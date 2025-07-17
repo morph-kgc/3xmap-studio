@@ -19,4 +19,7 @@ To run it:
 
 MAIN VARIABLES:
 st.session_state["g_mapping"]: stores the mapping
-st.session_state["map_dict"]: dictionary in the shape {triplesmap label: triplesmap}
+st.session_state["ns_dict"]: dictionary in the shape {prefix: namespace iri}
+st.session_state["tmap_dict"]: dictionary in the shape {triplesmap label: triplesmap}
+st.session_state["data_source_dict"]: dictionary in the shape {triplesmap label: data source}
+st.session_state["subject_dict"]: dictionary in the shape {triplesmap label: [subject label, subject data source column]}

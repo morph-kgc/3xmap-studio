@@ -1,1 +1,13 @@
+@prefix ns1: <http://www.w3.org/ns/r2rml#> .
+@prefix ns2: <http://semweb.mmlab.be/ns/rml#> .
+@prefix ns3: <http://semweb.mmlab.be/ns/ql#> .
+
+<http://example.org/mapping#AuthorsTriplesMap> ns2:logicalSource <http://example.org/mapping#AuthorsLogicalSource> ;
+    ns1:subjectMap <http://example.org/subject#AuthorsSubject> .
+
+<http://example.org/mapping#AuthorsLogicalSource> ns3:referenceFormulation ns3:CSV ;
+    ns2:source "Authors.csv" .
+
+<http://example.org/subject#AuthorsSubject> ns1:class <http://example.org/class#People> ;
+    ns1:template "http://example.org/{subject_map_node}/{subject_id}" .
 
