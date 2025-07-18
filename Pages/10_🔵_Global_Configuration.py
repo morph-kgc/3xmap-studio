@@ -170,7 +170,6 @@ def bind_all_predefined_namespaces():
 
 def unbind_namespace():
     st.session_state["g_mapping"].namespace_manager.bind(unbind_ns, None, replace=True)
-    st.session_state["ns_dict"][unbind_ns] = None
     st.session_state["unbind_selectbox"] = "Select a namespace"   #we reset the variables
 
 def save_progress():
@@ -654,6 +653,7 @@ if st.session_state["10_option_button"] == "ns":   #ns button selected
         with col2b:
             st.write("")
             st.write("")
+            utils.update_dictionaries()
             ns_df = pd.DataFrame(list(st.session_state["ns_dict"].items()), columns=["Prefix", "Namespace"])
             st.dataframe(ns_df, hide_index=True)
             st.write("")

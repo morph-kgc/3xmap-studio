@@ -437,17 +437,18 @@ if st.session_state["20_option_button"] == "s":
 
     elif len(tmap_without_subject_list) == 1:
         with col1a:
-            st.markdown(f"""
-                <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                    <span style="font-size:0.95rem;">
-                ☑️ <b>All existing TriplesMaps have already been assigned a subject map.</b><br>
+            st.markdown(
+                f"""
+                <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
+                🔒 <b>All existing TriplesMaps have already been assigned a subject map.</b><br>
                 <ul style="margin-top:0.5em; margin-bottom:0; font-size:0.9em; list-style-type: disc; padding-left: 1.2em;">
                     <li>Note that only one subject can be assigned to each TriplesMap.</li>
                     <li>You can add new TriplesMaps in the <b style="color:#007bff;">Add TriplesMap option</b>.</li>
                 </ul>
-                    </span>
                 </div>
-                """, unsafe_allow_html=True)
+                """,
+                unsafe_allow_html=True
+            )
             st.write("")
 
     else:
@@ -610,180 +611,7 @@ if st.session_state["20_option_button"] == "s":
 
 #_________________________________________________________________
 
-#_____________________________________________________________________
-#SELECT SUBJECT CLASS (ontology-based)
 
-#     with col1:
-#         st.write("______________")
-#         st.markdown("""
-#         <div style="background-color:#e6e6fa; border:1px solid #511D66;
-#                     border-radius:5px; padding:10px; margin-bottom:8px;">
-#             <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
-#                 🏷️ Select Subject Class
-#             </div>
-#         </div>
-#         """, unsafe_allow_html=True)
-#         st.markdown("")
-#
-#     #SELECT THE TRIPLESMAP (this will give the subject if it exists)__________________________________
-#     #list of all triplesmaps
-#     tm_list = []
-#     for tm_label in st.session_state["tmap_dict"]:
-#         tm_list.append(tm_label)
-#
-#     tm_list.insert(0, "Select a TriplesMap")
-#
-#     with col1:
-#         col1a, col1b = st.columns([2,1])
-#     with col1a:
-#         selected_tm_label = st.selectbox("Select a TriplesMap", tm_list, key="selected_tm_label_class")   #select a triplesmap
-#
-#     if selected_tm_label == "Select a TriplesMap":
-#         with col1b:
-#             st.markdown(f"""
-#                 <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-#                     <span style="font-size:0.95rem;">
-#                     ❕ You must select a TriplesMap to continue.
-#                     </span>
-#                 </div>
-#                 """, unsafe_allow_html=True)
-#     else:
-#
-#         selected_tm = st.session_state["tmap_dict"][selected_tm_label]        #selected tm iri
-#         selected_subject_bnode = st.session_state["g_mapping"].value(selected_tm, RR.subjectMap)     #subject of selected tm (BNode)
-#         selected_subject_id = st.session_state["subject_dict"][selected_tm_label][1]
-#         selected_subject_type = st.session_state["subject_dict"][selected_tm_label][2]
-#
-#         if not selected_subject_bnode:
-#             with col1a:
-#                 st.markdown(f"""
-#                     <div style="background-color:#fff3cd; padding:1em;
-#                     border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-#                         ⚠️ A subject has not been added yet to the TriplesMap
-#                         <b style="color:#cc9a06;"> {selected_tm_label}</b>.
-#                         Please add a subject for the TriplesMap in the
-#                         <b style="color:#cc9a06;">🧱 Add New Subject Map section</b>.
-#                     </div>
-#                 """, unsafe_allow_html=True)
-#                 st.write("")
-#             with col1b:
-#                 st.markdown(f"""
-#                     <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-#                         <span style="font-size:0.95rem;">
-#                          🔖 The TriplesMap <b>{selected_tm_label}</b>
-#                          has no subject.
-#                         </span>
-#                     </div>
-#                     """, unsafe_allow_html=True)
-#         else:
-#             with col1b:
-#                 st.markdown(f"""
-#                     <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-#                         <span style="font-size:0.95rem;">
-#                          🔖 The subject of the TriplesMap <b>{selected_tm_label}</b>
-#                          is the {selected_subject_type} <b>{selected_subject_id}</b>.
-#                         </span>
-#                     </div>
-#                     """, unsafe_allow_html=True)
-#                 st.write("")
-#
-#         #Check whether the subject map already has a class
-#         subject_class = st.session_state["g_mapping"].value(selected_subject_bnode, RR["class"])
-#
-#         with col1a:
-#             if subject_class and selected_subject_bnode:   #subject class already exists
-#                 st.markdown(
-#                     f"""
-#                     <div style="background-color:#d4edda; padding:1em; border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-#                         Subject class:
-#                         <b style="color:#007bff;">{split_uri(subject_class)[1]}</b><br>
-#                         <small>Delete it to assign a different subject class.</small>
-#                     </div>
-#                     """,
-#                     unsafe_allow_html=True
-#                 )
-#                 st.write("")
-#                 with col1a:
-#                     delete_subject_class_checkbox = st.checkbox(f"""I am completely sure I want to delete the subject class""", key="delete_subject_class")
-#                 if delete_subject_class_checkbox:
-#                     with col1:
-#                         col1a, col1b = st.columns([1,2])
-#                     with col1a:
-#                         st.button("Delete", on_click=delete_subject_class)
-#
-#
-#             elif selected_subject_bnode:        #subject class does not exist
-#                 class_type_option_list = ["Simple class", "Union class", "Intersection class", "Class outside ontology"]
-#                 with col1a:
-#                     class_type = st.selectbox("Select a class type", class_type_option_list)
-#
-#                 #SIMPLE CLASS
-#                 if class_type == "Simple class":
-#                     superclass_dict = {"Select a superclass": ""}
-#                     classes_in_superclass_dict = {"Select a class": ""}
-#                     for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, None)))):
-#                         if not isinstance(o, BNode) and o not in superclass_dict.values():
-#                             superclass_dict[o.split("/")[-1].split("#")[-1]] = o
-#
-#                     with col1a:
-#                         superclass = st.selectbox("Select a superclass", list(superclass_dict.keys()))   #superclass label
-#                     if superclass != "Select a superclass":
-#                         superclass = superclass_dict[superclass] #we get the superclass iri
-#                         for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, superclass)))):
-#                             classes_in_superclass_dict[s.split("/")[-1].split("#")[-1]] = s
-#
-#
-#                     with col1a:
-#                         subject_class = st.selectbox("Select a class", list(classes_in_superclass_dict.keys()))   #class label
-#                     subject_class = classes_in_superclass_dict[subject_class] #we get the superclass iri
-#
-#                     if subject_class != "":
-#                         with col1:
-#                             col1a,col2a = st.columns([1,2])
-#                         with col1a:
-#                             st.button("Save", key="save_subject_class", on_click=save_simple_subject_class)
-#
-#
-#
-#                 # simple_class_dict = {}    #dictionary {class, class label}
-#                 # unionof_class_list = []   #need to add intersectionof, complementof and restriction (+nested constructs and annotations)
-#                 # for cls in set(st.session_state["g_ontology"].subjects(RDF.type, OWL.Class)):
-#                 #     if isinstance(cls, BNode):
-#                 #         if st.session_state["g_ontology"].triples((cls, OWL.unionOf, None)):
-#                 #             unionof_class_list.append(cls)
-#                 #             continue  # don't look for class label in this case
-#                 #     class_label = st.session_state["g_ontology"].value(cls, RDFS.label)  #look for label in ontology
-#                 #     if not class_label:
-#                 #         class_label =  cls.split("/")[-1].split("#")[-1]   #or just split iri by / or #
-#                 #     simple_class_dict[cls] = class_label
-#                 #
-#                 # st.write(simple_class_dict)
-#                 # st.write(unionof_class_list)
-#                 #
-#                 #
-#                 # duplicate_list = []
-#                 # for s, o, p in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, None)))):
-#                 #     if p not in duplicate_list:
-#                 #         st.write(p)
-#                 #         duplicate_list.append(p)
-#                 #
-#                 # st.write(len(duplicate_list))
-#                 #
-#                 #
-#                 # change_option = st.selectbox("Select a class", list(ontology_class_dict.values()))
-#
-#                 if class_type == "Class outside ontology":
-#                     with col1a:
-#                         subject_class_input = st.text_input("Enter subject class")
-#                         subject_class = FOAF[subject_class_input]
-#                     with col1b:
-#                         if subject_class_input:
-#                             st.write("")
-#                             st.button("Save", on_click=save_external_subject_class)
-#
-#
-# #_________________________________________________________________
-#
 
 #_____________________________________________________________________
 #ADD EXTRA TRIPLES TO SUBJECT MAP
@@ -794,7 +622,7 @@ if st.session_state["20_option_button"] == "s":
         <div style="background-color:#e6e6fa; border:1px solid #511D66;
                     border-radius:5px; padding:10px; margin-bottom:8px;">
             <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
-                ➕ Subject Map Additional Configuration
+                ➕ Subject Map Configuration
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -868,7 +696,7 @@ if st.session_state["20_option_button"] == "s":
         with col1:
             st.markdown(
                 """
-                <div style="border-top:3px dashed #511D66; padding-top:12px;">
+                <div style="border-top:3px dashed #b5b5d0; padding-top:12px;">
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -892,7 +720,7 @@ if st.session_state["20_option_button"] == "s":
                 st.markdown(
                     f"""
                     <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
-                        ✅ Subject class:
+                        🔒 Subject class:
                         <b style="color:#007bff;">{split_uri(subject_class)[1]}</b><br>
                         <small>Delete it to assign a different subject class.</small>
                     </div>
@@ -910,7 +738,21 @@ if st.session_state["20_option_button"] == "s":
 
 
             elif selected_subject_bnode:        #subject class does not exist
+                with col1a:
+                    st.markdown(
+                        f"""
+                        <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
+                            🔓 Subject class:
+                            <b style="color:#007bff;">not given</b><br>
+                            <small>Enter below.</small>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                st.write("")
                 class_type_option_list = ["Simple class", "Union class", "Intersection class", "Class outside ontology"]
+                with col1:
+                    col1a, col1b = st.columns([2,1])
                 with col1a:
                     class_type = st.selectbox("Select a class type", class_type_option_list)
 
@@ -950,42 +792,37 @@ if st.session_state["20_option_button"] == "s":
                             st.button("Save", key="save_subject_class", on_click=save_simple_subject_class)
 
 
-
-                # simple_class_dict = {}    #dictionary {class, class label}
-                # unionof_class_list = []   #need to add intersectionof, complementof and restriction (+nested constructs and annotations)
-                # for cls in set(st.session_state["g_ontology"].subjects(RDF.type, OWL.Class)):
-                #     if isinstance(cls, BNode):
-                #         if st.session_state["g_ontology"].triples((cls, OWL.unionOf, None)):
-                #             unionof_class_list.append(cls)
-                #             continue  # don't look for class label in this case
-                #     class_label = st.session_state["g_ontology"].value(cls, RDFS.label)  #look for label in ontology
-                #     if not class_label:
-                #         class_label =  cls.split("/")[-1].split("#")[-1]   #or just split iri by / or #
-                #     simple_class_dict[cls] = class_label
-                #
-                # st.write(simple_class_dict)
-                # st.write(unionof_class_list)
-                #
-                #
-                # duplicate_list = []
-                # for s, o, p in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, None)))):
-                #     if p not in duplicate_list:
-                #         st.write(p)
-                #         duplicate_list.append(p)
-                #
-                # st.write(len(duplicate_list))
-                #
-                #
-                # change_option = st.selectbox("Select a class", list(ontology_class_dict.values()))
-
+                #CLASS OUTSIDE ONTOLOGY
                 if class_type == "Class outside ontology":
+                    with col1b:
+                        st.write("")
+                        st.write("careful with this option")
+                    subject_class_prefix_list = list(st.session_state["ns_dict"].keys())
+                    with col1a:
+                        subject_class_prefix_list.insert(0,"Select a namespace")
+                    with col1a:
+                        subject_class_prefix = st.selectbox("Select a namespace", subject_class_prefix_list)
+                    if len(subject_class_prefix_list) == 1:
+                        with col1b:
+                            st.write("")
+                            st.markdown(
+                                f"""
+                                <div style="background-color:#fff3cd; padding:1em;
+                                border-radius:5px; color:#856404; border:1px solid #ffeeba; font-size:0.9em;">
+                                    ⚠️ No namespaces available. You can add namespaces in the
+                                     <b style="color:#cc9a06;">Global Configuration</b> page.
+                                </div>
+                                """,
+                                unsafe_allow_html=True)
+                    if subject_class_prefix != "Select a namespace":
+                        NS = Namespace(st.session_state["ns_dict"][subject_class_prefix])
                     with col1a:
                         subject_class_input = st.text_input("Enter subject class")
-                        subject_class = FOAF[subject_class_input]
-                    with col1b:
-                        if subject_class_input:
-                            st.write("")
+                    if subject_class_input and subject_class_prefix != "Select a namespace":
+                        subject_class = NS[subject_class_input]
+                        with col1a:
                             st.button("Save", on_click=save_external_subject_class)
+
 
 
         #TERM TYPE - IRI by default, but can be changed to BNode
@@ -996,7 +833,7 @@ if st.session_state["20_option_button"] == "s":
             st.write("")
             st.markdown(
                 """
-                <div style="border-top:3px dashed #511D66; padding-top:12px;">
+                <div style="border-top:3px dashed #b5b5d0; padding-top:12px;">
                     <span style="font-size:1.1em; font-weight:bold;">🆔 Term type</span><br>
                     <small>Indicates the target graph for the subject map triples. If not given, the default graph will be used.</small>
                 </div>
@@ -1016,7 +853,7 @@ if st.session_state["20_option_button"] == "s":
                     st.markdown(
                         f"""
                         <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
-                            ✅ Subject term type:
+                            🔒 Subject term type:
                             <b style="color:#007bff;">IRI</b><br>
                             <small>Click button to change to BNode.</small>
                         </div>
@@ -1032,7 +869,7 @@ if st.session_state["20_option_button"] == "s":
                     st.markdown(
                         f"""
                         <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
-                            ✅ Subject term type:
+                            🔒 Subject term type:
                             <b style="color:#007bff;">BNode</b><br>
                             <small>Click button to change to IRI.</small>
                         </div>
@@ -1053,7 +890,7 @@ if st.session_state["20_option_button"] == "s":
             st.write("")
             st.markdown(
                 """
-                <div style="border-top:3px dashed #511D66; padding-top:12px;">
+                <div style="border-top:3px dashed #b5b5d0; padding-top:12px;">
                     <span style="font-size:1.1em; font-weight:bold;">🗺️️ Graph map</span><br>
                     <small>Indicates the target graph for the subject map triples. If not given, the default graph will be used.</small>
                 </div>
@@ -1066,11 +903,11 @@ if st.session_state["20_option_button"] == "s":
         with col1:
             col1a, col1b = st.columns([2,1])
         with col1a:
-            if subject_graph and selected_subject_bnode:
+            if subject_graph and selected_subject_bnode:    #subject graph already given
                 st.markdown(
                     f"""
                     <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
-                        ✅ Subject graph:
+                        🔒 Subject graph:
                         <b style="color:#007bff;">{split_uri(subject_graph)[1]}</b><br>
                         <small>Delete it to assign a different subject graph.</small>
                     </div>
@@ -1087,9 +924,19 @@ if st.session_state["20_option_button"] == "s":
                     with col1a:
                         st.button("Delete", on_click=delete_subject_graph)
 
-
-
-            elif selected_subject_bnode:
+            elif selected_subject_bnode:       #subject graph not given
+                with col1a:
+                    st.markdown(
+                        f"""
+                        <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
+                            🔓 Subject graph:
+                            <b style="color:#007bff;">not given</b><br>
+                            <small>Enter below.</small>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                st.write("")
                 subject_graph_input = st.text_input("Enter subject graph", key="subject_graph_input")
                 subject_graph = FOAF[subject_graph_input]
                 with col1:

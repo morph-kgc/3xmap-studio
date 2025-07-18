@@ -203,7 +203,7 @@ def update_dictionaries():
         #{prefix: namespace}
         default_ns_dict = get_default_ns_dict()
         all_ns_dict = dict(st.session_state["g_mapping"].namespace_manager.namespaces())
-        st.session_state["ns_dict"] = {k: v for k, v in all_ns_dict.items() if k not in default_ns_dict}
+        st.session_state["ns_dict"] = {k: v for k, v in all_ns_dict.items() if (k not in default_ns_dict and v != URIRef("None"))}
 
         #subject dictionary   {tm label: [subject_label, subject_id, subject_type]}
         st.session_state["subject_dict"] = {}
