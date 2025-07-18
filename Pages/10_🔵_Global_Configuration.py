@@ -121,8 +121,10 @@ if "ontology_file_path" not in st.session_state:
     st.session_state["ontology_file_path"] = ""
 if "g_ontology_loaded_from_file" not in st.session_state:
     st.session_state["g_ontology_loaded_from_file"] = False
-if "load_ontology_file_button_flag" not in st.session_state:
-    st.session_state["load_ontology_file_button_flag"] = False
+if "load_ontology_from_file_button_flag" not in st.session_state:
+    st.session_state["load_ontology_from_file_button_flag"] = False
+if "ontology_source" not in st.session_state:
+    st.session_state["ontology_source"] = ""
 
 
 #initialise variables
@@ -194,9 +196,10 @@ def load_mapping():
 def load_ontology_from_link_button():
     st.session_state["ontology_link_input"] = ""
 
-def load_ontology_file_button():
+def load_ontology_from_file_button():
     st.session_state["ontology_file_input"] = "Select an ontology file"
-    st.session_state["load_ontology_file_button_flag"] = True
+    st.session_state["load_ontology_from_file_button_flag"] = True
+    st.session_state["ontology_source"] = "file"
 
 def discard_ontology():
     st.session_state["g_ontology"] = Graph()
@@ -278,18 +281,21 @@ if st.session_state["10_option_button"] == "g":
                 st.session_state["candidate_g_label"] = candidate_g_label    #just candidate until confirmed
 
         #A MAPPING HAS NOT BEEN LOADED YET
-        if not st.session_state["g_mapping"]:   #a mapping has not been loaded yet
+        if not st.session_state["g_mapping"]:   #a mapping has not been loaded yet (if we have created a mapping but it is empty this will not trigger)
             if st.session_state["candidate_g_label"]:  #after a new label has been given (so st.session_state["candidate_g_label"] exists)
                 with col1a:
                     if st.button(f"Confirm: create mapping {st.session_state["candidate_g_label"]}", on_click=reset_input):
                         st.session_state["g_label"] = st.session_state["candidate_g_label"]   #we consolidate g_label
                         st.session_state["g_mapping"] = Graph()   #we create a new empty mapping
                         st.session_state["ns_dict"] = {}    #we create empty dictionary for namespaces
-                        st.markdown(f"""
-                        <div style="background-color:#d4edda; padding:1em; border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                            ✅ The mapping <b style="color:#0f5132;">{st.session_state["g_label"]}</b> has been created!
-                        </div>
-                        """, unsafe_allow_html=True)
+                        with col1b:
+                            st.write("")
+                            st.write("")
+                            st.markdown(f"""
+                            <div style="background-color:#d4edda; padding:1em; border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                                ✅ The mapping <b style="color:#0f5132;">{st.session_state["g_label"]}</b> has been created!
+                            </div>
+                            """, unsafe_allow_html=True)
 
         #A MAPPING IS CURRENTLY LOADED
         else:  #a mapping is currently loaded (ask if overwrite)
@@ -577,10 +583,13 @@ if st.session_state["10_option_button"] == "g":
     with col3:
         if st.session_state["g_label"]:
             st.markdown(f"""
-            <div style="background-color:#e6e6fa; padding:1em; border-radius:5px; color:#2a0134; border:1px solid #511D66;">
-                ☑️ You are currently working with mapping
-                <b style="color:#511D66;">{st.session_state["g_label"]}</b>.
-            </div>
+                <div style="background-color:#e6e6fa; padding:1em; border-radius:5px;
+                color:#2a0134; border:1px solid #511D66;">
+                    <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
+                    style="vertical-align:middle; margin-right:8px; height:20px;">
+                    You are currently working with mapping
+                    <b style="color:#007bff;">{st.session_state["g_label"]}</b>.
+                </div>
             """, unsafe_allow_html=True)
 
 
@@ -606,15 +615,17 @@ utils.update_dictionaries()
 
 if st.session_state["10_option_button"] == "ns":   #ns button selected
 
-    if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
-        st.markdown(f"""
-        <div style="background-color:#f8d7da; padding:1em;
-                    border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-            ❗ You need to create or load a mapping in the
-            <b style="color:#a94442;">Select mapping option</b>."
-        </div>
-        """, unsafe_allow_html=True)
-        st.stop()
+    col1, col2 = st.columns([2,1.5])
+    with col1:
+        if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
+            st.markdown(f"""
+            <div style="background-color:#f8d7da; padding:1em;
+                        border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
+                ❗ You need to create or load a mapping in the
+                <b style="color:#a94442;">Select mapping option</b>."
+            </div>
+            """, unsafe_allow_html=True)
+            st.stop()
 
 
 
@@ -631,11 +642,13 @@ if st.session_state["10_option_button"] == "ns":   #ns button selected
         with col2b:
             if st.session_state["g_label"]:
                 st.markdown(f"""
-                <div style="background-color:#e6e6fa; padding:1em; border-radius:5px;
-                color:#2a0134; border:1px solid #511D66;">
-                    ☑️ You are currently working with mapping
-                    <b style="color:#511D66;">{st.session_state["g_label"]}</b>.
-                </div>
+                    <div style="background-color:#e6e6fa; padding:1em; border-radius:5px;
+                    color:#2a0134; border:1px solid #511D66;">
+                        <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
+                        style="vertical-align:middle; margin-right:8px; height:20px;">
+                        You are currently working with mapping
+                        <b style="color:#007bff;">{st.session_state["g_label"]}</b>.
+                    </div>
                 """, unsafe_allow_html=True)
 
 
@@ -846,15 +859,17 @@ if st.session_state["10_option_button"] == "ns":   #ns button selected
 #LOAD ONTOLOGY OPTION
 if st.session_state["10_option_button"] == "lo":
 
-    if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
-        st.markdown(f"""
-        <div style="background-color:#f8d7da; padding:1em;
-                    border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-            ❗ You need to create or load a mapping in the
-            <b style="color:#a94442;">Select mapping option</b>."
-        </div>
-        """, unsafe_allow_html=True)
-        st.stop()
+    col1, col2 = st.columns([2,1.5])
+    with col1:
+        if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
+            st.markdown(f"""
+            <div style="background-color:#f8d7da; padding:1em;
+                        border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
+                ❗ You need to create or load a mapping in the
+                <b style="color:#a94442;">Select mapping option</b>."
+            </div>
+            """, unsafe_allow_html=True)
+            st.stop()
 
     col1,col2 = st.columns([2,1.5])
 
@@ -862,26 +877,44 @@ if st.session_state["10_option_button"] == "lo":
         col2a,col2b = st.columns([1,2])
         with col2b:
             st.markdown(f"""
-            <div style="background-color:#e6e6fa; padding:1em; border-radius:5px;
-            color:#2a0134; border:1px solid #511D66;">
-                ☑️ You are currently working with mapping
-                <b style="color:#511D66;">{st.session_state["g_label"]}</b>.
-            </div>
+                <div style="background-color:#e6e6fa; padding:1em; border-radius:5px;
+                color:#2a0134; border:1px solid #511D66;">
+                    <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
+                    style="vertical-align:middle; margin-right:8px; height:20px;">
+                    You are currently working with mapping
+                    <b style="color:#007bff;">{st.session_state["g_label"]}</b>.
+                </div>
             """, unsafe_allow_html=True)
             st.write("")
 
             if st.session_state["g_ontology"]:
-                st.markdown(f"""
-                <div style="background-color:#d4edda; padding:1em;
-                            border-radius:5px; color:#155724; border:1px solid #444;">
-                    🧩 The ontology <b style="color:#007bff;">{st.session_state["ontology_label"]}</b> is currently loaded!
-                </div>
-                """, unsafe_allow_html=True)
+                if st.session_state["ontology_source"] == "file":
+                    st.markdown(f"""
+                    <div style="background-color:#d4edda; padding:1em;
+                                border-radius:5px; color:#155724; border:1px solid #444;">
+                        🧩 The ontology <b style="color:#007bff;">{st.session_state["ontology_label"]}</b> has been loaded!
+                        <ul style="font-size:0.85rem; margin-top:6px; margin-left:15px; padding-left:10px;">
+                            <li><b>Source:</b> {st.session_state["ontology_file"]}</li>
+                            <li><b>{len(st.session_state["g_ontology"])} triples<b/> retrieved 🧩</li>
+                        </ul>
+                    </div>
+                    """, unsafe_allow_html=True)
+                elif st.session_state["ontology_source"] == "link":
+                    st.markdown(f"""
+                    <div style="background-color:#d4edda; padding:1em;
+                                border-radius:5px; color:#155724; border:1px solid #444;">
+                        🧩 The ontology <b style="color:#007bff;">{st.session_state["ontology_label"]}</b> has been loaded!
+                        <ul style="font-size:0.85rem; margin-top:6px; margin-left:15px; padding-left:10px;">
+                            <li><b>Source:</b> {st.session_state["ontology_link_save"]}</li>
+                            <li><b>{len(st.session_state["g_ontology"])} triples<b/> retrieved 🧩</li>
+                        </ul>
+                    </div>
+                    """, unsafe_allow_html=True)
             else:
                 st.markdown("""
                 <div style="background-color:#f0f0f0; padding:10px; border-radius:5px; margin-bottom:8px; border:1px solid #ccc;">
                     <span style="font-size:0.95rem; color:#333;">
-                        🧩 <b>No ontology</b> is loaded yet<br>
+                        🚫 <b>No ontology</b> is loaded.<br>
                     </span>
                 </div>
                 """, unsafe_allow_html=True)
@@ -903,39 +936,24 @@ if st.session_state["10_option_button"] == "lo":
 
 
     #LOAD ONTOLOGY FROM URL___________________________________
-    with col1:
-        st.markdown("""
-            <div style="background-color:#e6e6fa; border:1px solid #511D66;
-                        border-radius:5px; padding:10px; margin-bottom:8px;">
-                <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
-                    🌐 Load ontology from URL
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-    with col1:
-        col1a,col1b = st.columns([2,1])
-
-    if st.session_state["g_ontology"]:
-        with col1a:
-            st.markdown(f"""
-                <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                    <span style="font-size:0.95rem;">
-                🚫 <b> Option not available:</b> an ontology is already loaded<br>
-                <ul style="margin-top:0.5em; margin-bottom:0; font-size:0.9em; list-style-type: disc; padding-left: 1.2em;">
-                    <li>Note that only one ontology can be loaded at once.</li>
-                    <li>You can <b style="color:#007bff;">discard the current ontology</b>
-                     to load a new one.</li>
-                </ul>
-                    </span>
+    if not st.session_state["g_ontology"]:   #no ontology is loaded yet
+        with col1:
+            st.markdown("""
+                <div style="background-color:#e6e6fa; border:1px solid #511D66;
+                            border-radius:5px; padding:10px; margin-bottom:8px;">
+                    <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
+                        🌐 Load ontology from URL
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
 
-    else:   #no ontology is loaded yet
+        with col1:
+            col1a,col1b = st.columns([2,1])
         with col1a:
             ontology_link_input = st.text_input("Enter link to ontology", key="ontology_link_input")
         if ontology_link_input:
             st.session_state["ontology_link"] = ontology_link_input
+            st.session_state["ontology_link_save"] = ontology_link_input
 
         #http://purl.org/ontology/bibo/
 
@@ -950,12 +968,15 @@ if st.session_state["10_option_button"] == "lo":
                 st.write("")
 
         elif st.session_state["ontology_link"]:
-            with col1b:
-                st.write("")
+            with col1:
+                col1a, col1b = st.columns([1,2])
+            with col1a:
                 load_ontology_from_link_button = st.button("Load ontology", key="load_ontology_from_link_button", on_click=load_ontology_from_link_button)
             if load_ontology_from_link_button:
                 st.session_state["g_ontology"] = Graph()
                 st.session_state["g_ontology"].parse(st.session_state["ontology_link"], format="xml")  # RDF/XML format
+                st.session_state["ontology_link"] = ""
+                st.session_state["ontology_source"] = "link"
 
                 #get the ontology human-readable name
                 ontology_iri = next(st.session_state["g_ontology"].subjects(RDF.type, OWL_NS.Ontology), None)
@@ -964,62 +985,37 @@ if st.session_state["10_option_button"] == "lo":
                     st.session_state["g_ontology"].value(ontology_iri, DC.title) or
                     st.session_state["g_ontology"].value(ontology_iri, DCTERMS.title) or
                     ontology_iri)    #look for ontology label; if there isnt one just select the ontology iri
-                with col1a:
-                    st.markdown(f"""
-                        <div style="background-color:#d4edda; padding:1em;
-                        border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                            ✅ The ontology <b style="color:#007bff;">{st.session_state["ontology_label"]}</b> has been loaded!
-                            <ul style="font-size:0.85rem; margin-top:6px; margin-left:15px; padding-left:10px;">
-                                <li><b>Source:</b> {st.session_state["ontology_link"]}</li>
-                                <li><b>{len(st.session_state["g_ontology"])} triples<b/> retrieved 🧩</li>
-                            </ul>
-                        </div>
-                    """, unsafe_allow_html=True)
+                st.rerun()
 
     #LOAD ONTOLOGY FROM FILE___________________________________
-    with col1:
-        st.write("________")
-        st.markdown("""
-            <div style="background-color:#e6e6fa; border:1px solid #511D66;
-                        border-radius:5px; padding:10px; margin-bottom:8px;">
-                <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
-                    📁 Load ontology from file
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-    #ontology files
-    ontology_extension_dict = {"owl": ".owl", "turtle": ".ttl", "longturtle": ".ttl", "n3": ".n3",
-    "ntriples": ".nt", "nquads": "nq", "trig": ".trig", "json-ld": ".jsonld",
-    "xml": ".xml", "pretty-xml": ".xml", "trix": ".trix"}
-    ontology_format_list = list(ontology_extension_dict)
-    ontology_folder = os.path.join(os.getcwd(), "ontologies")
-    ontology_file_list = [
-        filename for filename in os.listdir(ontology_folder)
-        if os.path.isfile(os.path.join(ontology_folder, filename)) and
-           any(filename.endswith(ext) for ext in ontology_format_list)
-    ]
-    ontology_file_list.insert(0, "Select an ontology file")
-
-    with col1:
-        col1a,col1b = st.columns([2,1])
-
-    if st.session_state["g_ontology"]:
-        with col1a:
-            st.markdown(f"""
-                <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                    <span style="font-size:0.95rem;">
-                🚫 <b> Option not available:</b> an ontology is already loaded<br>
-                <ul style="margin-top:0.5em; margin-bottom:0; font-size:0.9em; list-style-type: disc; padding-left: 1.2em;">
-                    <li>Note that only one ontology can be loaded at once.</li>
-                    <li>You can <b style="color:#007bff;">discard the current ontology</b>
-                     to load a new one.</li>
-                </ul>
-                    </span>
+    if not st.session_state["g_ontology"]:   #no ontology is loaded yet
+        with col1:
+            st.write("________")
+            st.markdown("""
+                <div style="background-color:#e6e6fa; border:1px solid #511D66;
+                            border-radius:5px; padding:10px; margin-bottom:8px;">
+                    <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
+                        📁 Load ontology from file
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
 
-    else:   #no ontology is loaded yet
+        #ontology files
+        ontology_extension_dict = {"owl": ".owl", "turtle": ".ttl", "longturtle": ".ttl", "n3": ".n3",
+        "ntriples": ".nt", "nquads": "nq", "trig": ".trig", "json-ld": ".jsonld",
+        "xml": ".xml", "pretty-xml": ".xml", "trix": ".trix"}
+        ontology_format_list = list(ontology_extension_dict)
+        ontology_folder = os.path.join(os.getcwd(), "ontologies")
+        ontology_file_list = [
+            filename for filename in os.listdir(ontology_folder)
+            if os.path.isfile(os.path.join(ontology_folder, filename)) and
+               any(filename.endswith(ext) for ext in ontology_format_list)
+        ]
+        ontology_file_list.insert(0, "Select an ontology file")
+
+        with col1:
+            col1a,col1b = st.columns([2,1])
+
         if len(ontology_file_list) == 1:
             with col1a:
                 st.markdown(f"""
@@ -1054,13 +1050,15 @@ if st.session_state["10_option_button"] == "lo":
 
 
             if st.session_state["g_ontology_loaded_from_file"] == True and ontology_file_input != "Select an ontology file":
-                with col1b:
+                with col1:
+                    col1a, col1b = st.columns([1,2])
+                with col1a:
                     st.write("")
-                    st.button("Load ontology", key="load_ontology_file_button", on_click=load_ontology_file_button)
+                    st.button("Load ontology", key="load_ontology_from_file_button", on_click=load_ontology_from_file_button)
 
-            if st.session_state["load_ontology_file_button_flag"]:
+            if st.session_state["load_ontology_from_file_button_flag"]:
                 #get the ontology human-readable name
-                st.session_state["load_ontology_file_button_flag"] = False
+                st.session_state["load_ontology_from_file_button_flag"] = False
                 st.session_state["g_ontology"] = st.session_state["g_ontology_candidate"]
                 ontology_iri = next(st.session_state["g_ontology"].subjects(RDF.type, OWL_NS.Ontology), None)
                 st.session_state["ontology_label"] = (
@@ -1068,59 +1066,55 @@ if st.session_state["10_option_button"] == "lo":
                     st.session_state["g_ontology"].value(ontology_iri, DC.title) or
                     st.session_state["g_ontology"].value(ontology_iri, DCTERMS.title) or
                     ontology_iri)    #look for ontology label; if there isnt one just select the ontology iri
-                with col1a:
-                    st.markdown(f"""
-                        <div style="background-color:#d4edda; padding:1em;
-                        border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                            ✅ The ontology <b style="color:#007bff;">{st.session_state["ontology_label"]}</b> has been loaded!
-                            <ul style="font-size:0.85rem; margin-top:6px; margin-left:15px; padding-left:10px;">
-                                <li><b>Source:</b> {st.session_state["ontology_file"]}</li>
-                                <li><b>{len(st.session_state["g_ontology"])} triples<b/> retrieved 🧩</li>
-                            </ul>
-                        </div>
-                    """, unsafe_allow_html=True)
+                st.rerun()
 
 
 
 
     #DISCARD ONTOLOGY___________________________________
-    with col1:
-        st.write("________")
-        st.markdown("""
-            <div style="background-color:#e6e6fa; border:1px solid #511D66;
-                        border-radius:5px; padding:10px; margin-bottom:8px;">
-                <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
-                    🗑️ Discard current ontology
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-    with col1:
-        col1a,col1b = st.columns([2,1])
-
-    if not st.session_state["g_ontology"]:   #no ontology loaded
-        with col1a:
-            st.markdown(f"""
-                <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                    <span style="font-size:0.95rem;">
-                🚫 <b> Option not available:</b> No ontology is currently loaded.
-                    </span>
+    if st.session_state["g_ontology"]:   #ontology loaded -> only option to discard
+        with col1:
+            st.markdown("""
+                <div style="background-color:#e6e6fa; border:1px solid #511D66;
+                            border-radius:5px; padding:10px; margin-bottom:8px;">
+                    <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
+                        🗑️ Discard current ontology
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
 
-    else:  #an ontology is loaded and can be discarded
-        with col1a:
-            st.markdown(f"""
-                <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                    <span style="font-size:0.95rem;">
-                🧩 <b> Current ontology:</b> <b style="color:#007bff;">{st.session_state["ontology_label"]}</b>
-                    </span>
-                </div>
-                """, unsafe_allow_html=True)
-            discard_ontology_checkbox = st.checkbox(f"""I am completely sure I want to discard the ontology""", key="discard_ontology")
-        if discard_ontology_checkbox:
-            with col1b:
-                st.button("Discard ontology", on_click=discard_ontology)
+        with col1:
+            col1a,col1b = st.columns([2,1])
+
+        if not st.session_state["g_ontology"]:   #no ontology loaded
+            with col1a:
+                st.markdown(f"""
+                    <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                        <span style="font-size:0.95rem;">
+                    🚫 <b> Option not available:</b> No ontology is currently loaded.
+                        </span>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+        else:  #an ontology is loaded and can be discarded
+            with col1a:
+                st.markdown(
+                    f"""
+                    <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
+                        🔒 Current ontology:
+                        <b style="color:#007bff;">{st.session_state["ontology_label"]}</b><br>
+                        <small>Discard to load a new one (only one ontology can be loaded at once).</small>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+                st.write("")
+                discard_ontology_checkbox = st.checkbox(f"""I am completely sure I want to discard the ontology""", key="discard_ontology")
+            if discard_ontology_checkbox:
+                with col1:
+                    col1a, col1b = st.columns([1,2])
+                with col1a:
+                    st.button("Discard ontology", on_click=discard_ontology)
 
 
 #_____________________________________________
@@ -1129,15 +1123,17 @@ if st.session_state["10_option_button"] == "lo":
 #SAVE PROGRESS OPTION
 if st.session_state["10_option_button"] == "sp":
 
-    if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
-        st.markdown(f"""
-        <div style="background-color:#f8d7da; padding:1em;
-                    border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-            ❗ You need to create or load a mapping in the
-            <b style="color:#a94442;">Select mapping option</b>."
-        </div>
-        """, unsafe_allow_html=True)
-        st.stop()
+    col1, col2 = st.columns([2,1.5])
+    with col1:
+        if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
+            st.markdown(f"""
+            <div style="background-color:#f8d7da; padding:1em;
+                        border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
+                ❗ You need to create or load a mapping in the
+                <b style="color:#a94442;">Select mapping option</b>."
+            </div>
+            """, unsafe_allow_html=True)
+            st.stop()
 
 
     col1,col2 = st.columns([2,1.5])
@@ -1147,11 +1143,13 @@ if st.session_state["10_option_button"] == "sp":
         with col2b:
             if st.session_state["g_label"]:
                 st.markdown(f"""
-                <div style="background-color:#e6e6fa; padding:1em; border-radius:5px;
-                color:#2a0134; border:1px solid #511D66;">
-                    ☑️ You are currently working with mapping
-                    <b style="color:#511D66;">{st.session_state["g_label"]}</b>.
-                </div>
+                    <div style="background-color:#e6e6fa; padding:1em; border-radius:5px;
+                    color:#2a0134; border:1px solid #511D66;">
+                        <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
+                        style="vertical-align:middle; margin-right:8px; height:20px;">
+                        You are currently working with mapping
+                        <b style="color:#007bff;">{st.session_state["g_label"]}</b>.
+                    </div>
                 """, unsafe_allow_html=True)
 
 
@@ -1247,15 +1245,17 @@ if st.session_state["10_option_button"] == "sp":
 
 if st.session_state["10_option_button"] == "em":
 
-    if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
-        st.markdown(f"""
-        <div style="background-color:#f8d7da; padding:1em;
-                    border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-            ❗ You need to create or load a mapping in the
-            <b style="color:#a94442;">Select mapping option</b>."
-        </div>
-        """, unsafe_allow_html=True)
-        st.stop()
+    col1, col2 = st.columns([2,1.5])
+    with col1:
+        if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
+            st.markdown(f"""
+            <div style="background-color:#f8d7da; padding:1em;
+                        border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
+                ❗ You need to create or load a mapping in the
+                <b style="color:#a94442;">Select mapping option</b>."
+            </div>
+            """, unsafe_allow_html=True)
+            st.stop()
 
     col1,col2 = st.columns([2,1.5])
 
@@ -1264,11 +1264,13 @@ if st.session_state["10_option_button"] == "em":
         with col2b:
             if st.session_state["g_label"]:
                 st.markdown(f"""
-                <div style="background-color:#e6e6fa; padding:1em; border-radius:5px;
-                color:#2a0134; border:1px solid #511D66;">
-                    ☑️ You are currently working with mapping
-                    <b style="color:#511D66;">{st.session_state["g_label"]}</b>.
-                </div>
+                    <div style="background-color:#e6e6fa; padding:1em; border-radius:5px;
+                    color:#2a0134; border:1px solid #511D66;">
+                        <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
+                        style="vertical-align:middle; margin-right:8px; height:20px;">
+                        You are currently working with mapping
+                        <b style="color:#007bff;">{st.session_state["g_label"]}</b>.
+                    </div>
                 """, unsafe_allow_html=True)
 
 

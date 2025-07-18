@@ -174,16 +174,17 @@ s_show_info_button = False
 
 
 
-col1,col2 = st.columns(2)
+col1,col2 = st.columns([2,1.5])
 if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
-    st.markdown(f"""
-    <div style="background-color:#f8d7da; padding:1em;
-                border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-        ❗ You need to create or load a mapping. Please go to the
-        <b style="color:#a94442;">Global Configuration page</b>.
-    </div>
-    """, unsafe_allow_html=True)
-    st.stop()
+    with col1:
+        st.markdown(f"""
+        <div style="background-color:#f8d7da; padding:1em;
+                    border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
+            ❗ You need to create or load a mapping. Please go to the
+            <b style="color:#a94442;">Global Configuration page</b>.
+        </div>
+        """, unsafe_allow_html=True)
+        st.stop()
 
 
 
@@ -234,23 +235,39 @@ if st.session_state["20_option_button"] == "map":
     with col2:
         col2a,col2b = st.columns([1,2])
         with col2b:
-            if st.session_state["g_label"]:
-                st.markdown(f"""
+            st.markdown(f"""
                 <div style="background-color:#e6e6fa; padding:1em; border-radius:5px;
                 color:#2a0134; border:1px solid #511D66;">
-                    ☑️ You are currently working with mapping
-                    <b style="color:#511D66;">{st.session_state["g_label"]}</b>.
+                    <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
+                    style="vertical-align:middle; margin-right:8px; height:20px;">
+                    You are currently working with mapping
+                    <b style="color:#007bff;">{st.session_state["g_label"]}</b>.
+                </div>
+            """, unsafe_allow_html=True)
+            st.write("")
+
+            if st.session_state["ontology_label"]:
+                st.markdown(f"""
+                <div style="background-color:#d4edda; padding:1em;
+                            border-radius:5px; color:#155724; border:1px solid #444;">
+                    🧩 The ontology
+                    <b style="color:#007bff;">{st.session_state["ontology_label"]}</b>
+                    is currently loaded.
                 </div>
                 """, unsafe_allow_html=True)
-
-
             else:
-                st.markdown(f"""
-                <div style="background-color:#e6e6fa; padding:1em; border-radius:5px;
-                color:#2a0134; border:1px solid #511D66;">
-                    ✖️ <b style="color:#511D66;">No mapping</b> has been loaded yet.
-                </div>
+                st.markdown("""
+                    <div style="background-color:#f0f0f0; padding:10px; border-radius:5px; margin-bottom:8px; border:1px solid #ccc;">
+                        <span style="font-size:0.95rem; color:#333;">
+                            🚫 <b>No ontology</b> is loaded.<br>
+                        </span>
+                        <span style="font-size:0.82rem; color:#555;">
+                            Working without an ontology could result in structural inconsistencies.
+                        </span>
+                    </div>
                 """, unsafe_allow_html=True)
+
+
 
 
     #DISPLAY TRIPLESMAP INFO IN A DATAFRAME
@@ -329,13 +346,36 @@ if st.session_state["20_option_button"] == "s":
     with col2:
         col2a,col2b = st.columns([1,2])
         with col2b:
-            if st.session_state["g_label"]:
-                st.markdown(f"""
+            st.markdown(f"""
                 <div style="background-color:#e6e6fa; padding:1em; border-radius:5px;
                 color:#2a0134; border:1px solid #511D66;">
-                    ☑️ You are currently working with mapping
-                    <b style="color:#511D66;">{st.session_state["g_label"]}</b>.
+                    <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
+                    style="vertical-align:middle; margin-right:8px; height:20px;">
+                    You are currently working with mapping
+                    <b style="color:#007bff;">{st.session_state["g_label"]}</b>.
                 </div>
+            """, unsafe_allow_html=True)
+            st.write("")
+
+            if st.session_state["ontology_label"]:
+                st.markdown(f"""
+                <div style="background-color:#d4edda; padding:1em;
+                            border-radius:5px; color:#155724; border:1px solid #444;">
+                    🧩 The ontology
+                    <b style="color:#007bff;">{st.session_state["ontology_label"]}</b>
+                    is currently loaded.
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown("""
+                    <div style="background-color:#f0f0f0; padding:10px; border-radius:5px; margin-bottom:8px; border:1px solid #ccc;">
+                        <span style="font-size:0.95rem; color:#333;">
+                            🚫 <b>No ontology</b> is loaded.<br>
+                        </span>
+                        <span style="font-size:0.82rem; color:#555;">
+                            Working without an ontology could result in structural inconsistencies.
+                        </span>
+                    </div>
                 """, unsafe_allow_html=True)
 
 
@@ -375,11 +415,26 @@ if st.session_state["20_option_button"] == "s":
             with col2b:
                 st.markdown("""
                     <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                    ℹ️ <b>Configuration options:</b>
-                        <ul style="font-size:0.85rem; margin-left:15px; padding-left:10px;">
-                            <li><b>Subject class</b>: Declares the class of the generated subject (ontology-based).</li>
-                            <li><b>Term type</b>: Specifies what kind of RDF node the subject should be (either an IRI or a blank node).</li>
-                            <li><b>Graph map</b>: Indicates the named graph where the triples produced by the subject map will be stored.</li>
+                        ℹ️ <b>Working with subject maps:</b>
+                        <ul style="font-size:0.85rem; margin-left:10px; padding-left:15px; list-style-type: disc;">
+                            <li>
+                                First, create a TriplesMap in the <b>Add TriplesMap</b> panel.
+                            </li>
+                            <li>
+                                Then, go to panel <b> Add Subject Map </b> to set the Subject Map of the TriplesMap
+                                (each TriplesMap can only be assigned one Subject Map).
+                            </li>
+                            <li>
+                                Create the Subject Map in section <b>🧱 Add New Subject Map</b>.
+                            </li>
+                            <li>
+                                You can add more details in the <b>➕ Subject Map Configuration</b> section (optional):
+                                <ul style="list-style-type: none; margin: 0; padding-left: 0;">
+                                    <li>🏷️ <b>Subject class</b>: Declares the subject’s class (ontology-based).</li>
+                                    <li>🆔 <b>Term type</b>: Specifies whether the subject is an IRI or a blank node.</li>
+                                    <li>🗺️️ <b>Graph map</b>: Designates the named graph for storing the generated triples.</li>
+                                </ul>
+                            </li>
                         </ul>
                     </div>
                 """, unsafe_allow_html=True)
@@ -777,7 +832,10 @@ if st.session_state["20_option_button"] == "s":
                             subject_class = st.selectbox("Select a class", list(classes_in_superclass_dict.keys()))   #class label
                         subject_class = classes_in_superclass_dict[subject_class] #we get the superclass iri
                     else:  #no superclass selected, give all classes as options
-                        for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDF.type, OWL.Class)))):
+                        class_triples = set()
+                        class_triples |= set(st.session_state["g_ontology"].triples((None, RDF.type, OWL.Class)))   #collect owl:Class definitions
+                        class_triples |= set(st.session_state["g_ontology"].triples((None, RDF.type, RDFS.Class)))    # collect rdfs:Class definitions
+                        for s, p, o in class_triples:
                             if not isinstance(s, BNode):
                                 all_classes_dict[s.split("/")[-1].split("#")[-1]] = s
                         with col1a:
@@ -791,12 +849,38 @@ if st.session_state["20_option_button"] == "s":
                         with col1a:
                             st.button("Save", key="save_subject_class", on_click=save_simple_subject_class)
 
+                #UNION CLASS
+                if class_type == "Union class":
+                    with col1a:
+                        st.markdown(f"""
+                        <div style="background-color:#f8d7da; padding:1em;
+                                    border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
+                            ❌ Option <b style="color:#a94442;">not available</b> yet!<br>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+
+                #INTERSECTION CLASS
+                if class_type == "Intersection class":
+                    with col1a:
+                        st.markdown(f"""
+                        <div style="background-color:#f8d7da; padding:1em;
+                                    border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
+                            ❌ Option <b style="color:#a94442;">not available</b> yet!<br>
+                        </div>
+                        """, unsafe_allow_html=True)
 
                 #CLASS OUTSIDE ONTOLOGY
                 if class_type == "Class outside ontology":
                     with col1b:
                         st.write("")
-                        st.write("careful with this option")
+                        st.markdown(f"""
+                            <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                                <span style="font-size:0.95rem;">
+                                  🚧<b> Caution</b>: This option lacks ontology alignment and could result in structural inconsistencies.
+                                </span>
+                            </div>
+                            """, unsafe_allow_html=True)
                     subject_class_prefix_list = list(st.session_state["ns_dict"].keys())
                     with col1a:
                         subject_class_prefix_list.insert(0,"Select a namespace")
