@@ -132,7 +132,7 @@ if "load_ontology_from_file_button_flag" not in st.session_state:
 if "ontology_source" not in st.session_state:
     st.session_state["ontology_source"] = ""
 if "mapping_source" not in st.session_state:
-    st.session_state["mapping_source"] = ""
+    st.session_state["mapping_source"] = []
 
 
 
@@ -160,7 +160,7 @@ def create_new_mapping():
     st.session_state["candidate_g_label_input_create"] = ""
     st.session_state["candidate_g_label_new_flag"] = True
     st.session_state["overwrite_selection"] = ""
-    st.session_state["mapping_source"] = "Mapping was created from scratch"
+    st.session_state["mapping_source"] = ["scratch", ""]
 
 def cancel_create_new_mapping():
     st.session_state["candidate_g_label_input_create"] = ""
@@ -175,7 +175,7 @@ def create_new_mapping_and_save():
     st.session_state["candidate_g_label_input_create"] = ""
     st.session_state["candidate_g_label_new_flag"] = True
     st.session_state["overwrite_selection"] = ""
-    st.session_state["mapping_source"] = "Mapping was created from scratch"
+    st.session_state["mapping_source"] = ["scratch", ""]
     # st.session_state["overwrite_checkbox"] = False   HERE CHECK IF NEEDED
 
 def load_existing_mapping():
@@ -185,7 +185,7 @@ def load_existing_mapping():
     st.session_state["candidate_g_label_existing_flag"] = True
     st.session_state["overwrite_selection"] = ""
     st.session_state["load_file_selector"] = "Choose a file"
-    st.session_state["mapping_source"] = "Mapping was loaded from file"
+    st.session_state["mapping_source"] = ["file", st.session_state["selected_load_pkl"]]
 
 def cancel_load_existing_mapping():
     st.session_state["candidate_g_label_input_load"] = ""
@@ -201,7 +201,7 @@ def load_existing_mapping_and_save():
     st.session_state["candidate_g_label_existing_flag"] = True
     st.session_state["overwrite_selection"] = ""
     st.session_state["load_file_selector"] = "Choose a file"
-    st.session_state["mapping_source"] = "Mapping was loaded from file"
+    st.session_state["mapping_source"] = ["file", st.session_state["selected_load_pkl"]]
 
 def reset_input():
     st.session_state["candidate_g_label_input_create"] = ""
@@ -329,7 +329,6 @@ if st.session_state["10_option_button"] == "g":
                 col1a, col1b = st.columns([1,2])
             with col1a:
                 st.button("Confirm", on_click=create_new_mapping)
-                
         if st.session_state["candidate_g_label_new_flag"]:
             with col1b:
                 st.markdown(f"""
@@ -346,7 +345,7 @@ if st.session_state["10_option_button"] == "g":
             st.session_state["candidate_g_label_new"] = candidate_g_label    #just candidate until confirmed
 
             with col1a:
-                with st.form("overwrite_form"):
+                with st.form("overwrite_form_new"):
                     st.markdown(f"""
                         <div style="background-color:#fff3cd; padding:1em;
                         border-radius:5px; color:#856404; border:1px solid #ffeeba;">
@@ -372,22 +371,22 @@ if st.session_state["10_option_button"] == "g":
                         "What would you like to do?",
                         list(overwrite_options.keys()),
                         format_func=lambda x: overwrite_options[x],
-                        key="overwrite_selection_radio"
+                        key="overwrite_selection_radio_new"
                     )
 
                     st.markdown("</div>", unsafe_allow_html=True)   # Closing the box
 
-                    submitted = st.form_submit_button("Confirm")   # Submit button
+                    submitted_new = st.form_submit_button("Confirm")   # Submit button
 
-                if submitted:
-                    st.session_state["overwrite_selection"] = st.session_state["overwrite_selection_radio"]
+                if submitted_new:
+                    st.session_state["overwrite_selection"] = st.session_state["overwrite_selection_radio_new"]
 
                 with col1a:
                     if st.session_state["overwrite_selection"] == "opt_overwrite":
                         confirm_button = st.button(f"""I am sure I want to OVERWRITE
-                        mapping {st.session_state["candidate_g_label_new"]}""", on_click=create_new_mapping)
+                        mapping {st.session_state["candidate_g_label_new"]}""", on_click=create_new_mapping, key="confirm_button_overwrite_new")
                     elif st.session_state["overwrite_selection"] == "opt_cancel":
-                        confirm_button = st.button(f"""I am sure I want to CANCEL""", on_click=cancel_create_new_mapping)
+                        confirm_button = st.button(f"""I am sure I want to CANCEL""", on_click=cancel_create_new_mapping, key="confirm_button_cancel_new")
                     elif st.session_state["overwrite_selection"] == "opt_save": #for the save case we need to ask for the filename before confirming
                         save_g_filename = st.text_input(
                         f"Enter the filename to save the mapping {st.session_state["g_label"]} (without extension):")
@@ -404,8 +403,7 @@ if st.session_state["10_option_button"] == "g":
                             if save_g_filename:
                                 confirm_button = st.button(f"""I am sure I want to SAVE
                                  {st.session_state["g_label"]} to file {save_g_filename + ".ttl"}""",
-                                  on_click=create_new_mapping_and_save)
-
+                                  on_click=create_new_mapping_and_save, key="confirm_button_save_new")
         if st.session_state["candidate_g_label_new_flag"]:
             with col1b:
                 st.markdown(f"""
@@ -418,6 +416,7 @@ if st.session_state["10_option_button"] == "g":
 
     with col1:
         st.write("_____")
+
 
     #LOAD EXISTING MAPPING OPTION__________________________________________________________
     with col1:
@@ -476,7 +475,7 @@ if st.session_state["10_option_button"] == "g":
             st.session_state["candidate_g_label_existing"] = candidate_g_label    #just candidate until confirmed
 
             with col1a:
-                with st.form("overwrite_form"):
+                with st.form("overwrite_form_existing"):
                     st.markdown(f"""
                         <div style="background-color:#fff3cd; padding:1em;
                         border-radius:5px; color:#856404; border:1px solid #ffeeba;">
@@ -502,22 +501,22 @@ if st.session_state["10_option_button"] == "g":
                         "What would you like to do?",
                         list(overwrite_options.keys()),
                         format_func=lambda x: overwrite_options[x],
-                        key="overwrite_selection_radio"
+                        key="overwrite_selection_radio_existing"
                     )
 
                     st.markdown("</div>", unsafe_allow_html=True)   # Closing the box
 
-                    submitted = st.form_submit_button("Confirm")   # Submit button
+                    submitted_existing = st.form_submit_button("Confirm")   # Submit button
 
-                if submitted:
-                    st.session_state["overwrite_selection"] = st.session_state["overwrite_selection_radio"]
+                if submitted_existing:
+                    st.session_state["overwrite_selection"] = st.session_state["overwrite_selection_radio_existing"]
 
                 with col1a:
                     if st.session_state["overwrite_selection"] == "opt_overwrite":
                         confirm_button = st.button(f"""I am sure I want to OVERWRITE
-                        mapping {st.session_state["candidate_g_label_new"]}""", on_click=load_existing_mapping)
+                        mapping {st.session_state["candidate_g_label_new"]}""", on_click=load_existing_mapping, key="confirm_button_overwrite_existing")
                     elif st.session_state["overwrite_selection"] == "opt_cancel":
-                        confirm_button = st.button(f"""I am sure I want to CANCEL""", on_click=cancel_load_existing_mapping)
+                        confirm_button = st.button(f"""I am sure I want to CANCEL""", on_click=cancel_load_existing_mapping, key="confirm_button_cancel_existing")
                     elif st.session_state["overwrite_selection"] == "opt_save": #for the save case we need to ask for the filename before confirming
                         save_g_filename = st.text_input(
                         f"Enter the filename to save the mapping {st.session_state["g_label"]} (without extension):")
@@ -534,7 +533,7 @@ if st.session_state["10_option_button"] == "g":
                             if save_g_filename:
                                 confirm_button = st.button(f"""I am sure I want to SAVE
                                  {st.session_state["g_label"]} to file {save_g_filename + ".ttl"}""",
-                                  on_click=load_existing_mapping_and_save)
+                                  on_click=load_existing_mapping_and_save, key="confirm_button_save_existing")
 
         if st.session_state["candidate_g_label_existing_flag"]:
             with col1b:
@@ -549,123 +548,6 @@ if st.session_state["10_option_button"] == "g":
             st.session_state["candidate_g_label_existing_flag"] = False
 
 
-    # else:  #a mapping is currently loaded (ask if overwrite)
-    #     st.write("MAPPING ALREADY LOADED")
-    #     if candidate_g_label and selected_load_pkl != "Choose a file":   #after a new label has been given
-    #         st.session_state["candidate_g_label"] = candidate_g_label    #just candidate until confirmed
-    #
-    #         with col1a:
-    #             with st.form("overwrite_form"):
-    #                 st.markdown(f"""
-    #                     <div style="background-color:#fff3cd; padding:1em;
-    #                     border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-    #                         ⚠️ The mapping <b style="color:#cc9a06;">{st.session_state["g_label"]}</b> is already loaded! <br>
-    #                         If you continue, it will be overwritten.</div>
-    #                 """, unsafe_allow_html=True)
-    #
-    #                 st.write("")
-    #
-    #                 # Option labels
-    #                 cancel_text = (f"""CANCEL loading mapping {st.session_state["candidate_g_label"]}   🛑""")
-    #                 save_text = f"""SAVE mapping {st.session_state["g_label"]} first   💾"""
-    #                 overwrite_text = f"""OVERWRITE mapping {st.session_state["g_label"]}  🗑️"""
-    #
-    #                 overwrite_options = {
-    #                     "opt_cancel": cancel_text,
-    #                     "opt_save": save_text,
-    #                     "opt_overwrite": overwrite_text
-    #                 }
-    #
-    #
-    #                 selection = st.radio(        # Widgets inside the form
-    #                     "What would you like to do?",
-    #                     list(overwrite_options.keys()),
-    #                     format_func=lambda x: overwrite_options[x],
-    #                     key="overwrite_selection_radio"
-    #                 )
-    #
-    #                 st.markdown("</div>", unsafe_allow_html=True)   # Closing the box
-    #
-    #                 submitted = st.form_submit_button("Confirm")   # Submit button
-    #
-    #             if submitted:
-    #                 st.session_state["overwrite_selection"] = st.session_state["overwrite_selection_radio"]
-    #
-    #             with col1a:
-    #                 if st.session_state["overwrite_selection"] == "opt_overwrite":
-    #                     confirm_button = st.button(f"""I am sure I want to OVERWRITE
-    #                     mapping {st.session_state["candidate_g_label"]}""", on_click=reset_input)
-    #                 elif st.session_state["overwrite_selection"] == "opt_cancel":
-    #                     confirm_button = st.button(f"""I am sure I want to CANCEL""", on_click=reset_input)
-    #                 elif st.session_state["overwrite_selection"] == "opt_save": #for the save case we need to ask for the filename before confirming
-    #                     save_g_filename = st.text_input(
-    #                     f"Enter the filename to save the mapping {st.session_state["g_label"]} (without extension):")
-    #                     existing_pkl_list = [f for f in os.listdir(save_progress_folder) if f.endswith(".pkl")]
-    #                     if (save_g_filename + ".pkl") in existing_pkl_list:
-    #                         st.markdown(f"""
-    #                         <div style="background-color:#f8d7da; padding:1em;
-    #                                     border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-    #                             ❌ File <b style="color:#a94442;">{save_g_filename + ".pkl"}</b> already exists!<br>
-    #                             Please choose a different filename.
-    #                         </div>
-    #                         """, unsafe_allow_html=True)
-    #                     else:
-    #                         st.session_state["save_g_filename"] = save_g_filename
-    #                         if save_g_filename:
-    #                             confirm_button = st.button(f"""I am sure I want to SAVE
-    #                              {st.session_state["g_label"]} to file {save_g_filename + ".ttl"}""",
-    #                               on_click=reset_input)
-    #
-    #     if st.session_state["candidate_g_label"] and not candidate_g_label:   #this happens when i have confirmed and fields have been reset
-    #
-    #         if st.session_state["overwrite_selection"] == "opt_overwrite":   #OVERWRITE OPTION
-    #             with col1a:
-    #                 st.markdown(f"""
-    #                 <div style="background-color:#d4edda; padding:1em;
-    #                 border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-    #                     ✅ The mapping <b style="color:#0f5132;">{st.session_state["candidate_g_label"]}
-    #                     </b> has been created! <br> (and mapping
-    #                     <b style="color:#0f5132;"> {st.session_state["g_label"]} </b>
-    #                     has been overwritten).  </div>
-    #                 """, unsafe_allow_html=True)
-    #             st.session_state["g_label"] = st.session_state["candidate_g_label"]
-    #             st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]
-    #             st.session_state["ns_dict"] = {}    #we create empty dictionary for namespaces
-    #             st.session_state["overwrite_selection"] = ""
-    #
-    #         elif st.session_state["overwrite_selection"] == "opt_save":   #SAVE OPTION
-    #             save_current_mapping_file = save_progress_folder + "\\" + st.session_state["save_g_filename"] + ".pkl"
-    #             with open(save_current_mapping_file, "wb") as f:
-    #                 pickle.dump(st.session_state["g_mapping"], f)
-    #             with col1a:
-    #                 st.markdown(f"""
-    #                 <div style="background-color:#d4edda; padding:1em;
-    #                 border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-    #                     ✅ The mapping <b style="color:#0f5132;">{st.session_state["candidate_g_label"]}
-    #                     </b> has been created! <br> (and mapping
-    #                     <b style="color:#0f5132;"> {st.session_state["g_label"]} </b>
-    #                     has been saved to file
-    #                     <b style="color:#0f5132;">{st.session_state["save_g_filename"]})</b>
-    #                     .  </div>
-    #                 """, unsafe_allow_html=True)
-    #             st.session_state["g_label"] = st.session_state["candidate_g_label"]
-    #             st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]
-    #             st.session_state["ns_dict"] = {}    #we create empty dictionary for namespaces
-    #             st.session_state["overwrite_selection"] = ""
-    #
-    #         elif st.session_state["overwrite_selection"] == "opt_cancel": #cancel option
-    #             with col1a:
-    #                 st.markdown(f"""
-    #                     <div style="background-color:#fff3cd; padding:1em;
-    #                     border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-    #                         ⚠️ The mapping <b style="color:#cc9a06;">{st.session_state["candidate_g_label"]}</b>
-    #                         has NOT been created! <br>
-    #                         You are still working with mapping
-    #                         <b style="color:#cc9a06;">{st.session_state["g_label"]}</b>. </div>
-    #                 """, unsafe_allow_html=True)
-    #             st.session_state["overwrite_selection"] = ""
-
-
 
 
     # st.write("This is for debugging purposes and will be deleted")
@@ -677,19 +559,34 @@ if st.session_state["10_option_button"] == "g":
 
     with col3:
         if st.session_state["g_label"]:
-            st.markdown(f"""
-                <div style="background-color:#e6e6fa; padding:1em; border-radius:5px;
-                color:#2a0134; border:1px solid #511D66;">
-                    <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-                    style="vertical-align:middle; margin-right:8px; height:20px;">
-                    You are currently working with mapping
-                    <b style="color:#007bff;">{st.session_state["g_label"]}</b>.
-                    <ul style="font-size:0.85rem; margin-top:6px; margin-left:15px; padding-left:10px;">
-                        <li><b>{st.session_state["mapping_source"]}<b/></li>
-                        <li><b>Mapping has {len(st.session_state["g_mapping"])} triples<b/></li>
-                    </ul>
-                </div>
-            """, unsafe_allow_html=True)
+            if st.session_state["mapping_source"][0] == "file":
+                st.markdown(f"""
+                    <div style="background-color:#e6e6fa; padding:1em; border-radius:5px;
+                    color:#2a0134; border:1px solid #511D66;">
+                        <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
+                        style="vertical-align:middle; margin-right:8px; height:20px;">
+                        You are currently working with mapping
+                        <b style="color:#007bff;">{st.session_state["g_label"]}</b>.
+                        <ul style="font-size:0.85rem; margin-top:6px; margin-left:15px; padding-left:10px;">
+                            <li>Mapping was loaded from file <b>{st.session_state["mapping_source"][1]}</b></li>
+                            <li>Mapping has <b>{len(st.session_state["g_mapping"])} triples<b/></li>
+                        </ul>
+                    </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                    <div style="background-color:#e6e6fa; padding:1em; border-radius:5px;
+                    color:#2a0134; border:1px solid #511D66;">
+                        <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
+                        style="vertical-align:middle; margin-right:8px; height:20px;">
+                        You are currently working with mapping
+                        <b style="color:#007bff;">{st.session_state["g_label"]}</b>.
+                        <ul style="font-size:0.85rem; margin-top:6px; margin-left:15px; padding-left:10px;">
+                            <li>Mapping was created <b>from scratch</b></li>
+                            <li>Mapping has <b>{len(st.session_state["g_mapping"])} triples<b/></li>
+                        </ul>
+                    </div>
+                """, unsafe_allow_html=True)
 
 
         else:
