@@ -186,6 +186,7 @@ def update_dictionaries():
     st.session_state["tmap_dict"] = {}
     st.session_state["data_source_dict"] = {}
     st.session_state["subject_dict"] = {}
+    st.session_state["ns_dict"] = {}
 
     if st.session_state["g_label"]:
 
