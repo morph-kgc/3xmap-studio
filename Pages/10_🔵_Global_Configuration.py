@@ -175,9 +175,26 @@ def create_new_mapping_and_save():
     st.session_state["candidate_g_label_input_create"] = ""
     st.session_state["candidate_g_label_new_flag"] = True
     st.session_state["overwrite_selection"] = ""
+    st.session_state["mapping_source"] = "Mapping was created from scratch"
     # st.session_state["overwrite_checkbox"] = False   HERE CHECK IF NEEDED
 
 def load_existing_mapping():
+    st.session_state["g_label"] = st.session_state["candidate_g_label_existing"]   #we consolidate g_label
+    st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]   #we consolidate the loaded mapping
+    st.session_state["candidate_g_label_input_load"] = ""
+    st.session_state["candidate_g_label_existing_flag"] = True
+    st.session_state["overwrite_selection"] = ""
+    st.session_state["load_file_selector"] = "Choose a file"
+    st.session_state["mapping_source"] = "Mapping was loaded from file"
+
+def cancel_load_existing_mapping():
+    st.session_state["candidate_g_label_input_load"] = ""
+    st.session_state["overwrite_selection"] = ""
+
+def load_existing_mapping_and_save():
+    save_current_mapping_file = save_progress_folder + "\\" + st.session_state["save_g_filename"] + ".pkl"
+    with open(save_current_mapping_file, "wb") as f:
+        pickle.dump(st.session_state["g_mapping"], f)
     st.session_state["g_label"] = st.session_state["candidate_g_label_existing"]   #we consolidate g_label
     st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]   #we consolidate the loaded mapping
     st.session_state["candidate_g_label_input_load"] = ""
@@ -312,6 +329,7 @@ if st.session_state["10_option_button"] == "g":
                 col1a, col1b = st.columns([1,2])
             with col1a:
                 st.button("Confirm", on_click=create_new_mapping)
+                
         if st.session_state["candidate_g_label_new_flag"]:
             with col1b:
                 st.markdown(f"""
@@ -320,8 +338,6 @@ if st.session_state["10_option_button"] == "g":
                 </div>
                 """, unsafe_allow_html=True)
             st.session_state["candidate_g_label_new_flag"] = False
-
-    #CHECKPOINT
 
 
     #A MAPPING IS CURRENTLY LOADED
@@ -390,6 +406,15 @@ if st.session_state["10_option_button"] == "g":
                                  {st.session_state["g_label"]} to file {save_g_filename + ".ttl"}""",
                                   on_click=create_new_mapping_and_save)
 
+        if st.session_state["candidate_g_label_new_flag"]:
+            with col1b:
+                st.markdown(f"""
+                <div style="background-color:#d4edda; padding:1em; border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                    ✅ The mapping <b style="color:#0f5132;">{st.session_state["g_label"]}</b> has been created!
+                </div>
+                """, unsafe_allow_html=True)
+            st.session_state["candidate_g_label_new_flag"] = False
+
 
     with col1:
         st.write("_____")
@@ -423,7 +448,6 @@ if st.session_state["10_option_button"] == "g":
         with open(load_g_file_full_path, "rb") as f:
             st.session_state["candidate_g_mapping"] = pickle.load(f)   #we load the mapping as a candidate (ultil confirmed)
 
-    st.write("load file ready", load_file_ready)
 
     #A MAPPING HAS NOT BEEN LOADED YET
     if not st.session_state["g_mapping"]:   #a mapping has not been loaded yet (or empty mapping loaded)
@@ -432,6 +456,7 @@ if st.session_state["10_option_button"] == "g":
                 col1a, col1b = st.columns([1,2])
             with col1a:
                 st.button("Confirm", on_click=load_existing_mapping)
+
         if st.session_state["candidate_g_label_existing_flag"]:
             with col1b:
                 st.write("")
@@ -490,9 +515,9 @@ if st.session_state["10_option_button"] == "g":
                 with col1a:
                     if st.session_state["overwrite_selection"] == "opt_overwrite":
                         confirm_button = st.button(f"""I am sure I want to OVERWRITE
-                        mapping {st.session_state["candidate_g_label_new"]}""", on_click=create_new_mapping)
+                        mapping {st.session_state["candidate_g_label_new"]}""", on_click=load_existing_mapping)
                     elif st.session_state["overwrite_selection"] == "opt_cancel":
-                        confirm_button = st.button(f"""I am sure I want to CANCEL""", on_click=cancel_create_new_mapping)
+                        confirm_button = st.button(f"""I am sure I want to CANCEL""", on_click=cancel_load_existing_mapping)
                     elif st.session_state["overwrite_selection"] == "opt_save": #for the save case we need to ask for the filename before confirming
                         save_g_filename = st.text_input(
                         f"Enter the filename to save the mapping {st.session_state["g_label"]} (without extension):")
@@ -509,7 +534,19 @@ if st.session_state["10_option_button"] == "g":
                             if save_g_filename:
                                 confirm_button = st.button(f"""I am sure I want to SAVE
                                  {st.session_state["g_label"]} to file {save_g_filename + ".ttl"}""",
-                                  on_click=create_new_mapping_and_save)
+                                  on_click=load_existing_mapping_and_save)
+
+        if st.session_state["candidate_g_label_existing_flag"]:
+            with col1b:
+                st.write("")
+                st.write("")
+                st.write("")
+                st.markdown(f"""
+                <div style="background-color:#d4edda; padding:1em; border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                    ✅ The mapping <b style="color:#0f5132;">{st.session_state["g_label"]}</b> has been loaded!
+                </div>
+                """, unsafe_allow_html=True)
+            st.session_state["candidate_g_label_existing_flag"] = False
 
 
     # else:  #a mapping is currently loaded (ask if overwrite)
