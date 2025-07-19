@@ -132,6 +132,10 @@ def save_subject_reference():   #function to save subject (template option)
 def save_simple_subject_class():
     st.session_state["g_mapping"].add((selected_subject_bnode, RR["class"], subject_class))
 
+def save_union_class():
+    st.session_state["g_mapping"].add((selected_subject_bnode, RR["class"], selected_union_class_BNode))
+    st.session_state["selected_union_class_label"] = "Select a union class"
+
 def save_external_subject_class():
     st.session_state["g_mapping"].add((selected_subject_bnode, RR["class"], subject_class))
 
@@ -151,6 +155,7 @@ def save_subject_graph():
 
 def delete_subject_graph():
     st.session_state["g_mapping"].remove((selected_subject_bnode, RR["graph"], None))
+
 
 
 #initialise session state variables
@@ -772,16 +777,39 @@ if st.session_state["20_option_button"] == "s":
 
         with col1a:
             if subject_class and selected_subject_bnode:   #subject class already exists
-                st.markdown(
-                    f"""
-                    <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
-                        🔒 Subject class:
-                        <b style="color:#007bff;">{split_uri(subject_class)[1]}</b><br>
-                        <small>Delete it to assign a different subject class.</small>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+                if isinstance(subject_class, URIRef):
+                    st.markdown(
+                        f"""
+                        <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
+                            🔒 Subject class:
+                            <b style="color:#007bff;">{split_uri(subject_class)[1]}</b><br>
+                            <small>Delete it to assign a different subject class.</small>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                elif isinstance(subject_class, BNode) and utils.is_union_class(subject_class):
+                    st.markdown(
+                        f"""
+                        <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
+                            🔒 Subject class:
+                            <b style="color:#007bff;">Union class {utils.get_union_class_label(subject_class)}</b><br>
+                            <small>Delete it to assign a different subject class.</small>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                elif isinstance(subject_class, BNode):
+                    st.markdown(
+                        f"""
+                        <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
+                            🔒 Subject class:
+                            <b style="color:#007bff;">BNode</b><br> ({subject_class})<br>
+                            <small>Delete it to assign a different subject class.</small>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
                 st.write("")
                 with col1a:
                     delete_subject_class_checkbox = st.checkbox(f"""I am completely sure I want to delete the subject class""", key="delete_subject_class")
@@ -851,13 +879,31 @@ if st.session_state["20_option_button"] == "s":
 
                 #UNION CLASS
                 if class_type == "Union class":
+
+                    union_class_dict = {}
+                    count = 0
+                    for s, p, o in st.session_state["g_ontology"].triples((None, OWL.unionOf, None)):
+                        union_class_label = utils.get_union_class_label(s)
+                        if union_class_label not in union_class_dict.values():    #remove duplicate elements (there may be several BNodes that point to the same union class)
+                            union_class_dict[s] = union_class_label
+
+                    union_class_options_list =  list(union_class_dict.values())
+                    union_class_options_list.insert(0, "Select a union class")
                     with col1a:
-                        st.markdown(f"""
-                        <div style="background-color:#f8d7da; padding:1em;
-                                    border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-                            ❌ Option <b style="color:#a94442;">not available</b> yet!<br>
-                        </div>
-                        """, unsafe_allow_html=True)
+                        selected_union_class_label = st.selectbox("Select a union class", union_class_options_list, key="selected_union_class_label")
+                    for k, v in union_class_dict.items():
+                        if v == selected_union_class_label:
+                            selected_union_class_BNode = k
+                            break
+
+                    if selected_union_class_label != "Select a union class":
+                        with col1:
+                            col1a, col1b = st.columns([1,2])
+                        with col1a:
+                            save_union_class_button = st.button("Save", on_click=save_union_class, key="save_union_class_button")
+
+
+
 
 
                 #INTERSECTION CLASS

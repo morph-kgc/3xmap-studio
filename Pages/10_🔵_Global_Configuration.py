@@ -133,6 +133,8 @@ if "ontology_source" not in st.session_state:
     st.session_state["ontology_source"] = ""
 if "mapping_source" not in st.session_state:
     st.session_state["mapping_source"] = []
+if "original_g_length" not in st.session_state:
+    st.session_state["original_g_length"] = ""
 
 
 
@@ -180,6 +182,7 @@ def create_new_mapping_and_save():
 
 def load_existing_mapping():
     st.session_state["g_label"] = st.session_state["candidate_g_label_existing"]   #we consolidate g_label
+    st.session_state["original_g_length"] = len(st.session_state["candidate_g_mapping"])
     st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]   #we consolidate the loaded mapping
     st.session_state["candidate_g_label_input_load"] = ""
     st.session_state["candidate_g_label_existing_flag"] = True
@@ -195,6 +198,7 @@ def load_existing_mapping_and_save():
     save_current_mapping_file = save_progress_folder + "\\" + st.session_state["save_g_filename"] + ".pkl"
     with open(save_current_mapping_file, "wb") as f:
         pickle.dump(st.session_state["g_mapping"], f)
+    st.session_state["original_g_length"] = len(st.session_state["candidate_g_mapping"])
     st.session_state["g_label"] = st.session_state["candidate_g_label_existing"]   #we consolidate g_label
     st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]   #we consolidate the loaded mapping
     st.session_state["candidate_g_label_input_load"] = ""
@@ -550,6 +554,7 @@ if st.session_state["10_option_button"] == "g":
 
 
 
+
     # st.write("This is for debugging purposes and will be deleted")
     # st.write("g_label: ", st.session_state["g_label"])
     #
@@ -569,7 +574,8 @@ if st.session_state["10_option_button"] == "g":
                         <b style="color:#007bff;">{st.session_state["g_label"]}</b>.
                         <ul style="font-size:0.85rem; margin-top:6px; margin-left:15px; padding-left:10px;">
                             <li>Mapping was loaded from file <b>{st.session_state["mapping_source"][1]}</b></li>
-                            <li>Mapping has <b>{len(st.session_state["g_mapping"])} triples<b/></li>
+                            <li>When loaded, mapping had <b>{st.session_state["original_g_length"]} triples</b></li>
+                            <li>Now mapping has <b>{len(st.session_state["g_mapping"])} triples<b/></li>
                         </ul>
                     </div>
                 """, unsafe_allow_html=True)
@@ -946,7 +952,7 @@ if st.session_state["10_option_button"] == "lo":
         st.markdown("""
         <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
             <span style="font-size:0.95rem;">
-        ℹ️ Certain options in this section can be a bit slow, some patience may be required 🐢.
+        ℹ️ Certain options in this panel can be a bit slow, some patience may be required 🐢.
         </span>
         </div>
         """, unsafe_allow_html=True)

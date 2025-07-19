@@ -7,7 +7,6 @@ from urllib.parse import urlparse
 import pandas as pd
 from rdflib.namespace import split_uri
 from rdflib.namespace import RDF, RDFS, OWL
-OWL_NS = OWL
 
 
 #_________________________________________________________
@@ -421,16 +420,22 @@ def build_complete_subject_df():
 
     subject_rows = []
     for tmap_label, tmap_iri in st.session_state["tmap_dict"].items():
+
         subject_bnode = st.session_state["g_mapping"].value(subject=tmap_iri, predicate=RR.subjectMap)
         subject_class = st.session_state["g_mapping"].value(subject=subject_bnode, predicate=RR["class"])
-        if subject_class:
+        if subject_class and isinstance(subject_class, URIRef):
             subject_class = split_uri(subject_class)[1]
+        elif subject_class and is_union_class(subject_class):
+            subject_class = "Union class " + get_union_class_label(subject_class)
+
         subject_term_type = st.session_state["g_mapping"].value(subject=subject_bnode, predicate=RR.termType)
         if subject_term_type:
             subject_term_type = split_uri(subject_term_type)[1]
+
         subject_graph = st.session_state["g_mapping"].value(subject=subject_bnode, predicate=RR.graph)
         if subject_graph:
             subject_graph = split_uri(subject_graph)[1]
+
         subject_info = st.session_state["subject_dict"].get(tmap_label, ["", "", ""])
         subject_rows.append({
             "TriplesMap Label": tmap_label,
@@ -454,7 +459,7 @@ def is_valid_ontology(url: str):
         g.parse(url, format="xml")
 
         # Check for presence of OWL or RDFS classes
-        classes = list(g.subjects(RDF.type, OWL_NS.Class)) + list(g.subjects(RDF.type, RDFS.Class))
+        classes = list(g.subjects(RDF.type, OWL.Class)) + list(g.subjects(RDF.type, RDFS.Class))
         properties = list(g.subjects(RDF.type, RDF.Property))
 
         # Consider it valid if it defines at least one class or property
@@ -466,6 +471,56 @@ def is_valid_ontology(url: str):
         #HERE ERROR - I have to load namespaces
 #___________________________________________________________________________________
 
+
+#___________________________________________________________________________________
+#FOR UNION CLASSES
+def get_union_members(class_iri):
+    member_classes_list = []
+    start_node = st.session_state["g_ontology"].value(class_iri, OWL.unionOf)
+    current_item = start_node
+    while current_item and current_item != RDF.nil:
+        first_item = st.session_state["g_ontology"].value(current_item, RDF.first)
+        if first_item:
+            member_classes_list.append(first_item)
+        current_item = st.session_state["g_ontology"].value(current_item, RDF.rest)
+    return member_classes_list
+
+#___________________________________________________________________________________
+
+#___________________________________________________________________________________
+#FOR UNION CLASSES
+def get_union_class_label(class_iri):
+    member_classes_list = []
+    start_node = st.session_state["g_ontology"].value(class_iri, OWL.unionOf)
+    current_item = start_node
+    while current_item and current_item != RDF.nil:
+        first_item = st.session_state["g_ontology"].value(current_item, RDF.first)
+        if first_item and isinstance(first_item, URIRef):
+            member_classes_list.append(split_uri(first_item)[1])
+        elif first_item:
+            member_classes_list.append(first_item)
+        current_item = st.session_state["g_ontology"].value(current_item, RDF.rest)
+    return "[" + ", ".join(member_classes_list) + "]"
+#___________________________________________________________________________________
+
+#___________________________________________________________________________________
+#FOR UNION CLASSES
+def is_union_class(class_iri):
+    start_node = st.session_state["g_ontology"].value(class_iri, OWL.unionOf)
+    if start_node:
+        return True
+    return False
+#___________________________________________________________________________________
+
+#___________________________________________________________________________________
+#COMPLETELY UNPACK UNION CLASS - NOT FINISHED
+def is_unpacked_union_class(class_iri):
+    member_classes_list = get_union_members(class_iri)
+    if all(not isinstance(member_class, BNode) for member_class in member_classes_list):
+        return True
+    return False
+
+#___________________________________________________________________________________
 
 #___________________________________________________________________________________
 #FORMAT GLOSSARY
