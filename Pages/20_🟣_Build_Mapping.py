@@ -435,7 +435,8 @@ if st.session_state["20_option_button"] == "s":
                             <li>
                                 You can add more details in the <b>➕ Subject Map Configuration</b> section (optional):
                                 <ul style="list-style-type: none; margin: 0; padding-left: 0;">
-                                    <li>🏷️ <b>Subject class</b>: Declares the subject’s class (ontology-based).</li>
+                                    <li>🏷️ <b>Subject class</b>: Declares the subject’s class (ontology-based).
+                                    Allows to select union or intersection classes if included in the ontology.</li>
                                     <li>🆔 <b>Term type</b>: Specifies whether the subject is an IRI or a blank node.</li>
                                     <li>🗺️️ <b>Graph map</b>: Designates the named graph for storing the generated triples.</li>
                                 </ul>
@@ -833,42 +834,75 @@ if st.session_state["20_option_button"] == "s":
                         unsafe_allow_html=True
                     )
                 st.write("")
-                class_type_option_list = ["Simple class", "Union class", "Intersection class", "Class outside ontology"]
-                with col1:
-                    col1a, col1b = st.columns([2,1])
-                with col1a:
-                    class_type = st.selectbox("Select a class type", class_type_option_list)
 
+                #WE ORGANISE THE ONTOLOGY CLASSES IN DIFFERENT DICTIONARIES
+                #dictionary for simple classes
+                simple_classes_dict = {"Select a class": ""}
+                class_triples = set()
+                class_triples |= set(st.session_state["g_ontology"].triples((None, RDF.type, OWL.Class)))   #collect owl:Class definitions
+                class_triples |= set(st.session_state["g_ontology"].triples((None, RDF.type, RDFS.Class)))    # collect rdfs:Class definitions
+                for s, p, o in class_triples:   #we add to dictionary removing the BNodes
+                    if not isinstance(s, BNode):
+                        simple_classes_dict[split_uri(s)[1]] = s
+
+                #dictionary for superclasses
+                superclass_dict = {"Select a superclass": ""}
+                classes_in_superclass_dict = {"Select a class": ""}
+                for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, None)))):
+                    if not isinstance(o, BNode) and o not in superclass_dict.values():
+                        superclass_dict[o.split("/")[-1].split("#")[-1]] = o
+
+                #dictionary for union classes
+                union_classes_dict = {"Select a union class": "Select a union class"}
+                for s, p, o in st.session_state["g_ontology"].triples((None, OWL.unionOf, None)):
+                    union_class_label = utils.get_union_class_label(s)
+                    if union_class_label not in union_classes_dict.values():    #remove duplicate elements (there may be several BNodes that point to the same union class)
+                        union_classes_dict[s] = union_class_label
+
+
+                #ONLY SHOW OPTIONS IF THE ONTOLOGY HAS THEM
+                class_type_option_list = []
+                if len(simple_classes_dict) != 1:   #if the ontology includes at least one simple class
+                    class_type_option_list.append("Simple class")
+                if len(union_classes_dict) != 1:   #if the ontology includes at least one union class
+                    class_type_option_list.append("Union class")
+                class_type_option_list.append("Class outside ontology")  #always
+
+
+
+
+                if st.session_state["g_ontology"]:
+                    if class_type_option_list == ["Class outside ontology"]:   #there is an ontology but it has no classes
+                        class_type = "Class outside ontology"
+                    else:    #there is an ontology and it has classes
+                        with col1a:
+                            class_type = st.selectbox("Select a class type", class_type_option_list)
+                else:         #there isnt an ontology
+                    class_type = "Class outside ontology"   #if no ontology is loaded this is the only option (no selectbox)
+
+
+                #OPTIONS FOR SUBJECT CLASS
                 #SIMPLE CLASS
                 if class_type == "Simple class":
-                    superclass_dict = {"Select a superclass": ""}
-                    classes_in_superclass_dict = {"Select a class": ""}
-                    all_classes_dict = {"Select a class": ""}
-                    for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, None)))):
-                        if not isinstance(o, BNode) and o not in superclass_dict.values():
-                            superclass_dict[o.split("/")[-1].split("#")[-1]] = o
 
+                    if len(superclass_dict) != 1:   #there exists at least one superclass (show option to select a superclass)
+                        with col1a:
+                            superclass = st.selectbox("Select a superclass to filter classes (optional)", list(superclass_dict.keys()))   #superclass label
+                        classes_in_superclass_dict[superclass] = superclass_dict[superclass]
+                    else:     #no superclasses exist (don't give option to select superclass)
+                        superclass = "Select a superclass"
 
-                    with col1a:
-                        superclass = st.selectbox("Select a superclass to filter classes (optional)", list(superclass_dict.keys()))   #superclass label
-                        classes_in_superclass_dict[superclass.split("/")[-1].split("#")[-1]] = superclass_dict[superclass]   #include the superclass as a class
                     if superclass != "Select a superclass":   #a superclass has been selected
                         superclass = superclass_dict[superclass] #we get the superclass iri
                         for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, superclass)))):
-                            classes_in_superclass_dict[s.split("/")[-1].split("#")[-1]] = s
+                            classes_in_superclass_dict[split_uri(s)[1]] = s
                         with col1a:
                             subject_class = st.selectbox("Select a class", list(classes_in_superclass_dict.keys()))   #class label
                         subject_class = classes_in_superclass_dict[subject_class] #we get the superclass iri
-                    else:  #no superclass selected, give all classes as options
-                        class_triples = set()
-                        class_triples |= set(st.session_state["g_ontology"].triples((None, RDF.type, OWL.Class)))   #collect owl:Class definitions
-                        class_triples |= set(st.session_state["g_ontology"].triples((None, RDF.type, RDFS.Class)))    # collect rdfs:Class definitions
-                        for s, p, o in class_triples:
-                            if not isinstance(s, BNode):
-                                all_classes_dict[s.split("/")[-1].split("#")[-1]] = s
+                    else:  #no superclass selected or no superclasses exist, give all classes as options
                         with col1a:
-                            subject_class = st.selectbox("Select a class", list(all_classes_dict.keys()), key="subject_class_from_all")   #class label
-                        subject_class = all_classes_dict[subject_class] #we get the superclass iri
+                            subject_class = st.selectbox("Select a class", list(simple_classes_dict.keys()), key="subject_class_from_all")   #class label
+                        subject_class = simple_classes_dict[subject_class] #we get the superclass iri
 
 
                     if subject_class != "":
@@ -879,19 +913,11 @@ if st.session_state["20_option_button"] == "s":
 
                 #UNION CLASS
                 if class_type == "Union class":
+                    union_class_options_list =  list(union_classes_dict.values())
 
-                    union_class_dict = {}
-                    count = 0
-                    for s, p, o in st.session_state["g_ontology"].triples((None, OWL.unionOf, None)):
-                        union_class_label = utils.get_union_class_label(s)
-                        if union_class_label not in union_class_dict.values():    #remove duplicate elements (there may be several BNodes that point to the same union class)
-                            union_class_dict[s] = union_class_label
-
-                    union_class_options_list =  list(union_class_dict.values())
-                    union_class_options_list.insert(0, "Select a union class")
                     with col1a:
                         selected_union_class_label = st.selectbox("Select a union class", union_class_options_list, key="selected_union_class_label")
-                    for k, v in union_class_dict.items():
+                    for k, v in union_classes_dict.items():
                         if v == selected_union_class_label:
                             selected_union_class_BNode = k
                             break
@@ -901,8 +927,6 @@ if st.session_state["20_option_button"] == "s":
                             col1a, col1b = st.columns([1,2])
                         with col1a:
                             save_union_class_button = st.button("Save", on_click=save_union_class, key="save_union_class_button")
-
-
 
 
 
@@ -919,14 +943,43 @@ if st.session_state["20_option_button"] == "s":
                 #CLASS OUTSIDE ONTOLOGY
                 if class_type == "Class outside ontology":
                     with col1b:
-                        st.write("")
-                        st.markdown(f"""
-                            <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                                <span style="font-size:0.95rem;">
-                                  🚧<b> Caution</b>: This option lacks ontology alignment and could result in structural inconsistencies.
-                                </span>
-                            </div>
-                            """, unsafe_allow_html=True)
+                        st.markdown("<br><br>", unsafe_allow_html=True)
+                    if st.session_state["g_ontology"] and len(class_type_option_list) == 1: #there is an ontology but it has no classes
+                        with col1b:
+                            st.write("")
+                            st.markdown(f"""
+                                <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                                    <span style="font-size:0.95rem;">
+                                      🚧<b> Caution</b>: The ontology {st.session_state["ontology_label"]}
+                                      does not define any classes. <b>Classes can only be added manually</b>.
+                                      Using an ontology with predefined classes is recommended.
+                                    </span>
+                                </div>
+                                """, unsafe_allow_html=True)
+                    elif st.session_state["g_ontology"]:   #there exists an ontology and it has classes
+                        with col1b:
+                            st.write("")
+                            st.markdown(f"""
+                                <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                                    <span style="font-size:0.95rem;">
+                                      🚧<b> Caution</b>: The option \"Class outside ontology\"
+                                      <b>lacks ontology alignment</b> and could result in structural inconsistencies.
+                                      We recommend an ontology-driven approach.
+                                    </span>
+                                </div>
+                                """, unsafe_allow_html=True)
+                    else:
+                        with col1b:
+                            st.write("")
+                            st.markdown(f"""
+                                <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                                    <span style="font-size:0.95rem;">
+                                      🚧<b> Caution</b>: You are working without an ontology. We recommend loading an ontology
+                                       from the <b> Global Configuration</b> panel.
+                                    </span>
+                                </div>
+                                """, unsafe_allow_html=True)
+
                     subject_class_prefix_list = list(st.session_state["ns_dict"].keys())
                     with col1a:
                         subject_class_prefix_list.insert(0,"Select a namespace")

@@ -6,7 +6,7 @@ import pandas as pd
 import pickle
 from rdflib.namespace import split_uri
 import re
-from rdflib.namespace import OWL as OWL_NS
+from rdflib.namespace import OWL as OWL
 from rdflib.namespace import RDF, RDFS, DC, DCTERMS
 
 #________________________________________________
@@ -1003,12 +1003,12 @@ if st.session_state["10_option_button"] == "lo":
                 st.session_state["ontology_source"] = "link"
 
                 #get the ontology human-readable name
-                ontology_iri = next(st.session_state["g_ontology"].subjects(RDF.type, OWL_NS.Ontology), None)
+                ontology_iri = next(st.session_state["g_ontology"].subjects(RDF.type, OWL.Ontology), None)
                 st.session_state["ontology_label"] = (
                     st.session_state["g_ontology"].value(ontology_iri, RDFS.label) or
                     st.session_state["g_ontology"].value(ontology_iri, DC.title) or
                     st.session_state["g_ontology"].value(ontology_iri, DCTERMS.title) or
-                    ontology_iri)    #look for ontology label; if there isnt one just select the ontology iri
+                    uri_split(ontology_iri)[1])    #look for ontology label; if there isnt one just select the ontology iri
                 st.rerun()
 
     #LOAD ONTOLOGY FROM FILE___________________________________
@@ -1084,12 +1084,12 @@ if st.session_state["10_option_button"] == "lo":
                 #get the ontology human-readable name
                 st.session_state["load_ontology_from_file_button_flag"] = False
                 st.session_state["g_ontology"] = st.session_state["g_ontology_candidate"]
-                ontology_iri = next(st.session_state["g_ontology"].subjects(RDF.type, OWL_NS.Ontology), None)
+                ontology_iri = next(st.session_state["g_ontology"].subjects(RDF.type, OWL.Ontology), None)
                 st.session_state["ontology_label"] = (
                     st.session_state["g_ontology"].value(ontology_iri, RDFS.label) or
                     st.session_state["g_ontology"].value(ontology_iri, DC.title) or
                     st.session_state["g_ontology"].value(ontology_iri, DCTERMS.title) or
-                    ontology_iri)    #look for ontology label; if there isnt one just select the ontology iri
+                    split_uri(ontology_iri)[1])    #look for ontology label; if there isnt one just select the ontology iri
                 st.rerun()
 
 
