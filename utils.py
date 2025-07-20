@@ -8,6 +8,66 @@ import pandas as pd
 from rdflib.namespace import split_uri
 from rdflib.namespace import RDF, RDFS, OWL
 
+#________________________________________________
+#AESTHETICS
+def import_st_aesthetics():
+    #button style
+    st.markdown("""
+        <style>
+        div.stButton > button:first-child {
+            background-color: #3498db;
+            color: white;
+            height: 3em;
+            width: 100%;
+            border-radius: 5px;
+            border: none;
+        }
+        div.stButton > button:hover {
+            background-color: #2e86c1;
+            color: white;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    #Header style
+    st.markdown("""
+    <div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
+                border-radius:8px; margin-bottom:16px;">
+        <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
+             style="width:32px; margin-right:12px;">
+        <div>
+            <h3 style="margin:0; font-size:1.75rem;">
+                <span style="color:#511D66; font-weight:bold; margin-right:12px;">-----</span>
+                Build Mapping
+                <span style="color:#511D66; font-weight:bold; margin-left:12px;">-----</span>
+            </h3>
+            <p style="margin:0; font-size:0.95rem; color:#555;">
+                Build your mapping by adding <b>Triple Maps</b>, <b>Subject Maps</b>, and <b>Predicate-Object Maps</b>.
+            </p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+    # Expander header style
+    st.markdown("""
+        <style>
+        /* Customize the expander header (Streamlit 1.28+) */
+        div[data-testid="stExpander"] details summary {
+            background-color: #f0f0f0;  /* Light grey background */
+            padding: 6px;
+            border-radius: 5px;
+        }
+
+        div[data-testid="stExpander"] details summary p {
+            font-size: 16px;           /* Slightly smaller font */
+            color: black;              /* Black text */
+            font-weight: 500;
+            margin: 0;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+#_______________________________________________________
 
 #_________________________________________________________
 #Dictionary with predefined namespaces
@@ -402,14 +462,15 @@ def build_subject_df():
     subject_rows = []
     for tmap_label in st.session_state["tmap_dict"]:
         subject_info = st.session_state["subject_dict"].get(tmap_label, ["", "", ""])
-        subject_rows.append({
-            "TriplesMap Label": tmap_label,
-            "Data Source": st.session_state["data_source_dict"].get(tmap_label, ""),
-            "Subject Rule": subject_info[2],
-            "Subject": subject_info[1]
-        })
+        if subject_info[1]:
+            subject_rows.append({
+                "TriplesMap Label": tmap_label,
+                "Data Source": st.session_state["data_source_dict"].get(tmap_label, ""),
+                "Subject Rule": subject_info[2],
+                "Subject": subject_info[1]
+            })
 
-    return pd.DataFrame(subject_rows)
+    return pd.DataFrame(subject_rows).iloc[::-1]
 
 #___________________________________________________________________________________
 
@@ -423,10 +484,9 @@ def build_complete_subject_df():
 
         subject_bnode = st.session_state["g_mapping"].value(subject=tmap_iri, predicate=RR.subjectMap)
         subject_class = st.session_state["g_mapping"].value(subject=subject_bnode, predicate=RR["class"])
-        if subject_class and isinstance(subject_class, URIRef):
+        if subject_class:
             subject_class = split_uri(subject_class)[1]
-        elif subject_class and is_union_class(subject_class):
-            subject_class = "Union class " + get_union_class_label(subject_class)
+
 
         subject_term_type = st.session_state["g_mapping"].value(subject=subject_bnode, predicate=RR.termType)
         if subject_term_type:
@@ -437,15 +497,16 @@ def build_complete_subject_df():
             subject_graph = split_uri(subject_graph)[1]
 
         subject_info = st.session_state["subject_dict"].get(tmap_label, ["", "", ""])
-        subject_rows.append({
-            "TriplesMap Label": tmap_label,
-            "Data Source": st.session_state["data_source_dict"].get(tmap_label, ""),
-            "Subject Rule": subject_info[2],
-            "Subject": subject_info[1],
-            "Subject class": subject_class,
-            "Subject term type": subject_term_type,
-            "Subject graph": subject_graph
-        })
+        if subject_info[1]:
+            subject_rows.append({
+                "TriplesMap Label": tmap_label,
+                "Data Source": st.session_state["data_source_dict"].get(tmap_label, ""),
+                "Subject Rule": subject_info[2],
+                "Subject": subject_info[1],
+                "Subject class": subject_class,
+                "Subject term type": subject_term_type,
+                "Subject graph": subject_graph
+            })
 
     return pd.DataFrame(subject_rows)
 
@@ -472,55 +533,18 @@ def is_valid_ontology(url: str):
 #___________________________________________________________________________________
 
 
-#___________________________________________________________________________________
-#FOR UNION CLASSES
-def get_union_members(class_iri):
-    member_classes_list = []
-    start_node = st.session_state["g_ontology"].value(class_iri, OWL.unionOf)
-    current_item = start_node
-    while current_item and current_item != RDF.nil:
-        first_item = st.session_state["g_ontology"].value(current_item, RDF.first)
-        if first_item:
-            member_classes_list.append(first_item)
-        current_item = st.session_state["g_ontology"].value(current_item, RDF.rest)
-    return member_classes_list
-
-#___________________________________________________________________________________
-
-#___________________________________________________________________________________
-#FOR UNION CLASSES
-def get_union_class_label(class_iri):
-    member_classes_list = []
-    start_node = st.session_state["g_ontology"].value(class_iri, OWL.unionOf)
-    current_item = start_node
-    while current_item and current_item != RDF.nil:
-        first_item = st.session_state["g_ontology"].value(current_item, RDF.first)
-        if first_item and isinstance(first_item, URIRef):
-            member_classes_list.append(split_uri(first_item)[1])
-        elif first_item:
-            member_classes_list.append(first_item)
-        current_item = st.session_state["g_ontology"].value(current_item, RDF.rest)
-    return "[" + ", ".join(member_classes_list) + "]"
-#___________________________________________________________________________________
-
-#___________________________________________________________________________________
-#FOR UNION CLASSES
-def is_union_class(class_iri):
-    start_node = st.session_state["g_ontology"].value(class_iri, OWL.unionOf)
-    if start_node:
-        return True
-    return False
-#___________________________________________________________________________________
-
-#___________________________________________________________________________________
-#COMPLETELY UNPACK UNION CLASS - NOT FINISHED
-def is_unpacked_union_class(class_iri):
-    member_classes_list = get_union_members(class_iri)
-    if all(not isinstance(member_class, BNode) for member_class in member_classes_list):
-        return True
-    return False
-
-#___________________________________________________________________________________
+#SPECIAL BUTTON (GREY)
+# st.markdown('<span id="custom-style-marker"></span>', unsafe_allow_html=True)
+# s_show_info_button = st.button("ℹ️ Show information")
+# st.markdown("""
+#     <style>
+#     .element-container:has(#custom-style-marker) + div button {
+#         background-color: #eee;
+#         font-size: 0.75rem;
+#         color: #444;
+#     }
+#     </style>
+# """, unsafe_allow_html=True)
 
 #___________________________________________________________________________________
 #FORMAT GLOSSARY

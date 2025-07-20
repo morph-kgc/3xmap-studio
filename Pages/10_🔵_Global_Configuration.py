@@ -11,45 +11,7 @@ from rdflib.namespace import RDF, RDFS, DC, DCTERMS
 
 #________________________________________________
 #AESTHETICS
-
-#button style
-st.markdown("""
-    <style>
-    div.stButton > button:first-child {
-        background-color: #3498db;
-        color: white;
-        height: 3em;
-        width: 100%;
-        border-radius: 5px;
-        border: none;
-    }
-    div.stButton > button:hover {
-        background-color: #2e86c1;
-        color: white;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-#Header
-st.markdown("""
-<div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
-            border-radius:8px; margin-bottom:16px;">
-    <img src="https://img.icons8.com/ios-filled/50/000000/settings.png" alt="config icon"
-         style="width:32px; margin-right:12px;">
-    <div>
-        <h3 style="margin:0; font-size:1.75rem;">
-        <span style="color:#511D66; font-weight:bold; margin-left:12px;">-----</span>
-            Global Configuration
-            <span style="color:#511D66; font-weight:bold; margin-left:12px;">-----</span>
-        </h3>
-        <p style="margin:0; font-size:0.95rem; color:#555;">
-            Manage <b>mappings</b> and <b>namespaces</b>,
-            and store mappings by <b>saving</b> or <b>exporting</b>.
-        </p>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
+utils.import_st_aesthetics()
 st.write("")
 
 #__________________________________________
@@ -664,13 +626,25 @@ if st.session_state["10_option_button"] == "ns":   #ns button selected
 
 
 
-        col2a,col2b = st.columns([0.5,2])
+        col2a, col2b = st.columns([0.5, 2])
+
         with col2b:
             st.write("")
             st.write("")
             utils.update_dictionaries()
-            ns_df = pd.DataFrame(list(st.session_state["ns_dict"].items()), columns=["Prefix", "Namespace"])
-            st.dataframe(ns_df, hide_index=True)
+            ns_df = pd.DataFrame(list(st.session_state["ns_dict"].items()), columns=["Prefix", "Namespace"]).iloc[::-1]
+            ns_df_last = ns_df.head(7)
+            st.markdown("""
+                <div style='text-align: right; font-size: 14px; color: grey;'>
+                    last added namespaces
+                </div>
+            """, unsafe_allow_html=True)
+            st.markdown("""
+                <div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                    (complete list in 🔎 Show Namespaces)
+                </div>
+            """, unsafe_allow_html=True)
+            st.dataframe(ns_df_last, hide_index=True)
             st.write("")
 
 
@@ -863,16 +837,18 @@ if st.session_state["10_option_button"] == "ns":   #ns button selected
         """, unsafe_allow_html=True)
         st.markdown("")
 
+    #Option to show all custom namespaces
     with col1:
-        col1a,col1b = st.columns(2)
-    with col1a:
-        show_all_ns = st.button("Show all bound namespaces (including built-in ones)")
-    if show_all_ns:
-        with col1b:
-            st.button("Hide")
-        st.session_state["all_ns_dict"] = dict(st.session_state["g_mapping"].namespace_manager.namespaces())
-        all_ns_df = pd.DataFrame(list(st.session_state["all_ns_dict"].items()), columns=["Prefix", "Namespace"])
-        with col1:
+        with st.expander("ℹ️ Show all custom namespaces"):
+            st.write("")
+            st.dataframe(ns_df, hide_index=True)
+
+    #Option to show all namespaces (including built-in ones)
+    st.session_state["all_ns_dict"] = dict(st.session_state["g_mapping"].namespace_manager.namespaces())
+    all_ns_df = pd.DataFrame(list(st.session_state["all_ns_dict"].items()), columns=["Prefix", "Namespace"]).iloc[::-1]
+    with col1:
+        with st.expander("ℹ️ Show all bound namespaces (including built-in ones)"):
+            st.write("")
             st.dataframe(all_ns_df, hide_index=True)
 
 #_____________________________________________

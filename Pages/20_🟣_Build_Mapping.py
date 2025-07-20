@@ -11,44 +11,7 @@ from rdflib.namespace import RDF, RDFS, DC, DCTERMS
 #________________________________________________
 #AESTHETICS
 
-#button style
-st.markdown("""
-    <style>
-    div.stButton > button:first-child {
-        background-color: #3498db;
-        color: white;
-        height: 3em;
-        width: 100%;
-        border-radius: 5px;
-        border: none;
-    }
-    div.stButton > button:hover {
-        background-color: #2e86c1;
-        color: white;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-#Header
-st.markdown("""
-<div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
-            border-radius:8px; margin-bottom:16px;">
-    <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-         style="width:32px; margin-right:12px;">
-    <div>
-        <h3 style="margin:0; font-size:1.75rem;">
-            <span style="color:#511D66; font-weight:bold; margin-right:12px;">-----</span>
-            Build Mapping
-            <span style="color:#511D66; font-weight:bold; margin-left:12px;">-----</span>
-        </h3>
-        <p style="margin:0; font-size:0.95rem; color:#555;">
-            Build your mapping by adding <b>Triple Maps</b>, <b>Subject Maps</b>, and <b>Predicate-Object Maps</b>.
-        </p>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-
+utils.import_st_aesthetics()
 st.write("")
 
 #__________________________________________
@@ -277,13 +240,24 @@ if st.session_state["20_option_button"] == "map":
 
     #DISPLAY TRIPLESMAP INFO IN A DATAFRAME
     utils.update_dictionaries()
-    with col2:    #display all the TriplesMaps in a dataframe
+    with col2:    #display the last TriplesMaps in a dataframe
         col2a,col2b = st.columns([0.5,2])
         with col2b:
             st.write("")
             st.write("")
-            tmap_df = pd.DataFrame(list(st.session_state["data_source_dict"].items()), columns=["TriplesMap label", "Data source"])
-            st.dataframe(tmap_df, hide_index=True)
+            tmap_df = pd.DataFrame(list(st.session_state["data_source_dict"].items()), columns=["TriplesMap label", "Data source"]).iloc[::-1]
+            tmap_df_last = tmap_df.head(7)
+            st.markdown("""
+                <div style='text-align: right; font-size: 14px; color: grey;'>
+                    last added TriplesMaps
+                </div>
+            """, unsafe_allow_html=True)
+            st.markdown("""
+                <div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                    (complete list in 🔎 Show TriplesMaps)
+                </div>
+            """, unsafe_allow_html=True)
+            st.dataframe(tmap_df_last, hide_index=True)
             st.write("")
 
     with col1:
@@ -337,6 +311,22 @@ if st.session_state["20_option_button"] == "map":
                 associated to the data source <b style="color:#0f5132;"> {st.session_state["selected_ds"]}</b>.  </div>
             """, unsafe_allow_html=True)
 
+    with col1:
+        st.write("_____")
+        st.markdown("""
+        <div style="background-color:#e6e6fa; border:1px solid #511D66;
+                    border-radius:5px; padding:10px; margin-bottom:8px;">
+            <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
+                🔎 Show TriplesMaps
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        st.markdown("")
+
+        with st.expander("ℹ️ Show all TriplesMaps"):
+            st.write("")
+            st.dataframe(tmap_df, hide_index=True)
+
 
 #________________________________________________
 
@@ -388,12 +378,23 @@ if st.session_state["20_option_button"] == "s":
     utils.update_dictionaries()
     subject_df = utils.build_subject_df()
 
-    with col2:    #display all the TriplesMaps in a dataframe
+    with col2:    #display the last Subject Maps in a dataframe
         col2a,col2b = st.columns([0.1,2])
         with col2b:
             st.write("")
             st.write("")
-            st.dataframe(subject_df, hide_index=True)
+            subject_df_last = subject_df.head(7)
+            st.markdown("""
+                <div style='text-align: right; font-size: 14px; color: grey;'>
+                    last added Subject Maps
+                </div>
+            """, unsafe_allow_html=True)
+            st.markdown("""
+                <div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                    (complete list in 🔎 Show Subject Maps)
+                </div>
+            """, unsafe_allow_html=True)
+            st.dataframe(subject_df_last, hide_index=True)
             st.write("")
 
     #OPTION TO SHOW INFORMATION_________________________
@@ -402,25 +403,13 @@ if st.session_state["20_option_button"] == "s":
     with col2b:
         st.write("")
         st.write("")
-        st.markdown('<span id="custom-style-marker"></span>', unsafe_allow_html=True)
-        s_show_info_button = st.button("ℹ️ Show information")
-        st.markdown("""
-            <style>
-            .element-container:has(#custom-style-marker) + div button {
-                background-color: #eee;
-                font-size: 0.75rem;
-                color: #444;
-            }
-            </style>
-        """, unsafe_allow_html=True)
 
-        if s_show_info_button:
-            with col2:
-                col2a,col2b = st.columns([0.1,2])
-            with col2b:
-                st.markdown("""
-                    <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                        ℹ️ <b>Working with subject maps:</b>
+        with col2:
+            col2a,col2b = st.columns([0.1,2])
+        with col2b:
+            with st.expander("ℹ️ Show panel information"):
+                st.markdown(""" <br>
+                        💬 <b>Working with subject maps:</b>
                         <ul style="font-size:0.85rem; margin-left:10px; padding-left:15px; list-style-type: disc;">
                             <li>
                                 First, create a TriplesMap in the <b>Add TriplesMap</b> panel.
@@ -442,22 +431,8 @@ if st.session_state["20_option_button"] == "s":
                                 </ul>
                             </li>
                         </ul>
-                    </div>
-                """, unsafe_allow_html=True)
-            with col2:
-                col2a,col2b = st.columns(2)
-            with col2b:
-                st.markdown('<span id="custom-style-marker"></span>', unsafe_allow_html=True)
-                st.button("⬇️ Hide information")
-                st.markdown("""
-                    <style>
-                    .element-container:has(#custom-style-marker) + div button {
-                        background-color: #eee;
-                        font-size: 0.75rem;
-                        color: #444;
-                    }
-                    </style>
-                """, unsafe_allow_html=True)
+                    """, unsafe_allow_html=True)
+
 
 
 #ADD NEW SUBJECT MAP_________________________________________________________
@@ -673,7 +648,6 @@ if st.session_state["20_option_button"] == "s":
 #_________________________________________________________________
 
 
-
 #_____________________________________________________________________
 #ADD EXTRA TRIPLES TO SUBJECT MAP
 
@@ -837,13 +811,13 @@ if st.session_state["20_option_button"] == "s":
 
                 #WE ORGANISE THE ONTOLOGY CLASSES IN DIFFERENT DICTIONARIES
                 #dictionary for simple classes
-                simple_classes_dict = {"Select a class": ""}
+                ontology_classes_dict = {"Select a class": ""}
                 class_triples = set()
                 class_triples |= set(st.session_state["g_ontology"].triples((None, RDF.type, OWL.Class)))   #collect owl:Class definitions
                 class_triples |= set(st.session_state["g_ontology"].triples((None, RDF.type, RDFS.Class)))    # collect rdfs:Class definitions
                 for s, p, o in class_triples:   #we add to dictionary removing the BNodes
                     if not isinstance(s, BNode):
-                        simple_classes_dict[split_uri(s)[1]] = s
+                        ontology_classes_dict[split_uri(s)[1]] = s
 
                 #dictionary for superclasses
                 superclass_dict = {"Select a superclass": ""}
@@ -852,38 +826,27 @@ if st.session_state["20_option_button"] == "s":
                     if not isinstance(o, BNode) and o not in superclass_dict.values():
                         superclass_dict[o.split("/")[-1].split("#")[-1]] = o
 
-                #dictionary for union classes
-                union_classes_dict = {"Select a union class": "Select a union class"}
-                for s, p, o in st.session_state["g_ontology"].triples((None, OWL.unionOf, None)):
-                    union_class_label = utils.get_union_class_label(s)
-                    if union_class_label not in union_classes_dict.values():    #remove duplicate elements (there may be several BNodes that point to the same union class)
-                        union_classes_dict[s] = union_class_label
-
 
                 #ONLY SHOW OPTIONS IF THE ONTOLOGY HAS THEM
-                class_type_option_list = []
-                if len(simple_classes_dict) != 1:   #if the ontology includes at least one simple class
-                    class_type_option_list.append("Simple class")
-                if len(union_classes_dict) != 1:   #if the ontology includes at least one union class
-                    class_type_option_list.append("Union class")
-                class_type_option_list.append("Class outside ontology")  #always
+                class_type_option_list = ["Class outside ontology"]
+                if len(ontology_classes_dict) != 1:   #if the ontology includes at least one class
+                    class_type_option_list.insert(0, "Ontology class")
 
 
+                if class_type_option_list == ["Class outside ontology"]:   #no ontology or no classes in ontology
+                    class_type = "Class outside ontology"
+                else:    #there is an ontology and it has classes
+                    with col1a:
+                        class_type = st.radio(
+                            label="Select an option:",
+                            options=class_type_option_list,
+                            horizontal=True,
+                            label_visibility="collapsed"
+                        )
 
 
-                if st.session_state["g_ontology"]:
-                    if class_type_option_list == ["Class outside ontology"]:   #there is an ontology but it has no classes
-                        class_type = "Class outside ontology"
-                    else:    #there is an ontology and it has classes
-                        with col1a:
-                            class_type = st.selectbox("Select a class type", class_type_option_list)
-                else:         #there isnt an ontology
-                    class_type = "Class outside ontology"   #if no ontology is loaded this is the only option (no selectbox)
-
-
-                #OPTIONS FOR SUBJECT CLASS
-                #SIMPLE CLASS
-                if class_type == "Simple class":
+                #ONTOLOGY CLASS
+                if class_type == "Ontology class":
 
                     if len(superclass_dict) != 1:   #there exists at least one superclass (show option to select a superclass)
                         with col1a:
@@ -901,8 +864,8 @@ if st.session_state["20_option_button"] == "s":
                         subject_class = classes_in_superclass_dict[subject_class] #we get the superclass iri
                     else:  #no superclass selected or no superclasses exist, give all classes as options
                         with col1a:
-                            subject_class = st.selectbox("Select a class", list(simple_classes_dict.keys()), key="subject_class_from_all")   #class label
-                        subject_class = simple_classes_dict[subject_class] #we get the superclass iri
+                            subject_class = st.selectbox("Select a class", list(ontology_classes_dict.keys()), key="subject_class_from_all")   #class label
+                        subject_class = ontology_classes_dict[subject_class] #we get the superclass iri
 
 
                     if subject_class != "":
@@ -911,34 +874,7 @@ if st.session_state["20_option_button"] == "s":
                         with col1a:
                             st.button("Save", key="save_subject_class", on_click=save_simple_subject_class)
 
-                #UNION CLASS
-                if class_type == "Union class":
-                    union_class_options_list =  list(union_classes_dict.values())
 
-                    with col1a:
-                        selected_union_class_label = st.selectbox("Select a union class", union_class_options_list, key="selected_union_class_label")
-                    for k, v in union_classes_dict.items():
-                        if v == selected_union_class_label:
-                            selected_union_class_BNode = k
-                            break
-
-                    if selected_union_class_label != "Select a union class":
-                        with col1:
-                            col1a, col1b = st.columns([1,2])
-                        with col1a:
-                            save_union_class_button = st.button("Save", on_click=save_union_class, key="save_union_class_button")
-
-
-
-                #INTERSECTION CLASS
-                if class_type == "Intersection class":
-                    with col1a:
-                        st.markdown(f"""
-                        <div style="background-color:#f8d7da; padding:1em;
-                                    border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-                            ❌ Option <b style="color:#a94442;">not available</b> yet!<br>
-                        </div>
-                        """, unsafe_allow_html=True)
 
                 #CLASS OUTSIDE ONTOLOGY
                 if class_type == "Class outside ontology":
@@ -1136,7 +1072,7 @@ if st.session_state["20_option_button"] == "s":
         <div style="background-color:#e6e6fa; border:1px solid #511D66;
                     border-radius:5px; padding:10px; margin-bottom:8px;">
             <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
-                🔎 Show Subject Map Info
+                🔎 Subject Map Snapshot
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1145,19 +1081,18 @@ if st.session_state["20_option_button"] == "s":
 
     #SHOW COMPLETE INFORMATION ON THE SUBJECT MAPS___________________________________
     utils.update_dictionaries()
-    subject_df = utils.build_complete_subject_df()
+    subject_df_complete = utils.build_complete_subject_df()
 
     with col1:
-        col1a, col1b = st.columns(2)
-    with col1a:
-        show_subject_map_info_button = st.button("Show subject map information")
-    if show_subject_map_info_button:
-        with col1b:
-            hide_subject_map_info_button = st.button("Hide information")
-        st.write("")
-        st.dataframe(subject_df, hide_index=True)
-        st.write("")
+        with st.expander("ℹ️ Show all Subject Maps"):
+            st.write("")
+            st.write("")
+            st.dataframe(subject_df, hide_index=True)
 
+    with st.expander("ℹ️ Show all Subject Map entries"):
+        st.write("")
+        st.write("")
+        st.dataframe(subject_df_complete, hide_index=True)
 
 #________________________________________________
 
