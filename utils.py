@@ -532,6 +532,16 @@ def is_valid_ontology(url: str):
         #HERE ERROR - I have to load namespaces
 #___________________________________________________________________________________
 
+#_________________________________________________________________________________
+#Function to delete a node (recursively delete all triplesmap which reference the node)
+def delete_node(g, node):
+    pass
+    #HERE DO
+#______________________________________________________
+
+
+
+#_____________________________________________________________________________
 
 #SPECIAL BUTTON (GREY)
 # st.markdown('<span id="custom-style-marker"></span>', unsafe_allow_html=True)

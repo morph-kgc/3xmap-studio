@@ -798,7 +798,7 @@ if st.session_state["10_option_button"] == "ns":   #ns button selected
         <div style="background-color:#e6e6fa; border:1px solid #511D66;
                     border-radius:5px; padding:10px; margin-bottom:8px;">
             <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
-                🔄 Unbind Existing Namespace
+                🗑️Unbind Existing Namespace
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1109,7 +1109,9 @@ if st.session_state["10_option_button"] == "lo":
                     unsafe_allow_html=True
                 )
                 st.write("")
-                discard_ontology_checkbox = st.checkbox(f"""I am completely sure I want to discard the ontology""", key="discard_ontology")
+                discard_ontology_checkbox = st.checkbox(
+                ":gray-badge[⚠️ I am completely sure I want to discard the ontology]",
+                key="discard_ontology")
             if discard_ontology_checkbox:
                 with col1:
                     col1a, col1b = st.columns([1,2])
@@ -1212,7 +1214,9 @@ if st.session_state["10_option_button"] == "sp":
                     overwrite it?</div>
             """, unsafe_allow_html=True)
             st.write("")
-            overwrite_checkbox = st.checkbox(f"""I am completely sure I want to overwrite it""", key="overwrite_checkbox")
+            overwrite_checkbox = st.checkbox(
+            ":gray-badge[⚠️ I am completely sure I want to overwrite it]",
+            key="overwrite_checkbox")
         else:
             overwrite_checkbox = True
 
@@ -1354,7 +1358,9 @@ if st.session_state["10_option_button"] == "em":
                     overwrite it?</div>
             """, unsafe_allow_html=True)
             st.write("")
-            overwrite_checkbox = st.checkbox(f"""I am completely sure I want to overwrite it""", key="overwrite_checkbox")
+            overwrite_checkbox = st.checkbox(
+            ":gray-badge[⚠️ I am completely sure I want to overwrite it]",
+            key="overwrite_checkbox")
         else:
             overwrite_checkbox = True
 
