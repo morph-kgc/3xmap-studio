@@ -285,6 +285,7 @@ if st.session_state["20_option_button"] == "map":
     #
     # derived_triples_list = utils.get_tmap_exclusive_derived_triples("AuthorsTriplesMap")
     # derived_triples_df = pd.DataFrame(derived_triples_list, columns=["s", "p", "o"])
+    # st.write("HERE")
     # st.dataframe(derived_triples_df)
 
 
@@ -364,27 +365,38 @@ if st.session_state["20_option_button"] == "map":
     tm_to_remove_list = list(st.session_state["data_source_dict"].keys())
     tm_to_remove_list.insert(0, "Select a TriplesMap")
 
-    with col1a:
-        tm_to_remove = st.selectbox("Select a TriplesMap", tm_to_remove_list, key="tm_to_remove")
-
-    if tm_to_remove != "Select a TriplesMap":
+    if len(tm_to_remove_list) == 1:
         with col1a:
-            delete_triplesmap_checkbox = st.checkbox(
-            ":gray-badge[⚠️ I am completely sure I want to delete the TriplesMap]",
-            key="delete_triplesmap_checkbox")
-        if delete_triplesmap_checkbox:
-            with col1:
-                col1a, col1b = st.columns([1,2])
-            with col1a:
-                st.button("Delete", on_click=delete_triplesmap)
-
-        with col1x:
             st.markdown(f"""
-            <div style="background-color:#f8d7da; padding:1em;
-                        border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-                ❌ This option is not ready yet and does nothing.
-            </div>
-            """, unsafe_allow_html=True)
+                <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                    <span style="font-size:0.95rem;">
+                    ⚠️ There are no TriplesMap to remove.
+                    </span>
+                </div>
+                """, unsafe_allow_html=True)
+    else:
+
+        with col1a:
+            tm_to_remove = st.selectbox("Select a TriplesMap", tm_to_remove_list, key="tm_to_remove")
+
+        if tm_to_remove != "Select a TriplesMap":
+            with col1a:
+                delete_triplesmap_checkbox = st.checkbox(
+                ":gray-badge[⚠️ I am completely sure I want to delete the TriplesMap]",
+                key="delete_triplesmap_checkbox")
+            if delete_triplesmap_checkbox:
+                with col1:
+                    col1a, col1b = st.columns([1,2])
+                with col1a:
+                    st.button("Delete", on_click=delete_triplesmap)
+
+            with col1a:
+                st.markdown(f"""
+                <div style="background-color:#f8d7da; padding:1em;
+                            border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
+                    ❌ This option is not ready yet and does nothing.
+                </div>
+                """, unsafe_allow_html=True)
 
 
     with col1:
@@ -455,12 +467,11 @@ if st.session_state["20_option_button"] == "s":
     subject_df = utils.build_subject_df()
 
 
-    if st.session_state["smap_ordered_list"]:
+    subject_df_filtered = subject_df[subject_df["TriplesMap IRI"].isin(st.session_state["smap_ordered_list"])].copy()
+    subject_df_filtered["sort_key"] = subject_df_filtered["TriplesMap IRI"].apply(lambda x: st.session_state["smap_ordered_list"].index(x))
+    subject_df_ordered = subject_df_filtered.sort_values("sort_key").drop(columns=["sort_key", "TriplesMap IRI"]).reset_index(drop=True)
 
-        subject_df_filtered = subject_df[subject_df["TriplesMap IRI"].isin(st.session_state["smap_ordered_list"])].copy()
-        subject_df_filtered["sort_key"] = subject_df_filtered["TriplesMap IRI"].apply(lambda x: st.session_state["smap_ordered_list"].index(x))
-        subject_df_ordered = subject_df_filtered.sort_values("sort_key").drop(columns=["sort_key", "TriplesMap IRI"]).reset_index(drop=True)
-
+    if not subject_df_ordered.empty:
         with col2:    #display the last Subject Maps in a dataframe
             col2a,col2b = st.columns([0.1,2])
             with col2b:
@@ -739,6 +750,7 @@ if st.session_state["20_option_button"] == "s":
                     if tmap_label_input_new != "Select a TriplesMap" and subject_id != "Select a column of the data source:":
                         st.button("Save subject", on_click=save_subject_reference)
 
+
     if st.session_state["subject_saved_ok_existing"]:
         with col1b:
             st.write("")
@@ -749,7 +761,7 @@ if st.session_state["20_option_button"] == "s":
             <div style="background-color:#d4edda; padding:1em;
             border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
                 ✅ The Subject Map has been assigned to the TriplesMap
-                <b style="color:#0f5132;">{st.session_state["tmap_ordered_list"][0]}</b>.</div>
+                <b style="color:#0f5132;">{st.session_state["smap_ordered_list"][0]}</b>.</div>
             """, unsafe_allow_html=True)
         st.session_state["subject_saved_ok_existing"] = False
         time.sleep(2)

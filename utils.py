@@ -653,7 +653,7 @@ def get_tmap_exclusive_derived_triples(x_tmap_label):
 
 #_________________________________________________________________________________
 #Function to completely remove a triplesmap
-#remove primary and secondary triples, but dont remove any triples that is used by another triplesmap
+#remove primary and secondary triples, but dont remove any triples that are used by another triplesmap
 def remove_triplesmap(r_tmap_label):
 
     r_tmap_iri = st.session_state["tmap_dict"][r_tmap_label]   #get tmap iri

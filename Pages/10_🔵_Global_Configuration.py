@@ -301,6 +301,7 @@ if st.session_state["10_option_button"] == "g":
                 """, unsafe_allow_html=True)
             st.session_state["candidate_g_label_new_flag"] = False
             time.sleep(2)
+            st.cache_data.clear()
             st.rerun()
 
 
@@ -436,6 +437,7 @@ if st.session_state["10_option_button"] == "g":
                 </div>
                 """, unsafe_allow_html=True)
             st.session_state["candidate_g_label_existing_flag"] = False
+            st.cache_data.clear()
             time.sleep(2)
             st.rerun()
 
