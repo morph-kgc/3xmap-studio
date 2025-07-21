@@ -768,6 +768,7 @@ if st.session_state["20_option_button"] == "s":
         time.sleep(2)
         st.rerun()
 
+
     if st.session_state["subject_saved_ok_new"]:
         with col1:
             col1a, col1b = st.columns([1,2])
@@ -780,7 +781,7 @@ if st.session_state["20_option_button"] == "s":
             <div style="background-color:#d4edda; padding:1em;
             border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
                 ✅ The Subject Map has been assigned to the TriplesMap
-                <b style="color:#0f5132;">{st.session_state["tmap_ordered_list"][0]}</b>.</div>
+                <b style="color:#0f5132;">{st.session_state["smap_ordered_list"][0]}</b>.</div>
             """, unsafe_allow_html=True)
         st.session_state["subject_saved_ok_new"] = False
         time.sleep(2)

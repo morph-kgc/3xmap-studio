@@ -299,7 +299,7 @@ def update_dictionaries():
             if isinstance(subject_map, URIRef):
                 subject_label = split_uri(subject_map)[1]
             else:
-                subject_label = None
+                subject_label = "Unlabelled"
 
             if template:
                 matches = re.findall(r"{([^}]+)}", template)   #splitting template is not so easy but we try
@@ -508,6 +508,7 @@ def build_complete_subject_df():
             subject_rows.append({
                 "TriplesMap Label": tmap_label,
                 "Data Source": st.session_state["data_source_dict"].get(tmap_label, ""),
+                "Subject Label": subject_info[3],
                 "Subject Rule": subject_info[2],
                 "Subject": subject_info[1],
                 "Subject class": subject_class,
