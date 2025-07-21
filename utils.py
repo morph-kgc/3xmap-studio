@@ -79,6 +79,7 @@ def get_ontology_base_iri():
         except:
             if is_valid_iri(s):
                 return s
+
     return get_rdfolio_base_iri()
 
 #________________________________________________________

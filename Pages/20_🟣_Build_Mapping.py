@@ -24,7 +24,7 @@ QL = namespaces["ql"]
 MAP = namespaces["map"]
 CLASS = namespaces["class"]
 LS = namespaces["logicalSource"]
-
+BASE = Namespace(utils.get_rdfolio_base_iri())
 
 #define on_click functions
 def reset_input():    #function to reset input upon click
@@ -43,7 +43,7 @@ def delete_triplesmap():   #function to delete a TriplesMap
 
 def save_subject_existing():
     st.session_state["g_mapping"].add((tmap_iri_existing, RR.subjectMap, selected_existing_sm_iri))
-    st.session_state["sm_saved_flag"] = True
+    st.session_state["subject_saved_ok"] = True
 
 def save_subject_template():   #function to save subject (template option)
     utils.update_dictionaries()
@@ -262,17 +262,17 @@ if st.session_state["20_option_button"] == "map":
             st.dataframe(tmap_df_last, hide_index=True)
             st.write("")
 
-    st.write("HERE2")
-    st.write(utils.get_ontology_base_iri())
-
-    st.write("HERE", st.session_state["tmap_dict"])
-    derived_triples_list = utils.get_tmap_derived_triples("AuthorsTriplesMap")
-    derived_triples_df = pd.DataFrame(derived_triples_list, columns=["s", "p", "o"])
-    st.dataframe(derived_triples_df)
-
-    derived_triples_list = utils.get_tmap_exclusive_derived_triples("AuthorsTriplesMap")
-    derived_triples_df = pd.DataFrame(derived_triples_list, columns=["s", "p", "o"])
-    st.dataframe(derived_triples_df)
+    # st.write("HERE2")
+    # st.write(utils.get_ontology_base_iri())
+    #
+    # st.write("HERE", st.session_state["tmap_dict"])
+    # derived_triples_list = utils.get_tmap_derived_triples("AuthorsTriplesMap")
+    # derived_triples_df = pd.DataFrame(derived_triples_list, columns=["s", "p", "o"])
+    # st.dataframe(derived_triples_df)
+    #
+    # derived_triples_list = utils.get_tmap_exclusive_derived_triples("AuthorsTriplesMap")
+    # derived_triples_df = pd.DataFrame(derived_triples_list, columns=["s", "p", "o"])
+    # st.dataframe(derived_triples_df)
 
 
 
@@ -510,35 +510,46 @@ if st.session_state["20_option_button"] == "s":
 
 
     else:
+        #IF THERE ARE TRIPLESMAPS AVAILABLE UNCOLLAPSE OPTIONS___________________________
 
-            #IF THERE ARE TRIPLESMAPS AVAILABLE UNCOLLAPSE OPTIONS___________________________
+        #first create dictionary of all the existing Subject Maps
+        existing_subject_map_dict = {"Select a Subject Map": "Select a Subject Map"}
+        for sm in st.session_state["g_mapping"].objects(predicate=RR.subjectMap):
+            if isinstance(sm, URIRef):
+                existing_subject_map_dict[split_uri(sm)[1]] = sm
+        existing_subject_map_list = list(existing_subject_map_dict.keys())
 
-            with col1:
-                st.markdown("""<div style="border-top:3px dashed #b5b5d0; padding-top:12px;">
-                    </div>""", unsafe_allow_html=True)
 
-            with col1:
-                col1a, col1b = st.columns([2,1])
-            with col1a:
-                st.write("")
-                st.markdown("""<span style="font-size:1.1em; font-weight:bold;">📑 Select existing Subject Map</span><br>
-                        <small>Select an already created Subject Map from list</small>""",
-                    unsafe_allow_html=True)
+        with col1:
+            st.markdown("""<div style="border-top:3px dashed #b5b5d0; padding-top:12px;">
+                </div>""", unsafe_allow_html=True)
+
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.write("")
+            st.markdown("""<span style="font-size:1.1em; font-weight:bold;">📑 Select existing Subject Map</span><br>
+                    <small>Select an already created Subject Map from list</small>""",
+                unsafe_allow_html=True)
+
+            if len(existing_subject_map_dict) == 1:
+                st.markdown(f"""
+                    <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                        <span style="font-size:0.95rem;">
+                        ⚠️ This option is not available. No labelled Subject Maps exist in mapping {st.session_state["g_label"]}.
+                        </span>
+                    </div>
+                    """, unsafe_allow_html=True)
+                tmap_label_input_existing = "Select a TriplesMap"
+            else:
 
                 tmap_label_input_existing = st.selectbox("Select a TriplesMap", tmap_without_subject_list, key="s_tmap_label_input_existing")
-
-                existing_subject_map_dict = {"Select a Subject Map": "Select a Subject Map"}
-                for sm in st.session_state["g_mapping"].objects(predicate=RR.subjectMap):
-                    if isinstance(sm, URIRef):
-                        existing_subject_map_dict[split_uri(sm)[1]] = sm
-                existing_subject_map_list = list(existing_subject_map_dict.keys())
 
                 if tmap_label_input_existing != "Select a TriplesMap":
                     selected_existing_sm_label = st.selectbox("Choose an existing Subject Map", existing_subject_map_list)
                     selected_existing_sm_iri = existing_subject_map_dict[selected_existing_sm_label]
                     if selected_existing_sm_label != "Select a Subject Map":
                         tmap_iri_existing = st.session_state["tmap_dict"][tmap_label_input_existing]
-                        st.write(tmap_iri, selected_existing_sm_iri)
                         save_existing_subject_map = st.button("Save", on_click=save_subject_existing)
 
 
@@ -579,6 +590,17 @@ if st.session_state["20_option_button"] == "s":
 
                 with col1a:
                     s_label = st.text_input("Enter Subject Map label (optional)", key="subject_label")
+
+                if s_label in existing_subject_map_dict:
+                    with col1a:
+                        st.markdown(f"""
+                            <div style="background-color:#fff3cd; padding:1em;
+                            border-radius:5px; color:#856404; border:1px solid #ffeeba;">
+                                ⚠️ The Subject Map label <b style="color:#cc9a06;">{s_label}</b>
+                                is already in use and will be ignored. Please, pick a different label.</div>
+                        """, unsafe_allow_html=True)
+                    s_label = ""   #ignore subject map label if it already exists
+
 
                 with col1:
                     col1a, col1b = st.columns([2,1])
@@ -631,20 +653,6 @@ if st.session_state["20_option_button"] == "s":
                     if tmap_label_input_new != "Select a TriplesMap" and subject_id != "Select a column of the data source:":
                         st.button("Save subject", on_click=save_subject_template)
 
-                if st.session_state["subject_saved_ok"]:
-                    with col1a:
-                        subject_info = st.session_state["subject_dict"].get(tmap_label_input_new, ["", ""])
-                        st.markdown(f"""
-                        <div style="background-color:#d4edda; padding:1em;
-                        border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                            ✅ A subject has been assigned to the TriplesMap
-                            <b style="color:#0f5132;">{tmap_label_input_new}</b>.<br>
-                            The subject is a template using
-                            <b style="color:#0f5132;"> {subject_info[1]} </b>
-                            of the data source.</div>
-                        """, unsafe_allow_html=True)
-                    st.session_state["subject_saved_ok"] = False
-
 
             #CONSTANT OPTION______________________________
             if s_generation_type == "Constant 🔒":
@@ -671,18 +679,6 @@ if st.session_state["20_option_button"] == "s":
                     if tmap_label_input_new != "Select a TriplesMap" and subject_constant != "Enter the subject constant":
                         st.button("Save subject", on_click=save_subject_constant)
 
-                if st.session_state["subject_saved_ok"]:
-                    with col1a:
-                        st.markdown(f"""
-                        <div style="background-color:#d4edda; padding:1em;
-                        border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                            ✅ A subject has been assigned to the TriplesMap
-                            <b style="color:#0f5132;">{tmap_label_input_new}</b>.<br>
-                            The subject is a constant:
-                            <b style="color:#0f5132;"> {st.session_state["subject_constant_input"]}. </b>
-                            </div>
-                        """, unsafe_allow_html=True)
-                    st.session_state["subject_saved_ok"] = False
 
             #REFERENCE OPTION______________________________
             if s_generation_type == "Reference 🔗":
@@ -712,20 +708,29 @@ if st.session_state["20_option_button"] == "s":
                     if tmap_label_input_new != "Select a TriplesMap" and subject_id != "Select a column of the data source:":
                         st.button("Save subject", on_click=save_subject_reference)
 
-                if st.session_state["subject_saved_ok"]:
-                    with col1a:
+
                         subject_info = st.session_state["subject_dict"].get(tmap_label_input_new, ["", ""])
                         st.markdown(f"""
                         <div style="background-color:#d4edda; padding:1em;
                         border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
                             ✅ A subject has been assigned to the TriplesMap
                             <b style="color:#0f5132;">{tmap_label_input_new}</b>.<br>
-                            The subject is a reference using
+                            The subject is a template using
                             <b style="color:#0f5132;"> {subject_info[1]} </b>
                             of the data source.</div>
                         """, unsafe_allow_html=True)
                     st.session_state["subject_saved_ok"] = False
 
+
+    if st.session_state["subject_saved_ok"]:
+        #get info from dataframe
+        with col1b:
+            st.markdown(f"""
+            <div style="background-color:#d4edda; padding:1em;
+            border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                ✅ The Subject Map has been assigned to the TriplesMap.</div>
+            """, unsafe_allow_html=True)
+        st.session_state["subject_saved_ok"] = False
 
     # st.write("This is for debugging purposes and will be deleted")
     # st.write("g_label: ", st.session_state["g_label"])
@@ -1150,7 +1155,7 @@ if st.session_state["20_option_button"] == "s":
                     )
                 st.write("")
                 subject_graph_input = st.text_input("Enter subject graph", key="subject_graph_input")
-                subject_graph = FOAF[subject_graph_input]
+                subject_graph = BASE[subject_graph_input]
                 with col1:
                     col1a, col1b = st.columns([1,2])
                 with col1a:
