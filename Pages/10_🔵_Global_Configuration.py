@@ -9,28 +9,23 @@ import re
 from rdflib.namespace import OWL as OWL
 from rdflib.namespace import RDF, RDFS, DC, DCTERMS
 
-#________________________________________________
-#AESTHETICS
-utils.import_st_aesthetics()
-st.write("")
-
-#__________________________________________
-
 
 
 #____________________________________________
 #PRELIMINARY
+
+#Aesthetics
+utils.import_st_aesthetics()
+st.write("")
+
 # Namespaces
 namespaces = utils.get_predefined_ns_dict()
 RML = namespaces["rml"]
 RR = namespaces["rr"]
 QL = namespaces["ql"]
 MAP = namespaces["map"]
-SUBJ = namespaces["subj"]
-EX = namespaces["ex"]
 CLASS = namespaces["class"]
-
-
+LS = namespaces["logicalSource"]
 
 #system-wide settings
 

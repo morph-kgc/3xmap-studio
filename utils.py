@@ -70,19 +70,37 @@ def import_st_aesthetics():
 #_______________________________________________________
 
 #_________________________________________________________
+def get_ontology_base_iri():
+    for s in st.session_state["g_ontology"].subjects(RDF.type, OWL.Ontology):
+        try:
+            split_uri(s)
+            if is_valid_iri(split_uri(s)[0]):
+                return split_uri(s)[0]
+        except:
+            if is_valid_iri(s):
+                return s
+    return get_rdfolio_base_iri()
+
+#________________________________________________________
+
+#_________________________________________________________
+def get_rdfolio_base_iri():
+    return "http://rdfolio.org/"
+
+#________________________________________________________
+
+
+#_________________________________________________________
 #Dictionary with predefined namespaces
 def get_predefined_ns_dict():
     return {
-        "rr": Namespace("http://www.w3.org/ns/r2rml#"),
         "rml": Namespace("http://semweb.mmlab.be/ns/rml#"),
-        "ql": Namespace("http://semweb.mmlab.be/ns/ql#"),
-        "map": Namespace("http://example.org/mapping#"),
-        "subj": Namespace("http://example.org/subject#"),
-        "ex": Namespace("http://example.org/ns#"),
-        "class": Namespace("http://example.org/class#"),
-        "resource": Namespace("http://example.org/resource#"),
-        "logicalSource": Namespace("http://example.org/logicalSource#"),
-        "foaf": Namespace("http://xmlns.com/foaf/0.1/")
+        "rr": Namespace("http://www.w3.org/ns/r2rml#"),
+        "ql": Namespace(get_rdfolio_base_iri() + "/ql#"),
+        "map": Namespace(get_rdfolio_base_iri() + "/mapping#"),
+        "class": Namespace(get_rdfolio_base_iri() + "/class#"),
+        "resource": Namespace(get_rdfolio_base_iri() + "/resource#"),
+        "logicalSource": Namespace(get_rdfolio_base_iri() + "/logicalSource#"),
     }
 
 namespaces = get_predefined_ns_dict()
@@ -90,11 +108,9 @@ RML = namespaces["rml"]
 RR = namespaces["rr"]
 QL = namespaces["ql"]
 MAP = namespaces["map"]
-SUBJ = namespaces["subj"]
-EX = namespaces["ex"]
 CLASS = namespaces["class"]
+LS = namespaces["logicalSource"]
 #________________________________________________________
-
 
 #______________________________________________
 #Directories
@@ -193,7 +209,6 @@ def get_default_ns_dict():
     "wgs": "https://www.w3.org/2003/01/geo/wgs84_pos#"
     }
 #________________________________________________________
-
 
 
 #_________________________________________________________
@@ -360,15 +375,6 @@ def get_map_dict(map_label, map_dict):   #HERE FIX
 #It also builds a dictionary to save the new maps: {map name: map}
 def add_logical_source(g, tmap_label, source_file):
 
-    namespaces = get_predefined_ns_dict()
-    RML = namespaces["rml"]
-    QL = namespaces["ql"]
-    MAP = namespaces["map"]
-    LS = namespaces["logicalSource"]
-
-    # tmap_iri = MAP[f"{tmap_label}TriplesMap"]      #in case we want to add TriplesMap (but not necessary since namespace)
-    # logical_source_iri = MAP[f"{tmap_label}LogicalSource"]
-
     tmap_iri = MAP[f"{tmap_label}"]
     logical_source_iri = LS[f"{tmap_label}"]    #HERE this could be a BNode
 
@@ -392,10 +398,6 @@ def add_logical_source(g, tmap_label, source_file):
 #Function to get the data source file of a given map
 def get_data_source_file(g, map_node):
 
-    namespaces = get_predefined_ns_dict()
-    RML = namespaces["rml"]
-    QL = namespaces["ql"]
-
     logical_source = next(g.objects(map_node, RML.logicalSource), None)
 
     source_file = None          # get the associated source file (if found)
@@ -412,10 +414,6 @@ def get_data_source_file(g, map_node):
 #___________________________________________________________________________________
 #Function to remove a map from the graph
 def remove_map(g, map_label, map_dict):
-
-    namespaces = get_predefined_ns_dict()
-    RML = namespaces["rml"]
-    QL = namespaces["ql"]
 
     map_node = map_dict[map_label]
 
@@ -434,24 +432,11 @@ def remove_map(g, map_label, map_dict):
 #Function to add subjects
 def add_subject_map_template(g, tmap_label, smap_label, s_generation_type, subject_id):   #HERE DELETE
 
-    namespaces = get_predefined_ns_dict()
-    RML = namespaces["rml"]
-    RR = namespaces["rr"]
-    QL = namespaces["ql"]
-    MAP = namespaces["map"]
-    SUBJ = namespaces["subj"]
-    EX = namespaces["ex"]
-    CLASS = namespaces["class"]
-    RESOURCE = namespaces["resource"]
-
     tmap_iri = st.session_state["tmap_dict"][tmap_label]
-    smap_iri = SUBJ[f"{smap_label}"]
-
+    smap_iri = MAP[f"{smap_label}"]
 
     g.add((tmap_iri, RR.subjectMap, smap_iri))
     g.add((smap_iri, RR.template, Literal(f"http://example.org/resource/{subject_id}")))
-    # g.add((smap_iri, RR.template, Literal("http://example.org/{subject_map_node}/{subject_id}")))
-    # g.add((smap_iri, RR["class"], CLASS[subject_class]))
 
 #___________________________________________________________________________________
 
@@ -532,11 +517,135 @@ def is_valid_ontology(url: str):
         #HERE ERROR - I have to load namespaces
 #___________________________________________________________________________________
 
+
 #_________________________________________________________________________________
-#Function to delete a node (recursively delete all triplesmap which reference the node)
-def delete_node(g, node):
-    pass
-    #HERE DO
+#Function to get primary triples of a node
+#primary triples are the ones for which the node is either a subject or a predicate
+def get_primary_triples(x_node):
+
+    update_dictionaries()   #create a list with all triplesmaps
+    g = st.session_state["g_mapping"]   #for convenience
+
+    primary_triples = list(g.triples((x_node, None, None))) + list(g.triples((None, None, x_node)))
+
+    return primary_triples
+#______________________________________________________
+
+
+#_________________________________________________________________________________
+#Function to get secondary triples of a node
+#secondary triples are recursively related to the node, but are not primary triples
+def get_secondary_triples(x_node):
+
+    update_dictionaries()   #create a list with all triplesmaps
+    g = st.session_state["g_mapping"]   #for convenience
+
+    primary_triples = get_primary_triples(x_node)
+
+    #look for secondary triples recursively
+    secondary_triples = []
+    visited_nodes = set()
+    stack_nodes = [x_node]
+
+    #step 1: collect primary and related nodes
+    while stack_nodes:
+        current = stack_nodes.pop()
+        if current in visited_nodes:
+            continue
+        visited_nodes.add(current)
+
+        #collect predicates and objects for outgoing triples
+        for p, o in g.predicate_objects(current):
+            if isinstance(o, (BNode, URIRef)) and o not in visited_nodes:
+                stack_nodes.append(o)
+                if (current, p, o) not in primary_triples:
+                    secondary_triples.append((current, p, o))
+
+        #collect subjects and predicates for incoming triples
+        for s, p in g.subject_predicates(current):
+            if isinstance(s, (BNode, URIRef)) and s not in visited_nodes:
+                stack_nodes.append(s)
+                if (s, p, current) not in primary_triples:
+                    secondary_triples.append((s, p, current))
+
+    return secondary_triples
+#______________________________________________________
+
+#_________________________________________________________________________________
+#Function to get triples derived from a triplesmap
+#derived triples are defined for the tmap case
+def get_tmap_derived_triples(x_tmap_label):
+
+    # #list of all triplesmaps
+    # tm_iri_list = []
+    # for tm_iri in st.session_state["tmap_dict"].values():
+    #     tm_list.append(tm_iri)
+
+    x_tmap_iri = st.session_state["tmap_dict"][x_tmap_label]   #get tmap iri
+    update_dictionaries()   #create a list with all triplesmaps
+    g = st.session_state["g_mapping"]   #for convenience
+    derived_triples = set()
+
+    #get subjectMap and logicalSource directly
+    for p, o in g.predicate_objects(x_tmap_iri):
+        if p in [RR.subjectMap, RML.logicalSource]:
+            derived_triples.add((x_tmap_iri, p, o))
+
+            #follow the blank node (or URI) and extract its internal triples
+            if isinstance(o, (BNode, URIRef)):
+                for sp, so in g.predicate_objects(o):
+                    #focus only on expected predicates inside subjectMap
+                    if sp in [RR["class"], RR.termType, RR.graphMap, RR.template, RR.constant, RML.reference, QL.referenceFormulation]:
+                        derived_triples.add((o, sp, so))
+
+                        #optionally follow graphMap HERE FURTHER WORK
+                        # if sp == RR.graphMap and isinstance(so, (BNode, URIRef)):
+                        #     for gp, go in g.predicate_objects(so):
+                        #         derived_triples.add((so, gp, go))
+
+    return list(derived_triples)
+#______________________________________________________
+
+
+#_________________________________________________________________________________
+#Function to get triples derived from a triplesmap that are not derived from any other triplesmap
+def get_tmap_exclusive_derived_triples(x_tmap_label):
+
+    x_tmap_iri = st.session_state["tmap_dict"][x_tmap_label]   #get tmap iri
+    update_dictionaries()   #create a list with all triplesmaps
+    g = st.session_state["g_mapping"]   #for convenience
+    x_derived_triples_list = get_tmap_derived_triples(x_tmap_label) #triples derived from x_tmap
+
+
+    y_derived_triples_list = []
+    for y_tmap_label in st.session_state["tmap_dict"]:
+        if y_tmap_label != x_tmap_label:   #skip x_tmap_label
+            y_derived_triples_list += get_tmap_derived_triples(y_tmap_label)
+
+    exclusive_derived_triples_list = [item for item in x_derived_triples_list if item not in y_derived_triples_list]
+
+    return exclusive_derived_triples_list
+#______________________________________________________
+
+
+
+#_________________________________________________________________________________
+#Function to completely remove a triplesmap
+#remove primary and secondary triples, but dont remove any triples that is used by another triplesmap
+def remove_triplesmap(r_tmap_label):
+
+    r_tmap_iri = st.session_state["tmap_dict"][r_tmap_label]   #get tmap iri
+
+    primary_triples = get_primary_triples(r_tmap_iri)
+    secondary_triples = get_secondary_triples(r_tmap_iri)
+
+    #list of all triplesmaps
+    tm_iri_list = []
+    for tm_iri in st.session_state["tmap_dict"].values():
+        tm_iri_list.append(tm_iri)
+
+    return tm_iri_list
+
 #______________________________________________________
 
 
