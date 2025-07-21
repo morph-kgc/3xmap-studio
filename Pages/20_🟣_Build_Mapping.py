@@ -466,12 +466,13 @@ if st.session_state["20_option_button"] == "s":
     utils.update_dictionaries()
     subject_df = utils.build_subject_df()
 
+    if not subject_df.empty:
 
-    subject_df_filtered = subject_df[subject_df["TriplesMap IRI"].isin(st.session_state["smap_ordered_list"])].copy()
-    subject_df_filtered["sort_key"] = subject_df_filtered["TriplesMap IRI"].apply(lambda x: st.session_state["smap_ordered_list"].index(x))
-    subject_df_ordered = subject_df_filtered.sort_values("sort_key").drop(columns=["sort_key", "TriplesMap IRI"]).reset_index(drop=True)
+        subject_df_filtered = subject_df[subject_df["TriplesMap IRI"].isin(st.session_state["smap_ordered_list"])].copy()
+        subject_df_filtered["sort_key"] = subject_df_filtered["TriplesMap IRI"].apply(lambda x: st.session_state["smap_ordered_list"].index(x))
+        subject_df_ordered = subject_df_filtered.sort_values("sort_key").drop(columns=["sort_key", "TriplesMap IRI"]).reset_index(drop=True)
 
-    if not subject_df_ordered.empty:
+
         with col2:    #display the last Subject Maps in a dataframe
             col2a,col2b = st.columns([0.1,2])
             with col2b:
@@ -1241,19 +1242,28 @@ if st.session_state["20_option_button"] == "s":
         with st.expander("ℹ️ Show all Subject Maps"):
             st.write("")
             st.write("")
-            st.dataframe(subject_df.drop(columns="TriplesMap IRI").copy(), hide_index=True)
+            if not subject_df.empty:
+                st.dataframe(subject_df.drop(columns="TriplesMap IRI").copy(), hide_index=True)
+            else:
+                st.write("⚠️ No Subject Maps have been assigned yet!")
 
     with col1:
         with st.expander("ℹ️ Show all Subject Map entries"):
             st.write("")
             st.write("")
-            st.dataframe(subject_df_complete, hide_index=True)
+            if not subject_df_complete.empty:
+                st.dataframe(subject_df_complete, hide_index=True)
+            else:
+                st.write("⚠️ No Subject Maps have been assigned yet!")
 
     with col1:
         with st.expander("ℹ️ Show all TriplesMap with no Subject Map"):
             st.write("")
             st.write("")
-            st.dataframe(tmap_without_subject_df, hide_index=True)
+            if not tmap_without_subject_df.empty:
+                st.dataframe(tmap_without_subject_df, hide_index=True)
+            else:
+                st.write("✔️ All TriplesMap have already been asigned Subject Maps!")
 
 #________________________________________________
 
