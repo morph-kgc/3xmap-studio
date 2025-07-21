@@ -296,6 +296,11 @@ def update_dictionaries():
             constant = st.session_state["g_mapping"].value(subject_map, RR.constant)
             reference = st.session_state["g_mapping"].value(subject_map, RML.reference)
 
+            if isinstance(subject_map, URIRef):
+                subject_label = split_uri(subject_map)[1]
+            else:
+                subject_label = None
+
             if template:
                 matches = re.findall(r"{([^}]+)}", template)   #splitting template is not so easy but we try
                 if matches:
@@ -317,7 +322,7 @@ def update_dictionaries():
                 subject_type = "reference"
                 subject_id = str(reference)
 
-            st.session_state["subject_dict"][tm_label] = [subject, subject_id, subject_type]   # add to dict
+            st.session_state["subject_dict"][tm_label] = [subject, subject_id, subject_type, subject_label]   # add to dict
 #___________________________________________
 
 
@@ -445,16 +450,32 @@ def add_subject_map_template(g, tmap_label, smap_label, s_generation_type, subje
 #Function to build subject dataframe
 def build_subject_df():
 
+    update_dictionaries()
     subject_rows = []
-    for tmap_label in st.session_state["tmap_dict"]:
-        subject_info = st.session_state["subject_dict"].get(tmap_label, ["", "", ""])
-        if subject_info[1]:
-            subject_rows.append({
-                "TriplesMap Label": tmap_label,
-                "Data Source": st.session_state["data_source_dict"].get(tmap_label, ""),
-                "Subject Rule": subject_info[2],
-                "Subject": subject_info[1]
-            })
+
+    if not st.session_state["tmap_dict"]:   #if there is no triplesmap in g
+        subject_rows.append({
+            "TriplesMap Label": None,
+            "Data Source": None,
+            "Subject Label": None,
+            "Subject Rule": None,
+            "Subject": None,
+            "TriplesMap IRI": None
+        })
+
+    else:
+
+        for tmap_label in st.session_state["tmap_dict"]:
+            subject_info = st.session_state["subject_dict"].get(tmap_label, ["", "", ""])
+            if subject_info[1]:
+                subject_rows.append({
+                    "TriplesMap Label": tmap_label,
+                    "Data Source": st.session_state["data_source_dict"].get(tmap_label, ""),
+                    "Subject Label": subject_info[3],
+                    "Subject Rule": subject_info[2],
+                    "Subject": subject_info[1],
+                    "TriplesMap IRI": st.session_state["tmap_dict"][tmap_label]
+                })
 
     return pd.DataFrame(subject_rows).iloc[::-1]
 

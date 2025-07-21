@@ -7,6 +7,7 @@ import pickle
 from rdflib.namespace import split_uri
 from rdflib.namespace import OWL
 from rdflib.namespace import RDF, RDFS, DC, DCTERMS
+import time
 
 
 
@@ -43,7 +44,8 @@ def delete_triplesmap():   #function to delete a TriplesMap
 
 def save_subject_existing():
     st.session_state["g_mapping"].add((tmap_iri_existing, RR.subjectMap, selected_existing_sm_iri))
-    st.session_state["subject_saved_ok"] = True
+    st.session_state["subject_saved_ok_existing"] = True
+    st.session_state["smap_ordered_list"].insert(0, tmap_iri_existing)
 
 def save_subject_template():   #function to save subject (template option)
     utils.update_dictionaries()
@@ -58,8 +60,9 @@ def save_subject_template():   #function to save subject (template option)
     st.session_state["s_tmap_label_input_existing"] = "Select a TriplesMap"
     st.session_state["subject_id"] = "Select a column of the data source:"
     st.session_state["subject_id_input"] = ""
-    st.session_state["subject_saved_ok"] = True
+    st.session_state["subject_saved_ok_new"] = True
     st.session_state["subject_label"] = ""
+    st.session_state["smap_ordered_list"].insert(0, tmap_iri)
 
 
 def save_subject_constant():   #function to save subject (template option)
@@ -74,8 +77,9 @@ def save_subject_constant():   #function to save subject (template option)
     st.session_state["s_tmap_label_input_new"] = "Select a TriplesMap"
     st.session_state["s_tmap_label_input_existing"] = "Select a TriplesMap"
     st.session_state["subject_constant"] = ""
-    st.session_state["subject_saved_ok"] = True
+    st.session_state["subject_saved_ok_new"] = True
     st.session_state["subject_label"] = ""
+    st.session_state["smap_ordered_list"].insert(0, tmap_iri)
 
 
 def save_subject_reference():   #function to save subject (template option)
@@ -91,8 +95,9 @@ def save_subject_reference():   #function to save subject (template option)
     st.session_state["s_tmap_label_input_existing"] = "Select a TriplesMap"
     st.session_state["subject_id"] = "Select a column of the data source:"
     st.session_state["subject_id_input"] = ""
-    st.session_state["subject_saved_ok"] = True
+    st.session_state["subject_saved_ok_new"] = True
     st.session_state["subject_label"] = ""
+    st.session_state["smap_ordered_list"].insert(0, tmap_iri)
 
 def save_simple_subject_class():
     st.session_state["g_mapping"].add((selected_subject_bnode, RR["class"], subject_class))
@@ -136,11 +141,14 @@ if "selected_ds" not in st.session_state:
     st.session_state["selected_ds"] = None
 if "subject_id_input" not in st.session_state:
     st.session_state["subject_id_input"] = ""
-if "subject_saved_ok" not in st.session_state:
-    st.session_state["subject_saved_ok"] = False
-
-s_show_info_button = False
-
+if "subject_saved_ok_new" not in st.session_state:
+    st.session_state["subject_saved_ok_new"] = False
+if "subject_saved_ok_existing" not in st.session_state:
+    st.session_state["subject_saved_ok_existing"] = False
+if "tmap_ordered_list" not in st.session_state:
+    st.session_state["tmap_ordered_list"] = []
+if "smap_ordered_list" not in st.session_state:
+    st.session_state["smap_ordered_list"] = []
 
 
 
@@ -248,19 +256,24 @@ if st.session_state["20_option_button"] == "map":
             st.write("")
             st.write("")
             tmap_df = pd.DataFrame(list(st.session_state["data_source_dict"].items()), columns=["TriplesMap label", "Data source"]).iloc[::-1]
-            tmap_df_last = tmap_df.head(7)
-            st.markdown("""
-                <div style='text-align: right; font-size: 14px; color: grey;'>
-                    last added TriplesMaps
-                </div>
-            """, unsafe_allow_html=True)
-            st.markdown("""
-                <div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                    (complete list in 🔎 Show TriplesMaps)
-                </div>
-            """, unsafe_allow_html=True)
-            st.dataframe(tmap_df_last, hide_index=True)
-            st.write("")
+            ordered_rows = [(tm_label, st.session_state["data_source_dict"][tm_label]) for tm_label in st.session_state["tmap_ordered_list"]]
+            tmap_df_ordered = pd.DataFrame(ordered_rows, columns=["TriplesMap label", "Data source"])
+            tmap_df_last = tmap_df_ordered.head(7)
+
+            if ordered_rows:
+                st.markdown("""
+                    <div style='text-align: right; font-size: 14px; color: grey;'>
+                        last added TriplesMaps
+                    </div>
+                """, unsafe_allow_html=True)
+                st.markdown("""
+                    <div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                        (complete TriplesMap list in 🔎 Show TriplesMaps)
+                    </div>
+                """, unsafe_allow_html=True)
+                st.dataframe(tmap_df_last, hide_index=True)
+                st.write("")
+
 
     # st.write("HERE2")
     # st.write(utils.get_ontology_base_iri())
@@ -317,7 +330,7 @@ if st.session_state["20_option_button"] == "map":
             save_tmap_button = st.button("Save new TriplesMap", on_click=save_tmap)
 
     if st.session_state["save_tmap_success"]:
-        with col1a:
+        with col1b:
             st.session_state["save_tmap_success"] = False
             st.markdown(f"""
             <div style="background-color:#d4edda; padding:1em;
@@ -326,6 +339,12 @@ if st.session_state["20_option_button"] == "map":
                 </b>, <br>
                 associated to the data source <b style="color:#0f5132;"> {st.session_state["selected_ds"]}</b>.  </div>
             """, unsafe_allow_html=True)
+
+            st.session_state["tmap_ordered_list"].insert(0, st.session_state["tmap_label"])
+            time.sleep(2)
+            st.rerun()
+
+
 
     with col1:
         st.write("________")
@@ -435,24 +454,31 @@ if st.session_state["20_option_button"] == "s":
     utils.update_dictionaries()
     subject_df = utils.build_subject_df()
 
-    with col2:    #display the last Subject Maps in a dataframe
-        col2a,col2b = st.columns([0.1,2])
-        with col2b:
-            st.write("")
-            st.write("")
-            subject_df_last = subject_df.head(7)
-            st.markdown("""
-                <div style='text-align: right; font-size: 14px; color: grey;'>
-                    last added Subject Maps
-                </div>
-            """, unsafe_allow_html=True)
-            st.markdown("""
-                <div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                    (complete list in 🔎 Show Subject Maps)
-                </div>
-            """, unsafe_allow_html=True)
-            st.dataframe(subject_df_last, hide_index=True)
-            st.write("")
+
+    if st.session_state["smap_ordered_list"]:
+
+        subject_df_filtered = subject_df[subject_df["TriplesMap IRI"].isin(st.session_state["smap_ordered_list"])].copy()
+        subject_df_filtered["sort_key"] = subject_df_filtered["TriplesMap IRI"].apply(lambda x: st.session_state["smap_ordered_list"].index(x))
+        subject_df_ordered = subject_df_filtered.sort_values("sort_key").drop(columns=["sort_key", "TriplesMap IRI"]).reset_index(drop=True)
+
+        with col2:    #display the last Subject Maps in a dataframe
+            col2a,col2b = st.columns([0.1,2])
+            with col2b:
+                st.write("")
+                st.write("")
+                subject_df_last = subject_df_ordered.head(7)
+                st.markdown("""
+                    <div style='text-align: right; font-size: 14px; color: grey;'>
+                        last added Subject Maps
+                    </div>
+                """, unsafe_allow_html=True)
+                st.markdown("""
+                    <div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                        (complete Subject Map list in 🔎 Show Subject Maps)
+                    </div>
+                """, unsafe_allow_html=True)
+                st.dataframe(subject_df_last, hide_index=True)
+                st.write("")
 
 
 
@@ -616,8 +642,13 @@ if st.session_state["20_option_button"] == "s":
                         horizontal=True,
                         )
 
-            if tmap_label_input_new == "Select a TriplesMap" and tmap_label_input_existing == "Select a TriplesMap":
-                with col1b:
+                if (
+                    tmap_label_input_new == "Select a TriplesMap"
+                    and tmap_label_input_existing == "Select a TriplesMap"
+                    and not st.session_state["subject_saved_ok_new"]
+                    and not st.session_state["subject_saved_ok_existing"]
+                ):
+                    st.write("")
                     st.markdown(f"""
                         <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
                             <span style="font-size:0.95rem;">
@@ -708,29 +739,40 @@ if st.session_state["20_option_button"] == "s":
                     if tmap_label_input_new != "Select a TriplesMap" and subject_id != "Select a column of the data source:":
                         st.button("Save subject", on_click=save_subject_reference)
 
-
-                        subject_info = st.session_state["subject_dict"].get(tmap_label_input_new, ["", ""])
-                        st.markdown(f"""
-                        <div style="background-color:#d4edda; padding:1em;
-                        border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                            ✅ A subject has been assigned to the TriplesMap
-                            <b style="color:#0f5132;">{tmap_label_input_new}</b>.<br>
-                            The subject is a template using
-                            <b style="color:#0f5132;"> {subject_info[1]} </b>
-                            of the data source.</div>
-                        """, unsafe_allow_html=True)
-                    st.session_state["subject_saved_ok"] = False
-
-
-    if st.session_state["subject_saved_ok"]:
-        #get info from dataframe
+    if st.session_state["subject_saved_ok_existing"]:
         with col1b:
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
             st.markdown(f"""
             <div style="background-color:#d4edda; padding:1em;
             border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                ✅ The Subject Map has been assigned to the TriplesMap.</div>
+                ✅ The Subject Map has been assigned to the TriplesMap
+                <b style="color:#0f5132;">{st.session_state["tmap_ordered_list"][0]}</b>.</div>
             """, unsafe_allow_html=True)
-        st.session_state["subject_saved_ok"] = False
+        st.session_state["subject_saved_ok_existing"] = False
+        time.sleep(2)
+        st.rerun()
+
+    if st.session_state["subject_saved_ok_new"]:
+        with col1:
+            col1a, col1b = st.columns([1,2])
+        with col1a:
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.markdown(f"""
+            <div style="background-color:#d4edda; padding:1em;
+            border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                ✅ The Subject Map has been assigned to the TriplesMap
+                <b style="color:#0f5132;">{st.session_state["tmap_ordered_list"][0]}</b>.</div>
+            """, unsafe_allow_html=True)
+        st.session_state["subject_saved_ok_new"] = False
+        time.sleep(2)
+        st.rerun()
+
 
     # st.write("This is for debugging purposes and will be deleted")
     # st.write("g_label: ", st.session_state["g_label"])
@@ -1180,13 +1222,14 @@ if st.session_state["20_option_button"] == "s":
     #SHOW COMPLETE INFORMATION ON THE SUBJECT MAPS___________________________________
     utils.update_dictionaries()
     subject_df_complete = utils.build_complete_subject_df()
-    tmap_without_subject_df = pd.DataFrame(tmap_without_subject_list, columns=['TriplesMap without Subject Map'])
+    filtered_tmap_without_subject_list = [item for item in tmap_without_subject_list if item != "Select a TriplesMap"]
+    tmap_without_subject_df = pd.DataFrame(filtered_tmap_without_subject_list, columns=['TriplesMap without Subject Map'])
 
     with col1:
         with st.expander("ℹ️ Show all Subject Maps"):
             st.write("")
             st.write("")
-            st.dataframe(subject_df, hide_index=True)
+            st.dataframe(subject_df.drop(columns="TriplesMap IRI").copy(), hide_index=True)
 
     with col1:
         with st.expander("ℹ️ Show all Subject Map entries"):

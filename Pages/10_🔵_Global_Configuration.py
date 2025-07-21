@@ -8,6 +8,7 @@ from rdflib.namespace import split_uri
 import re
 from rdflib.namespace import OWL as OWL
 from rdflib.namespace import RDF, RDFS, DC, DCTERMS
+import time
 
 
 
@@ -292,12 +293,15 @@ if st.session_state["10_option_button"] == "g":
                 st.button("Confirm", on_click=create_new_mapping)
         if st.session_state["candidate_g_label_new_flag"]:
             with col1b:
+                st.write("")
                 st.markdown(f"""
                 <div style="background-color:#d4edda; padding:1em; border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
                     ✅ The mapping <b style="color:#0f5132;">{st.session_state["g_label"]}</b> has been created!
                 </div>
                 """, unsafe_allow_html=True)
             st.session_state["candidate_g_label_new_flag"] = False
+            time.sleep(2)
+            st.rerun()
 
 
     #A MAPPING IS CURRENTLY LOADED
@@ -373,6 +377,8 @@ if st.session_state["10_option_button"] == "g":
                 </div>
                 """, unsafe_allow_html=True)
             st.session_state["candidate_g_label_new_flag"] = False
+            time.sleep(2)
+            st.rerun()
 
 
     with col1:
@@ -422,12 +428,16 @@ if st.session_state["10_option_button"] == "g":
                 st.write("")
                 st.write("")
                 st.write("")
+                st.write("")
+                st.write("")
                 st.markdown(f"""
                 <div style="background-color:#d4edda; padding:1em; border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
                     ✅ The mapping <b style="color:#0f5132;">{st.session_state["g_label"]}</b> has been loaded!
                 </div>
                 """, unsafe_allow_html=True)
             st.session_state["candidate_g_label_existing_flag"] = False
+            time.sleep(2)
+            st.rerun()
 
 
     #A MAPPING IS CURRENTLY LOADED
@@ -507,6 +517,8 @@ if st.session_state["10_option_button"] == "g":
                 </div>
                 """, unsafe_allow_html=True)
             st.session_state["candidate_g_label_existing_flag"] = False
+            time.sleep(2)
+            st.rerun()
 
 
 
@@ -731,7 +743,7 @@ if st.session_state["10_option_button"] == "ns":   #ns button selected
                 </div>
                 """, unsafe_allow_html=True)
                 st.write("")
-            elif iri_input in st.session_state["ns_dict"].values():
+            elif URIRef(iri_input) in st.session_state["ns_dict"].values():
                 st.markdown(f"""
                 <div style="background-color:#f8d7da; padding:1em;
                             border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
@@ -747,7 +759,6 @@ if st.session_state["10_option_button"] == "ns":   #ns button selected
                 </div>
                 """, unsafe_allow_html=True)
                 st.write("")
-                valid_prefix_input = True
                 valid_iri_input = True
 
 
@@ -1233,6 +1244,8 @@ if st.session_state["10_option_button"] == "sp":
                 </b>.  </div>
             """, unsafe_allow_html=True)
             st.session_state["save_progress_success"] = False
+            time.sleep(2)
+            st.rerun()
 
         #     st.success(f"""The mapping {st.session_state["candidate_g_label"]}
         #      has been saved to file {st.session_state["save_g_filename"]}.""")
@@ -1374,6 +1387,8 @@ if st.session_state["10_option_button"] == "em":
                 </b>.  </div>
             """, unsafe_allow_html=True)
             st.session_state["export_success"] = False
+            time.sleep(2)
+            st.rerun()
 
 
 #_____________________________________________
