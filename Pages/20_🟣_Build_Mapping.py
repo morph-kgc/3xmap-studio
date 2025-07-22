@@ -32,9 +32,21 @@ def reset_input():    #function to reset input upon click
     st.session_state["overwrite_checkbox"] = False
     st.session_state["save_g_filename_flag"] = ""
 
-def save_tmap():   #function to save TriplesMap upon click
-    utils.add_logical_source(st.session_state["g_mapping"], tmap_label, selected_ds)   #HERE I GO - update dic separately and remove from function add triples
+def save_tmap_new_ls():   #function to save TriplesMap upon click
+    if logical_source_label:
+        logical_source_iri = LS[f"{logical_source_label}"]
+    else:
+        logical_source_iri = BNode()
+    utils.add_logical_source(st.session_state["g_mapping"], tmap_label, selected_ds, logical_source_iri)
     utils.update_dictionaries()             #to update tmap_dict
+    st.session_state["ds_list"] = "Select a data source"      #restart input variables
+    st.session_state["tmap_label_input"] = ""
+    st.session_state["save_tmap_success"] = True
+
+def save_tmap_existing_ls():   #function to save TriplesMap upon click
+    tmap_iri = MAP[f"{tmap_label}"]
+    logical_source_iri =  LS[f"{selected_existing_logical_source}"]
+    st.session_state["g_mapping"].add((tmap_iri, RML.logicalSource, logical_source_iri))    #bind to logical source
     st.session_state["ds_list"] = "Select a data source"      #restart input variables
     st.session_state["tmap_label_input"] = ""
     st.session_state["save_tmap_success"] = True
@@ -250,17 +262,25 @@ if st.session_state["20_option_button"] == "map":
 
     #DISPLAY TRIPLESMAP INFO IN A DATAFRAME
     utils.update_dictionaries()
+    st.write("HERE", st.session_state["tmap_ordered_list"])
+
     with col2:    #display the last TriplesMaps in a dataframe
         col2a,col2b = st.columns([0.5,2])
         with col2b:
             st.write("")
             st.write("")
-            tmap_df = pd.DataFrame(list(st.session_state["data_source_dict"].items()), columns=["TriplesMap label", "Data source"]).iloc[::-1]
-            ordered_rows = [(tm_label, st.session_state["data_source_dict"][tm_label]) for tm_label in st.session_state["tmap_ordered_list"]]
-            tmap_df_ordered = pd.DataFrame(ordered_rows, columns=["TriplesMap label", "Data source"])
-            tmap_df_last = tmap_df_ordered.head(7)
+            # tmap_df = pd.DataFrame(list(st.session_state["data_source_dict"].items()), columns=["TriplesMap label", "Data source"]).iloc[::-1]
+            tmap_df = utils.build_tmap_df()
 
-            if ordered_rows:
+            if not tmap_df.empty:
+                tmap_df_filtered = tmap_df[tmap_df["TriplesMap Label"].isin(st.session_state["tmap_ordered_list"])].copy()
+                tmap_df_filtered["sort_key"] = tmap_df_filtered["TriplesMap Label"].apply(lambda x: st.session_state["tmap_ordered_list"].index(x))
+                tmap_df_ordered = tmap_df_filtered.sort_values("sort_key").drop(columns=["sort_key", "TriplesMap IRI"]).reset_index(drop=True)
+
+                # ordered_rows = [(tm_label, st.session_state["data_source_dict"][tm_label]) for tm_label in st.session_state["tmap_ordered_list"]]
+                # tmap_df_ordered = pd.DataFrame(ordered_rows, columns=["TriplesMap label", "Data source"])
+                tmap_df_last = tmap_df_ordered.head(7)
+
                 st.markdown("""
                     <div style='text-align: right; font-size: 14px; color: grey;'>
                         last added TriplesMaps
@@ -303,36 +323,118 @@ if st.session_state["20_option_button"] == "map":
 
     with col1:
         col1a, col1b = st.columns([2,1])
-
     with col1a:
         tmap_label = st.text_input("Enter label for the new TriplesMap", key="tmap_label_input")    #user-friendly name for the TriplesMap
-        if tmap_label:
-            st.session_state["tmap_label"] = tmap_label
 
-        ds_allowed_formats = utils.get_ds_allowed_formats()            #data source for the TriplesMap
-        ds_list = [f for f in os.listdir(ds_folder_path) if f.endswith(ds_allowed_formats)]
-        ds_list.insert(0, "Select a data source") # Add a placeholder option
-        selected_ds = st.selectbox("Choose a file:", ds_list, key="ds_list")
-        if selected_ds != "Select a data source":
-            st.session_state["selected_ds"] = selected_ds
 
-    if tmap_label in st.session_state["tmap_dict"]:
-        with col1a:
-            st.markdown(f"""
-            <div style="background-color:#f8d7da; padding:1em;
-                        border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-                ❌ TriplesMap label <b style="color:#a94442;">{tmap_label}</b> already in use: <br>
-                Please pick a different label.
-            </div>
-            """, unsafe_allow_html=True)
-            st.write("")
-    elif tmap_label and selected_ds != "Select a data source":
-        with col1a:
-            save_tmap_button = st.button("Save new TriplesMap", on_click=save_tmap)
+
+    labelled_logical_sources_list = []      #existing labelled logical sources
+    for s, p, o in st.session_state["g_mapping"].triples((None, RML.logicalSource, None)):
+        if isinstance(o, URIRef):
+            labelled_logical_sources_list.append(split_uri(o)[1])
+
+    if tmap_label:   #after a label has been given
+        st.session_state["tmap_label"] = tmap_label
+        if tmap_label in st.session_state["tmap_dict"]:   #if label is already in use
+            with col1a:
+                st.markdown(f"""
+                <div style="background-color:#f8d7da; padding:1em;
+                            border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
+                    ❌ TriplesMap label <b style="color:#a94442;">{tmap_label}</b> already in use: <br>
+                    Please pick a different label.
+                </div>
+                """, unsafe_allow_html=True)
+                st.write("")
+
+        else:    #if label is valid
+
+            with col1:
+                st.markdown("""<div style="border-top:3px dashed #b5b5d0; padding-top:12px;">
+                    </div>""", unsafe_allow_html=True)
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                st.markdown("""<span style="font-size:1.1em; font-weight:bold;">📑 Assign an existing Logical Source</span><br>
+                        <small>Select an already created logical source from list</small>""",
+                    unsafe_allow_html=True)
+                st.write("")
+
+                labelled_logical_sources_list.insert(0, "Select a logical source")
+
+                if len(labelled_logical_sources_list) == 1:
+                    st.markdown(f"""
+                        <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                            <span style="font-size:0.95rem;">
+                            ⚠️ This option is not available. No labelled logical sources exist in mapping {st.session_state["g_label"]} yet.
+                            </span>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    st.write("")
+
+                else:
+
+                    selected_existing_logical_source = st.selectbox("Select an existing logical source:", labelled_logical_sources_list)
+                    st.write("")
+
+                    if selected_existing_logical_source != "Select a logical source":
+                        save_tmap_button_existing_ls = st.button("Save TriplesMap", on_click=save_tmap_existing_ls)
+
+            with col1a:
+                st.markdown(
+                    """
+                    <div style="border-top:3px dashed #b5b5d0; padding-top:12px;">
+                        <span style="font-size:1.1em; font-weight:bold;">🆕 Assign a new Logical Source</span><br>
+                        <small>Create logical source from scratch</small>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                    )
+                st.write("")
+
+
+            ds_allowed_formats = utils.get_ds_allowed_formats()            #data source for the TriplesMap
+            ds_list = [f for f in os.listdir(ds_folder_path) if f.endswith(ds_allowed_formats)]
+            ds_list.insert(0, "Select a data source") # Add a placeholder option
+            with col1a:
+                selected_ds = st.selectbox("Choose a file:", ds_list, key="ds_list")
+                logical_source_label = st.text_input("Enter label for the logical source (optional):")
+                if logical_source_label in labelled_logical_sources_list:
+                    with col1a:
+                        st.markdown(f"""
+                            <div style="background-color:#fff3cd; padding:1em;
+                            border-radius:5px; color:#856404; border:1px solid #ffeeba;">
+                                ⚠️ The logical source label <b style="color:#cc9a06;">{logical_source_label}</b>
+                                is already in use and will be ignored. Please, pick a different label.</div>
+                        """, unsafe_allow_html=True)
+                        st.write("")
+                    logical_source_label = ""   #ignore logical source label if it already exists
+
+            if selected_ds != "Select a data source":
+                st.session_state["selected_ds"] = selected_ds
+                with col1a:
+                    save_tmap_button_new_ls = st.button("Save TriplesMap", on_click=save_tmap_new_ls)
+
+
+
+
+        # if tmap_label in st.session_state["tmap_dict"]:
+        #     with col1a:
+        #         st.markdown(f"""
+        #         <div style="background-color:#f8d7da; padding:1em;
+        #                     border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
+        #             ❌ TriplesMap label <b style="color:#a94442;">{tmap_label}</b> already in use: <br>
+        #             Please pick a different label.
+        #         </div>
+        #         """, unsafe_allow_html=True)
+        #         st.write("")
+        # elif tmap_label and selected_ds != "Select a data source":
+        #     with col1a:
+        #         save_tmap_button = st.button("Save new TriplesMap", on_click=save_tmap)
 
     if st.session_state["save_tmap_success"]:
         with col1b:
             st.session_state["save_tmap_success"] = False
+            st.write("")
             st.markdown(f"""
             <div style="background-color:#d4edda; padding:1em;
             border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
@@ -340,7 +442,7 @@ if st.session_state["20_option_button"] == "map":
                 </b>, <br>
                 associated to the data source <b style="color:#0f5132;"> {st.session_state["selected_ds"]}</b>.  </div>
             """, unsafe_allow_html=True)
-
+            st.write("")
             st.session_state["tmap_ordered_list"].insert(0, st.session_state["tmap_label"])
             time.sleep(2)
             st.rerun()
@@ -413,7 +515,7 @@ if st.session_state["20_option_button"] == "map":
 
         with st.expander("ℹ️ Show all TriplesMaps"):
             st.write("")
-            st.dataframe(tmap_df, hide_index=True)
+            st.dataframe(tmap_df.drop(columns=["TriplesMap IRI"]))
 
 
 #________________________________________________

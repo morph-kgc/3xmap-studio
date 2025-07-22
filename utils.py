@@ -379,10 +379,9 @@ def get_map_dict(map_label, map_dict):   #HERE FIX
 #___________________________________________________________________________________
 #Function to create new map: assign name, data source and data format
 #It also builds a dictionary to save the new maps: {map name: map}
-def add_logical_source(g, tmap_label, source_file):
+def add_logical_source(g, tmap_label, source_file, logical_source_iri):
 
     tmap_iri = MAP[f"{tmap_label}"]
-    logical_source_iri = LS[f"{tmap_label}"]    #HERE this could be a BNode
 
     g.add((tmap_iri, RML.logicalSource, logical_source_iri))    #bind to logical source
     g.add((logical_source_iri, RML.source, Literal(source_file)))    #bind to source file
@@ -445,6 +444,46 @@ def add_subject_map_template(g, tmap_label, smap_label, s_generation_type, subje
     g.add((smap_iri, RR.template, Literal(f"http://example.org/resource/{subject_id}")))
 
 #___________________________________________________________________________________
+
+#___________________________________________________________________________________
+#Function to build triplesmap dataframe
+def build_tmap_df():
+
+    update_dictionaries()
+    tmap_rows = []
+
+    if not st.session_state["tmap_dict"]:   #if there is no triplesmap in g
+        tmap_rows.append({
+            "TriplesMap Label": None,
+            "Data Source": None,
+            "Logical Source Label": None,
+            "TriplesMap IRI": None,
+        })
+
+    else:
+
+        for tmap_label, tmap_iri in st.session_state["tmap_dict"].items():
+
+            ls_iri = st.session_state["g_mapping"].value(subject=tmap_iri, predicate=RML.logicalSource)
+            if isinstance(ls_iri, URIRef):
+                ls_label = split_uri(ls_iri)[1]
+            else:
+                ls_label = "Unlabelled"
+
+            data_source = st.session_state["g_mapping"].value(subject=ls_iri, predicate=RML.source)
+
+            tmap_rows.append({
+                "TriplesMap Label": tmap_label,
+                "Logical Source Label": ls_label,
+                "Data Source": data_source,
+                "TriplesMap IRI": tmap_iri,
+            })
+
+    return pd.DataFrame(tmap_rows).iloc[::-1]
+
+#___________________________________________________________________________________
+
+
 
 #___________________________________________________________________________________
 #Function to build subject dataframe
