@@ -52,7 +52,9 @@ def save_tmap_existing_ls():   #function to save TriplesMap upon click
     st.session_state["save_tmap_success"] = True
 
 def delete_triplesmap():   #function to delete a TriplesMap
+    st.session_state["deleted_triples"] = utils.remove_triplesmap(st.session_state["tm_to_remove"])
     st.session_state["tm_to_remove"] = "Select a TriplesMap"
+    st.session_state["tmap_deleted_ok"] = True
 
 def save_subject_existing():
     st.session_state["g_mapping"].add((tmap_iri_existing, RR.subjectMap, selected_existing_sm_iri))
@@ -161,6 +163,10 @@ if "tmap_ordered_list" not in st.session_state:
     st.session_state["tmap_ordered_list"] = []
 if "smap_ordered_list" not in st.session_state:
     st.session_state["smap_ordered_list"] = []
+if "deleted_triples" not in st.session_state:
+    st.session_state["deleted_triples"] = []
+if "tmap_deleted_ok" not in st.session_state:
+    st.session_state["tmap_deleted_ok"] = False
 
 
 
@@ -262,8 +268,6 @@ if st.session_state["20_option_button"] == "map":
 
     #DISPLAY TRIPLESMAP INFO IN A DATAFRAME
     utils.update_dictionaries()
-    st.write("HERE", st.session_state["tmap_ordered_list"])
-
     with col2:    #display the last TriplesMaps in a dataframe
         col2a,col2b = st.columns([0.5,2])
         with col2b:
@@ -492,13 +496,38 @@ if st.session_state["20_option_button"] == "map":
                 with col1a:
                     st.button("Delete", on_click=delete_triplesmap)
 
-            with col1a:
-                st.markdown(f"""
-                <div style="background-color:#f8d7da; padding:1em;
-                            border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-                    ❌ This option is not ready yet and does nothing.
-                </div>
-                """, unsafe_allow_html=True)
+
+    with col1:
+        col1a, col1b = st.columns([2,1])
+    if st.session_state["tmap_deleted_ok"]:
+        with col1a:
+            st.markdown(f"""
+            <div style="background-color:#d4edda; padding:1em;
+            border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                ✅ The <b style="color:#007bff;">Triplesmap
+                </b> has been succesfully deleted!  </div>
+            """, unsafe_allow_html=True)
+            st.write("")
+            st.markdown(
+                """
+                <div style='background-color:#f0f0f0; padding:8px; border-radius:4px;'>
+                    <b>Deleted triples:</b>
+                </div>""", unsafe_allow_html=True)
+            for s, p, o in st.session_state["deleted_triples"]:
+                if isinstance(s, URIRef):
+                    s = split_uri(s)[1]
+                if isinstance(s, URIRef):
+                    p = split_uri(s)[1]
+                if isinstance(s, URIRef):
+                    o = split_uri(s)[1]
+                st.markdown(
+                    f"""
+                    <div style='background-color:#f0f0f0; padding:6px 10px; border-radius:5px;'>
+                        <small>🔹 {s} → {p} → {o}</small>
+                    </div>""", unsafe_allow_html=True)
+        st.session_state["tmap_deleted_ok"] = False
+        time.sleep(4)
+        st.rerun()
 
 
     with col1:
@@ -572,7 +601,7 @@ if st.session_state["20_option_button"] == "s":
 
         subject_df_filtered = subject_df[subject_df["TriplesMap IRI"].isin(st.session_state["smap_ordered_list"])].copy()
         subject_df_filtered["sort_key"] = subject_df_filtered["TriplesMap IRI"].apply(lambda x: st.session_state["smap_ordered_list"].index(x))
-        subject_df_ordered = subject_df_filtered.sort_values("sort_key").drop(columns=["sort_key", "TriplesMap IRI"]).reset_index(drop=True)
+        subject_df_ordered = subject_df_filtered.sort_values("sort_key").drop(columns=["sort_key", "TriplesMap IRI", "Data Source"]).reset_index(drop=True)
 
 
         with col2:    #display the last Subject Maps in a dataframe
