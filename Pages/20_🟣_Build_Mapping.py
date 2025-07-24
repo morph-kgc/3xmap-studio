@@ -357,32 +357,41 @@ if st.session_state["20_option_button"] == "map":
                     </div>""", unsafe_allow_html=True)
             with col1:
                 col1a, col1b = st.columns([2,1])
+
+            with col1b:
+                existing_ls_uncollapse = st.toggle("", key="existing_ls_uncollapse")
             with col1a:
                 st.markdown("""<span style="font-size:1.1em; font-weight:bold;">📑 Assign an existing Logical Source</span><br>
                         <small>Select an already created logical source from list</small>""",
                     unsafe_allow_html=True)
                 st.write("")
 
-                labelled_logical_sources_list.insert(0, "Select a logical source")
+                if existing_ls_uncollapse:
 
-                if len(labelled_logical_sources_list) == 1:
-                    st.markdown(f"""
-                        <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                            <span style="font-size:0.95rem;">
-                            ⚠️ This option is not available. No labelled logical sources exist in mapping {st.session_state["g_label"]} yet.
-                            </span>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    st.write("")
+                    labelled_logical_sources_list.insert(0, "Select a logical source")
 
-                else:
+                    if len(labelled_logical_sources_list) == 1:
+                        st.markdown(f"""
+                            <div style="background-color:#fff9db; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                                <span style="font-size:0.95rem;">
+                                ⚠️ This option is not available. No labelled logical sources exist in mapping {st.session_state["g_label"]} yet.
+                                </span>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        st.write("")
 
-                    selected_existing_logical_source = st.selectbox("Select an existing logical source:", labelled_logical_sources_list)
-                    st.write("")
+                    else:
 
-                    if selected_existing_logical_source != "Select a logical source":
-                        save_tmap_button_existing_ls = st.button("Save TriplesMap", on_click=save_tmap_existing_ls)
+                        selected_existing_logical_source = st.selectbox("Select an existing logical source:", labelled_logical_sources_list)
+                        st.write("")
 
+                        if selected_existing_logical_source != "Select a logical source":
+                            save_tmap_button_existing_ls = st.button("Save TriplesMap", on_click=save_tmap_existing_ls)
+
+            with col1:
+                col1a,col1b = st.columns([2,1])
+            with col1b:
+                new_ls_uncollapse = st.toggle("", key = "new_ls_uncollapse")
             with col1a:
                 st.markdown(
                     """
@@ -395,28 +404,29 @@ if st.session_state["20_option_button"] == "map":
                     )
                 st.write("")
 
+            if new_ls_uncollapse:
 
-            ds_allowed_formats = utils.get_ds_allowed_formats()            #data source for the TriplesMap
-            ds_list = [f for f in os.listdir(ds_folder_path) if f.endswith(ds_allowed_formats)]
-            ds_list.insert(0, "Select a data source") # Add a placeholder option
-            with col1a:
-                selected_ds = st.selectbox("Choose a file:", ds_list, key="ds_list")
-                logical_source_label = st.text_input("Enter label for the logical source (optional):")
-                if logical_source_label in labelled_logical_sources_list:
-                    with col1a:
-                        st.markdown(f"""
-                            <div style="background-color:#fff3cd; padding:1em;
-                            border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                                ⚠️ The logical source label <b style="color:#cc9a06;">{logical_source_label}</b>
-                                is already in use and will be ignored. Please, pick a different label.</div>
-                        """, unsafe_allow_html=True)
-                        st.write("")
-                    logical_source_label = ""   #ignore logical source label if it already exists
-
-            if selected_ds != "Select a data source":
-                st.session_state["selected_ds"] = selected_ds
+                ds_allowed_formats = utils.get_ds_allowed_formats()            #data source for the TriplesMap
+                ds_list = [f for f in os.listdir(ds_folder_path) if f.endswith(ds_allowed_formats)]
+                ds_list.insert(0, "Select a data source") # Add a placeholder option
                 with col1a:
-                    save_tmap_button_new_ls = st.button("Save TriplesMap", on_click=save_tmap_new_ls)
+                    selected_ds = st.selectbox("Choose a file:", ds_list, key="ds_list")
+                    logical_source_label = st.text_input("Enter label for the logical source (optional):")
+                    if logical_source_label in labelled_logical_sources_list:
+                        with col1a:
+                            st.markdown(f"""
+                                <div style="background-color:#fff3cd; padding:1em;
+                                border-radius:5px; color:#856404; border:1px solid #ffeeba;">
+                                    ⚠️ The logical source label <b style="color:#cc9a06;">{logical_source_label}</b>
+                                    is already in use and will be ignored. Please, pick a different label.</div>
+                            """, unsafe_allow_html=True)
+                            st.write("")
+                        logical_source_label = ""   #ignore logical source label if it already exists
+
+                if selected_ds != "Select a data source":
+                    st.session_state["selected_ds"] = selected_ds
+                    with col1a:
+                        save_tmap_button_new_ls = st.button("Save TriplesMap", on_click=save_tmap_new_ls)
 
 
 
@@ -474,7 +484,7 @@ if st.session_state["20_option_button"] == "map":
     if len(tm_to_remove_list) == 1:
         with col1a:
             st.markdown(f"""
-                <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+            <div style="background-color:#fff9db; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
                     <span style="font-size:0.95rem;">
                     ⚠️ There are no TriplesMap to remove.
                     </span>
@@ -682,12 +692,13 @@ if st.session_state["20_option_button"] == "s":
     if not st.session_state["tmap_dict"]:
         with col1a:
             st.markdown(f"""
-                <div style="background-color:#fff3cd; padding:1em;
-                border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                    ⚠️ No TriplesMaps in mapping {st.session_state["g_label"]}.<br>
-                    You can add new TriplesMaps in the <b style="color:#cc9a06;">Add TriplesMap option</b>.
-                </div>
-            """, unsafe_allow_html=True)
+                <div style="background-color:#fff9db; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                        <span style="font-size:0.95rem;">
+                ⚠️ No TriplesMaps in mapping {st.session_state["g_label"]}.<br>
+                You can add new TriplesMaps in the <b style="color:#cc9a06;">Add TriplesMap option</b>.
+                        </span>
+                    </div>
+                    """, unsafe_allow_html=True)
             st.write("")
 
     elif len(tmap_without_subject_list) == 1:
@@ -724,46 +735,77 @@ if st.session_state["20_option_button"] == "s":
 
         with col1:
             col1a, col1b = st.columns([2,1])
+        with col1b:
+            existing_sm_uncollapse = st.toggle("", key="existing_sm_uncollapse")
         with col1a:
             st.write("")
             st.markdown("""<span style="font-size:1.1em; font-weight:bold;">📑 Select existing Subject Map</span><br>
                     <small>Select an already created Subject Map from list</small>""",
                 unsafe_allow_html=True)
 
-            if len(existing_subject_map_dict) == 1:
-                st.markdown(f"""
-                    <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                        <span style="font-size:0.95rem;">
-                        ⚠️ This option is not available. No labelled Subject Maps exist in mapping {st.session_state["g_label"]}.
-                        </span>
-                    </div>
-                    """, unsafe_allow_html=True)
-                tmap_label_input_existing = "Select a TriplesMap"
-            else:
-
-                tmap_label_input_existing = st.selectbox("Select a TriplesMap", tmap_without_subject_list, key="s_tmap_label_input_existing")
-
-                if tmap_label_input_existing != "Select a TriplesMap":
-                    selected_existing_sm_label = st.selectbox("Choose an existing Subject Map", existing_subject_map_list)
-                    selected_existing_sm_iri = existing_subject_map_dict[selected_existing_sm_label]
-                    if selected_existing_sm_label != "Select a Subject Map":
-                        tmap_iri_existing = st.session_state["tmap_dict"][tmap_label_input_existing]
-                        save_existing_subject_map = st.button("Save", on_click=save_subject_existing)
-
-
+        if existing_sm_uncollapse:
             with col1a:
-                st.write("")
-                st.markdown(
-                    """
-                    <div style="border-top:3px dashed #b5b5d0; padding-top:12px;">
-                        <span style="font-size:1.1em; font-weight:bold;">🆕 Create new Subject Map</span><br>
-                        <small>Create Subject Map defining its subject generation rule</small>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                    )
-                    #REUSE: ⚙️ Define the subject generation rule. Determine the logic for subject creation based on mapping type.
+                if len(existing_subject_map_dict) == 1:
+                    st.markdown(f"""
+                        <div style="background-color:#fff9db; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                            <span style="font-size:0.95rem;">
+                            ⚠️ This option is not available. No labelled Subject Maps exist in mapping {st.session_state["g_label"]}.
+                            </span>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    tmap_label_input_existing = "Select a TriplesMap"
+                else:
 
+                    tmap_label_input_existing = st.selectbox("Select a TriplesMap", tmap_without_subject_list, key="s_tmap_label_input_existing")
+
+                    if tmap_label_input_existing == "Select a TriplesMap":
+                        pass
+                        # with col1b:
+                        #     st.write("")
+                        #     st.write("")
+                        #     st.markdown(f"""
+                        #     <div style="background-color:#fff9db; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                        #             <span style="font-size:0.95rem;">
+                        #             ⚠️ You must select a TriplesMap to continue.
+                        #             </span>
+                        #         </div>
+                        #         """, unsafe_allow_html=True)
+                    else:
+                        selected_existing_sm_label = st.selectbox("Choose an existing Subject Map", existing_subject_map_list)
+                        selected_existing_sm_iri = existing_subject_map_dict[selected_existing_sm_label]
+                        if selected_existing_sm_label != "Select a Subject Map":
+                            tmap_iri_existing = st.session_state["tmap_dict"][tmap_label_input_existing]
+                            save_existing_subject_map = st.button("Save", on_click=save_subject_existing)
+
+
+
+        with col1a:
+            st.markdown(
+                """
+                <div style="border-top:3px dashed #b5b5d0; padding-top:12px;">
+                </div>
+                """,
+                unsafe_allow_html=True
+                )
+
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1b:
+            new_sm_uncollapse = st.toggle("", key="new_sm_uncollapse")
+        with col1a:
+            st.write("")
+            st.markdown(
+                """
+                    <span style="font-size:1.1em; font-weight:bold;">🆕 Create new Subject Map</span><br>
+                    <small>Create Subject Map defining its subject generation rule</small>
+                </div>
+                """,
+                unsafe_allow_html=True
+                )
+                #REUSE: ⚙️ Define the subject generation rule. Determine the logic for subject creation based on mapping type.
+
+        if new_sm_uncollapse:
+            with col1a:
                 tmap_label_input_new = st.selectbox("Select a TriplesMap", tmap_without_subject_list, key="s_tmap_label_input_new")
 
             #GET DATA SOURCE OF THE TRIPLESMAP____________________________
@@ -771,6 +813,16 @@ if st.session_state["20_option_button"] == "s":
                 tmap_iri = None
                 tmap_logical_source_iri = None
                 s_generation_type = ""
+                # with col1b:
+                #     st.write("")
+                #     st.write("")
+                #     st.markdown(f"""
+                #     <div style="background-color:#fff9db; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                #             <span style="font-size:0.95rem;">
+                #             ⚠️ You must select a TriplesMap to continue.
+                #             </span>
+                #         </div>
+                #         """, unsafe_allow_html=True)
 
             else:   #TriplesMap selected
                 tmap_iri = st.session_state["tmap_dict"][tmap_label_input_new]
@@ -814,20 +866,8 @@ if st.session_state["20_option_button"] == "s":
                         horizontal=True,
                         )
 
-                if (
-                    tmap_label_input_new == "Select a TriplesMap"
-                    and tmap_label_input_existing == "Select a TriplesMap"
-                    and not st.session_state["subject_saved_ok_new"]
-                    and not st.session_state["subject_saved_ok_existing"]
-                ):
-                    st.write("")
-                    st.markdown(f"""
-                        <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                            <span style="font-size:0.95rem;">
-                            ⚠️ You must select a TriplesMap to continue.
-                            </span>
-                        </div>
-                        """, unsafe_allow_html=True)
+
+
 
             #TEMPLATE OPTION______________________________
             if s_generation_type == "Template 📐":
@@ -984,399 +1024,418 @@ if st.session_state["20_option_button"] == "s":
 
     with col1:
         col1a, col1b = st.columns([2,1])
-    with col1a:
-        selected_tm_label = st.selectbox("Select a TriplesMap", tm_list)   #select a triplesmap
 
-    if selected_tm_label == "Select a TriplesMap":
-        with col1b:
+    if not st.session_state["tmap_dict"]:
+        with col1a:
             st.markdown(f"""
-                <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                    <span style="font-size:0.95rem;">
-                    ⚠️ You must select a TriplesMap to continue.
-                    </span>
-                </div>
-                """, unsafe_allow_html=True)
+                <div style="background-color:#fff9db; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                        <span style="font-size:0.95rem;">
+                ⚠️ No TriplesMaps in mapping {st.session_state["g_label"]}.<br>
+                You can add new TriplesMaps in the <b style="color:#cc9a06;">Add TriplesMap option</b>.
+                        </span>
+                    </div>
+                    """, unsafe_allow_html=True)
+            st.write("")
+
     else:
 
-        selected_tm = st.session_state["tmap_dict"][selected_tm_label]        #selected tm iri
-        selected_subject_bnode = st.session_state["g_mapping"].value(selected_tm, RR.subjectMap)     #subject of selected tm (BNode)
-        selected_subject_id = st.session_state["subject_dict"][selected_tm_label][1]
-        selected_subject_type = st.session_state["subject_dict"][selected_tm_label][2]
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            selected_tm_label = st.selectbox("Select a TriplesMap", tm_list)   #select a triplesmap
 
-        if not selected_subject_bnode:
-            with col1a:
-                st.markdown(f"""
-                    <div style="background-color:#fff3cd; padding:1em;
-                    border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                        ⚠️ A subject has not been added yet to the TriplesMap
-                        <b style="color:#cc9a06;"> {selected_tm_label}</b>.
-                        Please add a subject for the TriplesMap in the
-                        <b style="color:#cc9a06;">🧱 Add New Subject Map section</b>.
-                    </div>
-                """, unsafe_allow_html=True)
-                st.write("")
-            with col1b:
-                st.markdown(f"""
-                    <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                        <span style="font-size:0.95rem;">
-                         🔖 The TriplesMap <b>{selected_tm_label}</b>
-                         has no subject.
-                        </span>
-                    </div>
-                    """, unsafe_allow_html=True)
+        if selected_tm_label == "Select a TriplesMap":
+            pass
+            # with col1b:
+            #     st.markdown(f"""
+            #         <div style="background-color:#fff9db; border:1px dashed #511D66;
+            #         padding:10px; border-radius:5px; margin-bottom:8px;">
+            #             <span style="font-size:0.95rem;">
+            #             ⚠️ You must select a TriplesMap to continue.
+            #             </span>
+            #         </div>
+            #         """, unsafe_allow_html=True)
         else:
-            with col1b:
-                st.markdown(f"""
-                    <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                        <span style="font-size:0.95rem;">
-                         🔖 The subject of the TriplesMap <b>{selected_tm_label}</b>
-                         is the {selected_subject_type} <b>{selected_subject_id}</b>.
-                        </span>
-                    </div>
+
+            selected_tm = st.session_state["tmap_dict"][selected_tm_label]        #selected tm iri
+            selected_subject_bnode = st.session_state["g_mapping"].value(selected_tm, RR.subjectMap)     #subject of selected tm (BNode)
+            selected_subject_id = st.session_state["subject_dict"][selected_tm_label][1]
+            selected_subject_type = st.session_state["subject_dict"][selected_tm_label][2]
+
+            if not selected_subject_bnode:
+                with col1a:
+                    st.markdown(f"""
+                        <div style="background-color:#fff3cd; padding:1em;
+                        border-radius:5px; color:#856404; border:1px solid #ffeeba;">
+                            ⚠️ A subject has not been added yet to the TriplesMap
+                            <b style="color:#cc9a06;"> {selected_tm_label}</b>.
+                            Please add a subject for the TriplesMap in the
+                            <b style="color:#cc9a06;">🧱 Add New Subject Map section</b>.
+                        </div>
                     """, unsafe_allow_html=True)
-                st.write("")
-
-
-        #SUBJECT CLASS (ontology-based)
-        with col1:
-            st.markdown(
-                """
-                <div style="border-top:3px dashed #b5b5d0; padding-top:12px;">
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-        with col1:
-            col1a, col1b = st.columns([2,1])
-        with col1a:
-            st.markdown(
-                """
-                    <span style="font-size:1.1em; font-weight:bold;">🏷️ Subject class</span><br>
-                    <small>Declares the ontology-based class of the generated subjects.</small>
-                """,
-                unsafe_allow_html=True
-            )
-
-        #Check whether the subject map already has a class
-        subject_class = st.session_state["g_mapping"].value(selected_subject_bnode, RR["class"])
-
-        with col1a:
-            if subject_class and selected_subject_bnode:   #subject class already exists
-                if isinstance(subject_class, URIRef):
-                    st.markdown(
-                        f"""
-                        <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
-                            🔒 Subject class:
-                            <b style="color:#007bff;">{split_uri(subject_class)[1]}</b><br>
-                            <small>Delete it to assign a different subject class.</small>
+                    st.write("")
+                with col1b:
+                    st.markdown(f"""
+                        <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                            <span style="font-size:0.95rem;">
+                             🔖 The TriplesMap <b>{selected_tm_label}</b>
+                             has no subject.
+                            </span>
                         </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-                elif isinstance(subject_class, BNode) and utils.is_union_class(subject_class):
-                    st.markdown(
-                        f"""
-                        <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
-                            🔒 Subject class:
-                            <b style="color:#007bff;">Union class {utils.get_union_class_label(subject_class)}</b><br>
-                            <small>Delete it to assign a different subject class.</small>
+                        """, unsafe_allow_html=True)
+            else:
+                with col1b:
+                    st.markdown(f"""
+                        <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                            <span style="font-size:0.95rem;">
+                             🔖 The subject of the TriplesMap <b>{selected_tm_label}</b>
+                             is the {selected_subject_type} <b>{selected_subject_id}</b>.
+                            </span>
                         </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-                elif isinstance(subject_class, BNode):
-                    st.markdown(
-                        f"""
-                        <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
-                            🔒 Subject class:
-                            <b style="color:#007bff;">BNode</b><br> ({subject_class})<br>
-                            <small>Delete it to assign a different subject class.</small>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-                st.write("")
-                with col1a:
-                    delete_subject_class_checkbox = st.checkbox(
-                    ":gray-badge[⚠️ I am completely sure I want to delete the subject class]",
-                    key="delete_subject_class")
-                if delete_subject_class_checkbox:
-                    with col1:
-                        col1a, col1b = st.columns([1,2])
-                    with col1a:
-                        st.button("Delete", on_click=delete_subject_class)
+                        """, unsafe_allow_html=True)
+                    st.write("")
 
 
-            elif selected_subject_bnode:        #subject class does not exist
-                with col1a:
-                    st.markdown(
-                        f"""
-                        <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
-                            🔓 Subject class:
-                            <b style="color:#007bff;">not given</b><br>
-                            <small>Enter below.</small>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-                st.write("")
-
-                #WE ORGANISE THE ONTOLOGY CLASSES IN DIFFERENT DICTIONARIES
-                #dictionary for simple classes
-                ontology_classes_dict = {"Select a class": ""}
-                class_triples = set()
-                class_triples |= set(st.session_state["g_ontology"].triples((None, RDF.type, OWL.Class)))   #collect owl:Class definitions
-                class_triples |= set(st.session_state["g_ontology"].triples((None, RDF.type, RDFS.Class)))    # collect rdfs:Class definitions
-                for s, p, o in class_triples:   #we add to dictionary removing the BNodes
-                    if not isinstance(s, BNode):
-                        ontology_classes_dict[split_uri(s)[1]] = s
-
-                #dictionary for superclasses
-                superclass_dict = {"Select a superclass": ""}
-                classes_in_superclass_dict = {"Select a class": ""}
-                for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, None)))):
-                    if not isinstance(o, BNode) and o not in superclass_dict.values():
-                        superclass_dict[o.split("/")[-1].split("#")[-1]] = o
-
-
-                #ONLY SHOW OPTIONS IF THE ONTOLOGY HAS THEM
-                class_type_option_list = ["Class outside ontology"]
-                if len(ontology_classes_dict) != 1:   #if the ontology includes at least one class
-                    class_type_option_list.insert(0, "Ontology class")
-
-
-                if class_type_option_list == ["Class outside ontology"]:   #no ontology or no classes in ontology
-                    class_type = "Class outside ontology"
-                else:    #there is an ontology and it has classes
-                    with col1a:
-                        class_type = st.radio(
-                            label="Select an option:",
-                            options=class_type_option_list,
-                            horizontal=True,
-                            label_visibility="collapsed"
-                        )
-
-
-                #ONTOLOGY CLASS
-                if class_type == "Ontology class":
-
-                    if len(superclass_dict) != 1:   #there exists at least one superclass (show option to select a superclass)
-                        with col1a:
-                            superclass = st.selectbox("Select a superclass to filter classes (optional)", list(superclass_dict.keys()))   #superclass label
-                        classes_in_superclass_dict[superclass] = superclass_dict[superclass]
-                    else:     #no superclasses exist (don't give option to select superclass)
-                        superclass = "Select a superclass"
-
-                    if superclass != "Select a superclass":   #a superclass has been selected
-                        superclass = superclass_dict[superclass] #we get the superclass iri
-                        for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, superclass)))):
-                            classes_in_superclass_dict[split_uri(s)[1]] = s
-                        with col1a:
-                            subject_class = st.selectbox("Select a class", list(classes_in_superclass_dict.keys()))   #class label
-                        subject_class = classes_in_superclass_dict[subject_class] #we get the superclass iri
-                    else:  #no superclass selected or no superclasses exist, give all classes as options
-                        with col1a:
-                            subject_class = st.selectbox("Select a class", list(ontology_classes_dict.keys()), key="subject_class_from_all")   #class label
-                        subject_class = ontology_classes_dict[subject_class] #we get the superclass iri
-
-
-                    if subject_class != "":
-                        with col1:
-                            col1a,col2a = st.columns([1,2])
-                        with col1a:
-                            st.button("Save", key="save_subject_class", on_click=save_simple_subject_class)
-
-
-
-                #CLASS OUTSIDE ONTOLOGY
-                if class_type == "Class outside ontology":
-                    with col1b:
-                        st.markdown("<br><br>", unsafe_allow_html=True)
-                    if st.session_state["g_ontology"] and len(class_type_option_list) == 1: #there is an ontology but it has no classes
-                        with col1b:
-                            st.write("")
-                            st.markdown(f"""
-                                <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                                    <span style="font-size:0.95rem;">
-                                      🚧<b> Caution</b>: The ontology {st.session_state["ontology_label"]}
-                                      does not define any classes. <b>Classes can only be added manually</b>.
-                                      Using an ontology with predefined classes is recommended.
-                                    </span>
-                                </div>
-                                """, unsafe_allow_html=True)
-                    elif st.session_state["g_ontology"]:   #there exists an ontology and it has classes
-                        with col1b:
-                            st.write("")
-                            st.markdown(f"""
-                                <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                                    <span style="font-size:0.95rem;">
-                                      🚧<b> Caution</b>: The option \"Class outside ontology\"
-                                      <b>lacks ontology alignment</b> and could result in structural inconsistencies.
-                                      We recommend an ontology-driven approach.
-                                    </span>
-                                </div>
-                                """, unsafe_allow_html=True)
-                    else:
-                        with col1b:
-                            st.write("")
-                            st.markdown(f"""
-                                <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                                    <span style="font-size:0.95rem;">
-                                      🚧<b> Caution</b>: You are working without an ontology. We recommend loading an ontology
-                                       from the <b> Global Configuration</b> panel.
-                                    </span>
-                                </div>
-                                """, unsafe_allow_html=True)
-
-                    subject_class_prefix_list = list(st.session_state["ns_dict"].keys())
-                    with col1a:
-                        subject_class_prefix_list.insert(0,"Select a namespace")
-                    with col1a:
-                        subject_class_prefix = st.selectbox("Select a namespace", subject_class_prefix_list)
-                    if len(subject_class_prefix_list) == 1:
-                        with col1b:
-                            st.write("")
-                            st.markdown(
-                                f"""
-                                <div style="background-color:#fff3cd; padding:1em;
-                                border-radius:5px; color:#856404; border:1px solid #ffeeba; font-size:0.9em;">
-                                    ⚠️ No namespaces available. You can add namespaces in the
-                                     <b style="color:#cc9a06;">Global Configuration</b> page.
-                                </div>
-                                """,
-                                unsafe_allow_html=True)
-                    if subject_class_prefix != "Select a namespace":
-                        NS = Namespace(st.session_state["ns_dict"][subject_class_prefix])
-                    with col1a:
-                        subject_class_input = st.text_input("Enter subject class")
-                    if subject_class_input and subject_class_prefix != "Select a namespace":
-                        subject_class = NS[subject_class_input]
-                        with col1a:
-                            st.button("Save", on_click=save_external_subject_class)
-
-
-
-        #TERM TYPE - IRI by default, but can be changed to BNode
-        with col1:
-            col1a, col1b = st.columns([2,1])
-        with col1a:
-            st.write("")
-            st.write("")
-            st.markdown(
-                """
-                <div style="border-top:3px dashed #b5b5d0; padding-top:12px;">
-                    <span style="font-size:1.1em; font-weight:bold;">🆔 Term type</span><br>
-                    <small>Indicates the target graph for the subject map triples. If not given, the default graph will be used.</small>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-        if not st.session_state["g_mapping"].value(selected_subject_bnode, RR["termType"]):   #If termType not indicated yet, make it IRI (default)
-            st.session_state["g_mapping"].add((selected_subject_bnode, RR["termType"], RR.IRI))
-        selected_subject_term_type = st.session_state["g_mapping"].value(selected_subject_bnode, RR["termType"])
-
-        with col1:
-            col1a, col1b = st.columns([2,1])
-        with col1a:
-            if selected_subject_bnode:
-                st.write("")
-                if split_uri(selected_subject_term_type)[1] == "IRI":
-                    st.markdown(
-                        f"""
-                        <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
-                            🔒 Subject term type:
-                            <b style="color:#007bff;">IRI</b><br>
-                            <small>Click button to change to BNode.</small>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-                    with col1:
-                        col1a, col1b = st.columns([1,2])
-                    with col1a:
-                        st.write("")
-                        st.button("Change to BNode", on_click=change_to_BNode)
-                else:
-                    st.markdown(
-                        f"""
-                        <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
-                            🔒 Subject term type:
-                            <b style="color:#007bff;">BNode</b><br>
-                            <small>Click button to change to IRI.</small>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-                    with col1:
-                        col1a, col1b = st.columns([1,2])
-                    with col1a:
-                        st.write("")
-                        st.button("Change to IRI", on_click=change_to_IRI)
-
-        #GRAPH - If not given, default graph    HERE condider if rr:graphMap option (dynamic) is worth it
-        with col1:
-            col1a, col1b = st.columns([2,1])
-        with col1a:
-            st.write("")
-            st.write("")
-            st.markdown(
-                """
-                <div style="border-top:3px dashed #b5b5d0; padding-top:12px;">
-                    <span style="font-size:1.1em; font-weight:bold;">🗺️️ Graph map</span><br>
-                    <small>Indicates the target graph for the subject map triples. If not given, the default graph will be used.</small>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-            st.write("")
-        subject_graph = st.session_state["g_mapping"].value(selected_subject_bnode, RR["graph"])
-
-        with col1:
-            col1a, col1b = st.columns([2,1])
-        with col1a:
-            if subject_graph and selected_subject_bnode:    #subject graph already given
+            #SUBJECT CLASS (ontology-based)
+            with col1:
                 st.markdown(
-                    f"""
-                    <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
-                        🔒 Subject graph:
-                        <b style="color:#007bff;">{split_uri(subject_graph)[1]}</b><br>
-                        <small>Delete it to assign a different subject graph.</small>
+                    """
+                    <div style="border-top:3px dashed #b5b5d0; padding-top:12px;">
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                st.markdown(
+                    """
+                        <span style="font-size:1.1em; font-weight:bold;">🏷️ Subject class</span><br>
+                        <small>Declares the ontology-based class of the generated subjects.</small>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+            #Check whether the subject map already has a class
+            subject_class = st.session_state["g_mapping"].value(selected_subject_bnode, RR["class"])
+
+            with col1a:
+                if subject_class and selected_subject_bnode:   #subject class already exists
+                    if isinstance(subject_class, URIRef):
+                        st.markdown(
+                            f"""
+                            <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
+                                🔒 Subject class:
+                                <b style="color:#007bff;">{split_uri(subject_class)[1]}</b><br>
+                                <small>Delete it to assign a different subject class.</small>
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+                    elif isinstance(subject_class, BNode) and utils.is_union_class(subject_class):
+                        st.markdown(
+                            f"""
+                            <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
+                                🔒 Subject class:
+                                <b style="color:#007bff;">Union class {utils.get_union_class_label(subject_class)}</b><br>
+                                <small>Delete it to assign a different subject class.</small>
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+                    elif isinstance(subject_class, BNode):
+                        st.markdown(
+                            f"""
+                            <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
+                                🔒 Subject class:
+                                <b style="color:#007bff;">BNode</b><br> ({subject_class})<br>
+                                <small>Delete it to assign a different subject class.</small>
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+                    st.write("")
+                    with col1a:
+                        delete_subject_class_checkbox = st.checkbox(
+                        ":gray-badge[⚠️ I am completely sure I want to delete the subject class]",
+                        key="delete_subject_class")
+                    if delete_subject_class_checkbox:
+                        with col1:
+                            col1a, col1b = st.columns([1,2])
+                        with col1a:
+                            st.button("Delete", on_click=delete_subject_class)
+
+
+                elif selected_subject_bnode:        #subject class does not exist
+                    with col1a:
+                        st.markdown(
+                            f"""
+                            <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
+                                🔓 Subject class:
+                                <b style="color:#007bff;">not given</b><br>
+                                <small>Enter below.</small>
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+                    st.write("")
+
+                    #WE ORGANISE THE ONTOLOGY CLASSES IN DIFFERENT DICTIONARIES
+                    #dictionary for simple classes
+                    ontology_classes_dict = {"Select a class": ""}
+                    class_triples = set()
+                    class_triples |= set(st.session_state["g_ontology"].triples((None, RDF.type, OWL.Class)))   #collect owl:Class definitions
+                    class_triples |= set(st.session_state["g_ontology"].triples((None, RDF.type, RDFS.Class)))    # collect rdfs:Class definitions
+                    for s, p, o in class_triples:   #we add to dictionary removing the BNodes
+                        if not isinstance(s, BNode):
+                            ontology_classes_dict[split_uri(s)[1]] = s
+
+                    #dictionary for superclasses
+                    superclass_dict = {"Select a superclass": ""}
+                    classes_in_superclass_dict = {"Select a class": ""}
+                    for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, None)))):
+                        if not isinstance(o, BNode) and o not in superclass_dict.values():
+                            superclass_dict[o.split("/")[-1].split("#")[-1]] = o
+
+
+                    #ONLY SHOW OPTIONS IF THE ONTOLOGY HAS THEM
+                    class_type_option_list = ["Class outside ontology"]
+                    if len(ontology_classes_dict) != 1:   #if the ontology includes at least one class
+                        class_type_option_list.insert(0, "Ontology class")
+
+
+                    if class_type_option_list == ["Class outside ontology"]:   #no ontology or no classes in ontology
+                        class_type = "Class outside ontology"
+                    else:    #there is an ontology and it has classes
+                        with col1a:
+                            class_type = st.radio(
+                                label="Select an option:",
+                                options=class_type_option_list,
+                                horizontal=True,
+                                label_visibility="collapsed"
+                            )
+
+
+                    #ONTOLOGY CLASS
+                    if class_type == "Ontology class":
+
+                        if len(superclass_dict) != 1:   #there exists at least one superclass (show option to select a superclass)
+                            with col1a:
+                                superclass = st.selectbox("Select a superclass to filter classes (optional)", list(superclass_dict.keys()))   #superclass label
+                            classes_in_superclass_dict[superclass] = superclass_dict[superclass]
+                        else:     #no superclasses exist (don't give option to select superclass)
+                            superclass = "Select a superclass"
+
+                        if superclass != "Select a superclass":   #a superclass has been selected
+                            superclass = superclass_dict[superclass] #we get the superclass iri
+                            for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, superclass)))):
+                                classes_in_superclass_dict[split_uri(s)[1]] = s
+                            with col1a:
+                                subject_class = st.selectbox("Select a class", list(classes_in_superclass_dict.keys()))   #class label
+                            subject_class = classes_in_superclass_dict[subject_class] #we get the superclass iri
+                        else:  #no superclass selected or no superclasses exist, give all classes as options
+                            with col1a:
+                                subject_class = st.selectbox("Select a class", list(ontology_classes_dict.keys()), key="subject_class_from_all")   #class label
+                            subject_class = ontology_classes_dict[subject_class] #we get the superclass iri
+
+
+                        if subject_class != "":
+                            with col1:
+                                col1a,col2a = st.columns([1,2])
+                            with col1a:
+                                st.button("Save", key="save_subject_class", on_click=save_simple_subject_class)
+
+
+
+                    #CLASS OUTSIDE ONTOLOGY
+                    if class_type == "Class outside ontology":
+                        with col1b:
+                            st.markdown("<br><br>", unsafe_allow_html=True)
+                        if st.session_state["g_ontology"] and len(class_type_option_list) == 1: #there is an ontology but it has no classes
+                            with col1b:
+                                st.write("")
+                                st.markdown(f"""
+                                    <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                                        <span style="font-size:0.95rem;">
+                                          🚧<b> Caution</b>: The ontology {st.session_state["ontology_label"]}
+                                          does not define any classes. <b>Classes can only be added manually</b>.
+                                          Using an ontology with predefined classes is recommended.
+                                        </span>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                        elif st.session_state["g_ontology"]:   #there exists an ontology and it has classes
+                            with col1b:
+                                st.write("")
+                                st.markdown(f"""
+                                    <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                                        <span style="font-size:0.95rem;">
+                                          🚧<b> Caution</b>: The option \"Class outside ontology\"
+                                          <b>lacks ontology alignment</b> and could result in structural inconsistencies.
+                                          We recommend an ontology-driven approach.
+                                        </span>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                        else:
+                            with col1b:
+                                st.write("")
+                                st.markdown(f"""
+                                    <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                                        <span style="font-size:0.95rem;">
+                                          🚧<b> Caution</b>: You are working without an ontology. We recommend loading an ontology
+                                           from the <b> Global Configuration</b> panel.
+                                        </span>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+
+                        subject_class_prefix_list = list(st.session_state["ns_dict"].keys())
+                        with col1a:
+                            subject_class_prefix_list.insert(0,"Select a namespace")
+                        with col1a:
+                            subject_class_prefix = st.selectbox("Select a namespace", subject_class_prefix_list)
+                        if len(subject_class_prefix_list) == 1:
+                            with col1b:
+                                st.write("")
+                                st.markdown(
+                                    f"""
+                                    <div style="background-color:#fff3cd; padding:1em;
+                                    border-radius:5px; color:#856404; border:1px solid #ffeeba; font-size:0.9em;">
+                                        ⚠️ No namespaces available. You can add namespaces in the
+                                         <b style="color:#cc9a06;">Global Configuration</b> page.
+                                    </div>
+                                    """,
+                                    unsafe_allow_html=True)
+                        if subject_class_prefix != "Select a namespace":
+                            NS = Namespace(st.session_state["ns_dict"][subject_class_prefix])
+                        with col1a:
+                            subject_class_input = st.text_input("Enter subject class")
+                        if subject_class_input and subject_class_prefix != "Select a namespace":
+                            subject_class = NS[subject_class_input]
+                            with col1a:
+                                st.button("Save", on_click=save_external_subject_class)
+
+
+
+            #TERM TYPE - IRI by default, but can be changed to BNode
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                st.write("")
+                st.write("")
+                st.markdown(
+                    """
+                    <div style="border-top:3px dashed #b5b5d0; padding-top:12px;">
+                        <span style="font-size:1.1em; font-weight:bold;">🆔 Term type</span><br>
+                        <small>Indicates the target graph for the subject map triples. If not given, the default graph will be used.</small>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            if not st.session_state["g_mapping"].value(selected_subject_bnode, RR["termType"]):   #If termType not indicated yet, make it IRI (default)
+                st.session_state["g_mapping"].add((selected_subject_bnode, RR["termType"], RR.IRI))
+            selected_subject_term_type = st.session_state["g_mapping"].value(selected_subject_bnode, RR["termType"])
+
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                if selected_subject_bnode:
+                    st.write("")
+                    if split_uri(selected_subject_term_type)[1] == "IRI":
+                        st.markdown(
+                            f"""
+                            <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
+                                🔒 Subject term type:
+                                <b style="color:#007bff;">IRI</b><br>
+                                <small>Click button to change to BNode.</small>
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+                        with col1:
+                            col1a, col1b = st.columns([1,2])
+                        with col1a:
+                            st.write("")
+                            st.button("Change to BNode", on_click=change_to_BNode)
+                    else:
+                        st.markdown(
+                            f"""
+                            <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
+                                🔒 Subject term type:
+                                <b style="color:#007bff;">BNode</b><br>
+                                <small>Click button to change to IRI.</small>
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+                        with col1:
+                            col1a, col1b = st.columns([1,2])
+                        with col1a:
+                            st.write("")
+                            st.button("Change to IRI", on_click=change_to_IRI)
+
+            #GRAPH - If not given, default graph    HERE condider if rr:graphMap option (dynamic) is worth it
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                st.write("")
+                st.write("")
+                st.markdown(
+                    """
+                    <div style="border-top:3px dashed #b5b5d0; padding-top:12px;">
+                        <span style="font-size:1.1em; font-weight:bold;">🗺️️ Graph map</span><br>
+                        <small>Indicates the target graph for the subject map triples. If not given, the default graph will be used.</small>
                     </div>
                     """,
                     unsafe_allow_html=True
                 )
                 st.write("")
+            subject_graph = st.session_state["g_mapping"].value(selected_subject_bnode, RR["graph"])
 
-                with col1a:
-                    delete_subject_graph_checkbox = st.checkbox(
-                    ":gray-badge[⚠️ I am completely sure I want to delete the subject graph]",
-                    key="delete_subject_graph")
-                if delete_subject_graph_checkbox:
-                    with col1:
-                        col1a, col1b = st.columns([1,2])
-                    with col1a:
-                        st.button("Delete", on_click=delete_subject_graph)
-
-            elif selected_subject_bnode:       #subject graph not given
-                with col1a:
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                if subject_graph and selected_subject_bnode:    #subject graph already given
                     st.markdown(
                         f"""
                         <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
-                            🔓 Subject graph:
-                            <b style="color:#007bff;">not given</b><br>
-                            <small>Enter below.</small>
+                            🔒 Subject graph:
+                            <b style="color:#007bff;">{split_uri(subject_graph)[1]}</b><br>
+                            <small>Delete it to assign a different subject graph.</small>
                         </div>
                         """,
                         unsafe_allow_html=True
                     )
-                st.write("")
-                subject_graph_input = st.text_input("Enter subject graph", key="subject_graph_input")
-                subject_graph = BASE[subject_graph_input]
-                with col1:
-                    col1a, col1b = st.columns([1,2])
-                with col1a:
-                    if subject_graph_input:
-                        st.button("Save", on_click=save_subject_graph)
+                    st.write("")
+
+                    with col1a:
+                        delete_subject_graph_checkbox = st.checkbox(
+                        ":gray-badge[⚠️ I am completely sure I want to delete the subject graph]",
+                        key="delete_subject_graph")
+                    if delete_subject_graph_checkbox:
+                        with col1:
+                            col1a, col1b = st.columns([1,2])
+                        with col1a:
+                            st.button("Delete", on_click=delete_subject_graph)
+
+                elif selected_subject_bnode:       #subject graph not given
+                    with col1a:
+                        st.markdown(
+                            f"""
+                            <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
+                                🔓 Subject graph:
+                                <b style="color:#007bff;">not given</b><br>
+                                <small>Enter below.</small>
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+                    st.write("")
+                    subject_graph_input = st.text_input("Enter subject graph", key="subject_graph_input")
+                    subject_graph = BASE[subject_graph_input]
+                    with col1:
+                        col1a, col1b = st.columns([1,2])
+                    with col1a:
+                        if subject_graph_input:
+                            st.button("Save", on_click=save_subject_graph)
 
 
 
