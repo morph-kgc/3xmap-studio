@@ -5,13 +5,15 @@ import utils
 
 st.title("Filter Triplets")
 
-st.markdown(f"""
-<div style="background-color:#f8d7da; padding:1em;
-            border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-    ❌ This panel is not ready yet.
-</div>
-""", unsafe_allow_html=True)
-st.stop()
+col1, col2 = st.columns([2,1])
+with col1:
+    st.markdown(f"""
+    <div style="background-color:#f8d7da; padding:1em;
+                border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
+        ❌ This panel is not ready yet.
+    </div>
+    """, unsafe_allow_html=True)
+    st.stop()
 
 file_path = utils.get_file_path()    #get path to the selected graph
 g = utils.get_selected_graph()     #get selected graph

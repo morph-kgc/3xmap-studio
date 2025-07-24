@@ -500,7 +500,7 @@ if st.session_state["20_option_button"] == "map":
     with col1:
         col1a, col1b = st.columns([2,1])
     if st.session_state["tmap_deleted_ok"]:
-        with col1a:
+        with col1b:
             st.markdown(f"""
             <div style="background-color:#d4edda; padding:1em;
             border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
@@ -508,6 +508,7 @@ if st.session_state["20_option_button"] == "map":
                 </b> has been succesfully deleted!  </div>
             """, unsafe_allow_html=True)
             st.write("")
+        with col1a:
             st.markdown(
                 """
                 <div style='background-color:#f0f0f0; padding:8px; border-radius:4px;'>
@@ -516,18 +517,46 @@ if st.session_state["20_option_button"] == "map":
             for s, p, o in st.session_state["deleted_triples"]:
                 if isinstance(s, URIRef):
                     s = split_uri(s)[1]
-                if isinstance(s, URIRef):
-                    p = split_uri(s)[1]
-                if isinstance(s, URIRef):
-                    o = split_uri(s)[1]
+                elif isinstance(s, BNode):
+                    s = ("BNode: " + str(s)[:5] + "...")
+                if isinstance(p, URIRef):
+                    p = split_uri(p)[1]
+                if isinstance(o, URIRef):
+                    o = split_uri(o)[1]
+                elif isinstance(o, BNode):
+                    o = ("BNode: " + str(o)[:5] + "...")
                 st.markdown(
                     f"""
                     <div style='background-color:#f0f0f0; padding:6px 10px; border-radius:5px;'>
                         <small>🔹 {s} → {p} → {o}</small>
                     </div>""", unsafe_allow_html=True)
         st.session_state["tmap_deleted_ok"] = False
-        time.sleep(4)
+        time.sleep(5)
         st.rerun()
+
+    with col1a:
+        if st.session_state["deleted_triples"] and st.toggle("🔎 Display last removed triples") and not st.session_state["tmap_deleted_ok"]:
+            st.markdown(
+                """
+                <div style='background-color:#f0f0f0; padding:8px; border-radius:4px;'>
+                    <b> Last deleted triples:</b>
+                </div>""", unsafe_allow_html=True)
+            for s, p, o in st.session_state["deleted_triples"]:
+                if isinstance(s, URIRef):
+                    s = split_uri(s)[1]
+                elif isinstance(s, BNode):
+                    s = ("BNode: " + str(s)[:5] + "...")
+                if isinstance(p, URIRef):
+                    p = split_uri(p)[1]
+                if isinstance(o, URIRef):
+                    o = split_uri(o)[1]
+                elif isinstance(o, BNode):
+                    o = ("BNode: " + str(o)[:5] + "...")
+                st.markdown(
+                    f"""
+                    <div style='background-color:#f0f0f0; padding:6px 10px; border-radius:5px;'>
+                        <small>🔹 {s} → {p} → {o}</small>
+                    </div>""", unsafe_allow_html=True)
 
 
     with col1:
@@ -893,7 +922,7 @@ if st.session_state["20_option_button"] == "s":
             <div style="background-color:#d4edda; padding:1em;
             border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
                 ✅ The Subject Map has been assigned to the TriplesMap
-                <b style="color:#0f5132;">{st.session_state["smap_ordered_list"][0]}</b>.</div>
+                <b style="color:#0f5132;">{split_uri(st.session_state["smap_ordered_list"][0])[1]}</b>.</div>
             """, unsafe_allow_html=True)
         st.session_state["subject_saved_ok_existing"] = False
         time.sleep(2)
@@ -912,7 +941,7 @@ if st.session_state["20_option_button"] == "s":
             <div style="background-color:#d4edda; padding:1em;
             border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
                 ✅ The Subject Map has been assigned to the TriplesMap
-                <b style="color:#0f5132;">{st.session_state["smap_ordered_list"][0]}</b>.</div>
+                <b style="color:#0f5132;">{split_uri(st.session_state["smap_ordered_list"][0])[1]}</b>.</div>
             """, unsafe_allow_html=True)
         st.session_state["subject_saved_ok_new"] = False
         time.sleep(2)
