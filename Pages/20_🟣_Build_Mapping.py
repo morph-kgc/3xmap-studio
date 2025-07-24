@@ -1054,6 +1054,14 @@ if st.session_state["20_option_button"] == "s":
         if any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectMap, None))):
             tm_with_sm_list.append(tm_label)
 
+    labelled_sm_list = ["Select a Subject Map"]
+    for tm_label, tm_iri in st.session_state["tmap_dict"].items():
+        sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RR.subjectMap)
+        if isinstance(sm_iri, URIRef) and sm_iri not in labelled_sm_list:
+            if split_uri(sm_iri)[1] not in labelled_sm_list:
+                labelled_sm_list.append(split_uri(sm_iri)[1])
+
+
     with col1:
         col1a, col1b = st.columns([2,1])
 
@@ -1088,6 +1096,17 @@ if st.session_state["20_option_button"] == "s":
         with col1a:
             selected_tm_label = st.selectbox("Select a TriplesMap", tm_with_sm_list)   #select a triplesmap
 
+        selected_sm_label = "Select a Subject Map"
+        if selected_tm_label == "Select a TriplesMap":
+            with col1a:
+                selected_sm_label = st.selectbox("or select a labelled Subject Map", labelled_sm_list)
+
+        if selected_sm_label != "Select a Subject Map":
+            selected_sm_iri = MAP[selected_sm_label]
+            selected_tm = next((s for s, p, o in st.session_state["g_mapping"].triples((None, RR.subjectMap, selected_sm_iri))), None)
+            selected_tm_label = split_uri(selected_tm)[1]
+
+
         if selected_tm_label == "Select a TriplesMap":
             pass
             # with col1b:
@@ -1107,16 +1126,33 @@ if st.session_state["20_option_button"] == "s":
             selected_subject_type = st.session_state["subject_dict"][selected_tm_label][2]
 
 
-            with col1a:
-                st.markdown(f"""
-                    <div style="background-color:#edf7ef; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                        <span style="font-size:0.95rem;">
-                         🔖 The Subject Map assigned to the TriplesMap <b>{selected_tm_label}</b>
-                         is the {selected_subject_type} <b>{selected_subject_id}</b>.
-                        </span>
-                    </div>
-                    """, unsafe_allow_html=True)
-                st.write("")
+            if selected_sm_label == "Select a Subject Map":
+                with col1a:
+                    st.markdown(f"""
+                        <div style="background-color:#edf7ef; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                            <span style="font-size:0.95rem;">
+                             🔖 The Subject Map assigned to the TriplesMap <b>{selected_tm_label}</b>
+                             is the {selected_subject_type} <b>{selected_subject_id}</b>.
+                            </span>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    st.write("")
+            else:
+                tm_assigned_to_sm_list = []
+                for tmap_label in st.session_state["subject_dict"]:
+                    if selected_sm_label == st.session_state["subject_dict"][tmap_label][3]:
+                        tm_assigned_to_sm_list.append(tmap_label)
+                assigned_str = ", ".join(str(item) for item in tm_assigned_to_sm_list)
+                with col1a:
+                    st.markdown(f"""
+                        <div style="background-color:#edf7ef; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                            <span style="font-size:0.95rem;">
+                             🔖 The Subject Map <b>{selected_sm_label}</b> is assigned to these TriplesMaps: <b>{assigned_str}</b>.
+                            </span>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    st.write("")
+
 
 
             #SUBJECT CLASS (ontology-based)
@@ -1497,188 +1533,222 @@ if st.session_state["20_option_button"] == "s":
         """, unsafe_allow_html=True)
         st.markdown("")
 
+    tm_with_sm_list = ["Select a TriplesMap"]
+    for tm_label, tm_iri in st.session_state["tmap_dict"].items():
+        if any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectMap, None))):
+            tm_with_sm_list.append(tm_label)
+
     with col1:
         col1a, col1b = st.columns([2,1])
 
-    with col1:
-        st.markdown("""<div style="border-top:3px dashed #b5b5d0; padding-top:12px;">
-            </div>""", unsafe_allow_html=True)
-
-    with col1:
-        col1a, col1b = st.columns([2,1])
-    with col1b:
-        delete_labelled_sm_uncollapse = st.toggle("", key="delete_labelled_sm_uncollapse")
-    with col1a:
-        st.write("")
-        st.markdown("""<span style="font-size:1.1em; font-weight:bold;">🔖 Delete labelled Subject Map</span><br>
-                <small>Select a labelled Subject Map and erase it completely</small>""",
-            unsafe_allow_html=True)
-
-    if delete_labelled_sm_uncollapse:
-        with col1:
-            col1a, col1b = st.columns([2,1])
-
-        utils.update_dictionaries()
-        sm_to_remove_list = ["Select a Subject Map"]
-        for tm_label in st.session_state["subject_dict"]:
-            if st.session_state["subject_dict"][tm_label][3] not in sm_to_remove_list and st.session_state["subject_dict"][tm_label][3] != "Unlabelled":
-                sm_to_remove_list.append(st.session_state["subject_dict"][tm_label][3])
-
-        if len(sm_to_remove_list) == 1:
-            with col1a:
-                st.markdown(f"""
+    if not st.session_state["tmap_dict"]:
+        with col1a:
+            st.markdown(f"""
                 <div style="background-color:#fff9db; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
                         <span style="font-size:0.95rem;">
-                        ⚠️ There are no labelled Subject Maps to remove.
+                ⚠️ No TriplesMaps in mapping {st.session_state["g_label"]}.<br>
+                You can add new TriplesMaps in the <b style="color:#cc9a06;">Add TriplesMap option</b>.
                         </span>
                     </div>
                     """, unsafe_allow_html=True)
-        else:
+            st.write("")
 
-            with col1a:
-                sm_to_remove_label = st.selectbox("Select a Subject Map", sm_to_remove_list, key="sm_to_remove")
-                sm_to_remove = MAP[sm_to_remove_label]
+    elif len(tm_with_sm_list) == 1:
+        with col1a:
+            st.markdown(f"""
+                <div style="background-color:#fff9db; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                        <span style="font-size:0.95rem;">
+                ⚠️ This option is not available because no TriplesMaps have already been assigned a Subject Map yet.
+                Please do so in the <b style="color:#cc9a06;">🧱 Add New Subject Map</b> section of this pannel.
+                        </span>
+                    </div>
+                    """, unsafe_allow_html=True)
+            st.write("")
 
-            if sm_to_remove_label != "Select a Subject Map":
-                assigned_tmap_list = []
-                for tmap_label in st.session_state["subject_dict"]:
-                    if sm_to_remove_label == st.session_state["subject_dict"][tmap_label][3]:
-                        assigned_tmap_list.append(tmap_label)
+    else:
+
+        with col1:
+            col1a, col1b = st.columns([2,1])
+
+        with col1:
+            st.markdown("""<div style="border-top:3px dashed #b5b5d0; padding-top:12px;">
+                </div>""", unsafe_allow_html=True)
+
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1b:
+            delete_labelled_sm_uncollapse = st.toggle("", key="delete_labelled_sm_uncollapse")
+        with col1a:
+            st.write("")
+            st.markdown("""<span style="font-size:1.1em; font-weight:bold;">🔖 Delete labelled Subject Map</span><br>
+                    <small>Select a labelled Subject Map and erase it completely</small>""",
+                unsafe_allow_html=True)
+
+        if delete_labelled_sm_uncollapse:
+            with col1:
+                col1a, col1b = st.columns([2,1])
+
+            utils.update_dictionaries()
+            sm_to_remove_list = ["Select a Subject Map"]
+            for tm_label in st.session_state["subject_dict"]:
+                if st.session_state["subject_dict"][tm_label][3] not in sm_to_remove_list and st.session_state["subject_dict"][tm_label][3] != "Unlabelled":
+                    sm_to_remove_list.append(st.session_state["subject_dict"][tm_label][3])
+
+            if len(sm_to_remove_list) == 1:
                 with col1a:
-                    assigned_str = ", ".join(str(item) for item in assigned_tmap_list)
                     st.markdown(f"""
-                        <div style="background-color:#fff3cd; padding:1em;
-                        border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                            ⚠️ The Subject Map <b style="color:#cc9a06;">{sm_to_remove_label}</b>
-                            is currently assigned to these TriplesMaps: <b style="color:#cc9a06;">{assigned_str}</b>.
-                            </div>
-                    """, unsafe_allow_html=True)
-                    st.write("")
-                    delete_labelled_subject_map_checkbox = st.checkbox(
-                    ":gray-badge[⚠️ I am completely sure I want to delete the Subject Map]",
-                    key="delete_labelled_subject_map_checkbox")
-                if delete_labelled_subject_map_checkbox:
-                    with col1:
-                        col1a, col1b = st.columns([1,2])
-                    with col1a:
-                        st.button("Delete", on_click=delete_labelled_subject_map)
-
-    with col1a:
-        st.markdown("""<div style="border-top:3px dashed #b5b5d0; padding-top:12px;">
-            </div>""", unsafe_allow_html=True)
-    with col1:
-        col1a, col1b = st.columns([2,1])
-    with col1b:
-        unassign_sm_uncollapse = st.toggle("", key="unassign_sm_uncollapse")
-    with col1a:
-        st.write("")
-        st.markdown("""<span style="font-size:1.1em; font-weight:bold;">
-        🎯 Unassign Subject Map of a TriplesMap</span><br>
-                <small>Select a TriplesMap and unassign its Subject Map</small>""",
-            unsafe_allow_html=True)
-
-    if unassign_sm_uncollapse:
-        with col1:
-            col1a, col1b = st.columns([2,1])
-
-        tm_with_sm_list = ["Select a TriplesMap"]
-        for tm_label, tm_iri in st.session_state["tmap_dict"].items():
-            if any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectMap, None))):
-                tm_with_sm_list.append(tm_label)
-
-        if len(tm_with_sm_list) == 1:
-            with col1a:
-                st.write("")
-                st.markdown(f"""
-                <div style="background-color:#fff9db; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                        <span style="font-size:0.95rem;">
-                        ⚠️ There are no TriplesMap with assigned Subject Maps.
-                        </span>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-        else:
-
-            with col1a:
-                tm_to_unassign_sm = st.selectbox("Select a TriplesMap", tm_with_sm_list, key="tm_to_unassign_sm")
-
-            if tm_to_unassign_sm != "Select a TriplesMap":
-                tm_to_unassign_sm_iri = st.session_state["tmap_dict"][tm_to_unassign_sm]
-                sm_to_unassign = st.session_state["g_mapping"].value(subject=tm_to_unassign_sm_iri, predicate=RR.subjectMap)
-                other_tm_with_sm = [s for s, p, o in st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_to_unassign))]
-
-                st.write("HERE2", other_tm_with_sm)
-                if isinstance(sm_to_unassign, URIRef):
-                    sm_to_unassign_label = split_uri(sm_to_unassign)[1]
-                elif isinstance(sm_to_unassign, BNode):
-                    sm_to_unassign_label = "BNode: " + str(sm_to_unassign)[:5] + "..."
-
-                if len(other_tm_with_sm) != 1:
-                    with col1a:
-                        st.markdown(f"""
-                            <div style="background-color:#fff3cd; padding:1em;
-                            border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                                ⚠️ The TriplesMap <b style="color:#cc9a06;">{tm_to_unassign_sm}</b>
-                                has been assigned the Subject Map <b style="color:#cc9a06;">{sm_to_unassign_label}</b>.
-                                </div>
+                    <div style="background-color:#fff9db; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                            <span style="font-size:0.95rem;">
+                            ⚠️ There are no labelled Subject Maps to remove.
+                            </span>
+                        </div>
                         """, unsafe_allow_html=True)
-                        st.write("")
-
-                else:
-                    with col1a:
-                        st.markdown(f"""
-                            <div style="background-color:#fff3cd; padding:1em;
-                            border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                                ⚠️ The TriplesMap <b style="color:#cc9a06;">{tm_to_unassign_sm}</b>
-                                has been assigned the Subject Map <b style="color:#cc9a06;">{sm_to_unassign_label}</b>.<br>
-                                <br>
-                                The Subject Map <b style="color:#cc9a06;">{sm_to_unassign_label}</b> is not assigned
-                                to any other TriplesMap, so it will be <b style="color:#cc9a06;">completely removed<b> if you unnasign it
-                                (all triples related to it will be erased).
-                                </div>
-                        """, unsafe_allow_html=True)
-                        st.write("")
-
-
+            else:
 
                 with col1a:
-                    unassign_sm_checkbox = st.checkbox(
-                    ":gray-badge[⚠️ I am completely sure I want to unassign the Subject Map]",
-                    key=" unassign_sm_checkbox")
-                if unassign_sm_checkbox:
-                    with col1:
-                        col1a, col1b = st.columns([1,2])
+                    sm_to_remove_label = st.selectbox("Select a Subject Map", sm_to_remove_list, key="sm_to_remove")
+                    sm_to_remove = MAP[sm_to_remove_label]
+
+                if sm_to_remove_label != "Select a Subject Map":
+                    assigned_tmap_list = []
+                    for tmap_label in st.session_state["subject_dict"]:
+                        if sm_to_remove_label == st.session_state["subject_dict"][tmap_label][3]:
+                            assigned_tmap_list.append(tmap_label)
                     with col1a:
-                        st.button("Unassign", on_click=unassign_subject_map)
+                        assigned_str = ", ".join(str(item) for item in assigned_tmap_list)
+                        st.markdown(f"""
+                            <div style="background-color:#fff3cd; padding:1em;
+                            border-radius:5px; color:#856404; border:1px solid #ffeeba;">
+                                ⚠️ The Subject Map <b style="color:#cc9a06;">{sm_to_remove_label}</b>
+                                is currently assigned to these TriplesMaps: <b style="color:#cc9a06;">{assigned_str}</b>.
+                                </div>
+                        """, unsafe_allow_html=True)
+                        st.write("")
+                        delete_labelled_subject_map_checkbox = st.checkbox(
+                        ":gray-badge[⚠️ I am completely sure I want to delete the Subject Map]",
+                        key="delete_labelled_subject_map_checkbox")
+                    if delete_labelled_subject_map_checkbox:
+                        with col1:
+                            col1a, col1b = st.columns([1,2])
+                        with col1a:
+                            st.button("Delete", on_click=delete_labelled_subject_map)
 
-
-
-    if st.session_state["smap_deleted_ok"]:
+        with col1a:
+            st.markdown("""<div style="border-top:3px dashed #b5b5d0; padding-top:12px;">
+                </div>""", unsafe_allow_html=True)
+        with col1:
+            col1a, col1b = st.columns([2,1])
         with col1b:
-            st.markdown(f"""
-            <div style="background-color:#d4edda; padding:1em;
-            border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                ✅ The <b style="color:#007bff;">Subject Map
-                </b> has been succesfully deleted!  </div>
-            """, unsafe_allow_html=True)
+            unassign_sm_uncollapse = st.toggle("", key="unassign_sm_uncollapse")
+        with col1a:
             st.write("")
-        st.session_state["smap_deleted_ok"] = False
-        time.sleep(5)
-        st.rerun()
+            st.markdown("""<span style="font-size:1.1em; font-weight:bold;">
+            🎯 Unassign Subject Map of a TriplesMap</span><br>
+                    <small>Select a TriplesMap and unassign its Subject Map</small>""",
+                unsafe_allow_html=True)
 
-    if st.session_state["smap_unassigned_ok"]:
-        with col1b:
-            st.markdown(f"""
-            <div style="background-color:#d4edda; padding:1em;
-            border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                ✅ The <b style="color:#007bff;">Subject Map
-                </b> has been succesfully unassigned!  </div>
-            """, unsafe_allow_html=True)
-            st.write("")
-        st.session_state["smap_unassigned_ok"] = False
-        st.session_state["smap_deleted_ok"] = False
-        time.sleep(5)
-        st.rerun()
+        if unassign_sm_uncollapse:
+            with col1:
+                col1a, col1b = st.columns([2,1])
+
+            tm_with_sm_list = ["Select a TriplesMap"]
+            for tm_label, tm_iri in st.session_state["tmap_dict"].items():
+                if any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectMap, None))):
+                    tm_with_sm_list.append(tm_label)
+
+            if len(tm_with_sm_list) == 1:
+                with col1a:
+                    st.write("")
+                    st.markdown(f"""
+                    <div style="background-color:#fff9db; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                            <span style="font-size:0.95rem;">
+                            ⚠️ There are no TriplesMap with assigned Subject Maps.
+                            </span>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+            else:
+
+                with col1a:
+                    tm_to_unassign_sm = st.selectbox("Select a TriplesMap", tm_with_sm_list, key="tm_to_unassign_sm")
+
+                if tm_to_unassign_sm != "Select a TriplesMap":
+                    tm_to_unassign_sm_iri = st.session_state["tmap_dict"][tm_to_unassign_sm]
+                    sm_to_unassign = st.session_state["g_mapping"].value(subject=tm_to_unassign_sm_iri, predicate=RR.subjectMap)
+                    other_tm_with_sm = [s for s, p, o in st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_to_unassign))]
+
+                    st.write("HERE2", other_tm_with_sm)
+                    if isinstance(sm_to_unassign, URIRef):
+                        sm_to_unassign_label = split_uri(sm_to_unassign)[1]
+                    elif isinstance(sm_to_unassign, BNode):
+                        sm_to_unassign_label = "BNode: " + str(sm_to_unassign)[:5] + "..."
+
+                    if len(other_tm_with_sm) != 1:
+                        with col1a:
+                            st.markdown(f"""
+                                <div style="background-color:#fff3cd; padding:1em;
+                                border-radius:5px; color:#856404; border:1px solid #ffeeba;">
+                                    ⚠️ The TriplesMap <b style="color:#cc9a06;">{tm_to_unassign_sm}</b>
+                                    has been assigned the Subject Map <b style="color:#cc9a06;">{sm_to_unassign_label}</b>.
+                                    </div>
+                            """, unsafe_allow_html=True)
+                            st.write("")
+
+                    else:
+                        with col1a:
+                            st.markdown(f"""
+                                <div style="background-color:#fff3cd; padding:1em;
+                                border-radius:5px; color:#856404; border:1px solid #ffeeba;">
+                                    ⚠️ The TriplesMap <b style="color:#cc9a06;">{tm_to_unassign_sm}</b>
+                                    has been assigned the Subject Map <b style="color:#cc9a06;">{sm_to_unassign_label}</b>.<br>
+                                    <br>
+                                    The Subject Map <b style="color:#cc9a06;">{sm_to_unassign_label}</b> is not assigned
+                                    to any other TriplesMap, so it will be <b style="color:#cc9a06;">completely removed<b> if you unnasign it
+                                    (all triples related to it will be erased).
+                                    </div>
+                            """, unsafe_allow_html=True)
+                            st.write("")
+
+
+
+                    with col1a:
+                        unassign_sm_checkbox = st.checkbox(
+                        ":gray-badge[⚠️ I am completely sure I want to unassign the Subject Map]",
+                        key=" unassign_sm_checkbox")
+                    if unassign_sm_checkbox:
+                        with col1:
+                            col1a, col1b = st.columns([1,2])
+                        with col1a:
+                            st.button("Unassign", on_click=unassign_subject_map)
+
+
+
+        if st.session_state["smap_deleted_ok"]:
+            with col1b:
+                st.markdown(f"""
+                <div style="background-color:#d4edda; padding:1em;
+                border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                    ✅ The <b style="color:#007bff;">Subject Map
+                    </b> has been succesfully deleted!  </div>
+                """, unsafe_allow_html=True)
+                st.write("")
+            st.session_state["smap_deleted_ok"] = False
+            time.sleep(2)
+            st.rerun()
+
+        if st.session_state["smap_unassigned_ok"]:
+            with col1b:
+                st.markdown(f"""
+                <div style="background-color:#d4edda; padding:1em;
+                border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                    ✅ The <b style="color:#007bff;">Subject Map
+                    </b> has been succesfully unassigned!  </div>
+                """, unsafe_allow_html=True)
+                st.write("")
+            st.session_state["smap_unassigned_ok"] = False
+            st.session_state["smap_deleted_ok"] = False
+            time.sleep(2)
+            st.rerun()
 
 
     with col1:
