@@ -1048,7 +1048,7 @@ if st.session_state["20_option_button"] == "s":
 
 
     #SELECT THE TRIPLESMAP (this will give the subject if it exists)__________________________________
-    #list of all triplesmaps
+    #list of all triplesmaps with assigned Subject Map
     tm_with_sm_list = ["Select a TriplesMap"]
     for tm_label, tm_iri in st.session_state["tmap_dict"].items():
         if any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectMap, None))):
@@ -1806,160 +1806,312 @@ if st.session_state["20_option_button"] == "po":
     st.markdown(f"""
     <div style="background-color:#f8d7da; padding:1em;
                 border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-        ❌ This section is not ready yet.
+        ❌ This section is not ready yet and does nothing.
     </div>
     """, unsafe_allow_html=True)
-    st.stop()
+    st.write("")
 
-    col1,col2 = st.columns(2)
 
-    po_options = ["Simple Object Map via reference (column-based)",
-    "Constant-valued", "Template-based", "Language-tagged Literals",
-    "Data Type Assignment", "Referencing Object Maps",
-    "Referencing Object Map with Join Condition"
-    ]
+    col1,col2, col3 = st.columns([2,0.2,0.8])
+
+    with col3:
+        if st.session_state["ontology_label"]:
+            st.markdown(f"""
+            <div style="background-color:#d4edda; padding:1em;
+                        border-radius:5px; color:#155724; border:1px solid #444;">
+                🧩 The ontology
+                <b style="color:#007bff;">{st.session_state["ontology_label"]}</b>
+                is currently loaded.
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown("""
+                <div style="background-color:#f0f0f0; padding:10px; border-radius:5px; margin-bottom:8px; border:1px solid #ccc;">
+                    <span style="font-size:0.95rem; color:#333;">
+                        🚫 <b>No ontology</b> is loaded.<br>
+                    </span>
+                    <span style="font-size:0.82rem; color:#555;">
+                        Working without an ontology could result in structural inconsistencies and
+                        is especially discouraged when building Predicate-Object Maps.
+                    </span>
+                </div>
+            """, unsafe_allow_html=True)
+
+    with col1:
+        col1a, col1b = st.columns([2,1])
+
+    with col1a:
+        st.markdown(
+            """
+                <span style="font-size:1.1em; font-weight:bold;">🆕 Create the Predicate-Object Map</span><br>
+                <small>Declares the ontology-based class of the generated subjects.</small>
+            """,
+            unsafe_allow_html=True
+        )
+
+
+    #list of all triplesmaps with assigned Subject Map
+    tm_with_sm_list = ["Select a TriplesMap"]
+    for tm_label, tm_iri in st.session_state["tmap_dict"].items():
+        if any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectMap, None))):
+            tm_with_sm_list.append(tm_label)
+
+
+    with col1:
+        col1a, col1b = st.columns([2,1])
+    with col1a:
+        tmap_label = st.selectbox("Select a Triples map", tm_with_sm_list)
+        if tmap_label != "Select a TriplesMap":
+            tmap_iri = st.session_state["tmap_dict"][tmap_label]
+            sm_iri = st.session_state["g_mapping"].value(subject=tmap_iri, predicate=RR.subjectMap)
+            if isinstance(sm_iri, URIRef):
+                st.markdown(f"""
+                    <div style="background-color:#edf7ef; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                        <span style="font-size:0.95rem;">
+                         🔖 The Subject Map assigned to the TriplesMap <b>{tmap_label}</b>
+                         is <b>{split_uri(sm_iri)[1]}</b>.
+                        </span>
+                    </div>
+                    """, unsafe_allow_html=True)
+            elif isinstance(sm_iri, BNode):
+                st.markdown(f"""
+                    <div style="background-color:#edf7ef; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                        <span style="font-size:0.95rem;">
+                         🔖 The Subject Map assigned to the TriplesMap <b>{tmap_label}</b>
+                         is <b>BNode: {str(sm_iri)[:5] + "..."}</b>.
+                        </span>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+            if st.session_state["ontology_label"]:
+
+                ontology_predicates_list = []
+                for xtuple in st.session_state["g_ontology"].triples((None, RDF.type ,None)):
+                    try:
+                        pred = split_uri(xtuple[0])[1]
+                        if pred not in ontology_predicates_list:
+                            ontology_predicates_list.append(pred)
+                    except:
+                        pass
+                search_term = st.text_input("Search for a predicate")
+                filtered_options = [s for s in ontology_predicates_list if search_term.lower() in str(s).lower()]
+
+                selected_predicate = st.selectbox("Select a predicate", filtered_options)
+            else:
+                predicate = st.text_input("Enter predicate")
+
+
+        with col3:
+            pom_label = st.text_input("Enter Predicate-Object Map label (optional)")
+            if not pom_label:
+                pom_iri = BNode()
+            else:
+                pom_iri = MAP[pom_label]
+            om_label = st.text_input("Enter Object Map label (optional)")
+            if not om_label:
+                om_iri = BNode()
+            else:
+                om_iri = MAP[om_label]
+
+
+
+    with col1b:
+        st.markdown(f"""
+            <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                <span style="font-size:0.95rem;">
+                    ℹ️ Only TriplesMaps with an assigned Subject Map are shown.
+                    You can assign a Subject Map to a Triples Map in the Add Subject Map section.
+                </span>
+            </div>
+            """, unsafe_allow_html=True)
+
+    st.write("______")
+
+    col1, col2, col3 = st.columns([2,0.2, 0.8])
+
+    with col1:
+        col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.markdown(
+                """
+                    <span style="font-size:1.1em; font-weight:bold;">🏗️ Complete the information on Predicate-Object Map</span><br>
+                    <small>Declares the ontology-based class of the generated subjects.</small>
+                """,
+                unsafe_allow_html=True
+            )
 
     with col2:
-        po_type = st.radio("1️⃣ Choose the type of object map:", po_options)
+        po_options = ["Simple Object Map via reference (column-based)",
+        "Constant-valued", "Template-based", "Language-tagged Literals",
+        "Data Type Assignment", "Referencing Object Maps",
+        "Referencing Object Map with Join Condition"
+        ]
 
-        map_list = list(st.session_state["tmap_dict"].keys())
-        map_list.insert(0, "Select a map")
-
-
-        with col1:
-            map_label = st.selectbox("Select a Triples map", map_list)
-
-        if tmap_label != "Select a map":
-            map_node = st.session_state["tmap_dict"][map_label]
-            map_logical_source = next(st.session_state["g_mapping"].objects(map_node, RML.logicalSource), None)
-            subject_map = st.session_state["g_mapping"].value(subject=map_node, predicate=RR.subjectMap)
-        else:
-            map_node = None
-            map_logical_source = None
-            subject_map = None
-
-        if tmap_label != "Select a map":
-            with col1:
-                st.success(f"Subject map is {split_uri(subject_map)[1]}")
-
-        po_map_label = BNode()
+    with col3:
+        st.markdown(
+            """
+                <span style="font-size:1.1em; font-weight:bold;">⚙️ Predicate-Object Map type</span><br>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        po_type = st.radio("", po_options, label_visibility="collapsed")
 
 
-    st.write("___________________________")
+    st.write("______")
 
-    if po_type == "Simple Object Map via reference (column-based)":
+    col1, col2, col3 = st.columns([2, 0.2, 0.8])
 
+    with col1:
+        col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.markdown(
+                """
+                    <span style="font-size:1.1em; font-weight:bold;">💾 Check and save the Predicate-Object Map</span><br>
+                """,
+                unsafe_allow_html=True
+            )
 
-        col1, col2 = st.columns([1,2])
-
-        ns_list = list(st.session_state["ns_dict"].keys())
-        if not ns_list:
-            with col2:
-                st.warning("No available namespaces, please add them in the Global Configuration page.")  #HERE this will never happen, rpedefined NS
-        else:
-            ns_list.insert(0,"Select a namespace")
-
-            with col1:
-                p_label_prefix = st.selectbox("Select a namespace for the predicate", ns_list)
-
-            with col2:
-                p_label = st.text_input("Enter predicate label")
-
-            if p_label_prefix != "Select a namespace" and p_label:
-                PNS = Namespace(st.session_state["ns_dict"][p_label_prefix])
-                p_iri = PNS[p_label]
-
-
-            with col1:
-                om_label_prefix = st.selectbox("Select a namespace for the objectMap", ns_list)
-
-            with col2:
-                om_label = st.text_input("Enter objectMap name")
-
-            if om_label_prefix != "Select a namespace" and om_label:
-                OMNS = Namespace(st.session_state["ns_dict"][om_label_prefix])
-                om_iri = OMNS[om_label]
-
-
-            data_source = next(st.session_state["g_mapping"].objects(map_logical_source, RML.source), None)   #name of ds file
-            if data_source:
-                data_source = utils.get_ds_full_path(data_source)   #full path of ds file
-
-
-            if data_source:
-                columns_df = pd.read_csv(data_source)
-                column_list = columns_df.columns.tolist()
-                column_list.insert(0, "Select a data source")
-            else:
-                column_list = []
-
-            reference = st.selectbox("Select the reference (column name from where to get the data)", column_list)
+        #
+    # Multi-valued Object Map	Some mappings allow for multiple values per subject/predicate (handled with repetitions or unions)
+    # Term Type Control (rr:termType)	Explicitly sets whether the object is an IRI, blank node, or literal
+    # Graph Maps	Assigns triples to named graphs — especially useful in contexts like provenance or federation
+    # Fallbacks/Conditionals	Not part of base R2RML but often used in extended mapping tools (e.g., YARRRML) for handling optional values or logic
 
 
 
-            st.write("___________________________")
 
-            show_data_list = []
-
-            if subject_map:
-                s_prefix = st.session_state["g_mapping"].namespace_manager.compute_qname(subject_map)[0]
-                subject_map_label = split_uri(subject_map)[1]
-            else:
-                s_prefix = ""
-                subject_map_label = ""
-
-            if tmap_label != "Select a map":
-                map_iri = st.session_state["tmap_dict"][map_label]
-                m_prefix =  st.session_state["g_mapping"].namespace_manager.compute_qname(map_iri)[0]
-            else:
-                m_prefix = ""
-                map_label = ""
-
-            if p_label_prefix == "Select a namespace":
-                p_label_prefix = ""
-
-            if om_label_prefix == "Select a namespace":
-                om_label_prefix = ""
-
-            if reference == "Select a data source":
-                reference = ""
-
-
-            show_data_list.append({
-                "": "Namespace",
-                "TriplesMap": m_prefix,
-                "SubjectMap": s_prefix,
-                "Predicate": p_label_prefix,
-                "ObjectMap": om_label_prefix,
-                "Reference": "---"
-            })
-
-
-            show_data_list.append({
-                "": "Label",
-                "TriplesMap": map_label,
-                "SubjectMap": subject_map_label,
-                "Predicate": p_label,
-                "ObjectMap": om_label,
-                "Reference": reference
-            })
-
-
-            show_data_df = pd.DataFrame(show_data_list)
-            st.dataframe(show_data_df, use_container_width=True, hide_index=True)
-
-
-        if subject_map and po_map_label and p_iri and om_iri and reference:
-            po_button = st.button("Save predicate-object")
-            if po_button:
-
-                st.session_state["g_mapping"].add((subject_map, RR.predicateObjectMap, po_map_label))
-                st.session_state["g_mapping"].add((po_map_label, RR.predicate, p_iri))
-                st.session_state["g_mapping"].add((po_map_label, RR.objectMap, om_iri))
-                st.session_state["g_mapping"].add((om_iri, RML.reference, Literal(reference)))
-
-    else:
-        st.error("OPTION NOT YET AVAILABLE")
+    #     if tmap_label != "Select a TriplesMap":
+    #         map_node = st.session_state["tmap_dict"][map_label]
+    #         map_logical_source = next(st.session_state["g_mapping"].objects(map_node, RML.logicalSource), None)
+    #         subject_map = st.session_state["g_mapping"].value(subject=map_node, predicate=RR.subjectMap)
+    #     else:
+    #         map_node = None
+    #         map_logical_source = None
+    #         subject_map = None
+    #
+    #     if tmap_label != "Select a map":
+    #         with col1:
+    #             st.success(f"Subject map is {split_uri(subject_map)[1]}")
+    #
+    #     po_map_label = BNode()
+    #
+    #
+    # st.write("___________________________")
+    #
+    # if po_type == "Simple Object Map via reference (column-based)":
+    #
+    #
+    #     col1, col2 = st.columns([1,2])
+    #
+    #     ns_list = list(st.session_state["ns_dict"].keys())
+    #     if not ns_list:
+    #         with col2:
+    #             st.warning("No available namespaces, please add them in the Global Configuration page.")  #HERE this will never happen, rpedefined NS
+    #     else:
+    #         ns_list.insert(0,"Select a namespace")
+    #
+    #         with col1:
+    #             p_label_prefix = st.selectbox("Select a namespace for the predicate", ns_list)
+    #
+    #         with col2:
+    #             p_label = st.text_input("Enter predicate label")
+    #
+    #         if p_label_prefix != "Select a namespace" and p_label:
+    #             PNS = Namespace(st.session_state["ns_dict"][p_label_prefix])
+    #             p_iri = PNS[p_label]
+    #
+    #
+    #         with col1:
+    #             om_label_prefix = st.selectbox("Select a namespace for the objectMap", ns_list)
+    #
+    #         with col2:
+    #             om_label = st.text_input("Enter objectMap name")
+    #
+    #         if om_label_prefix != "Select a namespace" and om_label:
+    #             OMNS = Namespace(st.session_state["ns_dict"][om_label_prefix])
+    #             om_iri = OMNS[om_label]
+    #
+    #
+    #         data_source = next(st.session_state["g_mapping"].objects(map_logical_source, RML.source), None)   #name of ds file
+    #         if data_source:
+    #             data_source = utils.get_ds_full_path(data_source)   #full path of ds file
+    #
+    #
+    #         if data_source:
+    #             columns_df = pd.read_csv(data_source)
+    #             column_list = columns_df.columns.tolist()
+    #             column_list.insert(0, "Select a data source")
+    #         else:
+    #             column_list = []
+    #
+    #         reference = st.selectbox("Select the reference (column name from where to get the data)", column_list)
+    #
+    #
+    #
+    #         st.write("___________________________")
+    #
+    #         show_data_list = []
+    #
+    #         if subject_map:
+    #             s_prefix = st.session_state["g_mapping"].namespace_manager.compute_qname(subject_map)[0]
+    #             subject_map_label = split_uri(subject_map)[1]
+    #         else:
+    #             s_prefix = ""
+    #             subject_map_label = ""
+    #
+    #         if tmap_label != "Select a map":
+    #             map_iri = st.session_state["tmap_dict"][map_label]
+    #             m_prefix =  st.session_state["g_mapping"].namespace_manager.compute_qname(map_iri)[0]
+    #         else:
+    #             m_prefix = ""
+    #             map_label = ""
+    #
+    #         if p_label_prefix == "Select a namespace":
+    #             p_label_prefix = ""
+    #
+    #         if om_label_prefix == "Select a namespace":
+    #             om_label_prefix = ""
+    #
+    #         if reference == "Select a data source":
+    #             reference = ""
+    #
+    #
+    #         show_data_list.append({
+    #             "": "Namespace",
+    #             "TriplesMap": m_prefix,
+    #             "SubjectMap": s_prefix,
+    #             "Predicate": p_label_prefix,
+    #             "ObjectMap": om_label_prefix,
+    #             "Reference": "---"
+    #         })
+    #
+    #
+    #         show_data_list.append({
+    #             "": "Label",
+    #             "TriplesMap": map_label,
+    #             "SubjectMap": subject_map_label,
+    #             "Predicate": p_label,
+    #             "ObjectMap": om_label,
+    #             "Reference": reference
+    #         })
+    #
+    #
+    #         show_data_df = pd.DataFrame(show_data_list)
+    #         st.dataframe(show_data_df, use_container_width=True, hide_index=True)
+    #
+    #
+    #     if subject_map and po_map_label and p_iri and om_iri and reference:
+    #         po_button = st.button("Save predicate-object")
+    #         if po_button:
+    #
+    #             st.session_state["g_mapping"].add((subject_map, RR.predicateObjectMap, po_map_label))
+    #             st.session_state["g_mapping"].add((po_map_label, RR.predicate, p_iri))
+    #             st.session_state["g_mapping"].add((po_map_label, RR.objectMap, om_iri))
+    #             st.session_state["g_mapping"].add((om_iri, RML.reference, Literal(reference)))
+    #
+    # else:
+    #     st.error("OPTION NOT YET AVAILABLE")
 
 #________________________________________________
 

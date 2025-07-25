@@ -770,4 +770,13 @@ def remove_triplesmap(tmap_label):
 # </div>
 # """, unsafe_allow_html=True)
 
+#information box
+# st.markdown(f"""
+#     <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+#         <span style="font-size:0.95rem;">
+#             <b> 📐 Template use case </b>: <br>Dynamically construct the subject IRI using data values.
+#         </span>
+#     </div>
+#     """, unsafe_allow_html=True)
+
 #___________________________________________________________________________________
