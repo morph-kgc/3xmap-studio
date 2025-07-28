@@ -952,7 +952,7 @@ if st.session_state["20_option_button"] == "s":
                         st.session_state["subject_constant_input"] = subject_constant
 
                     with col1a:
-                        if tmap_label_input_new != "Select a TriplesMap" and subject_constant != "Enter the subject constant":
+                        if tmap_label_input_new != "Select a TriplesMap" and subject_constant:
                             st.button("Save subject", on_click=save_subject_constant)
 
 
@@ -1127,16 +1127,28 @@ if st.session_state["20_option_button"] == "s":
 
 
             if selected_sm_label == "Select a Subject Map":
-                with col1a:
-                    st.markdown(f"""
-                        <div style="background-color:#edf7ef; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                            <span style="font-size:0.95rem;">
-                             🔖 The Subject Map assigned to the TriplesMap <b>{selected_tm_label}</b>
-                             is the {selected_subject_type} <b>{selected_subject_id}</b>.
-                            </span>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    st.write("")
+                if isinstance(selected_subject_bnode, URIRef):
+                    with col1a:
+                        st.markdown(f"""
+                            <div style="background-color:#edf7ef; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                                <span style="font-size:0.95rem;">
+                                 🔖 The Subject Map assigned to the TriplesMap <b>{selected_tm_label}</b>
+                                 is <b>{split_uri(selected_subject_node)[1]}</b>.
+                                </span>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        st.write("")
+                elif isinstance(selected_subject_bnode, BNode):
+                    with col1a:
+                        st.markdown(f"""
+                            <div style="background-color:#edf7ef; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                                <span style="font-size:0.95rem;">
+                                 🔖 The Subject Map assigned to the TriplesMap <b>{selected_tm_label}</b>
+                                 is <b>_:{str(selected_subject_bnode)[:7] + "..."}</b>
+                                </span>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        st.write("")
             else:
                 tm_assigned_to_sm_list = []
                 for tmap_label in st.session_state["subject_dict"]:
@@ -1155,7 +1167,7 @@ if st.session_state["20_option_button"] == "s":
 
 
 
-            #SUBJECT CLASS (ontology-based)
+            #TERM TYPE - IRI by default, but can be changed to BNode
             with col1:
                 st.markdown(
                     """
@@ -1167,7 +1179,79 @@ if st.session_state["20_option_button"] == "s":
             with col1:
                 col1a, col1b = st.columns([2,1])
             with col1b:
+                term_type_uncollapse = st.toggle("", key="term_type_uncollapse")
+            with col1a:
+                st.markdown(
+                    """
+                        <span style="font-size:1.1em; font-weight:bold;">🆔 Term type</span><br>
+                        <small>Indicates the target graph for the subject map triples. If not given, the default graph will be used.</small>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+            if term_type_uncollapse:
+                if not st.session_state["g_mapping"].value(selected_subject_bnode, RR["termType"]):   #If termType not indicated yet, make it IRI (default)
+                    st.session_state["g_mapping"].add((selected_subject_bnode, RR["termType"], RR.IRI))
+                selected_subject_term_type = st.session_state["g_mapping"].value(selected_subject_bnode, RR["termType"])
+
+                with col1:
+                    col1a, col1b = st.columns([2,1])
+                with col1a:
+                    if selected_subject_bnode:
+                        st.write("")
+                        if split_uri(selected_subject_term_type)[1] == "IRI":
+                            st.markdown(
+                                f"""
+                                <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
+                                    🔒 Subject term type:
+                                    <b style="color:#007bff;">IRI</b><br>
+                                    <small>Click button to change to BNode.</small>
+                                </div>
+                                """,
+                                unsafe_allow_html=True
+                            )
+                            with col1:
+                                col1a, col1b = st.columns([1,2])
+                            with col1a:
+                                st.write("")
+                                st.button("Change to BNode", on_click=change_to_BNode)
+                        else:
+                            st.markdown(
+                                f"""
+                                <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
+                                    🔒 Subject term type:
+                                    <b style="color:#007bff;">BNode</b><br>
+                                    <small>Click button to change to IRI.</small>
+                                </div>
+                                """,
+                                unsafe_allow_html=True
+                            )
+                            with col1:
+                                col1a, col1b = st.columns([1,2])
+                            with col1a:
+                                st.write("")
+                                st.button("Change to IRI", on_click=change_to_IRI)
+
+
+
+
+            #SUBJECT CLASS (ontology-based)
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1b:
+                st.write("")
+                st.write("")
                 subject_class_uncollapse = st.toggle("", key="subject_class_uncollapse")
+            with col1a:
+                st.write("")
+                st.markdown(
+                    """
+                    <div style="border-top:3px dashed #b5b5d0; padding-top:12px;">
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
             with col1a:
                 st.markdown(
                     """
@@ -1375,76 +1459,6 @@ if st.session_state["20_option_button"] == "s":
                                     st.button("Save", on_click=save_external_subject_class)
 
 
-
-            #TERM TYPE - IRI by default, but can be changed to BNode
-            with col1a:
-                st.write("")
-                st.markdown(
-                    """
-                    <div style="border-top:3px dashed #b5b5d0; padding-top:12px;">
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-            with col1:
-                col1a, col1b = st.columns([2,1])
-            with col1b:
-                term_type_uncollapse = st.toggle("", key="term_type_uncollapse")
-            with col1a:
-                st.markdown(
-                    """
-                        <span style="font-size:1.1em; font-weight:bold;">🆔 Term type</span><br>
-                        <small>Indicates the target graph for the subject map triples. If not given, the default graph will be used.</small>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-            if term_type_uncollapse:
-                if not st.session_state["g_mapping"].value(selected_subject_bnode, RR["termType"]):   #If termType not indicated yet, make it IRI (default)
-                    st.session_state["g_mapping"].add((selected_subject_bnode, RR["termType"], RR.IRI))
-                selected_subject_term_type = st.session_state["g_mapping"].value(selected_subject_bnode, RR["termType"])
-
-                with col1:
-                    col1a, col1b = st.columns([2,1])
-                with col1a:
-                    if selected_subject_bnode:
-                        st.write("")
-                        if split_uri(selected_subject_term_type)[1] == "IRI":
-                            st.markdown(
-                                f"""
-                                <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
-                                    🔒 Subject term type:
-                                    <b style="color:#007bff;">IRI</b><br>
-                                    <small>Click button to change to BNode.</small>
-                                </div>
-                                """,
-                                unsafe_allow_html=True
-                            )
-                            with col1:
-                                col1a, col1b = st.columns([1,2])
-                            with col1a:
-                                st.write("")
-                                st.button("Change to BNode", on_click=change_to_BNode)
-                        else:
-                            st.markdown(
-                                f"""
-                                <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
-                                    🔒 Subject term type:
-                                    <b style="color:#007bff;">BNode</b><br>
-                                    <small>Click button to change to IRI.</small>
-                                </div>
-                                """,
-                                unsafe_allow_html=True
-                            )
-                            with col1:
-                                col1a, col1b = st.columns([1,2])
-                            with col1a:
-                                st.write("")
-                                st.button("Change to IRI", on_click=change_to_IRI)
-
-
-
             #GRAPH - If not given, default graph    HERE condider if rr:graphMap option (dynamic) is worth it
             with col1a:
                 st.write("")
@@ -1591,7 +1605,7 @@ if st.session_state["20_option_button"] == "s":
             utils.update_dictionaries()
             sm_to_remove_list = ["Select a Subject Map"]
             for tm_label in st.session_state["subject_dict"]:
-                if st.session_state["subject_dict"][tm_label][3] not in sm_to_remove_list and st.session_state["subject_dict"][tm_label][3] != "Unlabelled":
+                if st.session_state["subject_dict"][tm_label][3] not in sm_to_remove_list and not isinstance(st.session_state["subject_dict"][tm_label][3], str):
                     sm_to_remove_list.append(st.session_state["subject_dict"][tm_label][3])
 
             if len(sm_to_remove_list) == 1:
@@ -1878,7 +1892,7 @@ if st.session_state["20_option_button"] == "po":
                     <div style="background-color:#edf7ef; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
                         <span style="font-size:0.95rem;">
                          🔖 The Subject Map assigned to the TriplesMap <b>{tmap_label}</b>
-                         is <b>BNode: {str(sm_iri)[:5] + "..."}</b>.
+                         is <b>_:{str(sm_iri)[:7] + "..."}</b>.
                         </span>
                     </div>
                     """, unsafe_allow_html=True)

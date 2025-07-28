@@ -298,6 +298,8 @@ def update_dictionaries():
 
             if isinstance(subject_map, URIRef):
                 subject_label = split_uri(subject_map)[1]
+            elif isinstance(subject_map, BNode):
+                subject_label = "_:" + str(subject_map)[:7] + "..."
             else:
                 subject_label = "Unlabelled"
 
@@ -467,6 +469,8 @@ def build_tmap_df():
             ls_iri = st.session_state["g_mapping"].value(subject=tmap_iri, predicate=RML.logicalSource)
             if isinstance(ls_iri, URIRef):
                 ls_label = split_uri(ls_iri)[1]
+            elif isinstance(ls_iri, BNode):
+                ls_label = "_:" + str(ls_iri)[:7] + "..."
             else:
                 ls_label = "Unlabelled"
 
