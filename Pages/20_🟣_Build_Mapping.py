@@ -2288,6 +2288,36 @@ if st.session_state["20_option_button"] == "po":
             selected_constant_iri = Literal(om_constant)
             om_ready_flag_constant = True
 
+    #_______________________________________________
+    #TEMPLATE-VALUED OBJECT MAP
+    if po_type == "📐 Template-valued":
+        om_ready_flag_template = False
+
+        with col3:
+            col3a, col3b, col3c = st.columns([1,1,0.5])
+        with col3a:
+            st.write("Variable part")
+            om_variable_part_temp = st.selectbox("Select the column of the data source*", column_list, key="om_variable_part_temp")
+            om_variable_part_name = om_variable_part_temp if om_variable_part_temp != column_list[0] else ""
+        with col3b:
+            st.write("Fixed part")
+            om_fixed_part_temp = st.text_input("Enter fixed part*", key="om_fiex_part_temp")
+        with col3c:
+            st.write("")
+            st.write("")
+            save_template_pair_button = st.button("Save")
+
+
+
+
+
+
+        if om_datatype != "Natural language text":
+            if om_column_name and om_term_type:
+                om_ready_flag_reference = True
+        else:
+            if om_column_name and om_term_type and om_language_tag:
+                om_ready_flag_reference = True
 
 
 
