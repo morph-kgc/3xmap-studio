@@ -97,11 +97,13 @@ def get_predefined_ns_dict():
     return {
         "rml": Namespace("http://semweb.mmlab.be/ns/rml#"),
         "rr": Namespace("http://www.w3.org/ns/r2rml#"),
+        "xsd": Namespace("http://www.w3.org/2001/XMLSchema#"),
+        "rdf": Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
         "ql": Namespace(get_rdfolio_base_iri() + "/ql#"),
         "map": Namespace(get_rdfolio_base_iri() + "/mapping#"),
         "class": Namespace(get_rdfolio_base_iri() + "/class#"),
         "resource": Namespace(get_rdfolio_base_iri() + "/resource#"),
-        "logicalSource": Namespace(get_rdfolio_base_iri() + "/logicalSource#"),
+        "logicalSource": Namespace(get_rdfolio_base_iri() + "/logicalSource#")
     }
 
 namespaces = get_predefined_ns_dict()

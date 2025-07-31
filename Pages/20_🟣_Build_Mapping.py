@@ -25,6 +25,10 @@ QL = namespaces["ql"]
 MAP = namespaces["map"]
 CLASS = namespaces["class"]
 LS = namespaces["logicalSource"]
+RDF = namespaces["rdf"]
+XSD = namespaces["xsd"]
+RDF = namespaces["rdf"]
+
 BASE = Namespace(utils.get_rdfolio_base_iri())
 
 #define on_click functions
@@ -163,8 +167,41 @@ def save_subject_graph():
 def delete_subject_graph():
     st.session_state["g_mapping"].remove((selected_subject_bnode, RR["graph"], None))
 
-def save_om_reference():
-    pass
+def save_pom_reference():
+    st.session_state["g_mapping"].add((tmap_iri, RR.predicateObjectMap, pom_iri))
+    st.session_state["g_mapping"].add((pom_iri, RR.predicate, selected_predicate_iri))
+    st.session_state["g_mapping"].add((pom_iri, RR.objectMap, om_iri))
+    st.session_state["g_mapping"].add((om_iri, RR.column, Literal(om_column_name)))
+    #term type__________________________________
+    if om_term_type == "📘 Literal":
+        st.session_state["g_mapping"].add((om_iri, RR.termType, RR.Literal))
+    elif om_term_type == "🌐 IRI":
+        st.session_state["g_mapping"].add((om_iri, RR.termType, RR.IRI))
+    elif om_term_type == "👻 BNode":
+        st.session_state["g_mapping"].add((om_iri, RR.termType, RR.BlankNode))
+    #data type__________________________________
+    if om_datatype and om_datatype != "Natural language text":   #second condition unneccesary
+        if om_datatype.startswith("xsd:"):
+            st.session_state["g_mapping"].add((om_iri, RR.datatype, XSD.om_datatype))
+        elif om_datatype.startswith("rdf:"):
+            st.session_state["g_mapping"].add((om_iri, RR.datatype, RDF.om_datatype))
+    #language tag_____________________________________
+    if om_language_tag:   #can only be given if om_datatype == "Natural language text"
+        st.session_state["g_mapping"].add((om_iri, RR.language, Literal(om_language_tag)))
+    #reset fields_____________________________________
+    st.session_state["search_term"] = ""
+    st.session_state["selected_predicate_temp"] = "Select a predicate"
+    st.session_state["selected_predicate_textinput"] = ""
+    st.session_state["pom_label"] = ""
+    st.session_state["om_label"] = ""
+    st.session_state["om_column_name"] = "Select a column of the data source"
+    st.session_state["om_term_type"] = "📘 Literal"
+    st.session_state["po_type"] = "🔢 Reference-valued"
+    st.session_state["pom_saved_ok"] = True
+
+
+
+
 
 
 #initialise session state variables
@@ -198,6 +235,9 @@ if "smap_unassigned_ok" not in st.session_state:
     st.session_state["smap_unassigned_ok"] = False
 if "cache_tm" not in st.session_state:
     st.session_state["cache_tm"] = ""
+if "pom_saved_ok" not in st.session_state:
+    st.session_state["pom_saved_ok"] = False
+
 
 select_cache_tm_toggle = False
 select_cache_tm_toggle_pom = False
@@ -1863,7 +1903,7 @@ if st.session_state["20_option_button"] == "po":
     st.markdown(f"""
     <div style="background-color:#f8d7da; padding:1em;
                 border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-        ❌ This section is not ready yet and does nothing.
+        ❌ This section is not completely ready yet.
     </div>
     """, unsafe_allow_html=True)
     st.write("")
@@ -1871,6 +1911,7 @@ if st.session_state["20_option_button"] == "po":
 
 
     col1,col2, col3 = st.columns([2,0.2,0.8])
+
 
     with col3:
         st.markdown(f"""
@@ -1905,14 +1946,6 @@ if st.session_state["20_option_button"] == "po":
                 </div>
             """, unsafe_allow_html=True)
 
-        st.markdown(f"""
-            <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                <span style="font-size:0.95rem;">
-                    ⚠️ All compulsory fields* must be filled in order to save a Predicate-Object Map.
-                </span>
-            </div>
-            """, unsafe_allow_html=True)
-        st.write("")
 
     #POM_____________________________________________________
     tmap_label = ""
@@ -1936,6 +1969,33 @@ if st.session_state["20_option_button"] == "po":
     for tm_label, tm_iri in st.session_state["tmap_dict"].items():
         if any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectMap, None))):
             tm_with_sm_list.append(tm_label)
+
+    if not st.session_state["tmap_dict"]:
+        with col1a:
+            st.markdown(f"""
+                <div style="background-color:#fff9db; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                        <span style="font-size:0.95rem;">
+                ⚠️ No TriplesMaps in mapping {st.session_state["g_label"]}.<br>
+                You can add new TriplesMaps in the <b style="color:#cc9a06;">Add TriplesMap option</b>.
+                        </span>
+                    </div>
+                    """, unsafe_allow_html=True)
+            st.write("")
+            st.stop()
+
+    elif len(tm_with_sm_list) == 1:
+        with col1a:
+            st.markdown(f"""
+                <div style="background-color:#fff9db; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                        <span style="font-size:0.95rem;">
+                ⚠️ The existing TriplesMaps have not been assigned a Subject Map.
+                You can add new TriplesMaps in the <b style="color:#007bff;">Add TriplesMap option</b>
+                        </span>
+                    </div>
+                    """, unsafe_allow_html=True)
+            st.write("")
+            st.stop()
+
 
     if st.session_state["cache_tm"] and next(st.session_state["g_mapping"].objects(st.session_state["tmap_dict"][st.session_state["cache_tm"]], RR.subjectMap), None):
         with col1:
@@ -1979,9 +2039,11 @@ if st.session_state["20_option_button"] == "po":
 
         if st.session_state["ontology_label"]:
             ontology_predicates_list = []
+            ontology_predicates_dict = {}
             for xtuple in st.session_state["g_ontology"].triples((None, RDF.type ,None)):
                 try:
                     pred = split_uri(xtuple[0])[1]
+                    ontology_predicates_dict[split_uri(xtuple[0])[1]] = xtuple[0]
                     if pred not in ontology_predicates_list:
                         ontology_predicates_list.append(pred)
                 except:
@@ -1989,16 +2051,27 @@ if st.session_state["20_option_button"] == "po":
             with col1:
                 col1a, col1b = st.columns([2,1])
             with col1b:
-                search_term = st.text_input("💬 Type to filter predicates")
+                search_term = st.text_input("💬 Type to filter predicates", key="search_term")
             filtered_options = [s for s in ontology_predicates_list if search_term.lower() in str(s).lower()]
             filtered_options.insert(0, "Select a predicate")
             with col1a:
-                selected_predicate_temp = st.selectbox("🖱️ Select a predicate*", filtered_options)
+                selected_predicate_temp = st.selectbox("🖱️ Select a predicate*", filtered_options, key="selected_predicate_temp")
                 selected_predicate = selected_predicate_temp if selected_predicate_temp != filtered_options[0] else ""
+                selected_predicate_iri = ontology_predicates_dict[selected_predicate] if selected_predicate else ""
         else:
+            ns_prefix_list = list(st.session_state["ns_dict"].keys())
+            ns_prefix_list.insert(0, "Select a namespace")
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1b:
+                selected_predicate_ns_temp = st.selectbox("Select a namespace for the predicate*", ns_prefix_list)
+                selected_predicate_ns = selected_predicate_ns_temp if not selected_predicate_ns_temp == ns_prefix_list[0] else ""
             with col1a:
-                selected_predicate = st.text_input("⌨️ Enter a predicate*")
-
+                selected_predicate = st.text_input("⌨️ Enter a predicate*", key="selected_predicate_textinput")
+            if selected_predicate and selected_predicate_ns:
+                selected_predicate_iri = URIRef(st.session_state["ns_dict"][selected_predicate_ns] + selected_predicate)
+            else:
+                selected_predicate = ""
 
     if not tmap_label:
         with col1b:
@@ -2016,12 +2089,30 @@ if st.session_state["20_option_button"] == "po":
             st.write("")
             col1a, col1b = st.columns([1,1])
         with col1a:
-            pom_label = st.text_input("🔖 Enter Predicate-Object Map label (optional)")
-            pom_iri = BNode() if not pom_label else MAP[pom_label]
+            pom_label = st.text_input("🔖 Enter Predicate-Object Map label (optional)", key="pom_label")
+        pom_iri = BNode() if not pom_label else MAP[pom_label]
+        if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectMap, pom_iri)), None):
+            with col1a:
+                st.markdown(f"""
+                    <div style="background-color:#fff3cd; padding:1em;
+                    border-radius:5px; color:#856404; border:1px solid #ffeeba;">
+                        ⚠️ The Predicate-Object Map label <b style="color:#cc9a06;">{pom_label}</b>
+                        is already in use and will be ignored. Please, pick a different label.</div>
+                """, unsafe_allow_html=True)
+            pom_label = ""
 
         with col1b:
-            om_label = st.text_input("🔖Enter Object Map label (optional)")
-            om_iri = BNode() if not om_label else MAP[om_label]
+            om_label = st.text_input("🔖Enter Object Map label (optional)", key="om_label")
+        om_iri = BNode() if not om_label else MAP[om_label]
+        if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
+            with col1b:
+                st.markdown(f"""
+                    <div style="background-color:#fff3cd; padding:1em;
+                    border-radius:5px; color:#856404; border:1px solid #ffeeba;">
+                        ⚠️ The Object Map label <b style="color:#cc9a06;">{om_label}</b>
+                        is already in use and will be ignored. Please, pick a different label.</div>
+                """, unsafe_allow_html=True)
+            om_label = ""
 
 
 
@@ -2065,19 +2156,32 @@ if st.session_state["20_option_button"] == "po":
                 unsafe_allow_html=True
             )
 
-    col1, col2, col3 = st.columns([0.8, 0.2, 2])
-    po_options = ["🔢 Reference-valued", "🔒 Constant-valued", "📐 Template-valued"]
 
-    with col1:
-        st.markdown(""" <span style="font-size:1em; font-weight:bold;">
-        Predicate-Object Map type:</span><br></div>""",unsafe_allow_html=True)
-        po_type = st.radio("", po_options, label_visibility="collapsed")
+    if tmap_label:
+        col1, col2, col3 = st.columns([0.8, 0.2, 2])
+        po_options = ["🔢 Reference-valued", "🔒 Constant-valued", "📐 Template-valued"]
+
+        with col1:
+            st.markdown(""" <span style="font-size:1em; font-weight:bold;">
+            Predicate-Object Map type:</span><br></div>""",unsafe_allow_html=True)
+            po_type = st.radio("", po_options, label_visibility="collapsed", key="po_type")
+
+    else:
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.markdown(f"""
+                <div style="background-color:#fff3cd; padding:1em;
+                border-radius:5px; color:#856404; border:1px solid #ffeeba;">
+                    ⚠️ You must select a TriplesMap to continue.</div>
+            """, unsafe_allow_html=True)
+        po_type = ""
 
 
     #_______________________________________________
     #COLUMN-BASED OBJECT MAP
     if po_type == "🔢 Reference-valued":
-        om_data_type = ""
+        om_datatype = ""
         om_language_tag = ""
         om_ready_flag_reference = False
 
@@ -2088,7 +2192,7 @@ if st.session_state["20_option_button"] == "po":
             om_column_name = om_column_name_temp if om_column_name_temp != column_list[0] else ""
 
         with col3b:
-            om_term_type = st.radio(label="Choose the term type*", options=["📘 Literal", "🌐 IRI", "👻 BNode"], horizontal=True)
+            om_term_type = st.radio(label="Choose the term type*", options=["📘 Literal", "🌐 IRI", "👻 BNode"], horizontal=True, key="om_term_type")
 
         if om_column_name and om_term_type == "📘 Literal":
             rdf_datatypes = [
@@ -2098,10 +2202,10 @@ if st.session_state["20_option_button"] == "po":
                 "xsd:anyURI", "rdf:XMLLiteral", "rdf:HTML", "rdf:JSON"]
 
             with col3a:
-                om_data_type_temp = st.selectbox("Select data type (optional)", rdf_datatypes)
-                om_data_type = om_data_type_temp if om_data_type_temp != rdf_datatypes[0] else ""
+                om_datatype_temp = st.selectbox("Select data type (optional)", rdf_datatypes)
+                om_datatype = om_datatype_temp if om_datatype_temp != rdf_datatypes[0] else ""
 
-            if om_data_type == "Natural language text":
+            if om_datatype == "Natural language text":
                 language_tags = [
                     "Select language tag", "en", "es", "fr", "de", "zh",
                     "ja", "pt-BR", "en-US", "ar", "ru", "hi", "zh-Hans", "sr-Cyrl"]
@@ -2111,7 +2215,7 @@ if st.session_state["20_option_button"] == "po":
                     om_language_tag = om_language_tag_temp if om_language_tag_temp != language_tags[0] else ""
 
 
-        if om_data_type != "Natural language text":
+        if om_datatype != "Natural language text":
             if om_column_name and om_term_type:
                 om_ready_flag_reference = True
         else:
@@ -2138,6 +2242,17 @@ if st.session_state["20_option_button"] == "po":
             )
 
     col1, col2, col3 = st.columns(3)
+
+    if st.session_state["pom_saved_ok"]:
+        with col1:
+            st.markdown(f"""
+            <div style="background-color:#d4edda; padding:1em;
+            border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                ✅ Predicate-Object Map saved correctly! </div>
+            """, unsafe_allow_html=True)
+        st.session_state["pom_saved_ok"] = False
+        time.sleep(2)
+        st.rerun()
 
     if pom_ready_flag:
         with col1:
@@ -2186,7 +2301,7 @@ if st.session_state["20_option_button"] == "po":
 
     if po_type == "🔢 Reference-valued":
 
-        if om_ready_flag_reference and om_data_type != "Natural language text":
+        if om_ready_flag_reference and om_datatype != "Natural language text":
             with col2:
                 st.markdown(f"""
                 <style>
@@ -2202,23 +2317,23 @@ if st.session_state["20_option_button"] == "po":
                 <tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
                 <tr><td>🔖 <b>Column name*:</b></td><td>{om_column_name}</td></tr>
                 <tr><td><b>Term type*:</b></td><td>{om_term_type}</td></tr>
-                <tr><td><b>Data type:</b></td><td>{om_data_type}</td></tr>
+                <tr><td><b>Data type:</b></td><td>{om_datatype}</td></tr>
                 <tr class="title-row"><td colspan="2">✔️ Required fields completed</td></tr>
                 </table>
                 """, unsafe_allow_html=True)
-        elif om_ready_flag_reference and om_data_type == "Natural language text":
+        elif om_ready_flag_reference and om_datatype == "Natural language text":
             with col2:
                 st.markdown(f"""
                 <table class="vertical-table-green">
                 <tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
                 <tr><td>🔖 <b>Column name*:</b></td><td>{om_column_name}</td></tr>
                 <tr><td><b>Term type*:</b></td><td>{om_term_type}</td></tr>
-                <tr><td><b>Data type:</b></td><td>{om_data_type}</td></tr>
+                <tr><td><b>Data type:</b></td><td>{om_datatype}</td></tr>
                 <tr><td><b>Language tag*:</b></td><td>{om_language_tag}</td></tr>
                 <tr class="title-row"><td colspan="2">✔️ Required fields completed</td></tr>
                 </table>
                 """, unsafe_allow_html=True)
-        elif not om_ready_flag_reference and om_data_type != "Natural language text":
+        elif not om_ready_flag_reference and om_datatype != "Natural language text":
             with col2:
                 st.markdown(f"""
                 <style>
@@ -2234,18 +2349,18 @@ if st.session_state["20_option_button"] == "po":
                 <tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
                 <tr><td>🔖 <b>Column name*:</b></td><td>{om_column_name}</td></tr>
                 <tr><td><b>Term type*:</b></td><td>{om_term_type}</td></tr>
-                <tr><td><b>Data type:</b></td><td>{om_data_type}</td></tr>
+                <tr><td><b>Data type:</b></td><td>{om_datatype}</td></tr>
                 <tr class="title-row"><td colspan="2">⚠️ Required fields incomplete</td></tr>
                 </table>
                 """, unsafe_allow_html=True)
-        elif not om_ready_flag_reference and om_data_type == "Natural language text":
+        elif not om_ready_flag_reference and om_datatype == "Natural language text":
             with col2:
                 st.markdown(f"""
                 <table class="vertical-table-yellow">
                 <tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
                 <tr><td>🔖 <b>Column name*:</b></td><td>{om_column_name}</td></tr>
                 <tr><td><b>Term type*:</b></td><td>{om_term_type}</td></tr>
-                <tr><td><b>Data type:</b></td><td>{om_data_type}</td></tr>
+                <tr><td><b>Data type:</b></td><td>{om_datatype}</td></tr>
                 <tr><td><b>Language tag*:</b></td><td>{om_language_tag}</td></tr>
                 <tr class="title-row"><td colspan="2">⚠️ Required fields incomplete</td></tr>
                 </table>
@@ -2262,7 +2377,17 @@ if st.session_state["20_option_button"] == "po":
                     🧐 Double-check the information before saving. </div>
                 """, unsafe_allow_html=True)
                 st.write("")
-                save_pom_reference_button = st.button("Save", on_click=save_om_reference)
+                save_pom_reference_button = st.button("Save", on_click=save_pom_reference)
+        else:
+            with col3:
+                st.markdown(f"""
+                    <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                        <span style="font-size:0.95rem;">
+                            ⚠️ All required fields (*) must be filled in order to save a Predicate-Object Map.
+                        </span>
+                    </div>
+                    """, unsafe_allow_html=True)
+                st.write("")
 
 
 
