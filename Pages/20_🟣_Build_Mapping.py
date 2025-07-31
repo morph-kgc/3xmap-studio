@@ -200,6 +200,23 @@ def save_pom_reference():
     st.session_state["pom_saved_ok"] = True
 
 
+def save_pom_constant():
+    st.session_state["g_mapping"].add((tmap_iri, RR.predicateObjectMap, pom_iri))
+    st.session_state["g_mapping"].add((pom_iri, RR.predicate, selected_predicate_iri))
+    st.session_state["g_mapping"].add((pom_iri, RR.objectMap, om_iri))
+    st.session_state["g_mapping"].add((om_iri, RR.constant, selected_constant_iri))
+
+    #reset fields_____________________________________
+    st.session_state["search_term"] = ""
+    st.session_state["selected_predicate_temp"] = "Select a predicate"
+    st.session_state["selected_predicate_textinput"] = ""
+    st.session_state["pom_label"] = ""
+    st.session_state["om_label"] = ""
+    st.session_state["om_term_type"] = "📘 Literal"
+    st.session_state["po_type"] = "🔢 Reference-valued"
+    st.session_state["pom_saved_ok"] = True
+
+
 
 
 
@@ -2066,6 +2083,17 @@ if st.session_state["20_option_button"] == "po":
             with col1b:
                 selected_predicate_ns_temp = st.selectbox("Select a namespace for the predicate*", ns_prefix_list)
                 selected_predicate_ns = selected_predicate_ns_temp if not selected_predicate_ns_temp == ns_prefix_list[0] else ""
+                if len(ns_prefix_list) == 1:
+                    st.write("")
+                    with col1:
+                        st.markdown(f"""
+                            <div style="background-color:#fff3cd; padding:1em;
+                            border-radius:5px; color:#856404; border:1px solid #ffeeba;">
+                                ⚠️ No custom namespaces have been added. Please do so in
+                                the <b style="color:#cc9a06;">Global Configuration</b> page to continue.
+                                </div>
+                        """, unsafe_allow_html=True)
+
             with col1a:
                 selected_predicate = st.text_input("⌨️ Enter a predicate*", key="selected_predicate_textinput")
             if selected_predicate and selected_predicate_ns:
@@ -2179,7 +2207,7 @@ if st.session_state["20_option_button"] == "po":
 
 
     #_______________________________________________
-    #COLUMN-BASED OBJECT MAP
+    #REFERENCE-VALUED OBJECT MAP
     if po_type == "🔢 Reference-valued":
         om_datatype = ""
         om_language_tag = ""
@@ -2222,7 +2250,43 @@ if st.session_state["20_option_button"] == "po":
             if om_column_name and om_term_type and om_language_tag:
                 om_ready_flag_reference = True
 
+    #_______________________________________________
+    #CONSTANT-VALUED OBJECT MAP
+    if po_type == "🔒 Constant-valued":
+        om_ready_flag_constant = False
 
+        with col3:
+            col3a, col3b = st.columns(2)
+        with col3a:
+            om_constant = st.text_input("Enter constant*", key="om_constant")
+
+        with col3b:
+            om_constant_type = st.radio(label="Choose constant type*", options=["📘 Literal", "🌐 IRI"], horizontal=True, key="om_constant_type")
+
+        if om_constant_type == "🌐 IRI":
+            ns_prefix_list = list(st.session_state["ns_dict"].keys())
+            ns_prefix_list.insert(0, "Select a namespace")
+            with col3a:
+                selected_constant_ns_temp = st.selectbox("Select a namespace for the constant*", ns_prefix_list)
+                selected_constant_ns = selected_constant_ns_temp if not selected_constant_ns_temp == ns_prefix_list[0] else ""
+                if len(ns_prefix_list) == 1:
+                    st.write("")
+                    with col3b:
+                        st.markdown(f"""
+                            <div style="background-color:#fff3cd; padding:1em;
+                            border-radius:5px; color:#856404; border:1px solid #ffeeba;">
+                                ⚠️ No custom namespaces have been added. Please do so in
+                                the <b style="color:#cc9a06;">Global Configuration</b> page to continue.
+                                </div>
+                        """, unsafe_allow_html=True)
+
+
+        if om_constant_type == "🌐 IRI" and om_constant and selected_constant_ns:
+            selected_constant_iri = URIRef(st.session_state["ns_dict"][selected_constant_ns] + om_constant)
+            om_ready_flag_constant = True
+        if om_constant_type == "📘 Literal" and om_constant:
+            selected_constant_iri = Literal(om_constant)
+            om_ready_flag_constant = True
 
 
 
@@ -2324,6 +2388,15 @@ if st.session_state["20_option_button"] == "po":
         elif om_ready_flag_reference and om_datatype == "Natural language text":
             with col2:
                 st.markdown(f"""
+                <style>
+                .vertical-table-green td {{padding: 4px 8px; vertical-align: top;
+                    font-size: 0.85rem;}}
+                .vertical-table-green {{border-collapse: collapse; width: 100%;
+                    background-color: #edf7ef; border-radius: 5px;}}
+                .title-row td {{font-size: 0.9rem;font-weight: bold;text-align: center;
+                    padding-bottom: 6px;}}
+                </style>
+
                 <table class="vertical-table-green">
                 <tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
                 <tr><td>🔖 <b>Column name*:</b></td><td>{om_column_name}</td></tr>
@@ -2356,6 +2429,15 @@ if st.session_state["20_option_button"] == "po":
         elif not om_ready_flag_reference and om_datatype == "Natural language text":
             with col2:
                 st.markdown(f"""
+                <style>
+                .vertical-table-yellow td {{padding: 4px 8px; vertical-align: top;
+                    font-size: 0.85rem;}}
+                .vertical-table-yellow {{border-collapse: collapse; width: 100%;
+                    background-color: #fff9db; border-radius: 5px;}}
+                .title-row td {{font-size: 0.9rem;font-weight: bold;text-align: center;
+                    padding-bottom: 6px;}}
+                </style>
+
                 <table class="vertical-table-yellow">
                 <tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
                 <tr><td>🔖 <b>Column name*:</b></td><td>{om_column_name}</td></tr>
@@ -2378,6 +2460,130 @@ if st.session_state["20_option_button"] == "po":
                 """, unsafe_allow_html=True)
                 st.write("")
                 save_pom_reference_button = st.button("Save", on_click=save_pom_reference)
+        else:
+            with col3:
+                st.markdown(f"""
+                    <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                        <span style="font-size:0.95rem;">
+                            ⚠️ All required fields (*) must be filled in order to save a Predicate-Object Map.
+                        </span>
+                    </div>
+                    """, unsafe_allow_html=True)
+                st.write("")
+
+        if pom_ready_flag and om_ready_flag_reference:
+            with col3:
+                col3a, col3b = st.columns([0.5,1.5])
+            with col3b:
+                st.markdown(f"""
+                <div style="background-color:#d4edda; padding:1em;
+                border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                    ✅ All required fields are complete.<br>
+                    🧐 Double-check the information before saving. </div>
+                """, unsafe_allow_html=True)
+                st.write("")
+                save_pom_reference_button = st.button("Save", on_click=save_pom_reference)
+        else:
+            with col3:
+                st.markdown(f"""
+                    <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                        <span style="font-size:0.95rem;">
+                            ⚠️ All required fields (*) must be filled in order to save a Predicate-Object Map.
+                        </span>
+                    </div>
+                    """, unsafe_allow_html=True)
+                st.write("")
+
+
+    if po_type == "🔒 Constant-valued":
+
+        if om_ready_flag_constant and om_constant_type == "📘 Literal":
+            with col2:
+                st.markdown(f"""
+                <style>
+                .vertical-table-green td {{padding: 4px 8px; vertical-align: top;
+                    font-size: 0.85rem;}}
+                .vertical-table-green {{border-collapse: collapse; width: 100%;
+                    background-color: #edf7ef; border-radius: 5px;}}
+                .title-row td {{font-size: 0.9rem;font-weight: bold;text-align: center;
+                    padding-bottom: 6px;}}
+                </style>
+
+                <table class="vertical-table-green">
+                <tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
+                <tr><td>🔖 <b>Constant*:</b></td><td>{om_constant}</td></tr>
+                <tr class="title-row"><td colspan="2">✔️ Required fields completed</td></tr>
+                </table>
+                """, unsafe_allow_html=True)
+        elif om_ready_flag_constant and om_constant_type == "🌐 IRI":
+            with col2:
+                st.markdown(f"""
+                <style>
+                .vertical-table-green td {{padding: 4px 8px; vertical-align: top;
+                    font-size: 0.85rem;}}
+                .vertical-table-green {{border-collapse: collapse; width: 100%;
+                    background-color: #edf7ef; border-radius: 5px;}}
+                .title-row td {{font-size: 0.9rem;font-weight: bold;text-align: center;
+                    padding-bottom: 6px;}}
+                </style>
+
+                <table class="vertical-table-green">
+                <tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
+                <tr><td>🔖 <b>Constant prefix*:</b></td><td>{selected_constant_ns}</td></tr>
+                <tr><td>🔖 <b>Constant*:</b></td><td>{om_constant}</td></tr>
+                <tr class="title-row"><td colspan="2">✔️ Required fields completed</td></tr>
+                </table>
+                """, unsafe_allow_html=True)
+        elif not om_ready_flag_constant and om_constant_type == "📘 Literal":
+            with col2:
+                st.markdown(f"""
+                <style>
+                .vertical-table-yellow td {{padding: 4px 8px; vertical-align: top;
+                    font-size: 0.85rem;}}
+                .vertical-table-yellow {{border-collapse: collapse; width: 100%;
+                    background-color: #fff9db; border-radius: 5px;}}
+                .title-row td {{font-size: 0.9rem;font-weight: bold;text-align: center;
+                    padding-bottom: 6px;}}
+                </style>
+
+                <table class="vertical-table-yellow">
+                <tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
+                <tr><td>🔖 <b>Constant*:</b></td><td>{om_constant}</td></tr>
+                <tr class="title-row"><td colspan="2">⚠️ Required fields incomplete</td></tr>
+                </table>
+                """, unsafe_allow_html=True)
+        elif not om_ready_flag_constant and om_constant_type == "🌐 IRI":
+            with col2:
+                st.markdown(f"""
+                <style>
+                .vertical-table-yellow td {{padding: 4px 8px; vertical-align: top;
+                    font-size: 0.85rem;}}
+                .vertical-table-yellow {{border-collapse: collapse; width: 100%;
+                    background-color: #fff9db; border-radius: 5px;}}
+                .title-row td {{font-size: 0.9rem;font-weight: bold;text-align: center;
+                    padding-bottom: 6px;}}
+                </style>
+
+                <table class="vertical-table-yellow">
+                <tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
+                <tr><td>🔖 <b>Constant prefix*:</b></td><td>{selected_constant_ns}</td></tr>
+                <tr><td>🔖 <b>Constant*:</b></td><td>{om_constant}</td></tr>
+                <tr class="title-row"><td colspan="2">⚠️ Required fields incomplete</td></tr>
+                </table>
+                """, unsafe_allow_html=True)
+
+        if pom_ready_flag and om_ready_flag_constant:
+            with col3:
+                col3a, col3b = st.columns([0.5,1.5])
+            with col3b:
+                st.markdown(f"""
+                <div style="background-color:#d4edda; padding:1em;
+                border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                    ✅ All required fields are complete.<br>
+                    🧐 Double-check the information before saving. </div>
+                """, unsafe_allow_html=True)
+                st.write("")
+                save_pom_constant_button = st.button("Save", on_click=save_pom_constant)
         else:
             with col3:
                 st.markdown(f"""
