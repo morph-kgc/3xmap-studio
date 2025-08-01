@@ -1943,16 +1943,6 @@ if st.session_state["20_option_button"] == "s":
 #ADD PREDICATE-OBJECT MAP TO MAP
 if st.session_state["20_option_button"] == "po":
 
-    st.markdown(f"""
-    <div style="background-color:#f8d7da; padding:1em;
-                border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-        ❌ This section is not completely ready yet.
-    </div>
-    """, unsafe_allow_html=True)
-    st.write("")
-    st.write("")
-
-
     col1,col2, col3 = st.columns([2,0.2,0.8])
 
 
@@ -2449,6 +2439,7 @@ if st.session_state["20_option_button"] == "po":
         time.sleep(2)
         st.rerun()
 
+
     if pom_ready_flag:
         with col1:
             st.markdown(f"""
@@ -2471,7 +2462,7 @@ if st.session_state["20_option_button"] == "po":
             <tr class="title-row"><td colspan="2">✔️ Required fields completed</td></tr>
             </table>
             """, unsafe_allow_html=True)
-    else:
+    elif tmap_label:
         with col1:
             st.markdown(f"""
             <style>
@@ -2492,6 +2483,13 @@ if st.session_state["20_option_button"] == "po":
             <tr><td><b>OM label:</b></td><td>{om_label}</td></tr>
             <tr class="title-row"><td colspan="2">⚠️ Required fields incomplete</td></tr>
             </table>
+            """, unsafe_allow_html=True)
+    else:
+        with col1a:
+            st.markdown(f"""
+                <div style="background-color:#fff3cd; padding:1em;
+                border-radius:5px; color:#856404; border:1px solid #ffeeba;">
+                    ⚠️ You must select a TriplesMap to continue.</div>
             """, unsafe_allow_html=True)
 
     if po_type == "🔢 Reference-valued":
