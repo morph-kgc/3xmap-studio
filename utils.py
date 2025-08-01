@@ -278,10 +278,16 @@ def update_dictionaries():
             data_source = get_data_source_file(st.session_state["g_mapping"], tmap_node)
             st.session_state["data_source_dict"][tmap_label] = data_source
 
-        #{prefix: namespace}
+        #{prefix: namespace} only custom
         default_ns_dict = get_default_ns_dict()
-        all_ns_dict = dict(st.session_state["g_mapping"].namespace_manager.namespaces())
-        st.session_state["ns_dict"] = {k: v for k, v in all_ns_dict.items() if (k not in default_ns_dict and v != URIRef("None"))}
+        all_mapping_ns_dict = dict(st.session_state["g_mapping"].namespace_manager.namespaces())
+        st.session_state["mapping_ns_dict"] = {k: v for k, v in all_mapping_ns_dict.items() if (k not in default_ns_dict and v != URIRef("None"))}
+
+        #{prefix: namespace} only ontology
+        st.session_state["ontology_ns_dict"] = dict(st.session_state["g_ontology"].namespace_manager.namespaces())
+
+        #{prefix: namespace} custom+ontology
+        st.session_state["ns_dict"] = st.session_state["mapping_ns_dict"] | st.session_state["ontology_ns_dict"]
 
         #subject dictionary   {tm label: [subject_label, subject_id, subject_type]}
         st.session_state["subject_dict"] = {}
