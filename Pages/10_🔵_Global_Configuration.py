@@ -1,25 +1,22 @@
 import streamlit as st
-import os #for file navigation
-from rdflib import Graph, URIRef, Literal, Namespace, BNode
-import utils
+import os
 import pandas as pd
-import pickle
-from rdflib.namespace import split_uri
-import re
-from rdflib.namespace import OWL as OWL
-from rdflib.namespace import RDF, RDFS, DC, DCTERMS
 import time
-
-
+import re
+import pickle
+from rdflib import Graph, URIRef, Literal, Namespace, BNode
+from rdflib.namespace import split_uri
+from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL
+import utils
 
 #____________________________________________
-#PRELIMINARY
+# PRELIMINARY
 
-#Aesthetics
+# Aesthetics-----------------------
 utils.import_st_aesthetics()
 st.write("")
 
-# Namespaces
+# Namespaces---------------------
 namespaces = utils.get_predefined_ns_dict()
 RML = namespaces["rml"]
 RR = namespaces["rr"]
@@ -28,9 +25,7 @@ MAP = namespaces["map"]
 CLASS = namespaces["class"]
 LS = namespaces["logicalSource"]
 
-#system-wide settings
-
-#initialise session state variables
+# Initialise session state variables-------------------------
 if "10_option_button" not in st.session_state:
     st.session_state["10_option_button"] = None
 if "g_button_option" not in st.session_state:
@@ -39,14 +34,14 @@ if "g_mapping" not in st.session_state:
     st.session_state["g_mapping"] = Graph()
 if "g_label" not in st.session_state:
     st.session_state["g_label"] = ""
-if "candidate_g_label" not in st.session_state:
-    st.session_state["candidate_g_label"] = ""
-if "candidate_g_label_new" not in st.session_state:
-    st.session_state["candidate_g_label_new"] = ""
-if "candidate_g_label_new_flag" not in st.session_state:
-    st.session_state["candidate_g_label_new_flag"] = False
-if "candidate_g_label_existing_flag" not in st.session_state:
-    st.session_state["candidate_g_label_existing_flag"] = False
+if "g_label_temp" not in st.session_state:
+    st.session_state["g_label_temp"] = ""
+if "g_label_temp_new" not in st.session_state:
+    st.session_state["g_label_temp_new"] = ""
+if "new_g_mapping_saved_ok_flag" not in st.session_state:
+    st.session_state["new_g_mapping_saved_ok_flag"] = False
+if "g_label_temp_existing_flag" not in st.session_state:
+    st.session_state["g_label_temp_existing_flag"] = False
 if "overwrite_checkbox" not in st.session_state:
     st.session_state["overwrite_checkbox"] = False
 if "overwrite_selection" not in st.session_state:
@@ -89,15 +84,13 @@ if "load_ontology_from_file_button_flag" not in st.session_state:
     st.session_state["load_ontology_from_file_button_flag"] = False
 if "ontology_source" not in st.session_state:
     st.session_state["ontology_source"] = ""
-if "mapping_source" not in st.session_state:
-    st.session_state["mapping_source"] = []
+if "g_mapping_source" not in st.session_state:
+    st.session_state["g_mapping_source"] = []
 if "original_g_length" not in st.session_state:
     st.session_state["original_g_length"] = ""
 
-
-
-#initialise variables
-candidate_g_label = ""
+# Initialise variables----------------------------------------
+g_label_temp = ""
 cancel_text = ""
 save_text = ""
 overwrite_text = ""
@@ -107,49 +100,51 @@ overwrite_checkbox = False
 load_file_ready = False
 
 
-#directories
+#directories-----------------------------------------------------
 save_progress_folder = os.path.join(os.getcwd(), "saved_mappings")  #folder to save mappings (pkl)
 export_folder = os.path.join(os.getcwd(), "exported_mappings")    #filder to export mappings (ttl and others)
 utils.check_directories()
 
 
-#define on_click functions
-def create_new_mapping():
-    st.session_state["g_label"] = st.session_state["candidate_g_label_new"]   #we consolidate g_label
-    st.session_state["g_mapping"] = Graph()   #we create a new empty mapping
-    st.session_state["candidate_g_label_input_create"] = ""
-    st.session_state["candidate_g_label_new_flag"] = True
-    st.session_state["overwrite_selection"] = ""
-    st.session_state["mapping_source"] = ["scratch", ""]
-
-def cancel_create_new_mapping():
-    st.session_state["candidate_g_label_input_create"] = ""
+#define on_click functions---------------------------------------
+def create_new_g_mapping():
+    st.session_state["g_label"] = st.session_state["g_label_temp_new"]   # consolidate g_label
+    st.session_state["g_mapping"] = Graph()   # create a new empty mapping
+    st.session_state["new_g_mapping_saved_ok_flag"] = True   #flag for success mesagge
+    st.session_state["g_mapping_source"] = ["scratch", ""]   #info on the source to be displayed
+    # reset fields___________________________
+    st.session_state["key_g_label_temp_new"] = ""
     st.session_state["overwrite_selection"] = ""
 
-def create_new_mapping_and_save():
+
+def cancel_create_new_g_mapping():
+    st.session_state["key_g_label_temp_new"] = ""
+    st.session_state["overwrite_selection"] = ""
+
+def create_new_g_mapping_and_save():
     save_current_mapping_file = save_progress_folder + "\\" + st.session_state["save_g_filename"] + ".pkl"
     with open(save_current_mapping_file, "wb") as f:
         pickle.dump(st.session_state["g_mapping"], f)
-    st.session_state["g_label"] = st.session_state["candidate_g_label_new"]   #we consolidate g_label
+    st.session_state["g_label"] = st.session_state["g_label_temp_new"]   #we consolidate g_label
     st.session_state["g_mapping"] = Graph()   #we create a new empty mapping
-    st.session_state["candidate_g_label_input_create"] = ""
-    st.session_state["candidate_g_label_new_flag"] = True
+    st.session_state["key_g_label_temp_new"] = ""
+    st.session_state["new_g_mapping_saved_ok_flag"] = True
     st.session_state["overwrite_selection"] = ""
-    st.session_state["mapping_source"] = ["scratch", ""]
+    st.session_state["g_mapping_source"] = ["scratch", ""]
     # st.session_state["overwrite_checkbox"] = False   HERE CHECK IF NEEDED
 
 def load_existing_mapping():
-    st.session_state["g_label"] = st.session_state["candidate_g_label_existing"]   #we consolidate g_label
+    st.session_state["g_label"] = st.session_state["g_label_temp_existing"]   #we consolidate g_label
     st.session_state["original_g_length"] = len(st.session_state["candidate_g_mapping"])
     st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]   #we consolidate the loaded mapping
-    st.session_state["candidate_g_label_input_load"] = ""
-    st.session_state["candidate_g_label_existing_flag"] = True
+    st.session_state["g_label_temp_input_load"] = ""
+    st.session_state["g_label_temp_existing_flag"] = True
     st.session_state["overwrite_selection"] = ""
     st.session_state["load_file_selector"] = "Choose a file"
-    st.session_state["mapping_source"] = ["file", st.session_state["selected_load_pkl"]]
+    st.session_state["g_mapping_source"] = ["file", st.session_state["selected_load_pkl"]]
 
 def cancel_load_existing_mapping():
-    st.session_state["candidate_g_label_input_load"] = ""
+    st.session_state["g_label_temp_input_load"] = ""
     st.session_state["overwrite_selection"] = ""
 
 def load_existing_mapping_and_save():
@@ -157,19 +152,13 @@ def load_existing_mapping_and_save():
     with open(save_current_mapping_file, "wb") as f:
         pickle.dump(st.session_state["g_mapping"], f)
     st.session_state["original_g_length"] = len(st.session_state["candidate_g_mapping"])
-    st.session_state["g_label"] = st.session_state["candidate_g_label_existing"]   #we consolidate g_label
+    st.session_state["g_label"] = st.session_state["g_label_temp_existing"]   #we consolidate g_label
     st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]   #we consolidate the loaded mapping
-    st.session_state["candidate_g_label_input_load"] = ""
-    st.session_state["candidate_g_label_existing_flag"] = True
+    st.session_state["g_label_temp_input_load"] = ""
+    st.session_state["g_label_temp_existing_flag"] = True
     st.session_state["overwrite_selection"] = ""
     st.session_state["load_file_selector"] = "Choose a file"
-    st.session_state["mapping_source"] = ["file", st.session_state["selected_load_pkl"]]
-
-def reset_input():
-    st.session_state["candidate_g_label_input_create"] = ""
-    st.session_state["candidate_g_label_input_load"] = ""
-    st.session_state["overwrite_checkbox"] = False
-    st.session_state["load_file_selector"] = "Choose a file"
+    st.session_state["g_mapping_source"] = ["file", st.session_state["selected_load_pkl"]]
 
 def bind_namespace():
     st.session_state["ns_dict"][st.session_state["new_prefix"]] = st.session_state["new_ns"]    #we update the dictionaries
@@ -209,7 +198,7 @@ def export_mapping_to_file():
     st.session_state["export_success"] = True
 
 def load_mapping():
-    st.session_state["g_label"] = st.session_state["candidate_g_label"]
+    st.session_state["g_label"] = st.session_state["g_label_temp"]
     with open(load_g_file_full_path, "rb") as f:
         st.session_state["g_mapping"] = pickle.load(f)   #we load the mapping
     st.session_state["load_success"] = True
@@ -228,87 +217,59 @@ def discard_ontology():
 
 
 #____________________________________________________________
-#PAGE OPTIONS (buttons)
+#PAGE OPTIONS (tabs)
 
-col1,col2,col3,col4,col5 = st.columns(5)
-
-#Option to select g_mapping
-with col1:
-    if st.button("Select mapping"):
-        st.session_state["10_option_button"] = "g"
-
-#Option to configure namespaces
-with col2:
-    if st.button("Configure namespaces"):
-        st.session_state["10_option_button"] = "ns"
-
-#Option to load ontology
-with col3:
-    if st.button("Load ontology"):
-        st.session_state["10_option_button"] = "lo"
-
-#Option to save progress
-with col4:
-    if st.button("Save progress"):
-        st.session_state["10_option_button"] = "sp"
-
-#Option to export mapping
-with col5:
-    if st.button("Export mapping"):
-        st.session_state["10_option_button"] = "em"
-
-st.write("_______________")
-#____________________________________________________________
-
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["Select mapping",
+    "Configure namespaces", "Load ontology", "Save progress", "Export mapping"])
 
 #________________________________________________
 #SELECT MAPPING OPTION
-if st.session_state["10_option_button"] == "g":
+with tab1:
+    st.write("")
+    st.write("")
 
-    #CREATE NEW MAPPING OPTION__________________________________________
-    col1,col2, col3 = st.columns([2,0.5, 1])
+    #OPTION: CREATE NEW MAPPING______________________________________________
+    col1,col2,col3 = st.columns([2,0.5, 1])
     with col1:
-        st.markdown("""
-        <div style="background-color:#e6e6fa; border:1px solid #511D66;
-                    border-radius:5px; padding:10px; margin-bottom:8px;">
-            <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
-                📄 Create new mapping
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        st.markdown("")
+        st.markdown(""" <div class="purple_heading">
+            📄 Create new mapping </div>""", unsafe_allow_html=True)
+        st.write("")
 
     with col1:
         col1a, col1b = st.columns([2,1])
-    with col1a:      #PREFIX AND IRI INPUT
-        candidate_g_label = st.text_input("Enter mapping label:", key="candidate_g_label_input_create")
-        st.session_state["candidate_g_label_new"] = candidate_g_label    #just candidate until confirmed
+    with col1a:
+        g_label_temp = st.text_input("⌨️ Enter mapping label:",
+        key="key_g_label_temp_new")
+    st.session_state["g_label_temp_new"] = g_label_temp    #just a candidate until confirmed
 
-    #A MAPPING HAS NOT BEEN LOADED YET
-    if not st.session_state["g_mapping"]:   #a mapping has not been loaded yet (or empty mapping loaded)
-        if st.session_state["candidate_g_label_new"]:  #after a new label has been given (so st.session_state["candidate_g_label_new"] exists)
-            with col1:
-                col1a, col1b = st.columns([1,2])
+    #A mapping has not been loaded yet-----------------------------------------
+    if not st.session_state["g_mapping"]:   #a mapping has not been loaded yet (or loaded mapping is empty)
+
+        if st.session_state["g_label_temp_new"]:  #after a new label has been given
             with col1a:
-                st.button("Confirm", on_click=create_new_mapping)
-        if st.session_state["candidate_g_label_new_flag"]:
+                st.button("Confirm", on_click=create_new_g_mapping)
+
+        if st.session_state["new_g_mapping_saved_ok_flag"]:
             with col1b:
                 st.write("")
                 st.markdown(f"""
-                <div style="background-color:#d4edda; padding:1em; border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                    ✅ The mapping <b style="color:#0f5132;">{st.session_state["g_label"]}</b> has been created!
-                </div>
-                """, unsafe_allow_html=True)
-            st.session_state["candidate_g_label_new_flag"] = False
+                <div style="background-color:#d4edda; padding:1em;
+                border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                    ✅ The mapping <b style="color:#0f5132;">
+                    {st.session_state["g_label"]}</b> has been created!
+                </div>""", unsafe_allow_html=True)
+            st.session_state["new_g_mapping_saved_ok_flag"] = False
             time.sleep(2)
             st.cache_data.clear()
             st.rerun()
 
+    #HEREIGO
 
-    #A MAPPING IS CURRENTLY LOADED
+
+    #A mapping is currently loaded-------------------------------------------
     else:  #a mapping is currently loaded (ask if overwrite)
-        if candidate_g_label:   #after a new label has been given
-            st.session_state["candidate_g_label_new"] = candidate_g_label    #just candidate until confirmed
+        if g_label_temp:   #after a new label has been given
+            st.session_state["g_label_temp_new"] = g_label_temp    #just candidate until confirmed
 
             with col1a:
                 with st.form("overwrite_form_new"):
@@ -322,7 +283,7 @@ if st.session_state["10_option_button"] == "g":
                     st.write("")
 
                     # Option labels
-                    cancel_text = (f"""CANCEL loading mapping {st.session_state["candidate_g_label_new"]}   🛑""")
+                    cancel_text = (f"""CANCEL loading mapping {st.session_state["g_label_temp_new"]}   🛑""")
                     save_text = f"""SAVE mapping {st.session_state["g_label"]} first   💾"""
                     overwrite_text = f"""OVERWRITE mapping {st.session_state["g_label"]}  🗑️"""
 
@@ -350,9 +311,9 @@ if st.session_state["10_option_button"] == "g":
                 with col1a:
                     if st.session_state["overwrite_selection"] == "opt_overwrite":
                         confirm_button = st.button(f"""I am sure I want to OVERWRITE
-                        mapping {st.session_state["candidate_g_label_new"]}""", on_click=create_new_mapping, key="confirm_button_overwrite_new")
+                        mapping {st.session_state["g_label_temp_new"]}""", on_click=create_new_g_mapping, key="confirm_button_overwrite_new")
                     elif st.session_state["overwrite_selection"] == "opt_cancel":
-                        confirm_button = st.button(f"""I am sure I want to CANCEL""", on_click=cancel_create_new_mapping, key="confirm_button_cancel_new")
+                        confirm_button = st.button(f"""I am sure I want to CANCEL""", on_click=cancel_create_new_g_mapping, key="confirm_button_cancel_new")
                     elif st.session_state["overwrite_selection"] == "opt_save": #for the save case we need to ask for the filename before confirming
                         save_g_filename = st.text_input(
                         f"Enter the filename to save the mapping {st.session_state["g_label"]} (without extension):")
@@ -369,15 +330,15 @@ if st.session_state["10_option_button"] == "g":
                             if save_g_filename:
                                 confirm_button = st.button(f"""I am sure I want to SAVE
                                  {st.session_state["g_label"]} to file {save_g_filename + ".ttl"}""",
-                                  on_click=create_new_mapping_and_save, key="confirm_button_save_new")
-        if st.session_state["candidate_g_label_new_flag"]:
+                                  on_click=create_new_g_mapping_and_save, key="confirm_button_save_new")
+        if st.session_state["new_g_mapping_saved_ok_flag"]:
             with col1b:
                 st.markdown(f"""
                 <div style="background-color:#d4edda; padding:1em; border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
                     ✅ The mapping <b style="color:#0f5132;">{st.session_state["g_label"]}</b> has been created!
                 </div>
                 """, unsafe_allow_html=True)
-            st.session_state["candidate_g_label_new_flag"] = False
+            st.session_state["new_g_mapping_saved_ok_flag"] = False
             time.sleep(2)
             st.rerun()
 
@@ -401,13 +362,13 @@ if st.session_state["10_option_button"] == "g":
         col1a, col1b = st.columns([2,1])
 
     with col1a:
-        candidate_g_label = st.text_input("Enter mapping label:", key="candidate_g_label_input_load")
-        st.session_state["candidate_g_label_existing"] = candidate_g_label    #just candidate until confirmed
+        g_label_temp = st.text_input("Enter mapping label:", key="g_label_temp_input_load")
+        st.session_state["g_label_temp_existing"] = g_label_temp    #just candidate until confirmed
     pkl_list = [f for f in os.listdir(save_progress_folder) if f.endswith(".pkl")]
     pkl_list.insert(0, "Choose a file") # Add a placeholder option
     with col1a:
         selected_load_pkl = st.selectbox(f"""Select the file where the mapping
-        {st.session_state["candidate_g_label"]} is saved:""", pkl_list, key="load_file_selector")
+        {st.session_state["g_label_temp"]} is saved:""", pkl_list, key="load_file_selector")
     st.session_state["selected_load_pkl"] = selected_load_pkl
     if st.session_state["selected_load_pkl"] != "Choose a file":
         load_g_file_full_path = save_progress_folder + "\\" + st.session_state["selected_load_pkl"]
@@ -418,13 +379,13 @@ if st.session_state["10_option_button"] == "g":
 
     #A MAPPING HAS NOT BEEN LOADED YET
     if not st.session_state["g_mapping"]:   #a mapping has not been loaded yet (or empty mapping loaded)
-        if st.session_state["candidate_g_label_existing"] and load_file_ready:  #after a new label has been given (so st.session_state["candidate_g_label"] exists)
+        if st.session_state["g_label_temp_existing"] and load_file_ready:  #after a new label has been given (so st.session_state["g_label_temp"] exists)
             with col1:
                 col1a, col1b = st.columns([1,2])
             with col1a:
                 st.button("Confirm", on_click=load_existing_mapping)
 
-        if st.session_state["candidate_g_label_existing_flag"]:
+        if st.session_state["g_label_temp_existing_flag"]:
             with col1b:
                 st.write("")
                 st.write("")
@@ -436,7 +397,7 @@ if st.session_state["10_option_button"] == "g":
                     ✅ The mapping <b style="color:#0f5132;">{st.session_state["g_label"]}</b> has been loaded!
                 </div>
                 """, unsafe_allow_html=True)
-            st.session_state["candidate_g_label_existing_flag"] = False
+            st.session_state["g_label_temp_existing_flag"] = False
             st.cache_data.clear()
             time.sleep(2)
             st.rerun()
@@ -444,8 +405,8 @@ if st.session_state["10_option_button"] == "g":
 
     #A MAPPING IS CURRENTLY LOADED
     else:  #a mapping is currently loaded (ask if overwrite)
-        if candidate_g_label and load_file_ready:   #after a new label has been given
-            st.session_state["candidate_g_label_existing"] = candidate_g_label    #just candidate until confirmed
+        if g_label_temp and load_file_ready:   #after a new label has been given
+            st.session_state["g_label_temp_existing"] = g_label_temp    #just candidate until confirmed
 
             with col1a:
                 with st.form("overwrite_form_existing"):
@@ -459,7 +420,7 @@ if st.session_state["10_option_button"] == "g":
                     st.write("")
 
                     # Option labels
-                    cancel_text = (f"""CANCEL loading mapping {st.session_state["candidate_g_label_new"]}   🛑""")
+                    cancel_text = (f"""CANCEL loading mapping {st.session_state["g_label_temp_new"]}   🛑""")
                     save_text = f"""SAVE mapping {st.session_state["g_label"]} first   💾"""
                     overwrite_text = f"""OVERWRITE mapping {st.session_state["g_label"]}  🗑️"""
 
@@ -487,7 +448,7 @@ if st.session_state["10_option_button"] == "g":
                 with col1a:
                     if st.session_state["overwrite_selection"] == "opt_overwrite":
                         confirm_button = st.button(f"""I am sure I want to OVERWRITE
-                        mapping {st.session_state["candidate_g_label_new"]}""", on_click=load_existing_mapping, key="confirm_button_overwrite_existing")
+                        mapping {st.session_state["g_label_temp_new"]}""", on_click=load_existing_mapping, key="confirm_button_overwrite_existing")
                     elif st.session_state["overwrite_selection"] == "opt_cancel":
                         confirm_button = st.button(f"""I am sure I want to CANCEL""", on_click=cancel_load_existing_mapping, key="confirm_button_cancel_existing")
                     elif st.session_state["overwrite_selection"] == "opt_save": #for the save case we need to ask for the filename before confirming
@@ -508,7 +469,7 @@ if st.session_state["10_option_button"] == "g":
                                  {st.session_state["g_label"]} to file {save_g_filename + ".ttl"}""",
                                   on_click=load_existing_mapping_and_save, key="confirm_button_save_existing")
 
-        if st.session_state["candidate_g_label_existing_flag"]:
+        if st.session_state["g_label_temp_existing_flag"]:
             with col1b:
                 st.write("")
                 st.write("")
@@ -518,7 +479,7 @@ if st.session_state["10_option_button"] == "g":
                     ✅ The mapping <b style="color:#0f5132;">{st.session_state["g_label"]}</b> has been loaded!
                 </div>
                 """, unsafe_allow_html=True)
-            st.session_state["candidate_g_label_existing_flag"] = False
+            st.session_state["g_label_temp_existing_flag"] = False
             time.sleep(2)
             st.rerun()
 
@@ -535,7 +496,7 @@ if st.session_state["10_option_button"] == "g":
 
     with col3:
         if st.session_state["g_label"]:
-            if st.session_state["mapping_source"][0] == "file":
+            if st.session_state["g_mapping_source"][0] == "file":
                 st.markdown(f"""
                     <div style="background-color:#e6e6fa; padding:1em; border-radius:5px;
                     color:#2a0134; border:1px solid #511D66;">
@@ -544,7 +505,7 @@ if st.session_state["10_option_button"] == "g":
                         You are currently working with mapping
                         <b style="color:#007bff;">{st.session_state["g_label"]}</b>.
                         <ul style="font-size:0.85rem; margin-top:6px; margin-left:15px; padding-left:10px;">
-                            <li>Mapping was loaded from file <b>{st.session_state["mapping_source"][1]}</b></li>
+                            <li>Mapping was loaded from file <b>{st.session_state["g_mapping_source"][1]}</b></li>
                             <li>When loaded, mapping had <b>{st.session_state["original_g_length"]} triples</b></li>
                             <li>Now mapping has <b>{len(st.session_state["g_mapping"])} triples<b/></li>
                         </ul>
@@ -586,7 +547,9 @@ utils.update_dictionaries()
 #it will contain predefined namespaces, along with the ones the user defines
 #HERE I want to also give an option to show current namespaces
 
-if st.session_state["10_option_button"] == "ns":   #ns button selected
+with tab2:
+    st.write("")
+    st.write("")
 
     col1, col2 = st.columns([2,1.5])
     with col1:
@@ -865,7 +828,9 @@ if st.session_state["10_option_button"] == "ns":   #ns button selected
 
 #________________________________________________
 #LOAD ONTOLOGY OPTION
-if st.session_state["10_option_button"] == "lo":
+with tab3:
+    st.write("")
+    st.write("")
 
     col1, col2 = st.columns([2,1.5])
     with col1:
@@ -1131,7 +1096,9 @@ if st.session_state["10_option_button"] == "lo":
 
 #________________________________________________
 #SAVE PROGRESS OPTION
-if st.session_state["10_option_button"] == "sp":
+with tab4:
+    st.write("")
+    st.write("")
 
     col1, col2 = st.columns([2,1.5])
     with col1:
@@ -1249,15 +1216,16 @@ if st.session_state["10_option_button"] == "sp":
             time.sleep(2)
             st.rerun()
 
-        #     st.success(f"""The mapping {st.session_state["candidate_g_label"]}
+        #     st.success(f"""The mapping {st.session_state["g_label_temp"]}
         #      has been saved to file {st.session_state["save_g_filename"]}.""")
 
 #_____________________________________________
 
 #________________________________________________
 #EXPORT OPTION
-
-if st.session_state["10_option_button"] == "em":
+with tab5:
+    st.write("")
+    st.write("")
 
     col1, col2 = st.columns([2,1.5])
     with col1:

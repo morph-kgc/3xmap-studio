@@ -11,21 +11,51 @@ from rdflib.namespace import RDF, RDFS, OWL
 #________________________________________________
 #AESTHETICS
 def import_st_aesthetics():
-    #button style
+    # TAB styles (scoped to data-testid)----------------------------------
+    st.markdown("""<style>
+
+        div[data-testid="stTabs"] > div {
+        flex-wrap: wrap; justify-content: space-between;}
+
+        div[data-testid="stTabs"] button {flex: 1 1 auto;
+        background-color: #555555; color: white; font-size: 25px;
+        padding: 1.2em; border-radius: 5px; border: none;margin: 6px;}
+
+        div[data-testid="stTabs"] button div span {font-size: 36px !important;}
+
+        div[data-testid="stTabs"] button:hover {background-color: #7a4c8f;}
+
+        div[data-testid="stTabs"] button[aria-selected="true"] {
+            background-color: #9871b5; color: white; font-weight: bold;
+            box-shadow: 0 0 10px #9871b5;}
+
+        </style>""", unsafe_allow_html=True)
+
+    # BUTTON styles (scoped to stButton container)---------------------------
+    st.markdown("""<style>
+
+        div.stButton > button {background-color: #3498db; color: white;
+            height: 3em; width: auto; border-radius: 5px; border: none;
+            font-size: 20px; /* Optional */}
+
+        div.stButton > button:hover {background-color: #2e86c1;
+            color: white;}
+
+        </style>""", unsafe_allow_html=True)
+
+    # PURPLE HEADINGS----------------------------------------------------
     st.markdown("""
         <style>
-        div.stButton > button:first-child {
-            background-color: #3498db;
-            color: white;
-            height: 3em;
-            width: 100%;
-            border-radius: 5px;
-            border: none;
-        }
-        div.stButton > button:hover {
-            background-color: #2e86c1;
-            color: white;
-        }
+            .purple_heading {
+                background-color:#e6e6fa;
+                border:1px solid #511D66;
+                border-radius:5px;
+                padding:10px;
+                margin-bottom:8px;
+                font-size:1.1rem;
+                font-weight:600;
+                color:#511D66;
+            }
         </style>
     """, unsafe_allow_html=True)
 
@@ -370,6 +400,13 @@ def show_ds_file_path_success():   #FIX HERE
 
 #___________________________________________
 
+#___________________________________________________________________________________
+#Function to get the number of TriplesMaps in the mapping
+def get_number_of_tm():
+    triplesmaps = [s for s in st.session_state["g_mapping"].subjects(predicate=None, object=RR.TriplesMap)]
+    return len(triplesmaps)
+
+#_________________________________________________________________________________
 
 
 #___________________________________________________________________________________
