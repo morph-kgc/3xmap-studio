@@ -34,69 +34,75 @@ def import_st_aesthetics():
     # BUTTON styles (scoped to stButton container)---------------------------
     st.markdown("""<style>
 
-        div.stButton > button {background-color: #3498db; color: white;
-            height: 3em; width: auto; border-radius: 5px; border: none;
-            font-size: 20px; /* Optional */}
+        div.stButton > button {
+            background-color: #FF4B4B;  /* Light salmon orange */
+            color: white;
+            height: 2.4em;
+            width: auto;
+            border-radius: 6px;
+            border: 1px solid #FFD3C4;
+            font-size: 16px;
+            padding: 0.4em 1em;
+            transition: background-color 0.2s ease;
+        }
 
-        div.stButton > button:hover {background-color: #2e86c1;
-            color: white;}
+        div.stButton > button:hover {
+            background-color: #FF8C69;  /* Slightly darker on hover */
+            color: white;
+        }
 
-        </style>""", unsafe_allow_html=True)
+    </style>""", unsafe_allow_html=True)
+
+
 
     # PURPLE HEADINGS----------------------------------------------------
     st.markdown("""
         <style>
-            .purple_heading {
-                background-color:#e6e6fa;
-                border:1px solid #511D66;
-                border-radius:5px;
-                padding:10px;
-                margin-bottom:8px;
-                font-size:1.1rem;
-                font-weight:600;
-                color:#511D66;
-            }
+            .purple_heading {background-color:#e6e6fa; border:1px solid #511D66;
+                border-radius:5px; padding:10px; margin-bottom:8px;
+                font-size:1.1rem; font-weight:600; color:#511D66;}
         </style>
     """, unsafe_allow_html=True)
 
-    #Header style
-    st.markdown("""
-    <div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
-                border-radius:8px; margin-bottom:16px;">
-        <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-             style="width:32px; margin-right:12px;">
-        <div>
-            <h3 style="margin:0; font-size:1.75rem;">
-                <span style="color:#511D66; font-weight:bold; margin-right:12px;">-----</span>
-                Build Mapping
-                <span style="color:#511D66; font-weight:bold; margin-left:12px;">-----</span>
-            </h3>
-            <p style="margin:0; font-size:0.95rem; color:#555;">
-                Build your mapping by adding <b>Triple Maps</b>, <b>Subject Maps</b>, and <b>Predicate-Object Maps</b>.
-            </p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+
+
+    # st.markdown("""
+    # <div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
+    #             border-radius:8px; margin-bottom:16px;">
+    #     <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
+    #          style="width:32px; margin-right:12px;">
+    #     <div>
+    #         <h3 style="margin:0; font-size:1.75rem;">
+    #             <span style="color:#511D66; font-weight:bold; margin-right:12px;">-----</span>
+    #             Build Mapping
+    #             <span style="color:#511D66; font-weight:bold; margin-left:12px;">-----</span>
+    #         </h3>
+    #         <p style="margin:0; font-size:0.95rem; color:#555;">
+    #             Build your mapping by adding <b>Triple Maps</b>, <b>Subject Maps</b>, and <b>Predicate-Object Maps</b>.
+    #         </p>
+    #     </div>
+    # </div>
+    # """, unsafe_allow_html=True)
 
 
     # Expander header style
-    st.markdown("""
-        <style>
-        /* Customize the expander header (Streamlit 1.28+) */
-        div[data-testid="stExpander"] details summary {
-            background-color: #f0f0f0;  /* Light grey background */
-            padding: 6px;
-            border-radius: 5px;
-        }
-
-        div[data-testid="stExpander"] details summary p {
-            font-size: 16px;           /* Slightly smaller font */
-            color: black;              /* Black text */
-            font-weight: 500;
-            margin: 0;
-        }
-        </style>
-    """, unsafe_allow_html=True)
+    # st.markdown("""
+    #     <style>
+    #     /* Customize the expander header (Streamlit 1.28+) */
+    #     div[data-testid="stExpander"] details summary {
+    #         background-color: #f0f0f0;  /* Light grey background */
+    #         padding: 6px;
+    #         border-radius: 5px;
+    #     }
+    #
+    #     div[data-testid="stExpander"] details summary p {
+    #         font-size: 16px;           /* Slightly smaller font */
+    #         color: black;              /* Black text */
+    #         font-weight: 500;
+    #         margin: 0;
+    #     }
+    #     </style>
+    # """, unsafe_allow_html=True)
 #_______________________________________________________
 
 #_________________________________________________________
@@ -151,43 +157,38 @@ def check_directories():
     save_progress_folder = os.path.join(os.getcwd(), "saved_mappings")  #folder to save mappings (pkl)
     export_folder = os.path.join(os.getcwd(), "exported_mappings")    #filder to export mappings (ttl and others)
     if not os.path.exists(save_progress_folder):
-        st.markdown(f"""
-            <div style="background-color:#f8d7da; padding:1em;
-                        border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-                🚫 The folder <b style="color:#c82333;">
-                saved_mappings</b> does not exist and must be created!
-            </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"""<div style="background-color:#f8d7da; padding:1em;
+            border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
+            🚫 The folder <b style="color:#c82333;">
+            saved_mappings</b> does not exist and must be created!
+            </div>""", unsafe_allow_html=True)
         st.stop()
 
     if not os.access(save_progress_folder, os.R_OK | os.W_OK):
         st.markdown(f"""
             <div style="background-color:#f8d7da; padding:1em;
-                        border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-                🚫 No read/write permission for <b style="color:#c82333;">
-                saved_mappings</b> folder!
-            </div>
-        """, unsafe_allow_html=True)
+            border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
+            🚫 No read/write permission for <b style="color:#c82333;">
+            saved_mappings</b> folder!
+            </div>""", unsafe_allow_html=True)
         st.stop()
 
     if not os.path.exists(export_folder):
         st.markdown(f"""
             <div style="background-color:#f8d7da; padding:1em;
-                        border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-                🚫 The folder <b style="color:#c82333;">
-                exported_mappings</b> does not exist and must be created!
-            </div>
-        """, unsafe_allow_html=True)
+            border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
+            🚫 The folder <b style="color:#c82333;">
+            exported_mappings</b> does not exist and must be created!
+            </div>""", unsafe_allow_html=True)
         st.stop()
 
     if not os.access(export_folder, os.R_OK | os.W_OK):
         st.markdown(f"""
             <div style="background-color:#f8d7da; padding:1em;
-                        border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-                🚫 No read/write permission for <b style="color:#c82333;">
-                export</b> folder!
-            </div>
-        """, unsafe_allow_html=True)
+            border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
+            🚫 No read/write permission for <b style="color:#c82333;">
+            export</b> folder!
+            </div>""", unsafe_allow_html=True)
         st.stop()
 
 #__________________________________________

@@ -15,6 +15,24 @@ import re
 #____________________________________________
 #PRELIMINARY
 #Aesthetics
+st.markdown("""
+<div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
+            border-radius:8px; margin-bottom:16px;">
+    <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
+         style="width:32px; margin-right:12px;">
+    <div>
+        <h3 style="margin:0; font-size:1.75rem;">
+            <span style="color:#511D66; font-weight:bold; margin-right:12px;">-----</span>
+            Build Mapping
+            <span style="color:#511D66; font-weight:bold; margin-left:12px;">-----</span>
+        </h3>
+        <p style="margin:0; font-size:0.95rem; color:#555;">
+            Build your mapping by adding <b>Triple Maps</b>, <b>Subject Maps</b>, and <b>Predicate-Object Maps</b>.
+        </p>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
 utils.import_st_aesthetics()
 st.write("")
 
