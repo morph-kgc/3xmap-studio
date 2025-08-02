@@ -1,15 +1,15 @@
 import streamlit as st
-import os #for file navigation
-from rdflib import Graph, URIRef, Literal, Namespace, BNode
-from collections import Counter
-import re
-from urllib.parse import urlparse
+import os
 import pandas as pd
+import re
+from collections import Counter
+from urllib.parse import urlparse
+from rdflib import Graph, URIRef, Literal, Namespace, BNode
 from rdflib.namespace import split_uri
 from rdflib.namespace import RDF, RDFS, OWL
 
 #________________________________________________
-#AESTHETICS
+# Function to import style
 def import_st_aesthetics():
     # TAB styles (scoped to data-testid)----------------------------------
     st.markdown("""<style>
@@ -35,7 +35,7 @@ def import_st_aesthetics():
     st.markdown("""<style>
 
         div.stButton > button {
-            background-color: #FF4B4B;  /* Light salmon orange */
+            background-color: #FF4B4B;  /* Streamlit salmon orange */
             color: white;
             height: 2.4em;
             width: auto;
@@ -47,13 +47,11 @@ def import_st_aesthetics():
         }
 
         div.stButton > button:hover {
-            background-color: #FF8C69;  /* Slightly darker on hover */
+            background-color: #ff7a7a;  /* Slightly lighter on hover */
             color: white;
         }
 
     </style>""", unsafe_allow_html=True)
-
-
 
     # PURPLE HEADINGS----------------------------------------------------
     st.markdown("""
@@ -64,46 +62,15 @@ def import_st_aesthetics():
         </style>
     """, unsafe_allow_html=True)
 
-
-
-    # st.markdown("""
-    # <div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
-    #             border-radius:8px; margin-bottom:16px;">
-    #     <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-    #          style="width:32px; margin-right:12px;">
-    #     <div>
-    #         <h3 style="margin:0; font-size:1.75rem;">
-    #             <span style="color:#511D66; font-weight:bold; margin-right:12px;">-----</span>
-    #             Build Mapping
-    #             <span style="color:#511D66; font-weight:bold; margin-left:12px;">-----</span>
-    #         </h3>
-    #         <p style="margin:0; font-size:0.95rem; color:#555;">
-    #             Build your mapping by adding <b>Triple Maps</b>, <b>Subject Maps</b>, and <b>Predicate-Object Maps</b>.
-    #         </p>
-    #     </div>
-    # </div>
-    # """, unsafe_allow_html=True)
-
-
-    # Expander header style
-    # st.markdown("""
-    #     <style>
-    #     /* Customize the expander header (Streamlit 1.28+) */
-    #     div[data-testid="stExpander"] details summary {
-    #         background-color: #f0f0f0;  /* Light grey background */
-    #         padding: 6px;
-    #         border-radius: 5px;
-    #     }
-    #
-    #     div[data-testid="stExpander"] details summary p {
-    #         font-size: 16px;           /* Slightly smaller font */
-    #         color: black;              /* Black text */
-    #         font-weight: 500;
-    #         margin: 0;
-    #     }
-    #     </style>
-    # """, unsafe_allow_html=True)
 #_______________________________________________________
+
+#_______________________________________________________
+#Function to get the number of TriplesMaps in a mapping
+def get_number_of_tm(g):
+    triplesmaps = [s for s in g.subjects(predicate=RML.logicalSource, object=None)]
+    return len(triplesmaps)
+#_________________________________________________________
+
 
 #_________________________________________________________
 def get_ontology_base_iri():
@@ -401,13 +368,6 @@ def show_ds_file_path_success():   #FIX HERE
 
 #___________________________________________
 
-#___________________________________________________________________________________
-#Function to get the number of TriplesMaps in the mapping
-def get_number_of_tm():
-    triplesmaps = [s for s in st.session_state["g_mapping"].subjects(predicate=None, object=RR.TriplesMap)]
-    return len(triplesmaps)
-
-#_________________________________________________________________________________
 
 
 #___________________________________________________________________________________
@@ -828,6 +788,8 @@ def remove_triplesmap(tmap_label):
 #         </span>
 #     </div>
 #     """, unsafe_allow_html=True)
+
 #🛈
+#Neutral blue for text: #007bff
 
 #___________________________________________________________________________________
