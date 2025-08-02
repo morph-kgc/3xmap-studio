@@ -71,6 +71,23 @@ def get_number_of_tm(g):
     return len(triplesmaps)
 #_________________________________________________________
 
+#___________________________________________________________________________________
+#Function to check whether an ontology is valid
+def is_valid_ontology(url: str):
+    try:
+        g = Graph()
+        g.parse(url, format="xml")
+
+        # Check for presence of OWL or RDFS classes
+        classes = list(g.subjects(RDF.type, OWL.Class)) + list(g.subjects(RDF.type, RDFS.Class))
+        properties = list(g.subjects(RDF.type, RDF.Property))
+
+        # Consider it valid if it defines at least one class or property
+        return bool(classes or properties)
+
+    except:           # if failed to parse ontology
+        return False
+#___________________________________________________________________________________
 
 #_________________________________________________________
 def get_ontology_base_iri():
@@ -119,7 +136,7 @@ LS = namespaces["logicalSource"]
 #________________________________________________________
 
 #______________________________________________
-#Directories
+#Directories    #REFACTORING - Unused, but could be interesting to check if the permissions are correct
 def check_directories():
     save_progress_folder = os.path.join(os.getcwd(), "saved_mappings")  #folder to save mappings (pkl)
     export_folder = os.path.join(os.getcwd(), "exported_mappings")    #filder to export mappings (ttl and others)
@@ -569,25 +586,6 @@ def build_complete_subject_df():
 
 #___________________________________________________________________________________
 
-#___________________________________________________________________________________
-#Function to check whether an ontology is valid
-def is_valid_ontology(url: str):
-    try:
-        g = Graph()
-        g.parse(url, format="xml")
-
-        # Check for presence of OWL or RDFS classes
-        classes = list(g.subjects(RDF.type, OWL.Class)) + list(g.subjects(RDF.type, RDFS.Class))
-        properties = list(g.subjects(RDF.type, RDF.Property))
-
-        # Consider it valid if it defines at least one class or property
-        return bool(classes or properties)
-
-    except:           #if failed to parse ontology
-        return False
-
-        #HERE ERROR - I have to load namespaces
-#___________________________________________________________________________________
 
 
 #_________________________________________________________________________________
