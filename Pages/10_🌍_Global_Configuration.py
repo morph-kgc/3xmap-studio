@@ -101,7 +101,14 @@ if "g_ontology_loaded_from_file_ok_flag" not in st.session_state:
     st.session_state["g_ontology_loaded_from_file_ok_flag"] = False
 if "ontology_file_valid_flag" not in st.session_state:
     st.session_state["ontology_file_valid_flag"] = False
-
+if "g_ontology_information_cache" not in st.session_state:
+    st.session_state["g_ontology_information_cache"] = ["", "", ""]
+if "g_ontology_candidate_file" not in st.session_state:
+    st.session_state["g_ontology_candidate_file"] = Graph()
+if "g_ontology_candidate_link" not in st.session_state:
+    st.session_state["g_ontology_candidate_link"] = Graph()
+if "ontology_components_dict" not in st.session_state:
+    st.session_state["ontology_components_dict"] = {}
 
 
 if "g_label_temp" not in st.session_state:
@@ -192,34 +199,41 @@ def load_existing_g_mapping_and_save_current_one():
 
 #TAB2
 def load_ontology_from_link():
-    st.session_state["g_ontology"] = Graph()
-    st.session_state["g_ontology"].parse(st.session_state["ontology_link"], format="xml")  # RDF/XML format
-    st.session_state["ontology_source"] = "link"
-    st.session_state["ontology_link"] = ""
+    st.session_state["g_ontology"] = st.session_state["g_ontology_candidate_link"]  # consolidate ontology graph
     st.session_state["g_ontology_loaded_from_link_ok_flag"] = True
-    #get the ontology human-readable name______________________
-    ontology_iri = next(st.session_state["g_ontology"].subjects(RDF.type, OWL.Ontology), None)
-    st.session_state["g_ontology_label"] = (
-        st.session_state["g_ontology"].value(ontology_iri, RDFS.label) or
-        st.session_state["g_ontology"].value(ontology_iri, DC.title) or
-        st.session_state["g_ontology"].value(ontology_iri, DCTERMS.title) or
-        uri_split(ontology_iri)[1])    #look for ontology label; if there isnt one just select the ontology iri
+    st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"])
+    # save ontology info___________________________
+    st.session_state["g_ontology_information_cache"] = [st.session_state["g_ontology_label"], "link", st.session_state["ontology_link"]]
+    st.session_state["ontology_components_dict"][st.session_state["g_ontology_label"]]=st.session_state["g_ontology"]
     # reset fields___________________________
     st.session_state["ontology_link_input"] = ""
+    st.session_state["ontology_link"] = ""
 
 def load_ontology_from_file():
-    st.session_state["g_ontology"] = st.session_state["g_ontology_candidate"]  # consolidate ontology graph
-    st.session_state["ontology_source"] = "file"
+    st.session_state["g_ontology"] = st.session_state["g_ontology_candidate_file"]  # consolidate ontology graph
     st.session_state["g_ontology_loaded_from_file_ok_flag"] = True
-    #get the ontology human-readable name______________________
-    ontology_iri = next(st.session_state["g_ontology"].subjects(RDF.type, OWL.Ontology), None)
-    st.session_state["g_ontology_label"] = (
-        st.session_state["g_ontology"].value(ontology_iri, RDFS.label) or
-        st.session_state["g_ontology"].value(ontology_iri, DC.title) or
-        st.session_state["g_ontology"].value(ontology_iri, DCTERMS.title) or
-        uri_split(ontology_iri)[1])    #look for ontology label; if there isnt one just select the ontology iri
+    st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"])
+    # save ontology info___________________________
+    st.session_state["g_ontology_information_cache"] = [st.session_state["g_ontology_label"], "file", st.session_state["key_ontology_file_input"]]
+    st.session_state["ontology_components_dict"][st.session_state["g_ontology_label"]]=st.session_state["g_ontology"]
     # reset fields___________________________
     st.session_state["key_ontology_file_input"] = "Select a file"
+
+def extend_ontology_from_link():
+    g_ontology_new_part = st.session_state["g_ontology_candidate_link"]
+    g_ontology_new_part_label = utils.get_ontology_human_readable_name(g_ontology_new_part)
+    st.session_state["g_ontology_information_cache"] = [st.session_state["g_ontology_label"], "link", st.session_state["ontology_link"]]
+    st.session_state["ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
+    #merge both ontologies___________________
+    for triple in g_ontology_new_part:
+        st.session_state["g_ontology"].add(triple)
+    # reset fields___________________________
+    st.session_state["ontology_link_input"] = ""
+    st.session_state["ontology_link"] = ""
+    #HERE I NEED TO MERGE
+    #I ALSO NEED TO CREATE A LIST WITH ALL THE NAMES
+
+
 
 
 
@@ -709,24 +723,24 @@ with tab2:
             st.write("")
 
             if st.session_state["g_ontology"]:
-                if st.session_state["ontology_source"] == "file":
+                if st.session_state["g_ontology_information_cache"][1] == "file":
                     st.markdown(f"""
                     <div style="background-color:#d4edda; padding:1em;
                                 border-radius:5px; color:#155724; border:1px solid #444;">
                         🧩 The ontology <b style="color:#F63366;">{st.session_state["g_ontology_label"]}</b> has been loaded!
                         <ul style="font-size:0.85rem; margin-top:6px; margin-left:15px; padding-left:10px;">
-                            <li><b>Source:</b> {st.session_state["ontology_file"]}</li>
+                            <li><b>Source:</b> {st.session_state["g_ontology_information_cache"][2]}</li>
                             <li><b>{len(st.session_state["g_ontology"])} triples<b/> retrieved 🧩</li>
                         </ul>
                     </div>
                     """, unsafe_allow_html=True)
-                elif st.session_state["ontology_source"] == "link":
+                elif st.session_state["g_ontology_information_cache"][1] == "link":
                     st.markdown(f"""
                     <div style="background-color:#d4edda; padding:1em;
                                 border-radius:5px; color:#155724; border:1px solid #444;">
                         🧩 The ontology <b style="color:#F63366;">{st.session_state["g_ontology_label"]}</b> has been loaded!
                         <ul style="font-size:0.85rem; margin-top:6px; margin-left:15px; padding-left:10px;">
-                            <li><b>Source:</b> {st.session_state["ontology_link_cache"]}</li>
+                            <li><b>Source:</b> {st.session_state["g_ontology_information_cache"][2]}</li>
                             <li><b>{len(st.session_state["g_ontology"])} triples<b/> retrieved 🧩</li>
                         </ul>
                     </div>
@@ -767,7 +781,6 @@ with tab2:
             ontology_link_input = st.text_input("⌨️ Enter link to ontology", key="ontology_link_input")
         if ontology_link_input:
             st.session_state["ontology_link"] = ontology_link_input
-            st.session_state["ontology_link_cache"] = ontology_link_input
 
         #http://purl.org/ontology/bibo/
 
@@ -782,6 +795,17 @@ with tab2:
                     st.write("")
 
             elif st.session_state["ontology_link"]:
+                st.session_state["g_ontology_candidate_link"] = Graph()
+                st.session_state["g_ontology_candidate_link"].parse(st.session_state["ontology_link"], format="xml")  # RDF/XML format
+                st.session_state["g_ontology_candidate_label_link"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_candidate_link"])
+                with col1b:
+                    st.write("")
+                    st.markdown(f"""
+                        <div style="background-color:#d4edda; padding:0.8em;
+                        border-radius:5px; color:#155724; border:1px solid #c3e6cb; font-size:0.92em">
+                            ✅ Valid ontology: <b style="color:#F63366;">
+                            {st.session_state["g_ontology_candidate_label_link"]}</b>
+                        </div>""", unsafe_allow_html=True)
                 with col1a:
                     load_ontology_from_link_button = st.button("Load", on_click=load_ontology_from_link, key="key_load_ontology_from_link_button")
 
@@ -846,8 +870,9 @@ with tab2:
                 ontology_file_path = os.path.join(os.getcwd(), "ontologies", st.session_state["ontology_file"])
 
                 try:
-                    st.session_state["g_ontology_candidate"] = Graph()
-                    st.session_state["g_ontology_candidate"].parse(ontology_file_path, format="xml")  # RDF/XML format
+                    st.session_state["g_ontology_candidate_file"] = Graph()
+                    st.session_state["g_ontology_candidate_file"].parse(ontology_file_path, format="xml")  # RDF/XML format
+                    st.session_state["g_ontology_candidate_label_file"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_candidate_file"])
                     st.session_state["ontology_file_valid_flag"] = True
                 except:
                     with col1a:
@@ -868,24 +893,82 @@ with tab2:
 
 
             if st.session_state["ontology_file_valid_flag"] and st.session_state["ontology_file"]:
-                with col1:
-                    col1a, col1b = st.columns([1,2])
+                with col1b:
+                    st.write("")
+                    st.markdown(f"""
+                        <div style="background-color:#d4edda; padding:0.8em;
+                        border-radius:5px; color:#155724; border:1px solid #c3e6cb; font-size:0.92em">
+                            ✅ Valid ontology: <b style="color:#F63366;">
+                            {st.session_state["g_ontology_candidate_label_file"]}</b>
+                        </div>""", unsafe_allow_html=True)
                 with col1a:
                     st.button("Load", key="key_load_ontology_from_file_button", on_click=load_ontology_from_file)
 
 
     #HEREIGO
+    #EXTEND ONTOLOGY___________________________________
+    if st.session_state["g_ontology"]:   #ontology loaded -> only option to discard
+        with col1:
+            st.markdown("""<div class="purple_heading">
+                    ➕ Extend current ontology
+                </div>""", unsafe_allow_html=True)
+
+        with col1:
+            col1a,col1b = st.columns([2,1])
+        with col1b:
+            extend_ontology_selected_option = st.radio("Load ontology from:", ["🌐 URL", "📁 File"], horizontal=True, key="key_extend_ontology_selected_option")
+
+        if extend_ontology_selected_option == "🌐 URL":
+            with col1a:
+                ontology_link_input = st.text_input("⌨️ Enter link to ontology", key="ontology_link_input")
+            if ontology_link_input:
+                st.session_state["ontology_link"] = ontology_link_input
+
+                if st.session_state["ontology_link"] and not utils.is_valid_ontology(st.session_state["ontology_link"]):
+                    with col1b:
+                        st.markdown(f"""
+                        <div style="background-color:#f8d7da; padding:0.8em;
+                                    border-radius:5px; color:#721c24; border:1px solid #f5c6cb; font-size:0.92rem;">
+                            ❌ URL does not link to a valid ontology.
+                        </div>
+                        """, unsafe_allow_html=True)
+                        st.write("")
+
+                #HEREIGO
+                elif st.session_state["ontology_link"]:
+                    st.session_state["g_ontology_candidate_link"] = Graph()
+                    st.session_state["g_ontology_candidate_link"].parse(st.session_state["ontology_link"], format="xml")  # RDF/XML format
+                    st.session_state["g_ontology_candidate_label_link"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_candidate_link"])
+                    with col1b:
+                        st.markdown(f"""
+                            <div style="background-color:#d4edda; padding:0.8em;
+                            border-radius:5px; color:#155724; border:1px solid #c3e6cb; font-size:0.92em">
+                                ✅ Valid ontology: <b style="color:#F63366;">
+                                {st.session_state["g_ontology_candidate_label_link"]}</b>
+                            </div>""", unsafe_allow_html=True)
+                    with col1a:
+                        extend_ontology_from_link_button = st.button("Add", on_click=extend_ontology_from_link, key="key_extend_ontology_from_link_button")
+
+        with col1:
+            st.write("HERE1", st.session_state["ontology_components_dict"])
+            st.write("________")
+
+    #REDUCE ONTOLOGY___________________________________
+    if st.session_state["g_ontology"]:   #ontology loaded -> only option to discard
+        with col1:
+            st.markdown("""<div class="purple_heading">
+                    ➖ Reduce current ontology
+                </div>""", unsafe_allow_html=True)
+
+        with col1:
+            st.write("________")
+
     #DISCARD ONTOLOGY___________________________________
     if st.session_state["g_ontology"]:   #ontology loaded -> only option to discard
         with col1:
-            st.markdown("""
-                <div style="background-color:#e6e6fa; border:1px solid #511D66;
-                            border-radius:5px; padding:10px; margin-bottom:8px;">
-                    <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
-                        🗑️ Discard current ontology
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+            st.markdown("""<div class="purple_heading">
+                    🗑️ Discard current ontology
+                </div>""", unsafe_allow_html=True)
 
         with col1:
             col1a,col1b = st.columns([2,1])

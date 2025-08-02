@@ -6,7 +6,7 @@ from collections import Counter
 from urllib.parse import urlparse
 from rdflib import Graph, URIRef, Literal, Namespace, BNode
 from rdflib.namespace import split_uri
-from rdflib.namespace import RDF, RDFS, OWL
+from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL
 
 #________________________________________________
 # Function to import style
@@ -88,6 +88,20 @@ def is_valid_ontology(url: str):
     except:           # if failed to parse ontology
         return False
 #___________________________________________________________________________________
+
+#___________________________________________________________________________________
+#Function to get the human-readable name of an ontology
+def get_ontology_human_readable_name(g):
+    g_ontology_iri = next(g.subjects(RDF.type, OWL.Ontology), None)
+    g_ontology_label = (
+        g.value(g_ontology_iri, RDFS.label) or
+        g.value(g_ontology_iri, DC.title) or
+        g.value(g_ontology_iri, DCTERMS.title) or
+        uri_split(g_ontology_iri)[1])    #look for ontology label; if there isnt one just select the ontology iri
+    return g_ontology_label
+#___________________________________________________________________________________
+
+
 
 #_________________________________________________________
 def get_ontology_base_iri():
