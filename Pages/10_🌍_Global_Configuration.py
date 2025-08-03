@@ -648,7 +648,7 @@ with tab1:
         if st.session_state["g_label"]:
             if st.session_state["g_mapping_source_cache"][0] == "file":
                 st.markdown(f"""
-                    <div style="background-color:#f5f5f5; padding:1em; border-radius:5px;
+                    <div style="background-color:#d4edda; padding:1em; border-radius:5px;
                     color:#2a0134; border:1px solid #511D66;">
                         <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                         style="vertical-align:middle; margin-right:8px; height:20px;">
@@ -663,7 +663,7 @@ with tab1:
                 """, unsafe_allow_html=True)
             else:
                 st.markdown(f"""
-                    <div style="background-color:#f5f5f5; padding:1em; border-radius:5px;
+                    <div style="background-color:#d4edda; padding:1em; border-radius:5px;
                     color:#2a0134; border:1px solid #511D66;">
                         <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                         style="vertical-align:middle; margin-right:8px; height:20px;">
