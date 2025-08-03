@@ -53,6 +53,19 @@ def import_st_aesthetics():
 
     </style>""", unsafe_allow_html=True)
 
+    #MULTISELECT (selected options in gray)
+    st.markdown("""
+        <style>
+        div[data-baseweb="select"] > div {
+        color: black !important;
+        }
+        div[data-baseweb="select"] span {
+        background-color: #d3d3d3 !important;  /* Light gray */
+        color: black !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
     # PURPLE HEADINGS----------------------------------------------------
     st.markdown("""
         <style>

@@ -95,14 +95,8 @@ if "ontology_link" not in st.session_state:
     st.session_state["ontology_link"] = ""
 if "ontology_file" not in st.session_state:
     st.session_state["ontology_file"] = ""
-if "g_ontology_loaded_from_link_ok_flag" not in st.session_state:
-    st.session_state["g_ontology_loaded_from_link_ok_flag"] = False
-if "g_ontology_loaded_from_file_ok_flag" not in st.session_state:
-    st.session_state["g_ontology_loaded_from_file_ok_flag"] = False
 if "ontology_file_valid_flag" not in st.session_state:
     st.session_state["ontology_file_valid_flag"] = False
-if "g_ontology_information_cache" not in st.session_state:
-    st.session_state["g_ontology_information_cache"] = ["", "", ""]
 if "g_ontology_candidate_file" not in st.session_state:
     st.session_state["g_ontology_candidate_file"] = Graph()
 if "g_ontology_candidate_link" not in st.session_state:
@@ -200,10 +194,8 @@ def load_existing_g_mapping_and_save_current_one():
 #TAB2
 def load_ontology_from_link():
     st.session_state["g_ontology"] = st.session_state["g_ontology_candidate_link"]  # consolidate ontology graph
-    st.session_state["g_ontology_loaded_from_link_ok_flag"] = True
     st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_link=st.session_state["ontology_link_input"])
     # save ontology info___________________________
-    st.session_state["g_ontology_information_cache"] = [st.session_state["g_ontology_label"], "link", st.session_state["ontology_link"]]
     st.session_state["g_ontology_components_dict"][st.session_state["g_ontology_label"]]=st.session_state["g_ontology"]
     # reset fields___________________________
     st.session_state["ontology_link_input"] = ""
@@ -211,10 +203,8 @@ def load_ontology_from_link():
 
 def load_ontology_from_file():
     st.session_state["g_ontology"] = st.session_state["g_ontology_candidate_file"]  # consolidate ontology graph
-    st.session_state["g_ontology_loaded_from_file_ok_flag"] = True
     st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_file=st.session_state["key_ontology_file_input"])
     # save ontology info___________________________
-    st.session_state["g_ontology_information_cache"] = [st.session_state["g_ontology_label"], "file", st.session_state["key_ontology_file_input"]]
     st.session_state["g_ontology_components_dict"][st.session_state["g_ontology_label"]]=st.session_state["g_ontology"]
     # reset fields___________________________
     st.session_state["key_ontology_file_input"] = "Select a file"
@@ -223,7 +213,6 @@ def extend_ontology_from_link():
     g_ontology_new_part = st.session_state["g_ontology_candidate_link"]
     g_ontology_new_part_label = utils.get_ontology_human_readable_name(g_ontology_new_part, source_link=st.session_state["ontology_link_input"])
     # save ontology info___________________________
-    st.session_state["g_ontology_information_cache"] = [g_ontology_new_part_label, "link", st.session_state["ontology_link"]]
     st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
     #merge both ontologies___________________
     for triple in g_ontology_new_part:
@@ -236,7 +225,6 @@ def extend_ontology_from_file():
     g_ontology_new_part = st.session_state["g_ontology_candidate_file"]
     g_ontology_new_part_label = utils.get_ontology_human_readable_name(g_ontology_new_part, source_file=st.session_state["key_ontology_file_input"])
     # save ontology info___________________________
-    st.session_state["g_ontology_information_cache"] = [g_ontology_new_part_label, "file", st.session_state["key_ontology_file_input"]]
     st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
     #merge both ontologies___________________
     for triple in g_ontology_new_part:
@@ -244,12 +232,18 @@ def extend_ontology_from_file():
     # reset fields___________________________
     st.session_state["key_ontology_file_input"] = "Select a file"
 
+def reduce_ontology():
+    st.session_state["g_ontology_components_dict"] = {label: ont for label, ont in st.session_state["g_ontology_components_dict"].items() if label not in ontologies_to_drop_list}
 
+    st.session_state["g_ontology"] = Graph()
+    for label, ont in st.session_state["g_ontology_components_dict"].items():
+        st.session_state["g_ontology"] += ont  # Merge the graph using RDFLib's += operator
 
 
 def discard_ontology():
     st.session_state["g_ontology"] = Graph()
     st.session_state["g_ontology_label"] = ""
+    st.session_state["g_ontology_components_dict"] = {}
 
 
 
@@ -701,8 +695,6 @@ with tab1:
 #________________________________________________
 # PANEL: "LOAD ONTOLOGY"
 with tab2:
-    st.write("")
-    st.write("")
 
     col1, col2 = st.columns([2,1.5])
     with col1:
@@ -716,11 +708,11 @@ with tab2:
             """, unsafe_allow_html=True)
             st.stop()
 
-    col1,col2 = st.columns([2,1.5])
-
     with col2:
         col2a,col2b = st.columns([1,2])
         with col2b:
+            st.write("")
+            st.write("")
             st.markdown(f"""
                 <div style="background-color:#f5f5f5; padding:1em; border-radius:5px;
                 color:#2a0134; border:1px solid #511D66;">
@@ -743,24 +735,12 @@ with tab2:
                         <ul>
                             {ontology_items}
                         </ul></div>""", unsafe_allow_html=True)
-                elif st.session_state["g_ontology_information_cache"][1] == "file":
+                else:
                     st.markdown(f"""
                         <div style="background-color:#d4edda; padding:1em;
                         border-radius:5px; color:#155724; border:1px solid #444;">
                             🧩 The ontology <b style="color:#F63366;">{st.session_state["g_ontology_label"]}</b> has been loaded!
-                        <ul style="font-size:0.85rem; margin-top:6px; margin-left:15px; padding-left:10px;">
-                            <li><b>Source:</b> {st.session_state["g_ontology_information_cache"][2]}</li>
-                            <li><b>{len(st.session_state["g_ontology"])} triples<b/> retrieved 🧩</li>
-                        </ul></div>""", unsafe_allow_html=True)
-                elif st.session_state["g_ontology_information_cache"][1] == "link":
-                    st.markdown(f"""
-                    <div style="background-color:#d4edda; padding:1em;
-                    border-radius:5px; color:#155724; border:1px solid #444;">
-                        🧩 The ontology <b style="color:#F63366;">{st.session_state["g_ontology_label"]}</b> has been loaded!
-                    <ul style="font-size:0.85rem; margin-top:6px; margin-left:15px; padding-left:10px;">
-                        <li><b>Source:</b> {st.session_state["g_ontology_information_cache"][2]}</li>
-                        <li><b>{len(st.session_state["g_ontology"])} triples<b/> retrieved 🧩</li>
-                        </ul></div>""", unsafe_allow_html=True)
+                        </div>""", unsafe_allow_html=True)
             else:
                 st.markdown(f"""
                     <div style="background-color:#f5f5f5; padding:1em; border-radius:5px;
@@ -844,24 +824,6 @@ with tab2:
                         st.button("Load", key="key_load_ontology_from_link_button", on_click=load_ontology_from_link)
 
 
-        #REFACTORING - This will only work when more than 1 ontology can be loaded (inside if no ontology loaded)
-        if st.session_state["g_ontology_loaded_from_link_ok_flag"]:
-            with col1b:
-                st.write("")
-                st.markdown(f"""
-                    <div style="background-color:#d4edda; padding:1em;
-                    border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                        ✅ The ontology <b style="color:#0f5132;">
-                        {st.session_state["g_ontology_label"]}</b> has been loaded!
-                    </div>""", unsafe_allow_html=True)
-            st.session_state["g_ontology_loaded_from_link_ok_flag"] = False
-            time.sleep(2)
-            st.rerun()
-
-        with col1:
-            st.write("________")
-
-
     #LOAD ONTOLOGY FROM FILE___________________________________
     if not st.session_state["g_ontology"]:   #no ontology is loaded yet
         with col1:
@@ -937,8 +899,10 @@ with tab2:
 
 
     #EXTEND ONTOLOGY___________________________________
-    if st.session_state["g_ontology"]:   #ontology loaded -> only option to discard
+    if st.session_state["g_ontology"]:   #ontology loaded
         with col1:
+            st.write("")
+            st.write("")
             st.markdown("""<div class="purple_heading">
                     ➕ Extend current ontology
                 </div>""", unsafe_allow_html=True)
@@ -1102,19 +1066,46 @@ with tab2:
         with col1:
             st.write("________")
 
-    #HEREIGO
     #REDUCE ONTOLOGY___________________________________
-    if st.session_state["g_ontology"]:   #ontology loaded -> only option to discard
+    if st.session_state["g_ontology"]:   #ontology loaded
         with col1:
             st.markdown("""<div class="purple_heading">
                     ➖ Reduce current ontology
                 </div>""", unsafe_allow_html=True)
+            st.write("")
+
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            ontology_components_list = list(st.session_state["g_ontology_components_dict"].keys())
+            ontologies_to_drop_list = st.multiselect("Select ontologies to be dropped:", ontology_components_list)
+
+        if ontologies_to_drop_list:
+            ontologies_to_drop_itemise = '\n'.join([f"""<li><b style="color:#F63366;">{ont}</b></li>""" for ont in ontologies_to_drop_list])
+            with col1b:
+                st.write("")
+                st.markdown(f"""
+                    <div style="background-color:#f9f9f9; padding:1em; border-radius:5px;
+                    color:#333333; border:1px solid #e0e0e0;">
+                        👆 You selected: <ul> {ontologies_to_drop_itemise}
+                    </ul></span></div>""", unsafe_allow_html=True)
+
+        if ontologies_to_drop_list:
+            with col1a:
+                reduce_ontology_checkbox = st.checkbox(
+                ":gray-badge[⚠️ I am completely sure I want to drop the selected ontologies]",
+                key="key_reduce_ontology_checkbox")
+
+            if reduce_ontology_checkbox:
+                with col1a:
+                    st.button("Drop", key="key_reduce_ontology_button", on_click=reduce_ontology)
+
 
         with col1:
             st.write("________")
 
     #DISCARD ONTOLOGY___________________________________
-    if st.session_state["g_ontology"]:   #ontology loaded -> only option to discard
+    if st.session_state["g_ontology"]:   #ontology loaded
         with col1:
             st.markdown("""<div class="purple_heading">
                     🗑️ Discard current ontology
@@ -1122,38 +1113,26 @@ with tab2:
 
         with col1:
             col1a,col1b = st.columns([2,1])
-
-        if not st.session_state["g_ontology"]:   #no ontology loaded
-            with col1a:
-                st.markdown(f"""
-                    <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                        <span style="font-size:0.95rem;">
-                    🚫 <b> Option not available:</b> No ontology is currently loaded.
-                        </span>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-        else:  #an ontology is loaded and can be discarded
-            with col1a:
-                st.markdown(
-                    f"""
-                    <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
+        with col1a:
+            if len(st.session_state["g_ontology_components_dict"]) == 1:
+                st.markdown(f"""<div style="background-color:#f9f9f9; padding:1em; border-radius:5px;
+                    color:#333333; border:1px solid #e0e0e0;">
                         🔒 Current ontology:
-                        <b style="color:#007bff;">{st.session_state["g_ontology_label"]}</b><br>
-                        <small>Discard to load a new one (only one ontology can be loaded at once).</small>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-                st.write("")
-                discard_ontology_checkbox = st.checkbox(
-                ":gray-badge[⚠️ I am completely sure I want to discard the ontology]",
-                key="discard_ontology")
+                        <b style="color:#F63366;">{st.session_state["g_ontology_label"]}</b>
+                    </div>""",unsafe_allow_html=True)
+            else:
+                st.markdown(f"""<div style="background-color:#f9f9f9; padding:1em; border-radius:5px;
+                    color:#333333; border:1px solid #e0e0e0;">
+                        🔒 Current ontology is the <b style="color:#F63366;">merger of
+                        {len(st.session_state["g_ontology_components_dict"])} sub-ontologies</b>.
+                    </div>""",unsafe_allow_html=True)
+        with col1a:
+            st.write("")
+            discard_ontology_checkbox = st.checkbox(
+            ":gray-badge[⚠️ I am completely sure I want to discard the ontology]",
+            key="discard_ontology")
             if discard_ontology_checkbox:
-                with col1:
-                    col1a, col1b = st.columns([1,2])
-                with col1a:
-                    st.button("Discard ontology", on_click=discard_ontology)
+                st.button("Discard", on_click=discard_ontology)
 
 
 #_____________________________________________
