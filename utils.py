@@ -91,17 +91,56 @@ def is_valid_ontology(url: str):
 
 #___________________________________________________________________________________
 #Function to get the human-readable name of an ontology
+def parse_ontology(g, source):
+    for fmt in ["xml", "turtle", "json-ld", "ntriples", "trig", "trix"]:
+        try:
+            g.parse(source, format=fmt)
+            if len(g) != 0:
+                flag = True
+                break  # exit loop once successful
+            else:
+                flag = False
+        except:
+            flag = False
+    return flag
+#___________________________________________________________________________________
+
+#___________________________________________________________________________________
+#Function to get the human-readable name of an ontology
 def get_ontology_human_readable_name(g):
     g_ontology_iri = next(g.subjects(RDF.type, OWL.Ontology), None)
-    g_ontology_label = (
-        g.value(g_ontology_iri, RDFS.label) or
-        g.value(g_ontology_iri, DC.title) or
-        g.value(g_ontology_iri, DCTERMS.title) or
-        uri_split(g_ontology_iri)[1])    #look for ontology label; if there isnt one just select the ontology iri
-    return g_ontology_label
+    if g_ontology_iri:
+        g_ontology_label = (
+            g.value(g_ontology_iri, RDFS.label) or
+            g.value(g_ontology_iri, DC.title) or
+            g.value(g_ontology_iri, DCTERMS.title) or
+            split_uri(g_ontology_iri)[1])    #look for ontology label; if there isnt one just select the ontology iri
+        return g_ontology_label
+    else:
+        for s in g.subjects(None, None):  # auto-label using subject of first triple (if it is iri)
+            if isinstance(s, URIRef):
+                return "Auto-label: " + split_uri(s)[1]
+    return "Unlabelled ontology"  #if nothing works
+#___________________________________________________________________________________
+
+#___________________________________________________________________________________
+#Function to check whether two ontologies overlap
+#Ontology overlap definition - if they share rdfs:label
+def check_ontology_overlap(g1, g2):
+    labels1 = set()
+    for s, p, o in g1.triples((None, RDFS.label, None)):
+        labels1.add(str(o))
+
+    labels2 = set()
+    for s, p, o in g2.triples((None, RDFS.label, None)):
+        labels2.add(str(o))
+
+    common = labels1 & labels2
+    return bool(common)
 #___________________________________________________________________________________
 
 
+#HEREIGO
 
 #_________________________________________________________
 def get_ontology_base_iri():

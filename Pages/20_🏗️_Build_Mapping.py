@@ -379,12 +379,12 @@ if st.session_state["20_option_button"] == "map":
             """, unsafe_allow_html=True)
             st.write("")
 
-            if st.session_state["ontology_label"]:
+            if st.session_state["g_ontology_label"]:
                 st.markdown(f"""
                 <div style="background-color:#d4edda; padding:1em;
                             border-radius:5px; color:#155724; border:1px solid #444;">
                     🧩 The ontology
-                    <b style="color:#007bff;">{st.session_state["ontology_label"]}</b>
+                    <b style="color:#007bff;">{st.session_state["g_ontology_label"]}</b>
                     is currently loaded.
                 </div>
                 """, unsafe_allow_html=True)
@@ -749,12 +749,12 @@ if st.session_state["20_option_button"] == "s":
             """, unsafe_allow_html=True)
             st.write("")
 
-            if st.session_state["ontology_label"]:
+            if st.session_state["g_ontology_label"]:
                 st.markdown(f"""
                 <div style="background-color:#d4edda; padding:1em;
                             border-radius:5px; color:#155724; border:1px solid #444;">
                     🧩 The ontology
-                    <b style="color:#007bff;">{st.session_state["ontology_label"]}</b>
+                    <b style="color:#007bff;">{st.session_state["g_ontology_label"]}</b>
                     is currently loaded.
                 </div>
                 """, unsafe_allow_html=True)
@@ -1548,7 +1548,7 @@ if st.session_state["20_option_button"] == "s":
                                     st.markdown(f"""
                                         <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
                                             <span style="font-size:0.95rem;">
-                                              🚧<b> Caution</b>: The ontology {st.session_state["ontology_label"]}
+                                              🚧<b> Caution</b>: The ontology {st.session_state["g_ontology_label"]}
                                               does not define any classes. <b>Classes can only be added manually</b>.
                                               Using an ontology with predefined classes is recommended.
                                             </span>
@@ -1975,12 +1975,12 @@ if st.session_state["20_option_button"] == "po":
             </div>
         """, unsafe_allow_html=True)
         st.write("")
-        if st.session_state["ontology_label"]:
+        if st.session_state["g_ontology_label"]:
             st.markdown(f"""
             <div style="background-color:#d4edda; padding:1em;
                         border-radius:5px; color:#155724; border:1px solid #444;">
                 🧩 The ontology
-                <b style="color:#007bff;">{st.session_state["ontology_label"]}</b>
+                <b style="color:#007bff;">{st.session_state["g_ontology_label"]}</b>
                 is currently loaded.
             </div>
             """, unsafe_allow_html=True)
@@ -2088,7 +2088,7 @@ if st.session_state["20_option_button"] == "po":
         tmap_iri = st.session_state["tmap_dict"][tmap_label]
         sm_iri = st.session_state["g_mapping"].value(subject=tmap_iri, predicate=RR.subjectMap)
 
-        if st.session_state["ontology_label"]:
+        if st.session_state["g_ontology_label"]:
             ontology_predicates_list = []
             ontology_predicates_dict = {}
             for xtuple in st.session_state["g_ontology"].triples((None, RDF.type ,None)):
