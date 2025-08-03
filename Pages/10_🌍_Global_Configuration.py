@@ -201,7 +201,7 @@ def load_existing_g_mapping_and_save_current_one():
 def load_ontology_from_link():
     st.session_state["g_ontology"] = st.session_state["g_ontology_candidate_link"]  # consolidate ontology graph
     st.session_state["g_ontology_loaded_from_link_ok_flag"] = True
-    st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"])
+    st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_link=st.session_state["ontology_link_input"])
     # save ontology info___________________________
     st.session_state["g_ontology_information_cache"] = [st.session_state["g_ontology_label"], "link", st.session_state["ontology_link"]]
     st.session_state["g_ontology_components_dict"][st.session_state["g_ontology_label"]]=st.session_state["g_ontology"]
@@ -212,7 +212,7 @@ def load_ontology_from_link():
 def load_ontology_from_file():
     st.session_state["g_ontology"] = st.session_state["g_ontology_candidate_file"]  # consolidate ontology graph
     st.session_state["g_ontology_loaded_from_file_ok_flag"] = True
-    st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"])
+    st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_file=st.session_state["key_ontology_file_input"])
     # save ontology info___________________________
     st.session_state["g_ontology_information_cache"] = [st.session_state["g_ontology_label"], "file", st.session_state["key_ontology_file_input"]]
     st.session_state["g_ontology_components_dict"][st.session_state["g_ontology_label"]]=st.session_state["g_ontology"]
@@ -221,7 +221,7 @@ def load_ontology_from_file():
 
 def extend_ontology_from_link():
     g_ontology_new_part = st.session_state["g_ontology_candidate_link"]
-    g_ontology_new_part_label = utils.get_ontology_human_readable_name(g_ontology_new_part)
+    g_ontology_new_part_label = utils.get_ontology_human_readable_name(g_ontology_new_part, source_link=st.session_state["ontology_link_input"])
     # save ontology info___________________________
     st.session_state["g_ontology_information_cache"] = [g_ontology_new_part_label, "link", st.session_state["ontology_link"]]
     st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
@@ -234,7 +234,7 @@ def extend_ontology_from_link():
 
 def extend_ontology_from_file():
     g_ontology_new_part = st.session_state["g_ontology_candidate_file"]
-    g_ontology_new_part_label = utils.get_ontology_human_readable_name(g_ontology_new_part)
+    g_ontology_new_part_label = utils.get_ontology_human_readable_name(g_ontology_new_part, source_file=st.session_state["key_ontology_file_input"])
     # save ontology info___________________________
     st.session_state["g_ontology_information_cache"] = [g_ontology_new_part_label, "file", st.session_state["key_ontology_file_input"]]
     st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
@@ -813,7 +813,7 @@ with tab2:
             elif st.session_state["ontology_link"]:
                 st.session_state["g_ontology_candidate_link"] = Graph()
                 st.session_state["ontology_link_valid_flag"] = utils.parse_ontology(st.session_state["g_ontology_candidate_link"], st.session_state["ontology_link"])
-                st.session_state["g_ontology_candidate_label_link"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_candidate_link"])
+                st.session_state["g_ontology_candidate_label_link"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_candidate_link"], source_link=st.session_state["ontology_link"])
 
                 if not st.session_state["ontology_link_valid_flag"] and st.session_state["ontology_link"]:
                     with col1a:
@@ -833,6 +833,7 @@ with tab2:
 
                 if st.session_state["ontology_link_valid_flag"] and st.session_state["ontology_link"]:
                     with col1b:
+                        st.write("")
                         st.markdown(f"""
                             <div style="background-color:#d4edda; padding:0.8em;
                             border-radius:5px; color:#155724; border:1px solid #c3e6cb; font-size:0.92em">
@@ -904,7 +905,7 @@ with tab2:
                 ontology_file_path = os.path.join(os.getcwd(), "ontologies", st.session_state["ontology_file"])
                 st.session_state["g_ontology_candidate_file"] = Graph()
                 st.session_state["ontology_file_valid_flag"] = utils.parse_ontology(st.session_state["g_ontology_candidate_file"], ontology_file_path)
-                st.session_state["g_ontology_candidate_label_file"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_candidate_file"])
+                st.session_state["g_ontology_candidate_label_file"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_candidate_file"], source_file=st.session_state["ontology_file"])
 
             if not st.session_state["ontology_file_valid_flag"] and st.session_state["ontology_file"]:
                 with col1a:
@@ -924,6 +925,7 @@ with tab2:
 
             if st.session_state["ontology_file_valid_flag"] and st.session_state["ontology_file"]:
                 with col1b:
+                    st.write("")
                     st.markdown(f"""
                         <div style="background-color:#d4edda; padding:0.8em;
                         border-radius:5px; color:#155724; border:1px solid #c3e6cb; font-size:0.92em">
@@ -966,7 +968,7 @@ with tab2:
                 elif st.session_state["ontology_link"]:
                     st.session_state["g_ontology_candidate_link"] = Graph()
                     st.session_state["ontology_link_valid_flag"] = utils.parse_ontology(st.session_state["g_ontology_candidate_link"], st.session_state["ontology_link"])
-                    st.session_state["g_ontology_candidate_label_link"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_candidate_link"])
+                    st.session_state["g_ontology_candidate_label_link"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_candidate_link"], source_link=st.session_state["ontology_link"])
                     st.write("HERE1", len(st.session_state["g_ontology_candidate_link"]), st.session_state["ontology_link_valid_flag"])
                     if not st.session_state["ontology_link_valid_flag"] and st.session_state["ontology_link"]:
                         with col1a:
@@ -1048,7 +1050,7 @@ with tab2:
                     ontology_file_path = os.path.join(os.getcwd(), "ontologies", st.session_state["ontology_file"])
                     st.session_state["g_ontology_candidate_file"] = Graph()
                     st.session_state["ontology_file_valid_flag"] = utils.parse_ontology(st.session_state["g_ontology_candidate_file"], ontology_file_path)
-                    st.session_state["g_ontology_candidate_label_file"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_candidate_file"])
+                    st.session_state["g_ontology_candidate_label_file"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_candidate_file"], source_file=st.session_state["ontology_file"])
 
                 if not st.session_state["ontology_file_valid_flag"] and st.session_state["ontology_file"]:
                     with col1a:

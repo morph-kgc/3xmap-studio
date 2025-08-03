@@ -72,24 +72,6 @@ def get_number_of_tm(g):
 #_________________________________________________________
 
 #___________________________________________________________________________________
-#Function to check whether an ontology is valid
-def is_valid_ontology(url: str):
-    try:
-        g = Graph()
-        g.parse(url, format="xml")
-
-        # Check for presence of OWL or RDFS classes
-        classes = list(g.subjects(RDF.type, OWL.Class)) + list(g.subjects(RDF.type, RDFS.Class))
-        properties = list(g.subjects(RDF.type, RDF.Property))
-
-        # Consider it valid if it defines at least one class or property
-        return bool(classes or properties)
-
-    except:           # if failed to parse ontology
-        return False
-#___________________________________________________________________________________
-
-#___________________________________________________________________________________
 #Function to get the human-readable name of an ontology
 def parse_ontology(g, source):
     for fmt in ["xml", "turtle", "json-ld", "ntriples", "trig", "trix"]:
@@ -106,18 +88,43 @@ def parse_ontology(g, source):
 #___________________________________________________________________________________
 
 #___________________________________________________________________________________
+#Function to check whether an ontology is valid
+def is_valid_ontology(url: str):
+    try:
+        g = Graph()
+        parse_ontology(g, url)
+
+        # Check for presence of OWL or RDFS classes
+        classes = list(g.subjects(RDF.type, OWL.Class)) + list(g.subjects(RDF.type, RDFS.Class))
+        properties = list(g.subjects(RDF.type, RDF.Property))
+
+        # Consider it valid if it defines at least one class or property
+        return bool(classes or properties)
+
+    except:           # if failed to parse ontology
+        return False
+#___________________________________________________________________________________
+
+#___________________________________________________________________________________
 #Function to get the human-readable name of an ontology
-def get_ontology_human_readable_name(g):
+def get_ontology_human_readable_name(g, source_link=None, source_file=None):
     g_ontology_iri = next(g.subjects(RDF.type, OWL.Ontology), None)
-    if g_ontology_iri:
+    if g_ontology_iri:     # first option: look for ontology self-contained label
         g_ontology_label = (
             g.value(g_ontology_iri, RDFS.label) or
             g.value(g_ontology_iri, DC.title) or
             g.value(g_ontology_iri, DCTERMS.title) or
-            split_uri(g_ontology_iri)[1])    #look for ontology label; if there isnt one just select the ontology iri
+            split_uri(g_ontology_iri)[1])    # look for ontology label; if there isnt one just select the ontology iri
         return g_ontology_label
-    else:
-        for s in g.subjects(None, None):  # auto-label using subject of first triple (if it is iri)
+    elif source_link:               # if ontology is not self-labeled, use source as label (link)
+        try:
+            return split_uri(source_link)[1]
+        except:
+            return source_link.rstrip('/').split('/')[-1]
+    elif source_file:               # if ontology is not self-labeled, use source as label (file)
+        return source_file
+    else:                                 # if no source is given, auto-label using subject of first triple (if it is iri)
+        for s in g.subjects(None, None):
             if isinstance(s, URIRef):
                 return "Auto-label: " + split_uri(s)[1]
     return "Unlabelled ontology"  #if nothing works
