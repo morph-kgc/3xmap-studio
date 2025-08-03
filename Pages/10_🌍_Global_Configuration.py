@@ -820,6 +820,8 @@ with tab2:
                     with col1a:
                         st.button("Load", key="key_load_ontology_from_link_button", on_click=load_ontology_from_link)
 
+        with col1:
+            st.write("______")
 
     #LOAD ONTOLOGY FROM FILE___________________________________
     if not st.session_state["g_ontology"]:   #no ontology is loaded yet
