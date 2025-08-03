@@ -89,8 +89,6 @@ overwrite_text = ""
 #TAB2
 if "g_ontology" not in st.session_state:
     st.session_state["g_ontology"] = Graph()
-if "g_ontology_label" not in st.session_state:
-    st.session_state["g_ontology_label"] = ""
 if "ontology_link" not in st.session_state:
     st.session_state["ontology_link"] = ""
 if "ontology_file" not in st.session_state:
@@ -194,18 +192,18 @@ def load_existing_g_mapping_and_save_current_one():
 #TAB2
 def load_ontology_from_link():
     st.session_state["g_ontology"] = st.session_state["g_ontology_candidate_link"]  # consolidate ontology graph
-    st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_link=st.session_state["ontology_link_input"])
+    g_ontology_label = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_link=st.session_state["ontology_link_input"])
     # save ontology info___________________________
-    st.session_state["g_ontology_components_dict"][st.session_state["g_ontology_label"]]=st.session_state["g_ontology"]
+    st.session_state["g_ontology_components_dict"][g_ontology_label]=st.session_state["g_ontology"]
     # reset fields___________________________
     st.session_state["ontology_link_input"] = ""
     st.session_state["ontology_link"] = ""
 
 def load_ontology_from_file():
     st.session_state["g_ontology"] = st.session_state["g_ontology_candidate_file"]  # consolidate ontology graph
-    st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_file=st.session_state["key_ontology_file_input"])
+    g_ontology_label = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_file=st.session_state["key_ontology_file_input"])
     # save ontology info___________________________
-    st.session_state["g_ontology_components_dict"][st.session_state["g_ontology_label"]]=st.session_state["g_ontology"]
+    st.session_state["g_ontology_components_dict"][g_ontology_label]=st.session_state["g_ontology"]
     # reset fields___________________________
     st.session_state["key_ontology_file_input"] = "Select a file"
 
@@ -242,7 +240,6 @@ def reduce_ontology():
 
 def discard_ontology():
     st.session_state["g_ontology"] = Graph()
-    st.session_state["g_ontology_label"] = ""
     st.session_state["g_ontology_components_dict"] = {}
 
 
@@ -739,7 +736,7 @@ with tab2:
                     st.markdown(f"""
                         <div style="background-color:#d4edda; padding:1em;
                         border-radius:5px; color:#155724; border:1px solid #444;">
-                            🧩 The ontology <b style="color:#F63366;">{st.session_state["g_ontology_label"]}</b> has been loaded!
+                            🧩 The ontology <b style="color:#F63366;">{next(iter(st.session_state["g_ontology_components_dict"]))}</b> has been loaded!
                         </div>""", unsafe_allow_html=True)
             else:
                 st.markdown(f"""
@@ -791,8 +788,8 @@ with tab2:
                     st.write("")
 
             elif st.session_state["ontology_link"]:
-                st.session_state["g_ontology_candidate_link"] = Graph()
-                st.session_state["ontology_link_valid_flag"] = utils.parse_ontology(st.session_state["g_ontology_candidate_link"], st.session_state["ontology_link"])
+                st.session_state["g_ontology_candidate_link"] = utils.parse_ontology(st.session_state["ontology_link"])
+                st.session_state["ontology_link_valid_flag"] = True if st.session_state["g_ontology_candidate_link"] else False
                 st.session_state["g_ontology_candidate_label_link"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_candidate_link"], source_link=st.session_state["ontology_link"])
 
                 if not st.session_state["ontology_link_valid_flag"] and st.session_state["ontology_link"]:
@@ -865,8 +862,8 @@ with tab2:
 
             if st.session_state["ontology_file"]:
                 ontology_file_path = os.path.join(os.getcwd(), "ontologies", st.session_state["ontology_file"])
-                st.session_state["g_ontology_candidate_file"] = Graph()
-                st.session_state["ontology_file_valid_flag"] = utils.parse_ontology(st.session_state["g_ontology_candidate_file"], ontology_file_path)
+                st.session_state["g_ontology_candidate_file"] = utils.parse_ontology(ontology_file_path)
+                st.session_state["ontology_file_valid_flag"] = True if st.session_state["g_ontology_candidate_file"] else False
                 st.session_state["g_ontology_candidate_label_file"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_candidate_file"], source_file=st.session_state["ontology_file"])
 
             if not st.session_state["ontology_file_valid_flag"] and st.session_state["ontology_file"]:
@@ -930,8 +927,8 @@ with tab2:
                         st.write("")
 
                 elif st.session_state["ontology_link"]:
-                    st.session_state["g_ontology_candidate_link"] = Graph()
-                    st.session_state["ontology_link_valid_flag"] = utils.parse_ontology(st.session_state["g_ontology_candidate_link"], st.session_state["ontology_link"])
+                    st.session_state["g_ontology_candidate_link"] = utils.parse_ontology(st.session_state["ontology_link"])
+                    st.session_state["ontology_link_valid_flag"] = True if st.session_state["g_ontology_candidate_link"] else False
                     st.session_state["g_ontology_candidate_label_link"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_candidate_link"], source_link=st.session_state["ontology_link"])
                     st.write("HERE1", len(st.session_state["g_ontology_candidate_link"]), st.session_state["ontology_link_valid_flag"])
                     if not st.session_state["ontology_link_valid_flag"] and st.session_state["ontology_link"]:
@@ -1012,8 +1009,8 @@ with tab2:
 
                 if st.session_state["ontology_file"]:
                     ontology_file_path = os.path.join(os.getcwd(), "ontologies", st.session_state["ontology_file"])
-                    st.session_state["g_ontology_candidate_file"] = Graph()
-                    st.session_state["ontology_file_valid_flag"] = utils.parse_ontology(st.session_state["g_ontology_candidate_file"], ontology_file_path)
+                    st.session_state["g_ontology_candidate_file"] = utils.parse_ontology(ontology_file_path)
+                    st.session_state["ontology_file_valid_flag"] = True if st.session_state["g_ontology_candidate_file"] else False
                     st.session_state["g_ontology_candidate_label_file"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_candidate_file"], source_file=st.session_state["ontology_file"])
 
                 if not st.session_state["ontology_file_valid_flag"] and st.session_state["ontology_file"]:
@@ -1067,7 +1064,7 @@ with tab2:
             st.write("________")
 
     #REDUCE ONTOLOGY___________________________________
-    if st.session_state["g_ontology"]:   #ontology loaded
+    if st.session_state["g_ontology"] and len(st.session_state["g_ontology_components_dict"]) != 1:   #ontology loaded and more than 1 component (otherwise just can discard)
         with col1:
             st.markdown("""<div class="purple_heading">
                     ➖ Reduce current ontology
@@ -1114,11 +1111,12 @@ with tab2:
         with col1:
             col1a,col1b = st.columns([2,1])
         with col1a:
+            st.write("")
             if len(st.session_state["g_ontology_components_dict"]) == 1:
                 st.markdown(f"""<div style="background-color:#f9f9f9; padding:1em; border-radius:5px;
                     color:#333333; border:1px solid #e0e0e0;">
                         🔒 Current ontology:
-                        <b style="color:#F63366;">{st.session_state["g_ontology_label"]}</b>
+                        <b style="color:#F63366;">{next(iter(st.session_state["g_ontology_components_dict"]))}</b>
                     </div>""",unsafe_allow_html=True)
             else:
                 st.markdown(f"""<div style="background-color:#f9f9f9; padding:1em; border-radius:5px;

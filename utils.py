@@ -85,27 +85,25 @@ def get_number_of_tm(g):
 #_________________________________________________________
 
 #___________________________________________________________________________________
-#Function to get the human-readable name of an ontology
-def parse_ontology(g, source):
+#Function to parse an ontology to an initially empty graph
+@st.cache_resource
+def parse_ontology(source):
+    g = Graph()
     for fmt in ["xml", "turtle", "json-ld", "ntriples", "trig", "trix"]:
         try:
             g.parse(source, format=fmt)
             if len(g) != 0:
-                flag = True
-                break  # exit loop once successful
-            else:
-                flag = False
+                return g
         except:
-            flag = False
-    return flag
+            continue
+    return g
 #___________________________________________________________________________________
 
 #___________________________________________________________________________________
 #Function to check whether an ontology is valid
 def is_valid_ontology(url: str):
     try:
-        g = Graph()
-        parse_ontology(g, url)
+        g = parse_ontology(url)
 
         # Check for presence of OWL or RDFS classes
         classes = list(g.subjects(RDF.type, OWL.Class)) + list(g.subjects(RDF.type, RDFS.Class))
