@@ -506,7 +506,7 @@ with tab1:
             with col1:
                 col1a, col1b = st.columns([1,2])
             with col1a:
-                st.button("Confirm", on_click=load_existing_mapping)
+                st.button("Confirm", on_click=load_existing_g_mapping)
 
         if st.session_state["existing_g_mapping_loaded_ok_flag"]:
             with col1b:
