@@ -4,14 +4,21 @@ import pandas as pd
 import re
 from collections import Counter
 from urllib.parse import urlparse
+import pickle
+import json
+import csv
+import rdflib
 from rdflib import Graph, URIRef, Literal, Namespace, BNode
 from rdflib.namespace import split_uri
 from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL
 
+
 #________________________________________________
 # Function to import style
 def import_st_aesthetics():
-    # TAB styles (scoped to data-testid)----------------------------------
+    ##ff7a7a lighter streamlit salmon
+
+    # TABS ----------------------------------
     st.markdown("""<style>
 
         div[data-testid="stTabs"] > div {
@@ -31,11 +38,11 @@ def import_st_aesthetics():
 
         </style>""", unsafe_allow_html=True)
 
-    # BUTTON styles (scoped to stButton container)---------------------------
+    # MAIN BUTTONS ---------------------------
     st.markdown("""<style>
 
         div.stButton > button {
-            background-color: #FF4B4B;  /* Streamlit salmon orange */
+            background-color: #555555;
             color: white;
             height: 2.4em;
             width: auto;
@@ -47,13 +54,13 @@ def import_st_aesthetics():
         }
 
         div.stButton > button:hover {
-            background-color: #ff7a7a;  /* Slightly lighter on hover */
+            background-color: #FF4B4B;  /* Streamlit salmon orange */
             color: white;
         }
 
     </style>""", unsafe_allow_html=True)
 
-    #MULTISELECT (selected options in gray)
+    # MULTISELECT --------------------------------------
     st.markdown("""
         <style>
         div[data-baseweb="select"] > div {
@@ -66,7 +73,7 @@ def import_st_aesthetics():
         </style>
         """, unsafe_allow_html=True)
 
-    # PURPLE HEADINGS----------------------------------------------------
+    # PURPLE HEADINGS ----------------------------------
     st.markdown("""
         <style>
             .purple_heading {background-color:#e6e6fa; border:1px solid #511D66;
@@ -75,7 +82,121 @@ def import_st_aesthetics():
         </style>
     """, unsafe_allow_html=True)
 
+    # FILE UPLOADER -------------------------------------
+    st.markdown("""<style>
+
+        div[data-testid="stFileUploader"] > div {
+        flex-wrap: wrap; justify-content: space-between;}
+
+        div[data-testid="stFileUploader"] button {flex: 0 0 auto;
+        background-color: #555555; color: white; height: 2.4em; font-size: 15px;
+        padding: 1.2em; border-radius: 5px; border: none;margin: 4px;}
+
+        div[data-testid="stFileUploader"] button div span {font-size: 30px !important;}
+
+        div[data-testid="stFileUploader"] button:hover {background-color: #FF4B4B; color: white}
+
+        div[data-testid="stFileUploader"] button[aria-selected="true"] {
+            background-color: #9871b5; color: white; font-weight: bold;
+            box-shadow: 0 0 10px #9871b5;}
+
+        /* Uploaded file info */
+        div[data-testid="stFileUploader"] ul {font-size: 14px !important;}
+
+        /* x button size */
+        div[data-testid="stFileUploader"] ul button {
+        padding: 1px 5px !important; height: 22px !important;
+        line-height: 1 !important; min-height: 0 !important;}
+
+        /* x button icon */
+        div[data-testid="stFileUploader"] ul button svg {width: 14px !important;
+            height: 14px !important;}
+
+        </style>""", unsafe_allow_html=True)
+
+
 #_______________________________________________________
+
+
+#_______________________________________________________
+#List of allowed mapping file format
+#HERE expand options, now reduced version
+def get_g_mapping_file_formats_dict():
+    # allowed_format_dict = {"pickle": ".pkl", "turtle": ".ttl", "rdf": ".rdf","xml": ".xml",
+    #     "json": ".json", "json-ld": ".jsonld", "n-triples": ".nt",
+    #     "n3": ".n3","trig": ".trig","trix": ".trix"}
+
+    allowed_format_dict = {"pickle": ".pkl", "turtle": ".ttl"}
+
+    return allowed_format_dict
+#_______________________________________________________
+
+#_______________________________________________________
+#Funcion to save mapping to file
+#HERE check all formats work
+def save_mapping_to_file(filename):
+
+    save_mappings_folder = os.path.join(os.getcwd(), "saved_mappings")  #folder to save mappings
+    if not os.path.isdir(save_mappings_folder):   # create folder if it does not exist
+        os.makedirs(save_mappings_folder)
+
+    ext = os.path.splitext(filename)[1].lower()  #file extension
+
+    file_path = save_mappings_folder + "\\" + st.session_state["save_g_filename"]
+
+    if ext == ".pkl":
+        with open(file_path, "wb") as f:    # save current mapping to pkl file
+            pickle.dump(st.session_state["g_mapping"], f)
+
+    elif ext in [".json", ".jsonld"]:
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(st.session_state["g_mapping"], f, indent=2)
+
+    elif ext in [".ttl", ".rdf", ".xml", ".nt", ".n3", ".trig", ".trix"]:
+        rdf_format_dict = {".ttl": "turtle", ".rdf": "xml",
+            ".xml": "xml", ".nt": "nt", ".n3": "n3",
+            ".trig": "trig", ".trix": "trix"}
+
+        st.session_state["g_mapping"].serialize(destination=file_path, format=rdf_format_dict[ext])
+
+    else:
+        raise ValueError(f"Unsupported file extension: {ext}")   #should not occur
+
+#__________________________________________________
+
+
+
+#_______________________________________________________
+#Funcion to load mapping from file
+#HERE check all formats work
+def load_mapping_from_file(f):
+
+    ext = os.path.splitext(f.name)[1].lower()  #file extension
+
+    if ext == ".pkl":
+        return pickle.load(f)
+
+    elif ext in [".json", ".jsonld"]:
+        text = f.read().decode("utf-8")
+        return json.loads(text)
+
+    elif ext == ".csv":
+        text = f.read().decode("utf-8")
+        reader = csv.DictReader(io.StringIO(text))
+        return [row for row in reader]
+
+    elif ext in [".ttl", ".rdf", ".xml", ".nt", ".n3", ".trig", ".trix"]:
+        rdf_format_dict = {".ttl": "turtle", ".rdf": "xml", ".xml": "xml",
+            ".nt": "nt", ".n3": "n3", ".trig": "trig", ".trix": "trix"}
+        g = Graph()
+        content = f.read().decode("utf-8")
+        g.parse(data=content, format=rdf_format_dict[ext])
+        return g
+
+    else:
+        raise ValueError(f"Unsupported file extension: {ext}")  # should not happen
+
+#__________________________________________________
 
 #_______________________________________________________
 #Function to get the number of TriplesMaps in a mapping
