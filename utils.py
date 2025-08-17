@@ -142,7 +142,7 @@ def save_mapping_to_file(filename):
 
     ext = os.path.splitext(filename)[1].lower()  #file extension
 
-    file_path = save_mappings_folder + "\\" + st.session_state["save_g_filename"]
+    file_path = save_mappings_folder + "\\" + filename
 
     if ext == ".pkl":
         with open(file_path, "wb") as f:    # save current mapping to pkl file

@@ -10,12 +10,11 @@ from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL
 import utils
 import uuid
 
-#________________________________________________________________
-# PRELIMINARY
 
-# Aesthetics------------------------------------------
+# Import style-----------------------------
+utils.import_st_aesthetics()
 
-# Header
+# Header-----------------------------------
 st.markdown("""
 <div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
             border-radius:8px; margin-bottom:16px;">
@@ -36,10 +35,8 @@ st.markdown("""
 # another option for the icon:
 # https://www.clipartmax.com/png/middle/139-1393405_file-gear-icon-svg-wikimedia-commons-gear-icon.png
 
-# Import style
-utils.import_st_aesthetics()
 
-# Namespaces-------------------------------------------------------------
+# Namespaces-----------------------------------
 namespaces = utils.get_predefined_ns_dict()
 RML = namespaces["rml"]
 RR = namespaces["rr"]
@@ -48,7 +45,7 @@ MAP = namespaces["map"]
 CLASS = namespaces["class"]
 LS = namespaces["logicalSource"]
 
-# Directories---------------------------------------------------------------
+# Directories----------------------------------------
 #HERE DELETE LAST 2
 save_mappings_folder = os.path.join(os.getcwd(), "saved_mappings")  #folder to save mappings (pkl)
 if not os.path.isdir(save_mappings_folder):   # create progress folder if it does not exist
@@ -69,22 +66,20 @@ if "g_mapping" not in st.session_state:
     st.session_state["g_mapping"] = Graph()
 if "g_label" not in st.session_state:
     st.session_state["g_label"] = ""
-if "g_label_temp_existing" not in st.session_state:
-    st.session_state["g_label_temp_existing"] = ""
+if "g_label_temp_new" not in st.session_state:
+    st.session_state["g_label_temp_new"] = ""
 if "new_g_mapping_created_ok_flag" not in st.session_state:
     st.session_state["new_g_mapping_created_ok_flag"] = False
+if "uploader_key" not in st.session_state:
+    st.session_state["uploader_key"] = None
+if "g_label_temp_existing" not in st.session_state:
+    st.session_state["g_label_temp_existing"] = ""
 if "existing_g_mapping_loaded_ok_flag" not in st.session_state:
     st.session_state["existing_g_mapping_loaded_ok_flag"] = False
-if "save_g_filename" not in st.session_state:
-    st.session_state["save_g_filename"] = ""
-if "selected_load_file" not in st.session_state:
-    st.session_state["selected_load_file"] = ""
 if "g_mapping_source_cache" not in st.session_state:
     st.session_state["g_mapping_source_cache"] = ["",""]
 if "original_g_size_cache" not in st.session_state:
     st.session_state["original_g_size_cache"] = 0
-if "uploader_key" not in st.session_state:
-    st.session_state["uploader_key"] = None
 
 
 #TAB2
@@ -132,8 +127,8 @@ if "ontology_source" not in st.session_state:
 def create_new_g_mapping():
     st.session_state["g_label"] = st.session_state["g_label_temp_new"]   # consolidate g_label
     st.session_state["g_mapping"] = Graph()   # create a new empty mapping
-    st.session_state["new_g_mapping_created_ok_flag"] = True   #flag for success mesagge
     st.session_state["g_mapping_source_cache"] = ["scratch", ""]   #cache info on the mapping source
+    st.session_state["new_g_mapping_created_ok_flag"] = True   #flag for success mesagge
     # reset fields___________________________
     st.session_state["key_g_label_temp_new"] = ""
 
@@ -147,8 +142,8 @@ def create_new_g_mapping_and_save_current_one():
     #create new mapping_________________________
     st.session_state["g_label"] = st.session_state["g_label_temp_new"]
     st.session_state["g_mapping"] = Graph()
-    st.session_state["new_g_mapping_created_ok_flag"] = True
     st.session_state["g_mapping_source_cache"] = ["scratch", ""]
+    st.session_state["new_g_mapping_created_ok_flag"] = True
     # reset fields___________________________
     st.session_state["key_g_label_temp_new"] = ""
 
@@ -156,32 +151,29 @@ def load_existing_g_mapping():
     st.session_state["g_label"] = st.session_state["g_label_temp_existing"]   # consolidate g_label
     st.session_state["original_g_size_cache"] = utils.get_number_of_tm(st.session_state["candidate_g_mapping"])
     st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]   # consolidate the loaded mapping
-    st.session_state["g_mapping_source_cache"] = ["file", st.session_state["selected_load_file"].name]
+    st.session_state["g_mapping_source_cache"] = ["file", selected_load_file.name]
     st.session_state["existing_g_mapping_loaded_ok_flag"] = True
     # reset fields___________________________
     st.session_state["uploader_key"] = str(uuid.uuid4())
-    st.session_state["selected_load_file"] = None
     st.session_state["key_g_label_temp_existing"] = ""
 
 def cancel_load_existing_g_mapping():
     # reset fields___________________________
     st.session_state["uploader_key"] = str(uuid.uuid4())
-    st.session_state["selected_load_file"] = None
     st.session_state["key_g_label_temp_existing"] = ""
 
 def load_existing_g_mapping_and_save_current_one():
-    save_current_mapping_file = save_mappings_folder + "\\" + st.session_state["save_g_filename"] + ".pkl"
-    with open(save_current_mapping_file, "wb") as f:
-        pickle.dump(st.session_state["g_mapping"], f)
+    # save current mapping to file_____________
+    utils.save_mapping_to_file(save_g_filename)
+    #create new mapping_________________________
     st.session_state["original_g_size_cache"] = utils.get_number_of_tm(st.session_state["candidate_g_mapping"])
     st.session_state["g_label"] = st.session_state["g_label_temp_existing"]   #we consolidate g_label
     st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]   #we consolidate the loaded mapping
+    st.session_state["g_mapping_source_cache"] = ["file", selected_load_file.name]
+    st.session_state["existing_g_mapping_loaded_ok_flag"] = True
     # reset fields___________________________
     st.session_state["uploader_key"] = str(uuid.uuid4())
-    st.session_state["selected_load_file"] = None
     st.session_state["key_g_label_temp_existing"] = ""
-    st.session_state["existing_g_mapping_loaded_ok_flag"] = True
-    st.session_state["g_mapping_source_cache"] = ["file", st.session_state["selected_load_file"].name]
 
 
 #TAB2
@@ -304,6 +296,20 @@ with tab1:
 
     with col1:
         col1a, col1b = st.columns([2,1])
+
+    if st.session_state["new_g_mapping_created_ok_flag"]:
+        with col1a:
+            st.markdown(f"""
+            <div style="background-color:#d4edda; padding:1em; border-radius:5px;
+            color:#155724; border:1px solid #c3e6cb;">
+                ✅ The mapping <b style="color:#0f5132;">
+                {st.session_state["g_label"]}</b> has been created!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["new_g_mapping_created_ok_flag"] = False
+        time.sleep(2)
+        st.cache_data.clear()
+        st.rerun()
+
     with col1a:
         st.session_state["g_label_temp_new"] = st.text_input("⌨️ Enter mapping label:", # just a candidate until confirmed
         key="key_g_label_temp_new")
@@ -315,28 +321,14 @@ with tab1:
             with col1a:
                 st.button("Create", on_click=create_new_g_mapping)
 
-        if st.session_state["new_g_mapping_created_ok_flag"]:
-            with col1b:
-                st.write("")
-                st.markdown(f"""
-                    <div style="background-color:#d4edda; padding:1em;
-                    border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                        ✅ The mapping <b style="color:#0f5132;">
-                        {st.session_state["g_label"]}</b> has been created!
-                    </div>""", unsafe_allow_html=True)
-            st.session_state["new_g_mapping_created_ok_flag"] = False
-            time.sleep(2)
-            st.cache_data.clear()
-            st.rerun()
-
 
     # A mapping is currently loaded__________
     else:  #a mapping is currently loaded (ask if overwrite)
         with col1:
-            st.write("________________")
             col1a, col1b = st.columns([2,1])
         if st.session_state["g_label_temp_new"]:   #after a label and file have been given
             with col1a:
+                st.write("")
                 st.markdown(f"""<span style="font-size:1.1em; font-weight:bold;">
                 ⚠️ The mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b>
                 is already loaded!</span><br>""",
@@ -347,7 +339,7 @@ with tab1:
                 col1a, col1b = st.columns([1,2])
             with col1a:
                 overwrite_g_selection = st.radio("What would you like to do?:",
-                    ["🛑 Cancel", "💾 Save", "✏️ Overwrite"],
+                    ["✏️ Overwrite", "💾 Save", "🛑 Cancel"],
                     key="overwrite_selection_radio_new")
 
             if overwrite_g_selection == "✏️ Overwrite":
@@ -430,24 +422,13 @@ with tab1:
                             st.button(f"""Save and create""",
                              on_click=create_new_g_mapping_and_save_current_one,  key="key_save_new_button_1")
                 else:
-                    st.session_state["save_g_filename"] = save_g_filename
                     if save_g_filename:
                         with col1b:
                             st.button(f"""Save and create""",
                              on_click=create_new_g_mapping_and_save_current_one,  key="key_save_new_button_2")
 
-    if st.session_state["new_g_mapping_created_ok_flag"]:
-        with col1b:
-            st.markdown(f"""
-            <div style="background-color:#d4edda; padding:1em; border-radius:5px;
-            color:#155724; border:1px solid #c3e6cb;">
-                ✅ The mapping <b style="color:#0f5132;">
-                {st.session_state["g_label"]}</b> has been created!
-            </div>""", unsafe_allow_html=True)
-        st.session_state["new_g_mapping_created_ok_flag"] = False
-        time.sleep(2)
-        st.cache_data.clear()
-        st.rerun()
+    with col1:
+        st.write("______")
 
 
     # OPTION: Import existing mapping--------------------------------------
@@ -457,14 +438,28 @@ with tab1:
             </div>""", unsafe_allow_html=True)
         st.write("")
 
+
     allowed_format_list = list(utils.get_g_mapping_file_formats_dict().values())
+
 
     with col1:
         col1a, col1b = st.columns([2,1])
+
+    if st.session_state["existing_g_mapping_loaded_ok_flag"]:
+        with col1a:
+            st.write("")
+            st.markdown(f"""
+            <div style="background-color:#d4edda; padding:1em; border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                ✅ The mapping <b style="color:#0f5132;">{st.session_state["g_label"]}</b> has been loaded!
+            </div>
+            """, unsafe_allow_html=True)
+        st.session_state["existing_g_mapping_loaded_ok_flag"] = False
+        time.sleep(2)
+        st.rerun()
+
     with col1a:
         selected_load_file = st.file_uploader(f"""🖱️
         Upload mapping file""", type=allowed_format_list, key=st.session_state["uploader_key"])
-    st.session_state["selected_load_file"] = selected_load_file if selected_load_file else st.session_state["selected_load_file"]
 
     with col1b:
         if selected_load_file:
@@ -473,7 +468,7 @@ with tab1:
 
     if selected_load_file:
         st.session_state["candidate_g_mapping"] = utils.load_mapping_from_file(
-            st.session_state["selected_load_file"])   #we load the mapping as a candidate (until confirmed)
+            selected_load_file)   #we load the mapping as a candidate (until confirmed)
 
 
     # A mapping has not been loaded yet__________
@@ -487,31 +482,14 @@ with tab1:
             with col1a:
                 st.button("Load", on_click=load_existing_g_mapping, key="key_save_existing_button_1")
 
-        if st.session_state["existing_g_mapping_loaded_ok_flag"]:
-            with col1b:
-                st.write("")
-                st.write("")
-                st.write("")
-                st.write("")
-                st.write("")
-                st.markdown(f"""
-                <div style="background-color:#d4edda; padding:1em; border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                    ✅ The mapping <b style="color:#0f5132;">{st.session_state["g_label"]}</b> has been loaded!
-                </div>
-                """, unsafe_allow_html=True)
-            st.session_state["existing_g_mapping_loaded_ok_flag"] = False
-            time.sleep(2)
-            st.cache_data.clear()
-            st.rerun()
-
 
     # A mapping is currently loaded__________
     else:  #a mapping is currently loaded (ask if overwrite or save)
         with col1:
-            st.write("________________")
             col1a, col1b = st.columns([2,1])
         if st.session_state["g_label_temp_existing"] and selected_load_file:   #after a label and file have been given
             with col1a:
+                st.write("")
                 st.markdown(f"""<span style="font-size:1.1em; font-weight:bold;">
                 ⚠️ The mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b>
                 is already loaded!</span><br>""",
@@ -523,7 +501,7 @@ with tab1:
                 col1a, col1b = st.columns([1,2])
             with col1a:
                 overwrite_g_selection = st.radio("What would you like to do?:",
-                    ["🛑 Cancel", "💾 Save", "✏️ Overwrite"],
+                    ["✏️ Overwrite", "💾 Save", "🛑 Cancel"],
                     key="overwrite_selection_radio_existing")
 
             if overwrite_g_selection == "✏️ Overwrite":
@@ -605,23 +583,10 @@ with tab1:
                             st.button(f"""Save and create""",
                              on_click=load_existing_g_mapping_and_save_current_one,  key="key_save_existing_button_2")
                 else:
-                    st.session_state["save_g_filename"] = save_g_filename
                     if save_g_filename:
                         with col1b:
                             st.button(f"""Save and create""",
                              on_click=load_existing_g_mapping_and_save_current_one,  key="key_save_existing_button_3")
-
-        if st.session_state["existing_g_mapping_loaded_ok_flag"]:
-            with col1b:
-                st.write("")
-                st.markdown(f"""
-                <div style="background-color:#d4edda; padding:1em; border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                    ✅ The mapping <b style="color:#0f5132;">{st.session_state["g_label"]}</b> has been loaded!
-                </div>
-                """, unsafe_allow_html=True)
-            st.session_state["existing_g_mapping_loaded_ok_flag"] = False
-            time.sleep(2)
-            st.rerun()
 
     # g mapping INFORMATION BOX--------------------------------------------
     with col3:

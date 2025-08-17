@@ -4,6 +4,3 @@
 <http://rdfolio.org//mapping#tm1> ns1:logicalSource [ ns2:referenceFormulation ns2:CSV ;
             ns1:source "Authors_2.csv" ] .
 
-<http://rdfolio.org//mapping#tm2> ns1:logicalSource [ ns2:referenceFormulation ns2:CSV ;
-            ns1:source "Authors.csv" ] .
-
