@@ -39,28 +39,20 @@ def import_st_aesthetics():
             background-color: #9871b5; color: white; font-weight: bold;
             box-shadow: 0 0 10px #9871b5;}
 
-
     /* MAIN BUTTONS */
         div.stButton > button {background-color: #555555; color: white;
             height: 2.4em; width: auto; border-radius: 6px;
-            border: 1px solid #FFD3C4; font-size: 16px;
+            border: 1px solid #333333; font-size: 16px;
             padding: 0.4em 1em; transition: background-color 0.2s ease;}
 
         div.stButton > button:hover {background-color: #FF4B4B;
             color: white;}
-
 
     /* MULTISELECT */
         div[data-baseweb="select"] > div {color: black !important;}
 
         div[data-baseweb="select"] span {background-color: #d3d3d3 !important;
         color: black !important;}
-
-
-    /* PURPLE HEADINGS */
-            .purple_heading {background-color:#e6e6fa; border:1px solid #511D66;
-                border-radius:5px; padding:10px; margin-bottom:8px;
-                font-size:1.1rem; font-weight:600; color:#511D66;}
 
      /* FILE UPLOADER */
         div[data-testid="stFileUploader"] > div {
@@ -89,6 +81,23 @@ def import_st_aesthetics():
         /* x button icon */
         div[data-testid="stFileUploader"] ul button svg {width: 14px !important;
             height: 14px !important;}
+
+    /* PURPLE HEADINGS */
+            .purple_heading {background-color:#e6e6fa; border:1px solid #511D66;
+                border-radius:5px; padding:10px; margin-bottom:8px;
+                font-size:1.1rem; font-weight:600; color:#511D66;}
+
+    /* GRAY PREVIEW MESSAGE */
+            .gray-preview-message {background-color:#f9f9f9; padding:1em; border-radius:5px;
+            color:#333333; border:1px solid #e0e0e0;}
+
+    /* GREEN STATUS MESSAGE */
+            .green-status-message {background-color:#d4edda; padding:1em;
+            border-radius:5px; color:#155724; border:1px solid #511D66;}
+
+    /* GRAY STATUS MESSAGE */
+            .gray-status-message {background-color:#f5f5f5; padding:1em;
+            border-radius:5px; color:#2a0134; border:1px solid #511D66;}
 
     /* SUCCESS MESSAGE */
         .custom-success {background-color: #d4edda; padding: 1em;

@@ -99,6 +99,10 @@ if "g_ontology_from_link_candidate" not in st.session_state:
     st.session_state["g_ontology_from_link_candidate"] = Graph()
 if "g_ontology_components_dict" not in st.session_state:
     st.session_state["g_ontology_components_dict"] = {}
+if "g_ontology_reduced_ok_flag" not in st.session_state:
+    st.session_state["g_ontology_reduced_ok_flag"] = False
+if "g_ontology_discarded_ok_flag" not in st.session_state:
+    st.session_state["g_ontology_discarded_ok_flag"] = False
 
 
 if "overwrite_checkbox" not in st.session_state:
@@ -228,16 +232,19 @@ def extend_ontology_from_file():
     st.session_state["key_extend_ontology_selected_option"] = "📁 File"
 
 def reduce_ontology():
+    st.session_state["g_ontology_reduced_ok_flag"] = True
+    #drop the given ontology components from the dictionary
     st.session_state["g_ontology_components_dict"] = {label: ont for label, ont in st.session_state["g_ontology_components_dict"].items() if label not in ontologies_to_drop_list}
-
+    #merge remaining ontology components
     st.session_state["g_ontology"] = Graph()
     for label, ont in st.session_state["g_ontology_components_dict"].items():
-        st.session_state["g_ontology"] += ont  # Merge the graph using RDFLib's += operator
-
+        st.session_state["g_ontology"] += ont  # merge the graphs using RDFLib's += operator
 
 def discard_ontology():
+    st.session_state["g_ontology_discarded_ok_flag"] = True
     st.session_state["g_ontology"] = Graph()
     st.session_state["g_ontology_components_dict"] = {}
+    st.session_state["g_ontology_label"] = ""
 
 
 
@@ -596,9 +603,7 @@ with tab1:
     with col3:
         if st.session_state["g_label"]:
             if st.session_state["g_mapping_source_cache"][0] == "file":
-                st.markdown(f"""
-                    <div style="background-color:#d4edda; padding:1em; border-radius:5px;
-                    color:#2a0134; border:1px solid #511D66;">
+                st.markdown(f"""<div class="green-status-message">
                         <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                         style="vertical-align:middle; margin-right:8px; height:20px;">
                         You are currently working with mapping
@@ -611,9 +616,7 @@ with tab1:
                     </div>
                 """, unsafe_allow_html=True)
             else:
-                st.markdown(f"""
-                    <div style="background-color:#d4edda; padding:1em; border-radius:5px;
-                    color:#2a0134; border:1px solid #511D66;">
+                st.markdown(f"""<div class="green-status-message">
                         <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                         style="vertical-align:middle; margin-right:8px; height:20px;">
                         You are currently working with mapping
@@ -627,8 +630,7 @@ with tab1:
 
 
         else:
-            st.markdown(f"""
-            <div style="background-color:#e6e6fa; padding:1em; border-radius:5px; color:#2a0134; border:1px solid #511D66;">
+            st.markdown("""<div class="gray-status-message">
                 ✖️ <b style="color:#511D66;">No mapping</b> has been loaded yet.
             </div>
             """, unsafe_allow_html=True)
@@ -656,6 +658,30 @@ with tab2:
         time.sleep(st.session_state["success_display_time"])
         st.rerun()
 
+    if st.session_state["g_ontology_reduced_ok_flag"]:
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.write("")
+            st.markdown(f"""<div class="custom-success">
+                ✅ The ontology has been reduced!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["g_ontology_reduced_ok_flag"] = False
+        time.sleep(st.session_state["success_display_time"])
+        st.rerun()
+
+    if st.session_state["g_ontology_discarded_ok_flag"]:
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.write("")
+            st.markdown(f"""<div class="custom-success">
+                ✅ The ontology has been discarded!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["g_ontology_discarded_ok_flag"] = False
+        time.sleep(st.session_state["success_display_time"])
+        st.rerun()
+
     with col2:
         col2a,col2b = st.columns([1,2])
         with col2b:
@@ -665,25 +691,19 @@ with tab2:
             if st.session_state["g_ontology"]:
                 if len(st.session_state["g_ontology_components_dict"]) > 1:
                     ontology_items = '\n'.join([f"""<li><b style="color:#F63366;">{ont}</b></li>""" for ont in st.session_state["g_ontology_components_dict"]])
-                    st.markdown(f"""
-                        <div style="background-color:#d4edda; padding:1em;
-                        border-radius:5px; color:#155724; border:1px solid #444;">
+                    st.markdown(f"""<div class="green-status-message">
                             🧩 Your <b>ontology</b> is the merger of:
                         <ul>
                             {ontology_items}
                         </ul></div>""", unsafe_allow_html=True)
                 else:
-                    st.markdown(f"""
-                        <div style="background-color:#d4edda; padding:1em;
-                        border-radius:5px; color:#155724; border:1px solid #444;">
+                    st.markdown(f"""<div class="green-status-message">
                             🧩 The ontology <b style="color:#F63366;">
                             {next(iter(st.session_state["g_ontology_components_dict"]))}</b>
                             is currently loaded.
                         </div>""", unsafe_allow_html=True)
             else:
-                st.markdown(f"""
-                    <div style="background-color:#f5f5f5; padding:1em; border-radius:5px;
-                    color:#2a0134; border:1px solid #511D66;">
+                st.markdown(f"""<div class="gray-status-message">
                         🚫 <b>No ontology</b> is loaded.
                     </div>
                 """, unsafe_allow_html=True)
@@ -920,44 +940,11 @@ with tab2:
                     with col1a:
                         st.button("Add", key="key_extend_ontology_from_file_button", on_click=extend_ontology_from_file)
 
-
-
-
-            #HERE TO EXTEND
-            #ontology files
-
-
-                if st.session_state["ontology_from_file_valid_flag"] and st.session_state["ontology_file"]:
-                    if st.session_state["g_ontology_from_file_candidate_label"] in st.session_state["g_ontology_components_dict"] and st.session_state["g_ontology_from_file_candidate_label"]!="Unlabelled ontology":
-                        with col1b:
-                            st.markdown(f"""<div class="custom-warning">
-                                    ⚠️ The ontology <b style="color:#F63366;">
-                                    {st.session_state["g_ontology_from_file_candidate_label"]}</b>
-                                    is already loaded.
-                                </div>""", unsafe_allow_html=True)
-                    else:
-                        with col1b:
-                            st.markdown(f"""
-                                <div style="background-color:#d4edda; padding:0.8em;
-                                border-radius:5px; color:#155724; border:1px solid #c3e6cb; font-size:0.92em">
-                                    ✅ Valid ontology: <b style="color:#F63366;">
-                                    {st.session_state["g_ontology_from_file_candidate_label"]}</b>
-                                </div>""", unsafe_allow_html=True)
-                        if utils.check_ontology_overlap(st.session_state["g_ontology_from_file_candidate"], st.session_state["g_ontology"]):
-                            with col1a:
-                                st.markdown(f"""<div class="custom-warning">
-                                        ⚠️ Caution: <b>Ontologies overlap</b>. Check your ontologies
-                                        externally to make sure they are aligned and compatible.
-                                    </div>""", unsafe_allow_html=True)
-                                st.write("")
-                        with col1a:
-                            st.button("Add", key="key_extend_ontology_from_file_button", on_click=extend_ontology_from_file)
-
         with col1:
             st.write("________")
 
     #REDUCE ONTOLOGY___________________________________
-    if st.session_state["g_ontology"] and len(st.session_state["g_ontology_components_dict"]) != 1:   #ontology loaded and more than 1 component (otherwise just can discard)
+    if st.session_state["g_ontology"] and len(st.session_state["g_ontology_components_dict"]) != 1:   #ontology loaded and more than 1 component
         with col1:
             st.markdown("""<div class="purple_heading">
                     ➖ Reduce current ontology
@@ -974,11 +961,9 @@ with tab2:
             ontologies_to_drop_itemise = '\n'.join([f"""<li><b style="color:#F63366;">{ont}</b></li>""" for ont in ontologies_to_drop_list])
             with col1b:
                 st.write("")
-                st.markdown(f"""
-                    <div style="background-color:#f9f9f9; padding:1em; border-radius:5px;
-                    color:#333333; border:1px solid #e0e0e0;">
+                st.markdown(f"""<div class="gray-preview-message">
                         👆 You selected: <ul> {ontologies_to_drop_itemise}
-                    </ul></span></div>""", unsafe_allow_html=True)
+                    </ul></div>""", unsafe_allow_html=True)
 
         if ontologies_to_drop_list:
             with col1a:
@@ -1006,14 +991,12 @@ with tab2:
         with col1a:
             st.write("")
             if len(st.session_state["g_ontology_components_dict"]) == 1:
-                st.markdown(f"""<div style="background-color:#f9f9f9; padding:1em; border-radius:5px;
-                    color:#333333; border:1px solid #e0e0e0;">
+                st.markdown(f"""<div class="gray-preview-message">
                         🔒 Current ontology:
                         <b style="color:#F63366;">{next(iter(st.session_state["g_ontology_components_dict"]))}</b>
                     </div>""",unsafe_allow_html=True)
             else:
-                st.markdown(f"""<div style="background-color:#f9f9f9; padding:1em; border-radius:5px;
-                    color:#333333; border:1px solid #e0e0e0;">
+                st.markdown(f"""<div class="gray-preview-message">
                         🔒 Current ontology is the <b style="color:#F63366;">merger of
                         {len(st.session_state["g_ontology_components_dict"])} sub-ontologies</b>.
                     </div>""",unsafe_allow_html=True)
@@ -1021,9 +1004,9 @@ with tab2:
             st.write("")
             discard_ontology_checkbox = st.checkbox(
             ":gray-badge[⚠️ I am completely sure I want to discard the ontology]",
-            key="discard_ontology")
+            key="key_discard_ontology_checkbox")
             if discard_ontology_checkbox:
-                st.button("Discard", on_click=discard_ontology)
+                st.button("Discard", key="key_discard_ontology_button", on_click=discard_ontology)
 
 
 #_____________________________________________
@@ -1067,9 +1050,7 @@ with tab3:
         col2a,col2b = st.columns([1,2])
         with col2b:
             if st.session_state["g_label"]:
-                st.markdown(f"""
-                    <div style="background-color:#e6e6fa; padding:1em; border-radius:5px;
-                    color:#2a0134; border:1px solid #511D66;">
+                st.markdown(f"""<div class="green-status-message">
                         <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                         style="vertical-align:middle; margin-right:8px; height:20px;">
                         You are currently working with mapping
@@ -1079,9 +1060,7 @@ with tab3:
 
 
             else:
-                st.markdown(f"""
-                <div style="background-color:#e6e6fa; padding:1em; border-radius:5px;
-                color:#2a0134; border:1px solid #511D66;">
+                st.markdown("""<div class="gray-status-message">
                     ✖️ <b style="color:#511D66;">No mapping</b> has been loaded yet.
                 </div>
                 """, unsafe_allow_html=True)
@@ -1342,9 +1321,7 @@ with tab4:
         col2a,col2b = st.columns([1,2])
         with col2b:
             if st.session_state["g_label"]:
-                st.markdown(f"""
-                    <div style="background-color:#e6e6fa; padding:1em; border-radius:5px;
-                    color:#2a0134; border:1px solid #511D66;">
+                st.markdown(f"""<div class="green-status-message">
                         <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                         style="vertical-align:middle; margin-right:8px; height:20px;">
                         You are currently working with mapping
