@@ -1,7 +1,0 @@
-@prefix exA: <http://example.org/ontologyA#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-
-exA:Person
-    a rdfs:Class ;
-    rdfs:label "Entity"@en ;
-    rdfs:comment "An individual human being." .

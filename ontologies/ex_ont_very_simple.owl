@@ -1,7 +1,0 @@
-@prefix exB: <http://example.org/ontologyB#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-
-exB:Alien
-    a rdfs:Class ;
-    rdfs:label "Entity"@en ;
-    rdfs:comment "A being not native to planet Earth." .

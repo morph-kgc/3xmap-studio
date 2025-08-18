@@ -11,9 +11,6 @@ import utils
 import uuid
 
 
-# Import style-----------------------------
-utils.import_st_aesthetics()
-
 # Header-----------------------------------
 st.markdown("""
 <div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
@@ -35,6 +32,8 @@ st.markdown("""
 # another option for the icon:
 # https://www.clipartmax.com/png/middle/139-1393405_file-gear-icon-svg-wikimedia-commons-gear-icon.png
 
+# Import style-----------------------------
+utils.import_st_aesthetics()
 
 # Namespaces-----------------------------------
 namespaces = utils.get_predefined_ns_dict()
@@ -70,8 +69,8 @@ if "g_label_temp_new" not in st.session_state:
     st.session_state["g_label_temp_new"] = ""
 if "new_g_mapping_created_ok_flag" not in st.session_state:
     st.session_state["new_g_mapping_created_ok_flag"] = False
-if "uploader_key" not in st.session_state:
-    st.session_state["uploader_key"] = None
+if "key_mapping_uploader" not in st.session_state:
+    st.session_state["key_mapping_uploader"] = None
 if "g_label_temp_existing" not in st.session_state:
     st.session_state["g_label_temp_existing"] = ""
 if "existing_g_mapping_loaded_ok_flag" not in st.session_state:
@@ -85,16 +84,22 @@ if "original_g_size_cache" not in st.session_state:
 #TAB2
 if "g_ontology" not in st.session_state:
     st.session_state["g_ontology"] = Graph()
+if "g_ontology_label" not in st.session_state:
+    st.session_state["g_ontology_label"] = ""
+if "g_ontology_loaded_ok_flag" not in st.session_state:
+    st.session_state["g_ontology_loaded_ok_flag"] = False
 if "ontology_link" not in st.session_state:
     st.session_state["ontology_link"] = ""
+if "key_ontology_uploader" not in st.session_state:
+    st.session_state["key_ontology_uploader"] = None
 if "ontology_file" not in st.session_state:
     st.session_state["ontology_file"] = ""
-if "ontology_file_valid_flag" not in st.session_state:
-    st.session_state["ontology_file_valid_flag"] = False
-if "g_ontology_candidate_file" not in st.session_state:
-    st.session_state["g_ontology_candidate_file"] = Graph()
-if "g_ontology_candidate_link" not in st.session_state:
-    st.session_state["g_ontology_candidate_link"] = Graph()
+if "ontology_from_file_valid_flag" not in st.session_state:
+    st.session_state["ontology_from_file_valid_flag"] = False
+if "g_ontology_from_file_candidate" not in st.session_state:
+    st.session_state["g_ontology_from_file_candidate"] = Graph()
+if "g_ontology_from_link_candidate" not in st.session_state:
+    st.session_state["g_ontology_from_link_candidate"] = Graph()
 if "g_ontology_components_dict" not in st.session_state:
     st.session_state["g_ontology_components_dict"] = {}
 
@@ -154,12 +159,12 @@ def load_existing_g_mapping():
     st.session_state["g_mapping_source_cache"] = ["file", selected_load_file.name]
     st.session_state["existing_g_mapping_loaded_ok_flag"] = True
     # reset fields___________________________
-    st.session_state["uploader_key"] = str(uuid.uuid4())
+    st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
     st.session_state["key_g_label_temp_existing"] = ""
 
 def cancel_load_existing_g_mapping():
     # reset fields___________________________
-    st.session_state["uploader_key"] = str(uuid.uuid4())
+    st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
     st.session_state["key_g_label_temp_existing"] = ""
 
 def load_existing_g_mapping_and_save_current_one():
@@ -172,22 +177,23 @@ def load_existing_g_mapping_and_save_current_one():
     st.session_state["g_mapping_source_cache"] = ["file", selected_load_file.name]
     st.session_state["existing_g_mapping_loaded_ok_flag"] = True
     # reset fields___________________________
-    st.session_state["uploader_key"] = str(uuid.uuid4())
+    st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
     st.session_state["key_g_label_temp_existing"] = ""
 
 
 #TAB2
 def load_ontology_from_link():
-    st.session_state["g_ontology"] = st.session_state["g_ontology_candidate_link"]  # consolidate ontology graph
-    g_ontology_label = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_link=st.session_state["ontology_link_input"])
-    # save ontology info___________________________
-    st.session_state["g_ontology_components_dict"][g_ontology_label]=st.session_state["g_ontology"]
+    st.session_state["g_ontology"] = st.session_state["g_ontology_from_link_candidate"]  # consolidate ontology graph
+    st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_link=st.session_state["key_ontology_link"])
+    st.session_state["g_ontology_loaded_ok_flag"] = True
+    # save ontology info to dict___________________________
+    st.session_state["g_ontology_components_dict"][st.session_state["g_ontology_label"]]=st.session_state["g_ontology"]
     # reset fields___________________________
-    st.session_state["ontology_link_input"] = ""
+    st.session_state["key_ontology_link"] = ""
     st.session_state["ontology_link"] = ""
 
 def load_ontology_from_file():
-    st.session_state["g_ontology"] = st.session_state["g_ontology_candidate_file"]  # consolidate ontology graph
+    st.session_state["g_ontology"] = st.session_state["g_ontology_from_file_candidate"]  # consolidate ontology graph
     g_ontology_label = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_file=st.session_state["key_ontology_file_input"])
     # save ontology info___________________________
     st.session_state["g_ontology_components_dict"][g_ontology_label]=st.session_state["g_ontology"]
@@ -195,19 +201,19 @@ def load_ontology_from_file():
     st.session_state["key_ontology_file_input"] = "Select a file"
 
 def extend_ontology_from_link():
-    g_ontology_new_part = st.session_state["g_ontology_candidate_link"]
-    g_ontology_new_part_label = utils.get_ontology_human_readable_name(g_ontology_new_part, source_link=st.session_state["ontology_link_input"])
+    g_ontology_new_part = st.session_state["g_ontology_from_link_candidate"]
+    g_ontology_new_part_label = utils.get_ontology_human_readable_name(g_ontology_new_part, source_link=st.session_state["key_ontology_link"])
     # save ontology info___________________________
     st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
     #merge both ontologies___________________
     for triple in g_ontology_new_part:
         st.session_state["g_ontology"].add(triple)
     # reset fields___________________________
-    st.session_state["ontology_link_input"] = ""
+    st.session_state["key_ontology_link"] = ""
     st.session_state["ontology_link"] = ""
 
 def extend_ontology_from_file():
-    g_ontology_new_part = st.session_state["g_ontology_candidate_file"]
+    g_ontology_new_part = st.session_state["g_ontology_from_file_candidate"]
     g_ontology_new_part_label = utils.get_ontology_human_readable_name(g_ontology_new_part, source_file=st.session_state["key_ontology_file_input"])
     # save ontology info___________________________
     st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
@@ -299,14 +305,11 @@ with tab1:
 
     if st.session_state["new_g_mapping_created_ok_flag"]:
         with col1a:
-            st.markdown(f"""
-            <div style="background-color:#d4edda; padding:1em; border-radius:5px;
-            color:#155724; border:1px solid #c3e6cb;">
-                ✅ The mapping <b style="color:#0f5132;">
-                {st.session_state["g_label"]}</b> has been created!
+            st.markdown(f"""<div class="custom-success">
+                ✅ The mapping <b>{st.session_state["g_label"]}</b> has been created!
             </div>""", unsafe_allow_html=True)
         st.session_state["new_g_mapping_created_ok_flag"] = False
-        time.sleep(2)
+        time.sleep(st.session_state["success_display_time"])
         st.cache_data.clear()
         st.rerun()
 
@@ -340,7 +343,7 @@ with tab1:
             with col1a:
                 overwrite_g_selection = st.radio("What would you like to do?:",
                     ["✏️ Overwrite", "💾 Save", "🛑 Cancel"],
-                    key="overwrite_selection_radio_new")
+                    key="key_overwrite_selection_radio_new")
 
             if overwrite_g_selection == "✏️ Overwrite":
                 with col1b:
@@ -409,7 +412,7 @@ with tab1:
                     with col1b:
                         st.markdown(f"""<div style="background-color:#fff3cd; padding:0.8em;
                             border-radius:5px; color:#856404; border:1px solid #ffeeba; font-size:0.92rem;">
-                                ⚠️ A file named <b style="color:#cc9a06;">{save_g_filename}</b> already exists
+                                ⚠️ A file named <b>{save_g_filename}</b> already exists
                                 in folder. Please confirm below you want to overwrite it, or enter a different filename.
                             </div>""", unsafe_allow_html=True)
                         st.write("")
@@ -439,7 +442,7 @@ with tab1:
         st.write("")
 
 
-    allowed_format_list = list(utils.get_g_mapping_file_formats_dict().values())
+    mapping_format_list = list(utils.get_g_mapping_file_formats_dict().values())
 
 
     with col1:
@@ -448,18 +451,16 @@ with tab1:
     if st.session_state["existing_g_mapping_loaded_ok_flag"]:
         with col1a:
             st.write("")
-            st.markdown(f"""
-            <div style="background-color:#d4edda; padding:1em; border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                ✅ The mapping <b style="color:#0f5132;">{st.session_state["g_label"]}</b> has been loaded!
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f"""<div class="custom-success">
+                ✅ The mapping <b>{st.session_state["g_label"]}</b> has been loaded!
+            </div>""", unsafe_allow_html=True)
         st.session_state["existing_g_mapping_loaded_ok_flag"] = False
-        time.sleep(2)
+        time.sleep(st.session_state["success_display_time"])
         st.rerun()
 
     with col1a:
         selected_load_file = st.file_uploader(f"""🖱️
-        Upload mapping file""", type=allowed_format_list, key=st.session_state["uploader_key"])
+        Upload mapping file""", type=mapping_format_list, key=st.session_state["key_mapping_uploader"])
 
     with col1b:
         if selected_load_file:
@@ -502,7 +503,7 @@ with tab1:
             with col1a:
                 overwrite_g_selection = st.radio("What would you like to do?:",
                     ["✏️ Overwrite", "💾 Save", "🛑 Cancel"],
-                    key="overwrite_selection_radio_existing")
+                    key="key_overwrite_selection_radio_existing")
 
             if overwrite_g_selection == "✏️ Overwrite":
                 with col1b:
@@ -568,9 +569,8 @@ with tab1:
 
                 if save_g_filename in existing_files_list:
                     with col1b:
-                        st.markdown(f"""<div style="background-color:#fff3cd; padding:0.8em;
-                            border-radius:5px; color:#856404; border:1px solid #ffeeba; font-size:0.92rem;">
-                                ⚠️ A file named <b style="color:#cc9a06;">{save_g_filename}</b> already exists
+                        st.markdown(f"""<div class="custom-warning-small">
+                                ⚠️ A file named <b>{save_g_filename}</b> already exists
                                 in folder. Please confirm below you want to overwrite it, or enter a different filename.
                             </div>""", unsafe_allow_html=True)
                         st.write("")
@@ -639,33 +639,24 @@ with tab1:
 with tab2:
 
     col1, col2 = st.columns([2,1.5])
-    with col1:
-        if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
-            st.markdown(f"""
-            <div style="background-color:#f8d7da; padding:1em;
-                        border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-                ❗ First you need to create or load a mapping in the
-                <b style="color:#a94442;">Select mapping</b> panel.
-            </div>
-            """, unsafe_allow_html=True)
-            st.stop()
+
+    if st.session_state["g_ontology_loaded_ok_flag"]:
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.write("")
+            st.markdown(f"""<div class="custom-success">
+                ✅ The ontology <b style="color:#F63366;">{st.session_state["g_ontology_label"]}</b> has been loaded!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["g_ontology_loaded_ok_flag"] = False
+        time.sleep(st.session_state["success_display_time"])
+        st.rerun()
 
     with col2:
         col2a,col2b = st.columns([1,2])
         with col2b:
             st.write("")
             st.write("")
-            st.markdown(f"""
-                <div style="background-color:#f5f5f5; padding:1em; border-radius:5px;
-                color:#2a0134; border:1px solid #511D66;">
-                    <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-                    style="vertical-align:middle; margin-right:8px; height:20px;">
-                    You are currently working with mapping
-                    <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
-                </div>
-            """, unsafe_allow_html=True)
-            st.write("")
-
 
             if st.session_state["g_ontology"]:
                 if len(st.session_state["g_ontology_components_dict"]) > 1:
@@ -681,7 +672,9 @@ with tab2:
                     st.markdown(f"""
                         <div style="background-color:#d4edda; padding:1em;
                         border-radius:5px; color:#155724; border:1px solid #444;">
-                            🧩 The ontology <b style="color:#F63366;">{next(iter(st.session_state["g_ontology_components_dict"]))}</b> has been loaded!
+                            🧩 The ontology <b style="color:#F63366;">
+                            {next(iter(st.session_state["g_ontology_components_dict"]))}</b>
+                            is currently loaded.
                         </div>""", unsafe_allow_html=True)
             else:
                 st.markdown(f"""
@@ -708,6 +701,8 @@ with tab2:
     #LOAD ONTOLOGY FROM URL___________________________________
     if not st.session_state["g_ontology"]:   #no ontology is loaded yet
         with col1:
+            st.write("")
+            st.write("")
             st.markdown("""<div class="purple_heading">
                     🌐 Load ontology from URL
                 </div>""", unsafe_allow_html=True)
@@ -715,55 +710,41 @@ with tab2:
 
         with col1:
             col1a,col1b = st.columns([2,1])
+
         with col1a:
-            ontology_link_input = st.text_input("⌨️ Enter link to ontology", key="ontology_link_input")
-        if ontology_link_input:
-            st.session_state["ontology_link"] = ontology_link_input
+            ontology_link = st.text_input("⌨️ Enter link to ontology", key="key_ontology_link")
+        st.session_state["ontology_link"] = ontology_link if ontology_link else ""
 
-        #http://purl.org/ontology/bibo/
+        if ontology_link:
 
-            if st.session_state["ontology_link"] and not utils.is_valid_ontology(st.session_state["ontology_link"]):
+            #http://purl.org/ontology/bibo/
+            #http://xmlns.com/foaf/0.1/
+
+            g_candidate, fmt_candidate = utils.parse_ontology(st.session_state["ontology_link"])
+
+            if not utils.is_valid_ontology(g_candidate):
                 with col1b:
-                    st.markdown(f"""
-                    <div style="background-color:#f8d7da; padding:0.8em;
-                                border-radius:5px; color:#721c24; border:1px solid #f5c6cb; font-size:0.92rem;">
+                    st.write("")
+                    st.markdown(f"""<div class="custom-error-small">
                         ❌ URL does not link to a valid ontology.
-                    </div>
-                    """, unsafe_allow_html=True)
+                    </div>""", unsafe_allow_html=True)
                     st.write("")
 
-            elif st.session_state["ontology_link"]:
-                st.session_state["g_ontology_candidate_link"] = utils.parse_ontology(st.session_state["ontology_link"])
-                st.session_state["ontology_link_valid_flag"] = True if st.session_state["g_ontology_candidate_link"] else False
-                st.session_state["g_ontology_candidate_label_link"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_candidate_link"], source_link=st.session_state["ontology_link"])
+            else:
+                st.session_state["g_ontology_from_link_candidate"] = g_candidate
+                st.session_state["g_ontology_from_link_candidate_fmt"] = fmt_candidate
+                st.session_state["g_ontology_from_link_candidate_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_from_link_candidate"], source_link=st.session_state["ontology_link"])
 
-                if not st.session_state["ontology_link_valid_flag"] and st.session_state["ontology_link"]:
-                    with col1a:
-                        st.markdown(f"""
-                            <div style="background-color:#f8d7da; padding:0.8em;
-                                        border-radius:5px; color:#721c24; border:1px solid #f5c6cb; font-size:0.92rem;">
-                                ❌ Error when parsing the ontology.<br>
-                                Please check the <b style="color:#a94442;">ontology file</b> for:
-                                <ul style="margin-top:0.5em;">
-                                    <li>Invalid XML syntax</li>
-                                    <li>Encoding issues</li>
-                                    <li>Missing or misused namespaces</li>
-                                    <li>Incomplete or corrupted content</li>
-                                </ul>
-                            </div>
-                        """, unsafe_allow_html=True)
-
-                if st.session_state["ontology_link_valid_flag"] and st.session_state["ontology_link"]:
-                    with col1b:
-                        st.write("")
-                        st.markdown(f"""
-                            <div style="background-color:#d4edda; padding:0.8em;
-                            border-radius:5px; color:#155724; border:1px solid #c3e6cb; font-size:0.92em">
-                                ✅ Valid ontology: <b style="color:#F63366;">
-                                {st.session_state["g_ontology_candidate_label_link"]}</b>
-                            </div>""", unsafe_allow_html=True)
-                    with col1a:
-                        st.button("Load", key="key_load_ontology_from_link_button", on_click=load_ontology_from_link)
+                with col1b:
+                    st.write("")
+                    st.markdown(f"""<div class="custom-success-small">
+                            ✅ Valid ontology: <b style="color:#F63366;">
+                            {st.session_state["g_ontology_from_link_candidate_label"]}</b>
+                            (parsed successfully with format
+                            <b>{st.session_state["g_ontology_from_link_candidate_fmt"]}</b>)
+                        </div>""", unsafe_allow_html=True)
+                with col1a:
+                    st.button("Load", key="key_load_ontology_from_link_button", on_click=load_ontology_from_link)
 
         with col1:
             st.write("______")
@@ -776,68 +757,43 @@ with tab2:
                 </div>    """, unsafe_allow_html=True)
             st.write("")
 
-        #ontology files
-        ontology_extension_dict = {"owl": ".owl", "turtle": ".ttl", "longturtle": ".ttl", "n3": ".n3",
-        "ntriples": ".nt", "nquads": "nq", "trig": ".trig", "json-ld": ".jsonld",
-        "xml": ".xml", "pretty-xml": ".xml", "trix": ".trix"}
+        ontology_extension_dict = utils.get_g_ontology_file_formats_dict()   #ontology allowed formats
         ontology_format_list = list(ontology_extension_dict)
-        ontology_file_list = [
-            filename for filename in os.listdir(ontology_folder)
-            if os.path.isfile(os.path.join(ontology_folder, filename)) and
-            any(filename.endswith(extension) for extension in ontology_format_list)]
-        ontology_file_list.insert(0, "Select a file")
-
 
         with col1:
-            col1a,col1b = st.columns([2,1])
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.session_state["ontology_file"] = st.file_uploader(f"""🖱️
+                Upload ontology file""", type=ontology_format_list, key=st.session_state["key_ontology_uploader"])
 
-        if len(ontology_file_list) == 1:  # folder exists but it is empty
-            with col1a:
-                st.write("")
-                st.markdown(f"""
-                    <div style="background-color:#fff3cd; padding:1em;
-                    border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                        ⚠️ No valid files found in the <b style="color:#cc9a06;">ontologies folder</b>.
-                        Please add at least one valid ontology file to continue.
-                    """, unsafe_allow_html=True)
+        if st.session_state["ontology_file"]:
 
-        else:
-            with col1a:
-                ontology_file_input = st.selectbox("🖱️ Select an ontology file",
-                                    ontology_file_list, key="key_ontology_file_input")
-                st.session_state["ontology_file"] = ontology_file_input if ontology_file_input != ontology_file_list[0] else ""
+            g_candidate, fmt_candidate = utils.parse_ontology(st.session_state["ontology_file"])
 
-            if st.session_state["ontology_file"]:
-                ontology_file_path = os.path.join(os.getcwd(), "ontologies", st.session_state["ontology_file"])
-                st.session_state["g_ontology_candidate_file"] = utils.parse_ontology(ontology_file_path)
-                st.session_state["ontology_file_valid_flag"] = True if st.session_state["g_ontology_candidate_file"] else False
-                st.session_state["g_ontology_candidate_label_file"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_candidate_file"], source_file=st.session_state["ontology_file"])
-
-            if not st.session_state["ontology_file_valid_flag"] and st.session_state["ontology_file"]:
-                with col1a:
-                    st.markdown(f"""
-                        <div style="background-color:#f8d7da; padding:0.8em;
-                                    border-radius:5px; color:#721c24; border:1px solid #f5c6cb; font-size:0.92rem;">
-                            ❌ Error when parsing the ontology.<br>
-                            Please check the <b style="color:#a94442;">ontology file</b> for:
-                            <ul style="margin-top:0.5em;">
-                                <li>Invalid XML syntax</li>
-                                <li>Encoding issues</li>
-                                <li>Missing or misused namespaces</li>
-                                <li>Incomplete or corrupted content</li>
-                            </ul>
-                        </div>
-                    """, unsafe_allow_html=True)
-
-            if st.session_state["ontology_file_valid_flag"] and st.session_state["ontology_file"]:
+            if not utils.is_valid_ontology(g_candidate):
                 with col1b:
                     st.write("")
-                    st.markdown(f"""
-                        <div style="background-color:#d4edda; padding:0.8em;
-                        border-radius:5px; color:#155724; border:1px solid #c3e6cb; font-size:0.92em">
+                    st.write("")
+                    st.markdown(f"""<div class="custom-error-small">
+                        ❌ File does not contain a valid ontology.
+                    </div>""", unsafe_allow_html=True)
+                    st.write("")
+
+            else:
+                st.session_state["g_ontology_from_file_candidate"] = g_candidate
+                st.session_state["g_ontology_from_file_candidate_fmt"] = fmt_candidate
+                st.session_state["g_ontology_from_file_candidate_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_from_file_candidate"], source_file=st.session_state["ontology_file"])
+
+                with col1b:
+                    st.write("")
+                    st.write("")
+                    st.markdown(f"""<div class="custom-success-small">
                             ✅ Valid ontology: <b style="color:#F63366;">
-                            {st.session_state["g_ontology_candidate_label_file"]}</b>
+                            {st.session_state["g_ontology_from_file_candidate_label"]}</b>
+                            (parsed successfully with format
+                            <b>{st.session_state["g_ontology_from_file_candidate_fmt"]}</b>)
                         </div>""", unsafe_allow_html=True)
+
                 with col1a:
                     st.button("Load", key="key_load_ontology_from_file_button", on_click=load_ontology_from_file)
 
@@ -859,9 +815,9 @@ with tab2:
 
         if extend_ontology_selected_option == "🌐 URL":
             with col1a:
-                ontology_link_input = st.text_input("⌨️ Enter link to ontology", key="ontology_link_input")
-            if ontology_link_input:
-                st.session_state["ontology_link"] = ontology_link_input
+                ontology_link = st.text_input("⌨️ Enter link to ontology", key="key_ontology_link")
+            if ontology_link:
+                st.session_state["ontology_link"] = ontology_link
 
                 if st.session_state["ontology_link"] and not utils.is_valid_ontology(st.session_state["ontology_link"]):
                     with col1b:
@@ -874,11 +830,11 @@ with tab2:
                         st.write("")
 
                 elif st.session_state["ontology_link"]:
-                    st.session_state["g_ontology_candidate_link"] = utils.parse_ontology(st.session_state["ontology_link"])
-                    st.session_state["ontology_link_valid_flag"] = True if st.session_state["g_ontology_candidate_link"] else False
-                    st.session_state["g_ontology_candidate_label_link"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_candidate_link"], source_link=st.session_state["ontology_link"])
-                    st.write("HERE1", len(st.session_state["g_ontology_candidate_link"]), st.session_state["ontology_link_valid_flag"])
-                    if not st.session_state["ontology_link_valid_flag"] and st.session_state["ontology_link"]:
+                    st.session_state["g_ontology_from_link_candidate"] = utils.parse_ontology(st.session_state["ontology_link"])
+                    st.session_state["ontology_from_link_valid_flag"] = True if st.session_state["g_ontology_from_link_candidate"] else False
+                    st.session_state["g_ontology_from_link_candidate_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_from_link_candidate"], source_link=st.session_state["ontology_link"])
+                    st.write("HERE1", len(st.session_state["g_ontology_from_link_candidate"]), st.session_state["ontology_from_link_valid_flag"])
+                    if not st.session_state["ontology_from_link_valid_flag"] and st.session_state["ontology_link"]:
                         with col1a:
                             st.markdown(f"""
                                 <div style="background-color:#f8d7da; padding:0.8em;
@@ -894,28 +850,24 @@ with tab2:
                                 </div>
                             """, unsafe_allow_html=True)
 
-                    if st.session_state["ontology_link_valid_flag"] and st.session_state["g_ontology_candidate_label_link"] in st.session_state["g_ontology_components_dict"]:
+                    if st.session_state["ontology_from_link_valid_flag"] and st.session_state["g_ontology_from_link_candidate_label"] in st.session_state["g_ontology_components_dict"]:
                         with col1b:
-                            st.markdown(f"""
-                                <div style="background-color:#fff3cd; padding:0.8em;
-                                border-radius:5px; color:#856404; border:1px solid #ffeeba; font-size:0.92em">
+                            st.markdown(f"""<div class="custom-warning">
                                     ⚠️ The ontology <b style="color:#F63366;">
-                                    {st.session_state["g_ontology_candidate_label_link"]}</b>
+                                    {st.session_state["g_ontology_from_link_candidate_label"]}</b>
                                     is already loaded.
                                 </div>""", unsafe_allow_html=True)
-                    elif st.session_state["ontology_link_valid_flag"]:
+                    elif st.session_state["ontology_from_link_valid_flag"]:
                         with col1b:
                             st.markdown(f"""
                                 <div style="background-color:#d4edda; padding:0.8em;
                                 border-radius:5px; color:#155724; border:1px solid #c3e6cb; font-size:0.92em">
                                     ✅ Valid ontology: <b style="color:#F63366;">
-                                    {st.session_state["g_ontology_candidate_label_link"]}</b>
+                                    {st.session_state["g_ontology_from_link_candidate_label"]}</b>
                                 </div>""", unsafe_allow_html=True)
-                        if utils.check_ontology_overlap(st.session_state["g_ontology_candidate_file"], st.session_state["g_ontology"]):
+                        if utils.check_ontology_overlap(st.session_state["g_ontology_from_file_candidate"], st.session_state["g_ontology"]):
                             with col1a:
-                                st.markdown(f"""
-                                    <div style="background-color:#fff3cd; padding:0.8em;
-                                    border-radius:5px; color:#856404; border:1px solid #ffeeba; font-size:0.92em">
+                                st.markdown(f"""<div class="custom-warning">
                                         ⚠️ Caution: <b>Ontologies overlap</b>. Check your ontologies
                                         externally to make sure they are aligned and compatible.
                                     </div>""", unsafe_allow_html=True)
@@ -941,12 +893,10 @@ with tab2:
             if len(ontology_file_list) == 1:  # folder exists but it is empty
                 with col1a:
                     st.write("")
-                    st.markdown(f"""
-                        <div style="background-color:#fff3cd; padding:1em;
-                        border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                            ⚠️ No valid files found in the <b style="color:#cc9a06;">ontologies folder</b>.
+                    st.markdown(f"""<div class="custom-warning">
+                            ⚠️ No valid files found in the <b>ontologies folder</b>.
                             Please add at least one valid ontology file to continue.
-                        """, unsafe_allow_html=True)
+                        <div>""", unsafe_allow_html=True)
 
             else:
                 with col1a:
@@ -956,11 +906,11 @@ with tab2:
 
                 if st.session_state["ontology_file"]:
                     ontology_file_path = os.path.join(os.getcwd(), "ontologies", st.session_state["ontology_file"])
-                    st.session_state["g_ontology_candidate_file"] = utils.parse_ontology(ontology_file_path)
-                    st.session_state["ontology_file_valid_flag"] = True if st.session_state["g_ontology_candidate_file"] else False
-                    st.session_state["g_ontology_candidate_label_file"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_candidate_file"], source_file=st.session_state["ontology_file"])
+                    st.session_state["g_ontology_from_file_candidate"] = utils.parse_ontology(ontology_file_path)
+                    st.session_state["ontology_from_file_valid_flag"] = True if st.session_state["g_ontology_from_file_candidate"] else False
+                    st.session_state["g_ontology_from_file_candidate_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_from_file_candidate"], source_file=st.session_state["ontology_file"])
 
-                if not st.session_state["ontology_file_valid_flag"] and st.session_state["ontology_file"]:
+                if not st.session_state["ontology_from_file_valid_flag"] and st.session_state["ontology_file"]:
                     with col1a:
                         st.markdown(f"""
                             <div style="background-color:#f8d7da; padding:0.8em;
@@ -977,14 +927,12 @@ with tab2:
                         """, unsafe_allow_html=True)
 
 
-                if st.session_state["ontology_file_valid_flag"] and st.session_state["ontology_file"]:
-                    if st.session_state["g_ontology_candidate_label_file"] in st.session_state["g_ontology_components_dict"] and st.session_state["g_ontology_candidate_label_file"]!="Unlabelled ontology":
+                if st.session_state["ontology_from_file_valid_flag"] and st.session_state["ontology_file"]:
+                    if st.session_state["g_ontology_from_file_candidate_label"] in st.session_state["g_ontology_components_dict"] and st.session_state["g_ontology_from_file_candidate_label"]!="Unlabelled ontology":
                         with col1b:
-                            st.markdown(f"""
-                                <div style="background-color:#fff3cd; padding:0.8em;
-                                border-radius:5px; color:#856404; border:1px solid #ffeeba; font-size:0.92em">
+                            st.markdown(f"""<div class="custom-warning">
                                     ⚠️ The ontology <b style="color:#F63366;">
-                                    {st.session_state["g_ontology_candidate_label_file"]}</b>
+                                    {st.session_state["g_ontology_from_file_candidate_label"]}</b>
                                     is already loaded.
                                 </div>""", unsafe_allow_html=True)
                     else:
@@ -993,13 +941,11 @@ with tab2:
                                 <div style="background-color:#d4edda; padding:0.8em;
                                 border-radius:5px; color:#155724; border:1px solid #c3e6cb; font-size:0.92em">
                                     ✅ Valid ontology: <b style="color:#F63366;">
-                                    {st.session_state["g_ontology_candidate_label_file"]}</b>
+                                    {st.session_state["g_ontology_from_file_candidate_label"]}</b>
                                 </div>""", unsafe_allow_html=True)
-                        if utils.check_ontology_overlap(st.session_state["g_ontology_candidate_file"], st.session_state["g_ontology"]):
+                        if utils.check_ontology_overlap(st.session_state["g_ontology_from_file_candidate"], st.session_state["g_ontology"]):
                             with col1a:
-                                st.markdown(f"""
-                                    <div style="background-color:#fff3cd; padding:0.8em;
-                                    border-radius:5px; color:#856404; border:1px solid #ffeeba; font-size:0.92em">
+                                st.markdown(f"""<div class="custom-warning">
                                         ⚠️ Caution: <b>Ontologies overlap</b>. Check your ontologies
                                         externally to make sure they are aligned and compatible.
                                     </div>""", unsafe_allow_html=True)
@@ -1097,7 +1043,7 @@ with tab3:
 
     col1, col2 = st.columns([2,1.5])
     with col1:
-        if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
+        if not st.session_state["g_label"]:
             st.markdown(f"""
             <div style="background-color:#f8d7da; padding:1em;
                         border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
@@ -1452,7 +1398,7 @@ with tab4:
             st.markdown(f"""
                 <div style="background-color:#fff3cd; padding:1em;
                 border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                    ⚠️ The filename <b style="color:#cc9a06;">{save_progress_filename}</b>
+                    ⚠️ The filename <b>{save_progress_filename}</b>
                     seems to include an extension. <br> Please note that the extension <code>.pkl</code>
                     will be added.</div>
             """, unsafe_allow_html=True)
@@ -1490,7 +1436,7 @@ with tab4:
                 </b>.  </div>
             """, unsafe_allow_html=True)
             st.session_state["save_progress_success"] = False
-            time.sleep(2)
+            time.sleep(st.session_state["success_display_time"])
             st.rerun()
 
 
@@ -1632,7 +1578,7 @@ with tab5:
                 </b>.  </div>
             """, unsafe_allow_html=True)
             st.session_state["export_success"] = False
-            time.sleep(2)
+            time.sleep(st.session_state["success_display_time"])
             st.rerun()
 
 

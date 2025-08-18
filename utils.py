@@ -11,16 +11,19 @@ import rdflib
 from rdflib import Graph, URIRef, Literal, Namespace, BNode
 from rdflib.namespace import split_uri
 from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL
+from io import IOBase
 
 
 #________________________________________________
 # Function to import style
 def import_st_aesthetics():
-    ##ff7a7a lighter streamlit salmon
 
-    # TABS ----------------------------------
+    #TIME FOR MESSAGES
+    st.session_state["success_display_time"] = 2
+
     st.markdown("""<style>
 
+    /* TABS */
         div[data-testid="stTabs"] > div {
         flex-wrap: wrap; justify-content: space-between;}
 
@@ -36,55 +39,30 @@ def import_st_aesthetics():
             background-color: #9871b5; color: white; font-weight: bold;
             box-shadow: 0 0 10px #9871b5;}
 
-        </style>""", unsafe_allow_html=True)
 
-    # MAIN BUTTONS ---------------------------
-    st.markdown("""<style>
+    /* MAIN BUTTONS */
+        div.stButton > button {background-color: #555555; color: white;
+            height: 2.4em; width: auto; border-radius: 6px;
+            border: 1px solid #FFD3C4; font-size: 16px;
+            padding: 0.4em 1em; transition: background-color 0.2s ease;}
 
-        div.stButton > button {
-            background-color: #555555;
-            color: white;
-            height: 2.4em;
-            width: auto;
-            border-radius: 6px;
-            border: 1px solid #FFD3C4;
-            font-size: 16px;
-            padding: 0.4em 1em;
-            transition: background-color 0.2s ease;
-        }
+        div.stButton > button:hover {background-color: #FF4B4B;
+            color: white;}
 
-        div.stButton > button:hover {
-            background-color: #FF4B4B;  /* Streamlit salmon orange */
-            color: white;
-        }
 
-    </style>""", unsafe_allow_html=True)
+    /* MULTISELECT */
+        div[data-baseweb="select"] > div {color: black !important;}
 
-    # MULTISELECT --------------------------------------
-    st.markdown("""
-        <style>
-        div[data-baseweb="select"] > div {
-        color: black !important;
-        }
-        div[data-baseweb="select"] span {
-        background-color: #d3d3d3 !important;  /* Light gray */
-        color: black !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
+        div[data-baseweb="select"] span {background-color: #d3d3d3 !important;
+        color: black !important;}
 
-    # PURPLE HEADINGS ----------------------------------
-    st.markdown("""
-        <style>
+
+    /* PURPLE HEADINGS */
             .purple_heading {background-color:#e6e6fa; border:1px solid #511D66;
                 border-radius:5px; padding:10px; margin-bottom:8px;
                 font-size:1.1rem; font-weight:600; color:#511D66;}
-        </style>
-    """, unsafe_allow_html=True)
 
-    # FILE UPLOADER -------------------------------------
-    st.markdown("""<style>
-
+     /* FILE UPLOADER */
         div[data-testid="stFileUploader"] > div {
         flex-wrap: wrap; justify-content: space-between;}
 
@@ -112,7 +90,49 @@ def import_st_aesthetics():
         div[data-testid="stFileUploader"] ul button svg {width: 14px !important;
             height: 14px !important;}
 
-        </style>""", unsafe_allow_html=True)
+    /* SUCCESS MESSAGE */
+        .custom-success {background-color: #d4edda; padding: 1em;
+            border-radius: 5px; color: #155724; border: 1px solid #c3e6cb;}
+
+        .custom-success b {color: #0f5132;}
+
+    /* SUCCESS MESSAGE SMALL*/
+        .custom-success-small {background-color: #d4edda; padding: 0.5em;
+            border-radius: 5px; color: #155724; border: 1px solid #c3e6cb;
+            font-size: 0.92em; justify-content: center;
+            align-items: center; text-align: center;}
+
+        .custom-success-small b {color: #0f5132;}
+
+    /* WARNING MESSAGE */
+        .custom-warning {background-color: #fff3cd; padding: 1em;
+            border-radius: 5px; color: #856404; border: 1px solid #ffeeba;
+            font-size: 0.92em;}
+
+        .custom-warning b {color: #cc9a06;}
+
+    /* WARNING MESSAGE SMALL*/
+        .custom-warning-small {background-color: #fff3cd; padding: 0.5em;
+            border-radius: 5px; color: #856404; border: 1px solid #ffeeba;
+            font-size: 0.92em; justify-content: center;
+            align-items: center; text-align: center;}
+
+        .custom-warning-small b {color: #cc9a06;}
+
+     /* ERROR MESSAGE */
+        .custom-error {background-color: #f8d7da; padding: 1em;
+            border-radius: 5px; color: #721c24; border: 1px solid #f5c6cb;}
+        .custom-error b {color: #a94442;}
+
+     /* ERROR MESSAGE SMALL*/
+        .custom-error-small {background-color: #f8d7da; padding: 0.5em;
+            border-radius: 5px; color: #721c24; border: 1px solid #f5c6cb;
+            font-size: 0.92em;; justify-content: center;
+            align-items: center; text-align: center;}
+
+        .custom-error-small b {color: #a94442;}
+
+    </style>""", unsafe_allow_html=True)
 
 
 #_______________________________________________________
@@ -209,29 +229,42 @@ def get_number_of_tm(g):
 #Function to parse an ontology to an initially empty graph
 @st.cache_resource
 def parse_ontology(source):
-    g = Graph()
+
+    # if source is a file-like object
+    if isinstance(source, IOBase):
+        content = source.read()
+        source.seek(0)  # reset index so that file can be reused
+        for fmt in ["xml", "turtle", "json-ld", "ntriples", "trig", "trix"]:
+            g = Graph()
+            try:
+                g.parse(data=content, format=fmt)
+                if len(g) != 0:
+                    return [g, fmt]
+            except:
+                continue
+        return [Graph(), None]
+
+    # If source is a string (either raw RDF or a file path/URL) - Just URL in our case
     for fmt in ["xml", "turtle", "json-ld", "ntriples", "trig", "trix"]:
+        g = Graph()
         try:
             g.parse(source, format=fmt)
             if len(g) != 0:
-                return g
+                return [g, fmt]
         except:
             continue
-    return g
+
+    return [Graph(), None]
 #___________________________________________________________________________________
 
 #___________________________________________________________________________________
 #Function to check whether an ontology is valid
-def is_valid_ontology(url: str):
+def is_valid_ontology(g):
     try:
-        g = parse_ontology(url)
-
-        # Check for presence of OWL or RDFS classes
+        # check for presence of OWL or RDFS classes
         classes = list(g.subjects(RDF.type, OWL.Class)) + list(g.subjects(RDF.type, RDFS.Class))
         properties = list(g.subjects(RDF.type, RDF.Property))
-
-        # Consider it valid if it defines at least one class or property
-        return bool(classes or properties)
+        return bool(classes or properties)  # consider it valid if it defines at least one class or property
 
     except:           # if failed to parse ontology
         return False
@@ -254,12 +287,25 @@ def get_ontology_human_readable_name(g, source_link=None, source_file=None):
         except:
             return source_link.rstrip('/').split('/')[-1]
     elif source_file:               # if ontology is not self-labeled, use source as label (file)
-        return source_file
+        return source_file.name
     else:                                 # if no source is given, auto-label using subject of first triple (if it is iri)
         for s in g.subjects(None, None):
             if isinstance(s, URIRef):
                 return "Auto-label: " + split_uri(s)[1]
     return "Unlabelled ontology"  #if nothing works
+#___________________________________________________________________________________
+
+
+#___________________________________________________________________________________
+#Function to get all allowed formats for ontology files
+def get_g_ontology_file_formats_dict():
+
+    allowed_format_dict = {"owl": ".owl", "turtle": ".ttl", "longturtle": ".ttl", "n3": ".n3",
+    "ntriples": ".nt", "nquads": "nq", "trig": ".trig", "json-ld": ".jsonld",
+    "xml": ".xml", "pretty-xml": ".xml", "trix": ".trix"}
+
+    return allowed_format_dict
+
 #___________________________________________________________________________________
 
 #___________________________________________________________________________________
@@ -983,3 +1029,10 @@ def remove_triplesmap(tmap_label):
 #Neutral blue for text: #007bff
 
 #___________________________________________________________________________________
+
+
+#COLORS:
+#f5f5f5 light gray
+#555555 dark gray
+#F63366 Streamlit salmon
+#ff7a7a lighter streamlit salmon
