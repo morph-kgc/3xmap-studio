@@ -191,36 +191,41 @@ def load_ontology_from_link():
 
 def load_ontology_from_file():
     st.session_state["g_ontology"] = st.session_state["g_ontology_from_file_candidate"]  # consolidate ontology graph
-    st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_file=st.session_state["g_ontology_from_file_candidate"])
+    st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_file=st.session_state["ontology_file"])
     st.session_state["g_ontology_loaded_ok_flag"] = True
     # save ontology info___________________________
     st.session_state["g_ontology_components_dict"][st.session_state["g_ontology_label"]]=st.session_state["g_ontology"]
     # reset fields___________________________
     st.session_state["key_ontology_uploader"] = str(uuid.uuid4())
-    st.session_state["key_ontology_uploader"] = str(uuid.uuid4())
+    st.session_state["ontology_file"] = None
 
 def extend_ontology_from_link():
     g_ontology_new_part = st.session_state["g_ontology_from_link_candidate"]
-    g_ontology_new_part_label = utils.get_ontology_human_readable_name(g_ontology_new_part, source_link=st.session_state["key_ontology_link"])
+    st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(g_ontology_new_part, source_link=st.session_state["key_ontology_link"])
+    st.session_state["g_ontology_loaded_ok_flag"] = True
     # save ontology info___________________________
-    st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
+    st.session_state["g_ontology_components_dict"][st.session_state["g_ontology_label"]] = g_ontology_new_part
     #merge both ontologies___________________
     for triple in g_ontology_new_part:
         st.session_state["g_ontology"].add(triple)
     # reset fields___________________________
     st.session_state["key_ontology_link"] = ""
     st.session_state["ontology_link"] = ""
+    st.session_state["key_extend_ontology_selected_option"] = "🌐 URL"
 
 def extend_ontology_from_file():
     g_ontology_new_part = st.session_state["g_ontology_from_file_candidate"]
-    g_ontology_new_part_label = utils.get_ontology_human_readable_name(g_ontology_new_part, source_file=st.session_state["key_ontology_file_input"])
+    st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(g_ontology_new_part, source_file=st.session_state["ontology_file"])
+    st.session_state["g_ontology_loaded_ok_flag"] = True
     # save ontology info___________________________
-    st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
+    st.session_state["g_ontology_components_dict"][st.session_state["g_ontology_label"]] = g_ontology_new_part
     #merge both ontologies___________________
     for triple in g_ontology_new_part:
         st.session_state["g_ontology"].add(triple)
     # reset fields___________________________
-    st.session_state["key_ontology_file_input"] = "Select a file"
+    st.session_state["key_ontology_uploader"] = str(uuid.uuid4())
+    st.session_state["ontology_file"] = None
+    st.session_state["key_extend_ontology_selected_option"] = "📁 File"
 
 def reduce_ontology():
     st.session_state["g_ontology_components_dict"] = {label: ont for label, ont in st.session_state["g_ontology_components_dict"].items() if label not in ontologies_to_drop_list}
@@ -720,6 +725,9 @@ with tab2:
             #http://xmlns.com/foaf/0.1/
 
             g_candidate, fmt_candidate = utils.parse_ontology(st.session_state["ontology_link"])
+            st.session_state["g_ontology_from_link_candidate"] = g_candidate
+            st.session_state["g_ontology_from_link_candidate_fmt"] = fmt_candidate
+            st.session_state["g_ontology_from_link_candidate_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_from_link_candidate"], source_link=st.session_state["ontology_link"])
 
             if not utils.is_valid_ontology(g_candidate):
                 with col1b:
@@ -730,9 +738,6 @@ with tab2:
                     st.write("")
 
             else:
-                st.session_state["g_ontology_from_link_candidate"] = g_candidate
-                st.session_state["g_ontology_from_link_candidate_fmt"] = fmt_candidate
-                st.session_state["g_ontology_from_link_candidate_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_from_link_candidate"], source_link=st.session_state["ontology_link"])
 
                 with col1b:
                     st.write("")
@@ -768,6 +773,10 @@ with tab2:
         if st.session_state["ontology_file"]:
 
             g_candidate, fmt_candidate = utils.parse_ontology(st.session_state["ontology_file"])
+            st.session_state["g_ontology_from_file_candidate"] = g_candidate
+            st.session_state["g_ontology_from_file_candidate_fmt"] = fmt_candidate
+            st.session_state["g_ontology_from_file_candidate_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_from_file_candidate"], source_file=st.session_state["ontology_file"])
+
 
             if not utils.is_valid_ontology(g_candidate):
                 with col1b:
@@ -779,10 +788,6 @@ with tab2:
                     st.write("")
 
             else:
-                st.session_state["g_ontology_from_file_candidate"] = g_candidate
-                st.session_state["g_ontology_from_file_candidate_fmt"] = fmt_candidate
-                st.session_state["g_ontology_from_file_candidate_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_from_file_candidate"], source_file=st.session_state["ontology_file"])
-
                 with col1b:
                     st.write("")
                     st.write("")
@@ -815,115 +820,111 @@ with tab2:
         if extend_ontology_selected_option == "🌐 URL":
             with col1a:
                 ontology_link = st.text_input("⌨️ Enter link to ontology", key="key_ontology_link")
-            if ontology_link:
-                st.session_state["ontology_link"] = ontology_link
+            st.session_state["ontology_link"] = ontology_link if ontology_link else ""
 
-                if st.session_state["ontology_link"] and not utils.is_valid_ontology(st.session_state["ontology_link"]):
+            if ontology_link:
+
+                g_candidate, fmt_candidate = utils.parse_ontology(st.session_state["ontology_link"])
+                st.session_state["g_ontology_from_link_candidate"] = g_candidate
+                st.session_state["g_ontology_from_link_candidate_fmt"] = fmt_candidate
+                st.session_state["g_ontology_from_link_candidate_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_from_link_candidate"], source_link=st.session_state["ontology_link"])
+
+                if not utils.is_valid_ontology(g_candidate):
                     with col1b:
-                        st.markdown(f"""
-                        <div style="background-color:#f8d7da; padding:0.8em;
-                                    border-radius:5px; color:#721c24; border:1px solid #f5c6cb; font-size:0.92rem;">
+                        st.write("")
+                        st.markdown(f"""<div class="custom-error-small">
                             ❌ URL does not link to a valid ontology.
-                        </div>
-                        """, unsafe_allow_html=True)
+                        </div>""", unsafe_allow_html=True)
                         st.write("")
 
-                elif st.session_state["ontology_link"]:
-                    st.session_state["g_ontology_from_link_candidate"] = utils.parse_ontology(st.session_state["ontology_link"])
-                    st.session_state["ontology_from_link_valid_flag"] = True if st.session_state["g_ontology_from_link_candidate"] else False
-                    st.session_state["g_ontology_from_link_candidate_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_from_link_candidate"], source_link=st.session_state["ontology_link"])
-                    st.write("HERE1", len(st.session_state["g_ontology_from_link_candidate"]), st.session_state["ontology_from_link_valid_flag"])
-                    if not st.session_state["ontology_from_link_valid_flag"] and st.session_state["ontology_link"]:
-                        with col1a:
-                            st.markdown(f"""
-                                <div style="background-color:#f8d7da; padding:0.8em;
-                                            border-radius:5px; color:#721c24; border:1px solid #f5c6cb; font-size:0.92rem;">
-                                    ❌ Error when parsing the ontology.<br>
-                                    Please check the <b style="color:#a94442;">ontology file</b> for:
-                                    <ul style="margin-top:0.5em;">
-                                        <li>Invalid XML syntax</li>
-                                        <li>Encoding issues</li>
-                                        <li>Missing or misused namespaces</li>
-                                        <li>Incomplete or corrupted content</li>
-                                    </ul>
-                                </div>
-                            """, unsafe_allow_html=True)
+                elif st.session_state["g_ontology_from_link_candidate_label"] in st.session_state["g_ontology_components_dict"]:
+                    with col1b:
+                        st.markdown(f"""<div class="custom-warning">
+                                ⚠️ The ontology <b style="color:#F63366;">
+                                {st.session_state["g_ontology_from_link_candidate_label"]}</b>
+                                is already loaded.
+                            </div>""", unsafe_allow_html=True)
 
-                    if st.session_state["ontology_from_link_valid_flag"] and st.session_state["g_ontology_from_link_candidate_label"] in st.session_state["g_ontology_components_dict"]:
-                        with col1b:
-                            st.markdown(f"""<div class="custom-warning">
-                                    ⚠️ The ontology <b style="color:#F63366;">
-                                    {st.session_state["g_ontology_from_link_candidate_label"]}</b>
-                                    is already loaded.
-                                </div>""", unsafe_allow_html=True)
-                    elif st.session_state["ontology_from_link_valid_flag"]:
-                        with col1b:
-                            st.markdown(f"""
-                                <div style="background-color:#d4edda; padding:0.8em;
-                                border-radius:5px; color:#155724; border:1px solid #c3e6cb; font-size:0.92em">
-                                    ✅ Valid ontology: <b style="color:#F63366;">
-                                    {st.session_state["g_ontology_from_link_candidate_label"]}</b>
-                                </div>""", unsafe_allow_html=True)
-                        if utils.check_ontology_overlap(st.session_state["g_ontology_from_file_candidate"], st.session_state["g_ontology"]):
-                            with col1a:
-                                st.markdown(f"""<div class="custom-warning">
-                                        ⚠️ Caution: <b>Ontologies overlap</b>. Check your ontologies
-                                        externally to make sure they are aligned and compatible.
-                                    </div>""", unsafe_allow_html=True)
-                                st.write("")
+                else:
+                    with col1b:
+                        st.write("")
+                        st.markdown(f"""<div class="custom-success-small">
+                                ✅ Valid ontology: <b style="color:#F63366;">
+                                {st.session_state["g_ontology_from_link_candidate_label"]}</b>
+                                (parsed successfully with format
+                                <b>{st.session_state["g_ontology_from_link_candidate_fmt"]}</b>)
+                            </div>""", unsafe_allow_html=True)
+
+                    if utils.check_ontology_overlap(st.session_state["g_ontology_from_link_candidate"], st.session_state["g_ontology"]):
                         with col1a:
-                            extend_ontology_from_link_button = st.button("Add", on_click=extend_ontology_from_link, key="key_extend_ontology_from_link_button")
+                            st.markdown(f"""<div class="custom-warning">
+                                    ⚠️ Caution: <b>Ontologies overlap</b>. Check your ontologies
+                                    externally to make sure they are aligned and compatible.
+                                </div>""", unsafe_allow_html=True)
+                            st.write("")
+                    with col1a:
+                        st.button("Add", key="key_extend_ontology_from_link_button", on_click=extend_ontology_from_link)
+
 
 
         if extend_ontology_selected_option == "📁 File":
 
-            #ontology files
-            ontology_extension_dict = {"owl": ".owl", "turtle": ".ttl", "longturtle": ".ttl", "n3": ".n3",
-            "ntriples": ".nt", "nquads": "nq", "trig": ".trig", "json-ld": ".jsonld",
-            "xml": ".xml", "pretty-xml": ".xml", "trix": ".trix"}
+            ontology_extension_dict = utils.get_g_ontology_file_formats_dict()   #ontology allowed formats
             ontology_format_list = list(ontology_extension_dict)
-            ontology_file_list = [
-                filename for filename in os.listdir(ontology_folder)
-                if os.path.isfile(os.path.join(ontology_folder, filename)) and
-                any(filename.endswith(extension) for extension in ontology_format_list)]
-            ontology_file_list.insert(0, "Select a file")
 
+            with col1a:
+                st.session_state["ontology_file"] = st.file_uploader(f"""🖱️
+                    Upload ontology file""", type=ontology_format_list, key=st.session_state["key_ontology_uploader"])
 
-            if len(ontology_file_list) == 1:  # folder exists but it is empty
-                with col1a:
-                    st.write("")
-                    st.markdown(f"""<div class="custom-warning">
-                            ⚠️ No valid files found in the <b>ontologies folder</b>.
-                            Please add at least one valid ontology file to continue.
-                        <div>""", unsafe_allow_html=True)
+            if st.session_state["ontology_file"]:
 
-            else:
-                with col1a:
-                    ontology_file_input = st.selectbox("🖱️ Select an ontology file",
-                                        ontology_file_list, key="key_ontology_file_input")
-                    st.session_state["ontology_file"] = ontology_file_input if ontology_file_input != ontology_file_list[0] else ""
+                g_candidate, fmt_candidate = utils.parse_ontology(st.session_state["ontology_file"])
+                st.session_state["g_ontology_from_file_candidate"] = g_candidate
+                st.session_state["g_ontology_from_file_candidate_fmt"] = fmt_candidate
+                st.session_state["g_ontology_from_file_candidate_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_from_file_candidate"], source_file=st.session_state["ontology_file"])
 
-                if st.session_state["ontology_file"]:
-                    ontology_file_path = os.path.join(os.getcwd(), "ontologies", st.session_state["ontology_file"])
-                    st.session_state["g_ontology_from_file_candidate"] = utils.parse_ontology(ontology_file_path)
-                    st.session_state["ontology_from_file_valid_flag"] = True if st.session_state["g_ontology_from_file_candidate"] else False
-                    st.session_state["g_ontology_from_file_candidate_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_from_file_candidate"], source_file=st.session_state["ontology_file"])
+                if not utils.is_valid_ontology(g_candidate):
+                    with col1b:
+                        st.write("")
+                        st.write("")
+                        st.markdown(f"""<div class="custom-error-small">
+                            ❌ File does not contain a valid ontology.
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
 
-                if not st.session_state["ontology_from_file_valid_flag"] and st.session_state["ontology_file"]:
+                elif st.session_state["g_ontology_from_file_candidate_label"] in st.session_state["g_ontology_components_dict"]:
+                    with col1b:
+                        st.markdown(f"""<div class="custom-warning">
+                                ⚠️ The ontology <b style="color:#F63366;">
+                                {st.session_state["g_ontology_from_file_candidate_label"]}</b>
+                                is already loaded.
+                            </div>""", unsafe_allow_html=True)
+
+                else:
+                    with col1b:
+                        st.write("")
+                        st.markdown(f"""<div class="custom-success-small">
+                                ✅ Valid ontology: <b style="color:#F63366;">
+                                {st.session_state["g_ontology_from_file_candidate_label"]}</b>
+                                (parsed successfully with format
+                                <b>{st.session_state["g_ontology_from_file_candidate_fmt"]}</b>)
+                            </div>""", unsafe_allow_html=True)
+
+                    if utils.check_ontology_overlap(st.session_state["g_ontology_from_file_candidate"], st.session_state["g_ontology"]):
+                        with col1a:
+                            st.markdown(f"""<div class="custom-warning">
+                                    ⚠️ Caution: <b>Ontologies overlap</b>. Check your ontologies
+                                    externally to make sure they are aligned and compatible.
+                                </div>""", unsafe_allow_html=True)
+                            st.write("")
                     with col1a:
-                        st.markdown(f"""
-                            <div style="background-color:#f8d7da; padding:0.8em;
-                                        border-radius:5px; color:#721c24; border:1px solid #f5c6cb; font-size:0.92rem;">
-                                ❌ Error when parsing the ontology.<br>
-                                Please check the <b style="color:#a94442;">ontology file</b> for:
-                                <ul style="margin-top:0.5em;">
-                                    <li>Invalid XML syntax</li>
-                                    <li>Encoding issues</li>
-                                    <li>Missing or misused namespaces</li>
-                                    <li>Incomplete or corrupted content</li>
-                                </ul>
-                            </div>
-                        """, unsafe_allow_html=True)
+                        st.button("Add", key="key_extend_ontology_from_file_button", on_click=extend_ontology_from_file)
+
+
+
+
+            #HERE TO EXTEND
+            #ontology files
 
 
                 if st.session_state["ontology_from_file_valid_flag"] and st.session_state["ontology_file"]:

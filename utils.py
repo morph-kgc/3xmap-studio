@@ -287,7 +287,7 @@ def get_ontology_human_readable_name(g, source_link=None, source_file=None):
         except:
             return source_link.rstrip('/').split('/')[-1]
     elif source_file:               # if ontology is not self-labeled, use source as label (file)
-        return source_file.name
+        return os.path.splitext(source_file.name)[0]
     else:                                 # if no source is given, auto-label using subject of first triple (if it is iri)
         for s in g.subjects(None, None):
             if isinstance(s, URIRef):
