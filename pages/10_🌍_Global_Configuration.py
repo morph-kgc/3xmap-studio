@@ -80,7 +80,6 @@ if "g_mapping_source_cache" not in st.session_state:
 if "original_g_size_cache" not in st.session_state:
     st.session_state["original_g_size_cache"] = 0
 
-
 #TAB2
 if "g_ontology" not in st.session_state:
     st.session_state["g_ontology"] = Graph()
@@ -93,9 +92,7 @@ if "ontology_link" not in st.session_state:
 if "key_ontology_uploader" not in st.session_state:
     st.session_state["key_ontology_uploader"] = None
 if "ontology_file" not in st.session_state:
-    st.session_state["ontology_file"] = ""
-if "ontology_from_file_valid_flag" not in st.session_state:
-    st.session_state["ontology_from_file_valid_flag"] = False
+    st.session_state["ontology_file"] = None
 if "g_ontology_from_file_candidate" not in st.session_state:
     st.session_state["g_ontology_from_file_candidate"] = Graph()
 if "g_ontology_from_link_candidate" not in st.session_state:
@@ -194,11 +191,13 @@ def load_ontology_from_link():
 
 def load_ontology_from_file():
     st.session_state["g_ontology"] = st.session_state["g_ontology_from_file_candidate"]  # consolidate ontology graph
-    g_ontology_label = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_file=st.session_state["key_ontology_file_input"])
+    st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_file=st.session_state["g_ontology_from_file_candidate"])
+    st.session_state["g_ontology_loaded_ok_flag"] = True
     # save ontology info___________________________
-    st.session_state["g_ontology_components_dict"][g_ontology_label]=st.session_state["g_ontology"]
+    st.session_state["g_ontology_components_dict"][st.session_state["g_ontology_label"]]=st.session_state["g_ontology"]
     # reset fields___________________________
-    st.session_state["key_ontology_file_input"] = "Select a file"
+    st.session_state["key_ontology_uploader"] = str(uuid.uuid4())
+    st.session_state["key_ontology_uploader"] = str(uuid.uuid4())
 
 def extend_ontology_from_link():
     g_ontology_new_part = st.session_state["g_ontology_from_link_candidate"]
