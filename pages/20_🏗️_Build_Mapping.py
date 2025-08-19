@@ -37,7 +37,9 @@ utils.import_st_aesthetics()
 st.write("")
 
 # Namespaces
-namespaces = utils.get_predefined_ns_dict()
+namespaces_predefined = utils.get_predefined_ns_dict()
+namespaces_default = utils.get_default_ns_dict()
+namespaces = namespaces_predefined | namespaces_default
 RML = namespaces["rml"]
 RR = namespaces["rr"]
 QL = namespaces["ql"]

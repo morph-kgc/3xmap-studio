@@ -157,6 +157,53 @@ def import_st_aesthetics():
 
 #_______________________________________________________
 
+#_______________________________________________________
+# Function to get error message to indicate a g_mapping must be loaded
+def get_missing_g_mapping_error_message():
+    st.markdown(f"""
+    <div style="background-color:#f8d7da; padding:1em;
+                border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
+        ❗ You need to create or load a mapping in the
+        <b style="color:#a94442;">Select mapping option</b>."
+    </div>
+    """, unsafe_allow_html=True)
+#_______________________________________________________
+# Function to get the corner status message in the different panels
+def get_corner_status_message():
+    if st.session_state["g_ontology"]:
+        if len(st.session_state["g_ontology_components_dict"]) > 1:
+            ontology_items = '\n'.join([f"""<li><b style="color:#F63366;">{ont}</b></li>""" for ont in st.session_state["g_ontology_components_dict"]])
+            st.markdown(f"""<div class="green-status-message-small">
+                    <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
+                    style="vertical-align:middle; margin-right:8px; height:20px;">
+                    You are working with mapping
+                    <b style="color:#F63366;">{st.session_state["g_label"]}</b>.<br> <br>
+                    🧩 Your <b>ontology</b> is the merger of:
+                    <ul style="font-size:0.85rem; margin-top:6px; margin-left:15px; padding-left:10px;">
+                <ul>
+                    {ontology_items}
+                </ul></div>""", unsafe_allow_html=True)
+        else:
+            st.markdown(f"""<div class="green-status-message-small">
+                    <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
+                    style="vertical-align:middle; margin-right:8px; height:20px;">
+                    You are working with mapping
+                    <b style="color:#F63366;">{st.session_state["g_label"]}</b>.<br> <br>
+                    🧩 The ontology <b style="color:#F63366;">
+                    {next(iter(st.session_state["g_ontology_components_dict"]))}</b>
+                    is loaded.
+                </div>""", unsafe_allow_html=True)
+    else:
+        st.markdown(f"""<div class="green-status-message-small">
+                <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
+                style="vertical-align:middle; margin-right:8px; height:20px;">
+                You are working with mapping
+                <b style="color:#F63366;">{st.session_state["g_label"]}</b>.<br> <br>
+                🚫 <b>No ontology</b> is loaded.
+            </div>
+        """, unsafe_allow_html=True)
+
+#_______________________________________________________
 
 #_______________________________________________________
 #List of allowed mapping file format
@@ -203,8 +250,6 @@ def save_mapping_to_file(filename):
         raise ValueError(f"Unsupported file extension: {ext}")   #should not occur
 
 #__________________________________________________
-
-
 
 #_______________________________________________________
 #Funcion to load mapping from file
@@ -315,7 +360,6 @@ def get_ontology_human_readable_name(g, source_link=None, source_file=None):
     return "Unlabelled ontology"  #if nothing works
 #___________________________________________________________________________________
 
-
 #___________________________________________________________________________________
 #Function to get all allowed formats for ontology files
 def get_g_ontology_file_formats_dict():
@@ -347,24 +391,7 @@ def check_ontology_overlap(g1, g2):
 #_________________________________________________________
 def get_rdfolio_base_iri():
     return "http://rdfolio.org/"
-
 #________________________________________________________
-
-#_________________________________________________________
-#HERE CHANGE (NOT USED)
-def get_ontology_base_iri():
-    for s in st.session_state["g_ontology"].subjects(RDF.type, OWL.Ontology):
-        try:
-            split_uri(s)
-            if is_valid_iri(split_uri(s)[0]):
-                return split_uri(s)[0]
-        except:
-            if is_valid_iri(s):
-                return s
-
-    return None
-#________________________________________________________
-
 
 #_________________________________________________________
 #D Funtion to get dictionary with default namespaces
@@ -502,7 +529,20 @@ def is_valid_iri(iri):
     return True
 #__________________________________________________
 
+#_________________________________________________________
+#HERE CHANGE (NOT USED)
+def get_ontology_base_iri():
+    for s in st.session_state["g_ontology"].subjects(RDF.type, OWL.Ontology):
+        try:
+            split_uri(s)
+            if is_valid_iri(split_uri(s)[0]):
+                return split_uri(s)[0]
+        except:
+            if is_valid_iri(s):
+                return s
 
+    return None
+#________________________________________________________
 
 
 
@@ -580,6 +620,7 @@ def get_ds_allowed_formats():
 
 #________________________________________________
 #Update DICTIONARIES
+#This should be deleted HERE
 def update_dictionaries():
 
     st.session_state["tmap_dict"] = {}

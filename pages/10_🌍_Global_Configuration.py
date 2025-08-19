@@ -352,8 +352,8 @@ def export_mapping_to_file():
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["Select mapping",
-    "Load ontology", "Configure namespaces", "Save progress", "Export mapping"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["Select Mapping",
+    "Load Ontology", "Configure Namespaces", "Save Progress", "Export Mapping"])
 
 #____________________________________________________________
 # PANEL: "SELECT MAPPING"
@@ -1079,13 +1079,7 @@ with tab3:
     if not st.session_state["g_label"]:
         col1, col2 = st.columns([2,1.5])
         with col1:
-            st.markdown(f"""
-            <div style="background-color:#f8d7da; padding:1em;
-                        border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-                ❗ You need to create or load a mapping in the
-                <b style="color:#a94442;">Select mapping option</b>."
-            </div>
-            """, unsafe_allow_html=True)
+            utils.get_missing_g_mapping_error_message()
 
     else:   #only allow to continue if mapping is loaded
 
@@ -1093,77 +1087,47 @@ with tab3:
 
         with col2:
             col2a,col2b = st.columns([1,2])
-            with col2b:
+        with col2b:
+            utils.get_corner_status_message()
 
-                if st.session_state["g_ontology"]:
-                    if len(st.session_state["g_ontology_components_dict"]) > 1:
-                        ontology_items = '\n'.join([f"""<li><b style="color:#F63366;">{ont}</b></li>""" for ont in st.session_state["g_ontology_components_dict"]])
-                        st.markdown(f"""<div class="green-status-message-small">
-                                <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-                                style="vertical-align:middle; margin-right:8px; height:20px;">
-                                You are working with mapping
-                                <b style="color:#F63366;">{st.session_state["g_label"]}</b>.<br> <br>
-                                🧩 Your <b>ontology</b> is the merger of:
-                                <ul style="font-size:0.85rem; margin-top:6px; margin-left:15px; padding-left:10px;">
-                            <ul>
-                                {ontology_items}
-                            </ul></div>""", unsafe_allow_html=True)
-                    else:
-                        st.markdown(f"""<div class="green-status-message-small">
-                                <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-                                style="vertical-align:middle; margin-right:8px; height:20px;">
-                                You are working with mapping
-                                <b style="color:#F63366;">{st.session_state["g_label"]}</b>.<br> <br>
-                                🧩 The ontology <b style="color:#F63366;">
-                                {next(iter(st.session_state["g_ontology_components_dict"]))}</b>
-                                is loaded.
-                            </div>""", unsafe_allow_html=True)
-                else:
-                    st.markdown(f"""<div class="green-status-message-small">
-                            <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-                            style="vertical-align:middle; margin-right:8px; height:20px;">
-                            You are working with mapping
-                            <b style="color:#F63366;">{st.session_state["g_label"]}</b>.<br> <br>
-                            🚫 <b>No ontology</b> is loaded.
-                        </div>
-                    """, unsafe_allow_html=True)
 
             default_ns_dict = utils.get_default_ns_dict()
             mapping_ns_dict = utils.get_mapping_ns_dict()
             all_mapping_ns_dict = mapping_ns_dict | default_ns_dict
 
+        with col2:
             col2a, col2b = st.columns([0.5, 2])
 
-            with col2b:
+        with col2b:
+            st.write("")
+            st.write("")
+            last_added_ns_df = pd.DataFrame({
+                "Prefix": st.session_state["last_added_ns_list"],
+                "Namespace": [mapping_ns_dict.get(prefix, "") for prefix in st.session_state["last_added_ns_list"]]})
+            last_last_added_ns_df = last_added_ns_df.head(10)
+
+            if st.session_state["last_added_ns_list"]:
+                st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
+                        🔎 last added namespaces
+                    </div>""", unsafe_allow_html=True)
+                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                        (complete list below)
+                    </div>""", unsafe_allow_html=True)
+                st.dataframe(last_last_added_ns_df, hide_index=True)
                 st.write("")
+
+            mapping_ns_df = pd.DataFrame(list(mapping_ns_dict.items()), columns=["Prefix", "Namespace"]).iloc[::-1]
+            all_ns_df = pd.DataFrame(list(all_mapping_ns_dict.items()), columns=["Prefix", "Namespace"]).iloc[::-1]
+
+            #Option to show bound namespaces
+            with st.expander("🔎 Show all namespaces"):
                 st.write("")
-                last_added_ns_df = pd.DataFrame({
-                    "Prefix": st.session_state["last_added_ns_list"],
-                    "Namespace": [mapping_ns_dict.get(prefix, "") for prefix in st.session_state["last_added_ns_list"]]})
-                last_last_added_ns_df = last_added_ns_df.head(10)
+                st.dataframe(mapping_ns_df, hide_index=True)
 
-                if st.session_state["last_added_ns_list"]:
-                    st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
-                            🔎 last added namespaces
-                        </div>""", unsafe_allow_html=True)
-                    st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                            (complete list below)
-                        </div>""", unsafe_allow_html=True)
-                    st.dataframe(last_last_added_ns_df, hide_index=True)
-                    st.write("")
-
-                mapping_ns_df = pd.DataFrame(list(mapping_ns_dict.items()), columns=["Prefix", "Namespace"]).iloc[::-1]
-                all_ns_df = pd.DataFrame(list(all_mapping_ns_dict.items()), columns=["Prefix", "Namespace"]).iloc[::-1]
-
-                #Option to show bound namespaces
-                with st.expander("🔎 Show all namespaces"):
-                    st.write("")
-                    st.dataframe(mapping_ns_df, hide_index=True)
-
-                #Option to show all namespaces (including default)
-                with st.expander("🔎 Show all namespaces (including default)"):
-                    st.write("")
-                    st.dataframe(all_ns_df, hide_index=True)
+            #Option to show all namespaces (including default)
+            with st.expander("🔎 Show all namespaces (including default)"):
+                st.write("")
+                st.dataframe(all_ns_df, hide_index=True)
 
 
         with col1:
@@ -1455,119 +1419,50 @@ with tab4:
     st.write("")
     st.write("")
 
-    col1, col2 = st.columns([2,1.5])
-    with col1:
-        if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
-            st.markdown(f"""
-            <div style="background-color:#f8d7da; padding:1em;
-                        border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-                ❗ You need to create or load a mapping in the
-                <b style="color:#a94442;">Select mapping option</b>."
-            </div>
-            """, unsafe_allow_html=True)
-            st.stop()
+    if not st.session_state["g_label"]:
+        col1, col2 = st.columns([2,1.5])
+        with col1:
+            utils.get_missing_g_mapping_error_message()
 
+    else:   #only allow to continue if mapping is loaded
+        col1,col2 = st.columns([2,1.5])
 
-    col1,col2 = st.columns([2,1.5])
-
-    with col2:
-        col2a,col2b = st.columns([1,2])
+        with col2:
+            col2a,col2b = st.columns([1,2])
         with col2b:
-            if st.session_state["g_label"]:
-                st.markdown(f"""<div class="green-status-message">
-                        <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-                        style="vertical-align:middle; margin-right:8px; height:20px;">
-                        You are currently working with mapping
-                        <b style="color:#007bff;">{st.session_state["g_label"]}</b>.
-                    </div>
-                """, unsafe_allow_html=True)
+            utils.get_corner_status_message()
 
-
-            else:
-                st.markdown(f"""
-                <div style="background-color:#e6e6fa; padding:1em; border-radius:5px;
-                color:#2a0134; border:1px solid #511D66;">
-                    ✖️ <b style="color:#511D66;">No mapping</b> has been loaded yet.
-                </div>
-                """, unsafe_allow_html=True)
-
-    with col1:
-        st.markdown("""
-        <div style="background-color:#e6e6fa; border:1px solid #511D66;
-                    border-radius:5px; padding:10px; margin-bottom:8px;">
-            <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
-                💾 Save progress
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        st.write("")
-
-
-        existing_save_progress_file_list = [f for f in os.listdir(save_mappings_folder) if f.endswith(".pkl")]
-
-
-    with col1:
-        col1a, col1b = st.columns([2,1])
-
-    with col1b:
-        st.markdown(f"""
-        <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-            <span style="font-size:0.95rem;">
-                Current state of mapping <b style="color:#007bff;">
-                {st.session_state["g_label"]}</b> will be saved in folder
-                📁saved_mappings as a <code>.pkl</code> file.
-            </span>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col1a:
-        save_progress_filename = st.text_input(
-        f"""Enter the filename to save the mapping {st.session_state["g_label"]}
-        (without extension):""", key="save_progress_filename_key")
-        if "." in save_progress_filename:
-            st.markdown(f"""
-                <div style="background-color:#fff3cd; padding:1em;
-                border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                    ⚠️ The filename <b>{save_progress_filename}</b>
-                    seems to include an extension. <br> Please note that the extension <code>.pkl</code>
-                    will be added.</div>
-            """, unsafe_allow_html=True)
+        with col1:
+            st.markdown("""<div class="purple_heading">
+                    💾 Save progress
+                </div>""", unsafe_allow_html=True)
             st.write("")
-        if save_progress_filename and (save_progress_filename + ".pkl") in existing_save_progress_file_list:
-            st.markdown(f"""
-                <div style="background-color:#fff3cd; padding:1em;
-                border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                    ⚠️ The file <b style="color:#cc9a06;">{save_progress_filename}.pkl</b>
-                    is already in use. <br> Do you want to
-                    overwrite it?</div>
-            """, unsafe_allow_html=True)
-            st.write("")
-            overwrite_checkbox = st.checkbox(
-            ":gray-badge[⚠️ I am completely sure I want to overwrite it]",
-            key="overwrite_checkbox")
-        else:
-            overwrite_checkbox = True
 
-        save_progress_file = save_mappings_folder + "\\" + save_progress_filename + ".pkl"
-
-        if overwrite_checkbox:
-            if save_progress_filename:
-                st.session_state["save_progress_filename"] = save_progress_filename + ".pkl"
-                confirm_button = st.button("Save progress", key="10_save_progress", on_click=save_progress)
-
-    if st.session_state["save_progress_success"]:
+        with col1:
+            col1a, col1b = st.columns([2,1])
         with col1a:
-            st.markdown(f"""
-            <div style="background-color:#d4edda; padding:1em;
-            border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                ✅ The mapping <b style="color:#0f5132;">{st.session_state["g_label"]}
-                </b> has been saved to file
-                <b style="color:#0f5132;">{st.session_state["save_progress_filename"]}
-                </b>.  </div>
-            """, unsafe_allow_html=True)
-            st.session_state["save_progress_success"] = False
-            time.sleep(st.session_state["success_display_time"])
-            st.rerun()
+            st.markdown(f"""<div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                <span style="font-size:0.95rem;">
+                    ℹ️ Current state of mapping <b style="color:#F63366;">
+                    {st.session_state["g_label"]}</b> will be temporarily saved.
+                    To retrieve cached work go to the <b>Select Mapping</b> panel.
+                    Only one mapping can be cached, any previous cache mapping will be deleted.
+                </span></div>""", unsafe_allow_html=True)
+        with col1a:
+            pkl_cache_filename = "__" + st.session_state["g_label"] + "_cache__.pkl"
+            st.code(pkl_cache_filename)
+            overwrite_checkbox = st.checkbox(
+                ":gray-badge[⚠️ I am completely sure I want to continue]",
+                key="overwrite_checkbox")
+            if overwrite_checkbox:
+                st.button("Save", key="key_save_progress_button", on_click=save_progress)
+
+            existing_pkl_file_list = [f for f in os.listdir() if f.endswith("_cache__.pkl")]
+            pkl_cache_file = next((f for f in os.listdir() if f.endswith("_temp.pkl")), None)
+            st.write(pkl_cache_file)
+
+
+
 
 
 #_____________________________________________
