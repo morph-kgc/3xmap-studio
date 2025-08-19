@@ -271,6 +271,19 @@ def bind_all_predefined_namespaces():
     # reset fields
     st.session_state["key_add_ns_radio"] = "✏️ Custom"
 
+def bind_ontology_namespaces():
+    for prefix in ontology_ns_to_bind:
+        st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  #here we bind the new namespace
+    # reset fields
+    st.session_state["key_ontology_ns_to_bind_multiselect"] = []
+    st.session_state["key_add_ns_radio"] = "🧩 Ontology"
+
+def bind_all_ontology_namespaces():
+    for prefix in ontology_ns_dict:
+        st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  #here we bind the new namespace
+    # reset fields
+    st.session_state["key_add_ns_radio"] = "✏️ Custom"
+
 def unbind_namespace():
     st.session_state["g_mapping"].namespace_manager.bind(unbind_ns, None, replace=True)
     st.session_state["unbind_selectbox"] = "Select a namespace"   #we reset the variables
@@ -1209,24 +1222,75 @@ with tab3:
 
         if add_ns_selected_option == "📋 Predefined":
 
-            with col1a:
-                predefined_ns_list = list(predefined_ns_dict.keys())
-                predefined_ns_list.insert(0, "Bind all")
-                predefined_ns_to_bind = st.multiselect("Select predefined namespaces:", predefined_ns_list, key="key_predefined_ns_to_bind_multiselect")
+            predefined_ns_unbound_flag = False
+            for prefix in predefined_ns_dict:
+                if not prefix in mapping_ns_dict:
+                    predefined_ns_unbound_flag = True
+                    continue
 
-            if predefined_ns_to_bind:
-                if predefined_ns_list[0] not in predefined_ns_to_bind:   # "Bind all" not selected
-                    with col1a:
-                        st.button("Bind", key="key_bind_predefined_ns_button", on_click=bind_predefined_namespaces)
-                else:
-                    with col1a:
-                        overwrite_checkbox = st.checkbox(
-                        ":gray-badge[⚠️ I want to bind all predefined namespaces]",
-                        key="overwrite_checkbox")
-                        if overwrite_checkbox:
-                            st.button("Bind", key="key_bind_all_predefined_ns_button", on_click=bind_all_predefined_namespaces)
+            if not predefined_ns_unbound_flag:
+                with col1a:
+                    st.write("")
+                    st.markdown(f"""<div class="custom-error-small">
+                        ❌ <b> All predefined namespaces are already bound </b>
+                    </div>""", unsafe_allow_html=True)
+                    st.write("")
+            else:
 
-        st.write("HERE2", utils.get_mapping_ns_dict())
+                with col1a:
+                    predefined_ns_list = list(predefined_ns_dict.keys())
+                    predefined_ns_list.insert(0, "Bind all")
+                    predefined_ns_to_bind = st.multiselect("Select predefined namespaces:", predefined_ns_list, key="key_predefined_ns_to_bind_multiselect")
+
+                if predefined_ns_to_bind:
+                    if predefined_ns_list[0] not in predefined_ns_to_bind:   # "Bind all" not selected
+                        with col1a:
+                            st.button("Bind", key="key_bind_predefined_ns_button", on_click=bind_predefined_namespaces)
+                    else:
+                        with col1a:
+                            overwrite_checkbox = st.checkbox(
+                            ":gray-badge[⚠️ I want to bind all predefined namespaces]",
+                            key="overwrite_checkbox")
+                            if overwrite_checkbox:
+                                st.button("Bind", key="key_bind_all_predefined_ns_button", on_click=bind_all_predefined_namespaces)
+
+
+        if add_ns_selected_option == "🧩 Ontology":
+
+            ontology_ns_unbound_flag = False
+            for prefix in ontology_ns_dict:
+                if not prefix in mapping_ns_dict:
+                    ontology_ns_unbound_flag = True
+                    continue
+
+            if not ontology_ns_unbound_flag:
+                with col1a:
+                    st.write("")
+                    st.markdown(f"""<div class="custom-error-small">
+                        ❌ <b> All ontology namespaces are already bound </b>
+                    </div>""", unsafe_allow_html=True)
+                    st.write("")
+            else:
+
+                with col1a:
+                    ontology_ns_list = list(ontology_ns_dict.keys())
+                    ontology_ns_list.insert(0, "Bind all")
+                    ontology_ns_to_bind = st.multiselect("Select ontology namespaces:", ontology_ns_list, key="key_ontology_ns_to_bind_multiselect")
+
+                if ontology_ns_to_bind:
+                    if ontology_ns_list[0] not in ontology_ns_to_bind:   # "Bind all" not selected
+                        with col1a:
+                            st.button("Bind", key="key_bind_ontology_ns_button", on_click=bind_ontology_namespaces)
+                    else:
+                        with col1a:
+                            overwrite_checkbox = st.checkbox(
+                            ":gray-badge[⚠️ I want to bind all ontology namespaces]",
+                            key="overwrite_checkbox")
+                            if overwrite_checkbox:
+                                st.button("Bind", key="key_bind_all_ontology_ns_button", on_click=bind_all_ontology_namespaces)
+
+        st.write(mapping_ns_dict)
+
 
         with col1:
             st.write("---")
