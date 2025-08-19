@@ -109,7 +109,7 @@ def import_st_aesthetics():
         .custom-success-small {background-color: #d4edda; padding: 0.5em;
             border-radius: 5px; color: #155724; border: 1px solid #c3e6cb;
             font-size: 0.92em; justify-content: center;
-            align-items: center; text-align: center;}
+            align-items: center;}
 
         .custom-success-small b {color: #0f5132;}
 
@@ -124,20 +124,21 @@ def import_st_aesthetics():
         .custom-warning-small {background-color: #fff3cd; padding: 0.5em;
             border-radius: 5px; color: #856404; border: 1px solid #ffeeba;
             font-size: 0.92em; justify-content: center;
-            align-items: center; text-align: center;}
+            align-items: center;}
 
         .custom-warning-small b {color: #cc9a06;}
 
      /* ERROR MESSAGE */
         .custom-error {background-color: #f8d7da; padding: 1em;
             border-radius: 5px; color: #721c24; border: 1px solid #f5c6cb;}
+
         .custom-error b {color: #a94442;}
 
      /* ERROR MESSAGE SMALL*/
         .custom-error-small {background-color: #f8d7da; padding: 0.5em;
             border-radius: 5px; color: #721c24; border: 1px solid #f5c6cb;
-            font-size: 0.92em;; justify-content: center;
-            align-items: center; text-align: center;}
+            font-size: 0.92em; justify-content: center;
+            align-items: center;}
 
         .custom-error-small b {color: #a94442;}
 
@@ -333,9 +334,6 @@ def check_ontology_overlap(g1, g2):
     return bool(common)
 #___________________________________________________________________________________
 
-
-#HEREIGO
-
 #_________________________________________________________
 def get_ontology_base_iri():
     for s in st.session_state["g_ontology"].subjects(RDF.type, OWL.Ontology):
@@ -357,7 +355,6 @@ def get_rdfolio_base_iri():
 
 #________________________________________________________
 
-
 #_________________________________________________________
 #Dictionary with predefined namespaces
 def get_predefined_ns_dict():
@@ -366,13 +363,27 @@ def get_predefined_ns_dict():
         "rr": Namespace("http://www.w3.org/ns/r2rml#"),
         "xsd": Namespace("http://www.w3.org/2001/XMLSchema#"),
         "rdf": Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
+        "rdfs": Namespace("http://www.w3.org/2000/01/rdf-schema#"),
         "ql": Namespace(get_rdfolio_base_iri() + "/ql#"),
         "map": Namespace(get_rdfolio_base_iri() + "/mapping#"),
         "class": Namespace(get_rdfolio_base_iri() + "/class#"),
         "resource": Namespace(get_rdfolio_base_iri() + "/resource#"),
-        "logicalSource": Namespace(get_rdfolio_base_iri() + "/logicalSource#")
-    }
+        "logicalSource": Namespace(get_rdfolio_base_iri() + "/logicalSource#"),
+        "owl": Namespace("http://www.w3.org/2000/01/rdf-schema#"),
+        "dct": Namespace("http://purl.org/dc/terms/"),
+        "foaf": Namespace("http://xmlns.com/foaf/0.1/"),
+        "skos": Namespace("	http://www.w3.org/2004/02/skos/core#"),
+        "schema": Namespace("http://schema.org/"),
+        "sh": Namespace("http://www.w3.org/ns/shacl#"),
+        "prov": Namespace("http://www.w3.org/ns/prov#"),
+        "vann": Namespace("http://purl.org/vocab/vann/"),
+        "void": Namespace("http://rdfs.org/ns/void#"),
+        "qb": Namespace("http://purl.org/linked-data/cube#")}
 
+#________________________________________________________
+
+#________________________________________________________
+# Binding some namespaces for future use in this page
 namespaces = get_predefined_ns_dict()
 RML = namespaces["rml"]
 RR = namespaces["rr"]
@@ -381,6 +392,9 @@ MAP = namespaces["map"]
 CLASS = namespaces["class"]
 LS = namespaces["logicalSource"]
 #________________________________________________________
+
+#HEREIGO
+
 
 #______________________________________________
 #Directories    #REFACTORING - Unused, but could be interesting to check if the permissions are correct
