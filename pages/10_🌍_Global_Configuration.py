@@ -111,6 +111,12 @@ if "custom_ns_bound_ok_flag" not in st.session_state:
     st.session_state["custom_ns_bound_ok_flag"] = False
 if "ns_bound_ok_flag" not in st.session_state:
     st.session_state["ns_bound_ok_flag"] = False
+if "ns_unbound_ok_flag" not in st.session_state:
+    st.session_state["ns_unbound_ok_flag"] = False
+if "last_added_ns_list" not in st.session_state:
+    st.session_state["last_added_ns_list"] = []
+
+
 
 
 if "overwrite_checkbox" not in st.session_state:
@@ -143,6 +149,7 @@ def create_new_g_mapping():
     st.session_state["g_mapping"] = Graph()   # create a new empty mapping
     st.session_state["g_mapping_source_cache"] = ["scratch", ""]   #cache info on the mapping source
     st.session_state["new_g_mapping_created_ok_flag"] = True   #flag for success mesagge
+    st.session_state["last_added_ns_list"] = []    #empty list of last added ns
     # reset fields___________________________
     st.session_state["key_g_label_temp_new"] = ""
 
@@ -158,6 +165,7 @@ def create_new_g_mapping_and_save_current_one():
     st.session_state["g_mapping"] = Graph()
     st.session_state["g_mapping_source_cache"] = ["scratch", ""]
     st.session_state["new_g_mapping_created_ok_flag"] = True
+    st.session_state["last_added_ns_list"] = []    #empty list of last added ns
     # reset fields___________________________
     st.session_state["key_g_label_temp_new"] = ""
 
@@ -167,6 +175,7 @@ def load_existing_g_mapping():
     st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]   # consolidate the loaded mapping
     st.session_state["g_mapping_source_cache"] = ["file", selected_load_file.name]
     st.session_state["existing_g_mapping_loaded_ok_flag"] = True
+    st.session_state["last_added_ns_list"] = []    #empty list of last added ns
     # reset fields___________________________
     st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
     st.session_state["key_g_label_temp_existing"] = ""
@@ -185,6 +194,7 @@ def load_existing_g_mapping_and_save_current_one():
     st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]   #we consolidate the loaded mapping
     st.session_state["g_mapping_source_cache"] = ["file", selected_load_file.name]
     st.session_state["existing_g_mapping_loaded_ok_flag"] = True
+    st.session_state["last_added_ns_list"] = []    #empty list of last added ns
     # reset fields___________________________
     st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
     st.session_state["key_g_label_temp_existing"] = ""
@@ -254,10 +264,12 @@ def discard_ontology():
     st.session_state["g_ontology_components_dict"] = {}
     st.session_state["g_ontology_label"] = ""
 
+
 #TAB3
 def bind_custom_namespace():
     st.session_state["g_mapping"].bind(prefix_input, iri_input)  # bind the new namespace
-    st.session_state["custom_ns_bound_ok_flag"] = True
+    st.session_state["last_added_ns_list"].insert(0, st.session_state["new_ns_prefix"])  # to display last added ns
+    st.session_state["custom_ns_bound_ok_flag"] = True   #for success message
     # reset fields
     st.session_state["key_iri_input"] = ""
     st.session_state["key_prefix_input"] = ""
@@ -266,42 +278,59 @@ def bind_custom_namespace():
 def bind_predefined_namespaces():
     for prefix in predefined_ns_to_bind_list:
         st.session_state["g_mapping"].bind(prefix, predefined_ns_dict[prefix])  # bind the new namespace
-    st.session_state["ns_bound_ok_flag"] = True
+        st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
+    st.session_state["ns_bound_ok_flag"] = True    #for success message
     # reset fields
     st.session_state["key_predefined_ns_to_bind_multiselect"] = []
     st.session_state["key_add_ns_radio"] = "📋 Predefined"
 
 def bind_all_predefined_namespaces():
     for prefix in predefined_ns_dict:
-        st.session_state["g_mapping"].bind(prefix, predefined_ns_dict[prefix])  # bind the new namespace
-    st.session_state["ns_bound_ok_flag"] = True
+        if prefix not in mapping_ns_dict:
+            st.session_state["g_mapping"].bind(prefix, predefined_ns_dict[prefix])  # bind the new namespace
+            st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
+    st.session_state["ns_bound_ok_flag"] = True   #for success message
     # reset fields
     st.session_state["key_add_ns_radio"] = "✏️ Custom"
 
 def bind_ontology_namespaces():
     for prefix in ontology_ns_to_bind_list:
         st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
-    st.session_state["ns_bound_ok_flag"] = True
+        st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
+    st.session_state["ns_bound_ok_flag"] = True   #for success message
     # reset fields
     st.session_state["key_ontology_ns_to_bind_multiselect"] = []
     st.session_state["key_add_ns_radio"] = "🧩 Ontology"
 
 def bind_all_ontology_namespaces():
     for prefix in ontology_ns_dict:
-        st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
-    st.session_state["ns_bound_ok_flag"] = True
+        if prefix not in mapping_ns_dict:
+            st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
+            st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
+    st.session_state["ns_bound_ok_flag"] = True   #for success message
     # reset fields
     st.session_state["key_add_ns_radio"] = "✏️ Custom"
 
 def unbind_namespaces():
     for prefix in ns_to_unbind_list:
         st.session_state["g_mapping"].namespace_manager.bind(prefix, None, replace=True)
+        if prefix in st.session_state["last_added_ns_list"]:
+            st.session_state["last_added_ns_list"].remove(prefix)   # to remove from last added if it is there
+    st.session_state["ns_unbound_ok_flag"] = True
     st.session_state["key_unbind_multiselect"] = []   # reset the variables
 
 def unbind_all_namespaces():
     for prefix in mapping_ns_dict:
         st.session_state["g_mapping"].namespace_manager.bind(prefix, None, replace=True)
+        if prefix in st.session_state["last_added_ns_list"]:
+            st.session_state["last_added_ns_list"].remove(prefix)    # to remove from last added if it is there
+    st.session_state["ns_unbound_ok_flag"] = True
     st.session_state["key_unbind_multiselect"] = []   # reset the variables
+
+
+
+
+
 
 
 def save_progress():
@@ -336,7 +365,7 @@ with tab1:
     col1,col2,col3 = st.columns([2,0.5, 1])
     with col1:
         st.markdown("""<div class="purple_heading">
-            📄 Create new mapping
+            📄 Create New Mapping
         </div>""", unsafe_allow_html=True)
         st.write("")
 
@@ -477,7 +506,7 @@ with tab1:
     # OPTION: Import existing mapping--------------------------------------
     with col1:
         st.markdown("""<div class="purple_heading">
-                📁 Load existing mapping
+                📁 Load Existing Mapping
             </div>""", unsafe_allow_html=True)
         st.write("")
 
@@ -635,7 +664,7 @@ with tab1:
                 st.markdown(f"""<div class="green-status-message">
                         <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                         style="vertical-align:middle; margin-right:8px; height:20px;">
-                        You are currently working with mapping
+                        You are working with mapping
                         <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
                         <ul style="font-size:0.85rem; margin-top:6px; margin-left:15px; padding-left:10px;">
                             <li>Mapping was loaded from file <b>{st.session_state["g_mapping_source_cache"][1]}</b></li>
@@ -648,7 +677,7 @@ with tab1:
                 st.markdown(f"""<div class="green-status-message">
                         <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                         style="vertical-align:middle; margin-right:8px; height:20px;">
-                        You are currently working with mapping
+                        You are working with mapping
                         <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
                         <ul style="font-size:0.85rem; margin-top:6px; margin-left:15px; padding-left:10px;">
                             <li>Mapping was created <b>from scratch</b></li>
@@ -726,7 +755,7 @@ with tab2:
                     st.markdown(f"""<div class="green-status-message">
                             🧩 The ontology <b style="color:#F63366;">
                             {next(iter(st.session_state["g_ontology_components_dict"]))}</b>
-                            is currently loaded.
+                            is loaded.
                         </div>""", unsafe_allow_html=True)
             else:
                 st.markdown(f"""<div class="gray-status-message">
@@ -754,7 +783,7 @@ with tab2:
             st.write("")
             st.write("")
             st.markdown("""<div class="purple_heading">
-                    🌐 Load ontology from URL
+                    🌐 Load Ontology from URL
                 </div>""", unsafe_allow_html=True)
             st.write("")
 
@@ -803,7 +832,7 @@ with tab2:
     if not st.session_state["g_ontology"]:   #no ontology is loaded yet
         with col1:
             st.markdown("""<div class="purple_heading">
-                    📁 Load ontology from file
+                    📁 Load Ontology from File
                 </div>    """, unsafe_allow_html=True)
             st.write("")
 
@@ -854,7 +883,7 @@ with tab2:
             st.write("")
             st.write("")
             st.markdown("""<div class="purple_heading">
-                    ➕ Extend current ontology
+                    ➕ Extend Current Ontology
                 </div>""", unsafe_allow_html=True)
             st.write("")
 
@@ -973,7 +1002,7 @@ with tab2:
     if st.session_state["g_ontology"] and len(st.session_state["g_ontology_components_dict"]) != 1:   #ontology loaded and more than 1 component
         with col1:
             st.markdown("""<div class="purple_heading">
-                    ➖ Reduce current ontology
+                    ➖ Reduce Current Ontology
                 </div>""", unsafe_allow_html=True)
             st.write("")
 
@@ -1009,7 +1038,7 @@ with tab2:
     if st.session_state["g_ontology"]:   #ontology loaded
         with col1:
             st.markdown("""<div class="purple_heading">
-                    🗑️ Discard current ontology
+                    🗑️ Discard Current Ontology
                 </div>""", unsafe_allow_html=True)
 
         with col1:
@@ -1069,10 +1098,10 @@ with tab3:
                 if st.session_state["g_ontology"]:
                     if len(st.session_state["g_ontology_components_dict"]) > 1:
                         ontology_items = '\n'.join([f"""<li><b style="color:#F63366;">{ont}</b></li>""" for ont in st.session_state["g_ontology_components_dict"]])
-                        st.markdown(f"""<div class="green-status-message">
+                        st.markdown(f"""<div class="green-status-message-small">
                                 <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                                 style="vertical-align:middle; margin-right:8px; height:20px;">
-                                You are currently working with mapping
+                                You are working with mapping
                                 <b style="color:#F63366;">{st.session_state["g_label"]}</b>.<br> <br>
                                 🧩 Your <b>ontology</b> is the merger of:
                                 <ul style="font-size:0.85rem; margin-top:6px; margin-left:15px; padding-left:10px;">
@@ -1080,40 +1109,61 @@ with tab3:
                                 {ontology_items}
                             </ul></div>""", unsafe_allow_html=True)
                     else:
-                        st.markdown(f"""<div class="green-status-message">
+                        st.markdown(f"""<div class="green-status-message-small">
                                 <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                                 style="vertical-align:middle; margin-right:8px; height:20px;">
-                                You are currently working with mapping
+                                You are working with mapping
                                 <b style="color:#F63366;">{st.session_state["g_label"]}</b>.<br> <br>
                                 🧩 The ontology <b style="color:#F63366;">
                                 {next(iter(st.session_state["g_ontology_components_dict"]))}</b>
-                                is currently loaded.
+                                is loaded.
                             </div>""", unsafe_allow_html=True)
                 else:
-                    st.markdown(f"""<div class="green-status-message">
+                    st.markdown(f"""<div class="green-status-message-small">
                             <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                             style="vertical-align:middle; margin-right:8px; height:20px;">
-                            You are currently working with mapping
+                            You are working with mapping
                             <b style="color:#F63366;">{st.session_state["g_label"]}</b>.<br> <br>
                             🚫 <b>No ontology</b> is loaded.
                         </div>
                     """, unsafe_allow_html=True)
+
+            default_ns_dict = utils.get_default_ns_dict()
+            mapping_ns_dict = utils.get_mapping_ns_dict()
+            all_mapping_ns_dict = mapping_ns_dict | default_ns_dict
 
             col2a, col2b = st.columns([0.5, 2])
 
             with col2b:
                 st.write("")
                 st.write("")
-                ns_df = pd.DataFrame(list(st.session_state["ns_dict"].items()), columns=["Prefix", "Namespace"]).iloc[::-1]
-                ns_df_last = ns_df.head(7)
-                st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
-                        last added namespaces
-                    </div>""", unsafe_allow_html=True)
-                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                        (complete list in 🔎 Show Namespaces)
-                    </div>""", unsafe_allow_html=True)
-                st.dataframe(ns_df_last, hide_index=True)
-                st.write("")
+                last_added_ns_df = pd.DataFrame({
+                    "Prefix": st.session_state["last_added_ns_list"],
+                    "Namespace": [mapping_ns_dict.get(prefix, "") for prefix in st.session_state["last_added_ns_list"]]})
+                last_last_added_ns_df = last_added_ns_df.head(10)
+
+                if st.session_state["last_added_ns_list"]:
+                    st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
+                            🔎 last added namespaces
+                        </div>""", unsafe_allow_html=True)
+                    st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                            (complete list below)
+                        </div>""", unsafe_allow_html=True)
+                    st.dataframe(last_last_added_ns_df, hide_index=True)
+                    st.write("")
+
+                mapping_ns_df = pd.DataFrame(list(mapping_ns_dict.items()), columns=["Prefix", "Namespace"]).iloc[::-1]
+                all_ns_df = pd.DataFrame(list(all_mapping_ns_dict.items()), columns=["Prefix", "Namespace"]).iloc[::-1]
+
+                #Option to show bound namespaces
+                with st.expander("🔎 Show all namespaces"):
+                    st.write("")
+                    st.dataframe(mapping_ns_df, hide_index=True)
+
+                #Option to show all namespaces (including default)
+                with st.expander("🔎 Show all namespaces (including default)"):
+                    st.write("")
+                    st.dataframe(all_ns_df, hide_index=True)
 
 
         with col1:
@@ -1274,11 +1324,12 @@ with tab3:
 
                 with col1a:
                     predefined_ns_list = [key for key in predefined_ns_dict if key not in mapping_ns_dict]
-                    predefined_ns_list.insert(0, "Bind all")
+                    if len(predefined_ns_list) > 1:
+                        predefined_ns_list.insert(0, "Bind all")
                     predefined_ns_to_bind_list = st.multiselect("Select predefined namespaces:", predefined_ns_list, key="key_predefined_ns_to_bind_multiselect")
 
                 if predefined_ns_to_bind_list:
-                    if predefined_ns_list[0] not in predefined_ns_to_bind_list:   # "Bind all" not selected
+                    if "Bind all" not in predefined_ns_to_bind_list:   # "Bind all" not selected
                         with col1a:
                             st.button("Bind", key="key_bind_predefined_ns_button", on_click=bind_predefined_namespaces)
                     else:
@@ -1309,11 +1360,12 @@ with tab3:
 
                 with col1a:
                     ontology_ns_list = [key for key in ontology_ns_dict if key not in mapping_ns_dict]
-                    ontology_ns_list.insert(0, "Bind all")
+                    if len(ontology_ns_list) > 1:
+                        ontology_ns_list.insert(0, "Bind all")
                     ontology_ns_to_bind_list = st.multiselect("Select ontology namespaces:", ontology_ns_list, key="key_ontology_ns_to_bind_multiselect")
 
                 if ontology_ns_to_bind_list:
-                    if ontology_ns_list[0] not in ontology_ns_to_bind_list:   # "Bind all" not selected
+                    if "Bind all" not in ontology_ns_to_bind_list:   # "Bind all" not selected
                         with col1a:
                             st.button("Bind", key="key_bind_ontology_ns_button", on_click=bind_ontology_namespaces)
                     else:
@@ -1324,13 +1376,26 @@ with tab3:
                             if overwrite_checkbox:
                                 st.button("Bind", key="key_bind_all_ontology_ns_button", on_click=bind_all_ontology_namespaces)
 
-        with col1:
-            st.write("_____")
 
         mapping_ns_dict = utils.get_mapping_ns_dict()
+
+        if st.session_state["ns_unbound_ok_flag"]:
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                st.write("")
+                st.markdown(f"""<div class="custom-success">
+                    ✅ The namespace/s have been unbound!
+                </div>""", unsafe_allow_html=True)
+            st.session_state["ns_unbound_ok_flag"] = False
+            time.sleep(st.session_state["success_display_time"])
+            st.rerun()
+
+
         if mapping_ns_dict:   #only if there are namespaces to unbind
 
             with col1:
+                st.write("______")
                 st.markdown("""
                 <div style="background-color:#e6e6fa; border:1px solid #511D66;
                             border-radius:5px; padding:10px; margin-bottom:8px;">
@@ -1343,14 +1408,15 @@ with tab3:
 
             mapping_ns_dict = utils.get_mapping_ns_dict()
             mapping_ns_list = list(mapping_ns_dict.keys())
-            mapping_ns_list.insert(0, "Unbind all")
+            if len(mapping_ns_list) > 1:
+                mapping_ns_list.insert(0, "Unbind all")
 
             with col1:
                 col1a, col1b = st.columns([2,1])
                 with col1a:
                     ns_to_unbind_list = st.multiselect("Select namespaces to unbind", mapping_ns_list, key="key_unbind_multiselect")
 
-            if ns_to_unbind_list and mapping_ns_list[0] not in ns_to_unbind_list:
+            if ns_to_unbind_list and "Unbind all" not in ns_to_unbind_list:
                 with col1a:
                     #create single box for display
                     inner_html = ""
@@ -1377,35 +1443,6 @@ with tab3:
                     if overwrite_checkbox:
                         st.button("Unbind", key="key_unbind_all_ns_button", on_click=unbind_all_namespaces)
 
-            st.write("HERE", mapping_ns_dict)
-            with col1:
-                st.write("_____")
-
-
-        with col1:
-            st.markdown("""
-            <div style="background-color:#e6e6fa; border:1px solid #511D66;
-                        border-radius:5px; padding:10px; margin-bottom:8px;">
-                <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
-                    🔎 Show Namespaces
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            st.markdown("")
-
-        #Option to show all custom namespaces
-        with col1:
-            with st.expander("ℹ️ Show all custom namespaces"):
-                st.write("")
-                st.dataframe(ns_df, hide_index=True)
-
-        #Option to show all namespaces (including built-in ones)
-        st.session_state["all_ns_dict"] = dict(st.session_state["g_mapping"].namespace_manager.namespaces())
-        all_ns_df = pd.DataFrame(list(st.session_state["all_ns_dict"].items()), columns=["Prefix", "Namespace"]).iloc[::-1]
-        with col1:
-            with st.expander("ℹ️ Show all bound namespaces (including built-in ones)"):
-                st.write("")
-                st.dataframe(all_ns_df, hide_index=True)
 
 #_____________________________________________
 

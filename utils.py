@@ -99,6 +99,16 @@ def import_st_aesthetics():
             .gray-status-message {background-color:#f5f5f5; padding:1em;
             border-radius:5px; color:#2a0134; border:1px solid #511D66;}
 
+    /* GREEN STATUS MESSAGE SMALL */
+        .green-status-message-small {background-color: #d4edda; padding: 0.8em 0.75em;
+            border-radius: 4px; color: #155724; border: 1px solid #511D66;
+            font-size: 0.9em; max-width: 500px;
+            margin: 0 auto; line-height: 1;}
+
+    /* GRAY STATUS MESSAGE */
+            .gray-status-message {background-color:#f5f5f5; padding:1em;
+            border-radius:5px; color:#2a0134; border:1px solid #511D66;}
+
     /* SUCCESS MESSAGE */
         .custom-success {background-color: #d4edda; padding: 1em;
             border-radius: 5px; color: #155724; border: 1px solid #c3e6cb;}
