@@ -107,6 +107,10 @@ if "g_ontology_discarded_ok_flag" not in st.session_state:
 #TAB3
 if "ns_dict" not in st.session_state:
     st.session_state["ns_dict"] = {}
+if "custom_ns_bound_ok_flag" not in st.session_state:
+    st.session_state["custom_ns_bound_ok_flag"] = False
+if "ns_bound_ok_flag" not in st.session_state:
+    st.session_state["ns_bound_ok_flag"] = False
 
 
 if "overwrite_checkbox" not in st.session_state:
@@ -252,41 +256,53 @@ def discard_ontology():
 
 #TAB3
 def bind_custom_namespace():
-    st.session_state["g_mapping"].bind(prefix_input, iri_input)  #here we bind the new namespace
+    st.session_state["g_mapping"].bind(prefix_input, iri_input)  # bind the new namespace
+    st.session_state["custom_ns_bound_ok_flag"] = True
     # reset fields
     st.session_state["key_iri_input"] = ""
     st.session_state["key_prefix_input"] = ""
     st.session_state["key_add_ns_radio"] = "✏️ Custom"
 
 def bind_predefined_namespaces():
-    for prefix in predefined_ns_to_bind:
-        st.session_state["g_mapping"].bind(prefix, predefined_ns_dict[prefix])  #here we bind the new namespace
+    for prefix in predefined_ns_to_bind_list:
+        st.session_state["g_mapping"].bind(prefix, predefined_ns_dict[prefix])  # bind the new namespace
+    st.session_state["ns_bound_ok_flag"] = True
     # reset fields
     st.session_state["key_predefined_ns_to_bind_multiselect"] = []
     st.session_state["key_add_ns_radio"] = "📋 Predefined"
 
 def bind_all_predefined_namespaces():
     for prefix in predefined_ns_dict:
-        st.session_state["g_mapping"].bind(prefix, predefined_ns_dict[prefix])  #here we bind the new namespace
+        st.session_state["g_mapping"].bind(prefix, predefined_ns_dict[prefix])  # bind the new namespace
+    st.session_state["ns_bound_ok_flag"] = True
     # reset fields
     st.session_state["key_add_ns_radio"] = "✏️ Custom"
 
 def bind_ontology_namespaces():
-    for prefix in ontology_ns_to_bind:
-        st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  #here we bind the new namespace
+    for prefix in ontology_ns_to_bind_list:
+        st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
+    st.session_state["ns_bound_ok_flag"] = True
     # reset fields
     st.session_state["key_ontology_ns_to_bind_multiselect"] = []
     st.session_state["key_add_ns_radio"] = "🧩 Ontology"
 
 def bind_all_ontology_namespaces():
     for prefix in ontology_ns_dict:
-        st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  #here we bind the new namespace
+        st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
+    st.session_state["ns_bound_ok_flag"] = True
     # reset fields
     st.session_state["key_add_ns_radio"] = "✏️ Custom"
 
-def unbind_namespace():
-    st.session_state["g_mapping"].namespace_manager.bind(unbind_ns, None, replace=True)
-    st.session_state["unbind_selectbox"] = "Select a namespace"   #we reset the variables
+def unbind_namespaces():
+    for prefix in ns_to_unbind_list:
+        st.session_state["g_mapping"].namespace_manager.bind(prefix, None, replace=True)
+    st.session_state["key_unbind_multiselect"] = []   # reset the variables
+
+def unbind_all_namespaces():
+    for prefix in mapping_ns_dict:
+        st.session_state["g_mapping"].namespace_manager.bind(prefix, None, replace=True)
+    st.session_state["key_unbind_multiselect"] = []   # reset the variables
+
 
 def save_progress():
 
@@ -647,9 +663,6 @@ with tab1:
                 ✖️ <b style="color:#511D66;">No mapping</b> has been loaded yet.
             </div>
             """, unsafe_allow_html=True)
-
-    utils.update_dictionaries()   #After mapping is created or loaded, load the DICTIONARIES
-
 
 #_______________________________________________________
 
@@ -1029,12 +1042,10 @@ with tab2:
 
 #________________________________________________
 #ADD NAMESPACE
-# Here we build a dictionary that will store the Namespaces
-# The namespaces will be bound when exporting to file
+# Here we bind the namespaces
 with tab3:
     st.write("")
     st.write("")
-
 
     if not st.session_state["g_label"]:
         col1, col2 = st.columns([2,1.5])
@@ -1110,6 +1121,30 @@ with tab3:
                     🆕 Add a New Namespace
                 </div>""", unsafe_allow_html=True)
             st.write("")
+
+        if st.session_state["custom_ns_bound_ok_flag"]:
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                st.write("")
+                st.markdown(f"""<div class="custom-success">
+                    ✅ The namespace <b style="color:#F63366;">{st.session_state["new_ns_prefix"]}</b> has been bound!
+                </div>""", unsafe_allow_html=True)
+            st.session_state["custom_ns_bound_ok_flag"] = False
+            time.sleep(st.session_state["success_display_time"])
+            st.rerun()
+
+        if st.session_state["ns_bound_ok_flag"]:
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                st.write("")
+                st.markdown(f"""<div class="custom-success">
+                    ✅ The namespace/s have been bound!
+                </div>""", unsafe_allow_html=True)
+            st.session_state["ns_bound_ok_flag"] = False
+            time.sleep(st.session_state["success_display_time"])
+            st.rerun()
 
         if st.session_state["g_ontology"]:
             add_ns_options = ["🧩 Ontology", "✏️ Custom", "📋 Predefined"]
@@ -1222,13 +1257,13 @@ with tab3:
 
         if add_ns_selected_option == "📋 Predefined":
 
-            predefined_ns_unbound_flag = False
+            there_are_predefined_ns_unbound_flag = False
             for prefix in predefined_ns_dict:
                 if not prefix in mapping_ns_dict:
-                    predefined_ns_unbound_flag = True
+                    there_are_predefined_ns_unbound_flag = True
                     continue
 
-            if not predefined_ns_unbound_flag:
+            if not there_are_predefined_ns_unbound_flag:
                 with col1a:
                     st.write("")
                     st.markdown(f"""<div class="custom-error-small">
@@ -1238,12 +1273,12 @@ with tab3:
             else:
 
                 with col1a:
-                    predefined_ns_list = list(predefined_ns_dict.keys())
+                    predefined_ns_list = [key for key in predefined_ns_dict if key not in mapping_ns_dict]
                     predefined_ns_list.insert(0, "Bind all")
-                    predefined_ns_to_bind = st.multiselect("Select predefined namespaces:", predefined_ns_list, key="key_predefined_ns_to_bind_multiselect")
+                    predefined_ns_to_bind_list = st.multiselect("Select predefined namespaces:", predefined_ns_list, key="key_predefined_ns_to_bind_multiselect")
 
-                if predefined_ns_to_bind:
-                    if predefined_ns_list[0] not in predefined_ns_to_bind:   # "Bind all" not selected
+                if predefined_ns_to_bind_list:
+                    if predefined_ns_list[0] not in predefined_ns_to_bind_list:   # "Bind all" not selected
                         with col1a:
                             st.button("Bind", key="key_bind_predefined_ns_button", on_click=bind_predefined_namespaces)
                     else:
@@ -1257,13 +1292,13 @@ with tab3:
 
         if add_ns_selected_option == "🧩 Ontology":
 
-            ontology_ns_unbound_flag = False
+            there_are_ontology_ns_unbound_flag = False
             for prefix in ontology_ns_dict:
                 if not prefix in mapping_ns_dict:
-                    ontology_ns_unbound_flag = True
+                    there_are_ontology_ns_unbound_flag = True
                     continue
 
-            if not ontology_ns_unbound_flag:
+            if not there_are_ontology_ns_unbound_flag:
                 with col1a:
                     st.write("")
                     st.markdown(f"""<div class="custom-error-small">
@@ -1273,12 +1308,12 @@ with tab3:
             else:
 
                 with col1a:
-                    ontology_ns_list = list(ontology_ns_dict.keys())
+                    ontology_ns_list = [key for key in ontology_ns_dict if key not in mapping_ns_dict]
                     ontology_ns_list.insert(0, "Bind all")
-                    ontology_ns_to_bind = st.multiselect("Select ontology namespaces:", ontology_ns_list, key="key_ontology_ns_to_bind_multiselect")
+                    ontology_ns_to_bind_list = st.multiselect("Select ontology namespaces:", ontology_ns_list, key="key_ontology_ns_to_bind_multiselect")
 
-                if ontology_ns_to_bind:
-                    if ontology_ns_list[0] not in ontology_ns_to_bind:   # "Bind all" not selected
+                if ontology_ns_to_bind_list:
+                    if ontology_ns_list[0] not in ontology_ns_to_bind_list:   # "Bind all" not selected
                         with col1a:
                             st.button("Bind", key="key_bind_ontology_ns_button", on_click=bind_ontology_namespaces)
                     else:
@@ -1289,44 +1324,65 @@ with tab3:
                             if overwrite_checkbox:
                                 st.button("Bind", key="key_bind_all_ontology_ns_button", on_click=bind_all_ontology_namespaces)
 
-        st.write(mapping_ns_dict)
-
-
         with col1:
-            st.write("---")
-            st.markdown("""
-            <div style="background-color:#e6e6fa; border:1px solid #511D66;
-                        border-radius:5px; padding:10px; margin-bottom:8px;">
-                <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
-                    🗑️Unbind Existing Namespace
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            st.markdown("")
+            st.write("_____")
 
-        unbind_ns_list = list(st.session_state["ns_dict"].keys())
-        unbind_ns_list.insert(0, "Select a namespace")
+        mapping_ns_dict = utils.get_mapping_ns_dict()
+        if mapping_ns_dict:   #only if there are namespaces to unbind
 
-        with col1:
-            col1a, col1b = st.columns([2,1])
-            with col1a:
-                unbind_ns = st.selectbox("Select a namespace", unbind_ns_list, key="unbind_selectbox")
-
-        if unbind_ns != "Select a namespace":
-            with col1a:
-                st.markdown(f"""
-                <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                    <span style="font-size:1rem;">🔗 <strong>{unbind_ns}</strong> → {st.session_state["ns_dict"][unbind_ns]}</span>
+            with col1:
+                st.markdown("""
+                <div style="background-color:#e6e6fa; border:1px solid #511D66;
+                            border-radius:5px; padding:10px; margin-bottom:8px;">
+                    <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
+                        🗑️Unbind Existing Namespace
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
-            with col1a:
-                st.write("")
-                st.write("")
-                st.button(f"Unbind namespace {unbind_ns}", on_click=unbind_namespace)
+                st.markdown("")
+
+            mapping_ns_dict = utils.get_mapping_ns_dict()
+            mapping_ns_list = list(mapping_ns_dict.keys())
+            mapping_ns_list.insert(0, "Unbind all")
+
+            with col1:
+                col1a, col1b = st.columns([2,1])
+                with col1a:
+                    ns_to_unbind_list = st.multiselect("Select namespaces to unbind", mapping_ns_list, key="key_unbind_multiselect")
+
+            if ns_to_unbind_list and mapping_ns_list[0] not in ns_to_unbind_list:
+                with col1a:
+                    #create single box for display
+                    inner_html = ""
+                    for prefix in ns_to_unbind_list:
+                        inner_html += f"""<div style="margin-bottom:6px;">
+                            <span style="font-size:1rem;">🔗 <strong>{prefix}</strong> → {mapping_ns_dict[prefix]}</span>
+                        </div>"""
+                    # wrap it all in a single dashed box
+                    full_html = f"""<div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                        {inner_html}
+                    </div>"""
+                    # render
+                    st.markdown(full_html, unsafe_allow_html=True)
+
+                with col1a:
+                    st.write("")
+                    st.button(f"Unbind", key="key_unbind_ns_button", on_click=unbind_namespaces)
+
+            elif ns_to_unbind_list:
+                with col1a:
+                    overwrite_checkbox = st.checkbox(
+                    ":gray-badge[⚠️ I want to unbind all namespaces]",
+                    key="overwrite_checkbox")
+                    if overwrite_checkbox:
+                        st.button("Unbind", key="key_unbind_all_ns_button", on_click=unbind_all_namespaces)
+
+            st.write("HERE", mapping_ns_dict)
+            with col1:
+                st.write("_____")
 
 
         with col1:
-            st.write("---")
             st.markdown("""
             <div style="background-color:#e6e6fa; border:1px solid #511D66;
                         border-radius:5px; padding:10px; margin-bottom:8px;">

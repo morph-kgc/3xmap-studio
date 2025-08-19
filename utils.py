@@ -443,6 +443,7 @@ LS = namespaces["logicalSource"]
 
 #_________________________________________________________
 # Funtion to get dictionary {prefix: namespace} bound in the ontology
+# It will ignore the default namespaces
 def get_ontology_ns_dict():
 
     default_ns_dict = get_default_ns_dict()
@@ -454,11 +455,13 @@ def get_ontology_ns_dict():
 
 #_________________________________________________________
 # Funtion to get dictionary {prefix: namespace} bound in the ontology
+# It will ignore the default namespaces
 def get_mapping_ns_dict():
 
     default_ns_dict = get_default_ns_dict()
     all_mapping_ns_dict = dict(st.session_state["g_mapping"].namespace_manager.namespaces())
-    mapping_ns_dict = {k: Namespace(v) for k, v in all_mapping_ns_dict.items() if (k not in default_ns_dict)}
+    mapping_ns_dict = {k: Namespace(v) for k, v in all_mapping_ns_dict.items() if (k not in default_ns_dict and v != URIRef("None"))}
+    # last condition added so that it will not show unbound namespaces
 
     return mapping_ns_dict
 #_________________________________________________________
