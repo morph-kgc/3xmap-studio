@@ -111,10 +111,10 @@ if "ns_dict" not in st.session_state:
 
 if "overwrite_checkbox" not in st.session_state:
     st.session_state["overwrite_checkbox"] = False
-if "new_ns" not in st.session_state:
-    st.session_state["new_ns"] = ""
-if "new_prefix" not in st.session_state:
-    st.session_state["new_prefix"] = ""
+if "new_ns_iri" not in st.session_state:
+    st.session_state["new_ns_iri"] = ""
+if "new_ns_prefix" not in st.session_state:
+    st.session_state["new_ns_prefix"] = ""
 if "save_progress_success" not in st.session_state:
     st.session_state["save_progress_success"] = False
 if "export_success" not in st.session_state:
@@ -213,7 +213,7 @@ def extend_ontology_from_link():
     st.session_state["g_ontology_loaded_ok_flag"] = True
     # save ontology info___________________________
     st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
-    #merge both ontologies___________________
+    # merge both ontologies___________________
     for triple in g_ontology_new_part:
         st.session_state["g_ontology"].add(triple)
     # reset fields___________________________
@@ -227,7 +227,7 @@ def extend_ontology_from_file():
     st.session_state["g_ontology_loaded_ok_flag"] = True
     # save ontology info___________________________
     st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
-    #merge both ontologies___________________
+    # merge both ontologies___________________
     for triple in g_ontology_new_part:
         st.session_state["g_ontology"].add(triple)
     # reset fields___________________________
@@ -237,9 +237,9 @@ def extend_ontology_from_file():
 
 def reduce_ontology():
     st.session_state["g_ontology_reduced_ok_flag"] = True
-    #drop the given ontology components from the dictionary
+    # drop the given ontology components from the dictionary
     st.session_state["g_ontology_components_dict"] = {label: ont for label, ont in st.session_state["g_ontology_components_dict"].items() if label not in ontologies_to_drop_list}
-    #merge remaining ontology components
+    # merge remaining ontology components
     st.session_state["g_ontology"] = Graph()
     for label, ont in st.session_state["g_ontology_components_dict"].items():
         st.session_state["g_ontology"] += ont  # merge the graphs using RDFLib's += operator
@@ -251,25 +251,25 @@ def discard_ontology():
     st.session_state["g_ontology_label"] = ""
 
 #TAB3
-def bind_namespace():
-    st.session_state["ns_dict"][st.session_state["new_prefix"]] = st.session_state["new_ns"]    #we update the dictionaries
-    st.session_state["all_ns_dict"][st.session_state["new_prefix"]] = st.session_state["new_ns"]
+def bind_custom_namespace():
     st.session_state["g_mapping"].bind(prefix_input, iri_input)  #here we bind the new namespace
-    st.session_state["key_iri_input"] = ""   #we reset the variables
+    # reset fields
+    st.session_state["key_iri_input"] = ""
     st.session_state["key_prefix_input"] = ""
+    st.session_state["key_add_ns_radio"] = "✏️ Custom"
 
-def bind_predefined_namespace():
-    st.session_state["ns_dict"][st.session_state["new_prefix"]] = st.session_state["new_ns"]    #we update the dictionaries
-    st.session_state["all_ns_dict"][st.session_state["new_prefix"]] = st.session_state["new_ns"]
-    st.session_state["g_mapping"].bind(st.session_state["new_prefix"], st.session_state["new_ns"])  #here we bind the new namespace
-    st.session_state["predefined_ns_selectbox"] = "Select a namespace"   #we reset the selectbox
+def bind_predefined_namespaces():
+    for prefix in predefined_ns_to_bind:
+        st.session_state["g_mapping"].bind(prefix, predefined_ns_dict[prefix])  #here we bind the new namespace
+    # reset fields
+    st.session_state["key_predefined_ns_to_bind_multiselect"] = []
+    st.session_state["key_add_ns_radio"] = "📋 Predefined"
 
 def bind_all_predefined_namespaces():
     for prefix in predefined_ns_dict:
-        st.session_state["ns_dict"][prefix] = predefined_ns_dict[prefix]    #we update the dictionaries
-        st.session_state["all_ns_dict"][prefix] = predefined_ns_dict[prefix]
         st.session_state["g_mapping"].bind(prefix, predefined_ns_dict[prefix])  #here we bind the new namespace
-    st.session_state["predefined_ns_selectbox"] = "Select a namespace"   #we reset the selectbox
+    # reset fields
+    st.session_state["key_add_ns_radio"] = "✏️ Custom"
 
 def unbind_namespace():
     st.session_state["g_mapping"].namespace_manager.bind(unbind_ns, None, replace=True)
@@ -1036,12 +1036,6 @@ with tab3:
 
     else:   #only allow to continue if mapping is loaded
 
-        if "ns_dict" not in st.session_state:
-            #st.session_state["ns_dict"] = utils.get_predefined_ns_dict()   #initial dictionary with predefined namespaces, custom ns will be added
-            st.session_state["ns_dict"] = {}
-        if "all_ns_dict" not in st.session_state:
-            st.session_state["all_ns_dict"] = {}   #dictionary with all bound namespaces (includes the ones which are bound by default)
-
         col1,col2 = st.columns([2,1.5])
 
         with col2:
@@ -1081,25 +1075,19 @@ with tab3:
                         </div>
                     """, unsafe_allow_html=True)
 
-
             col2a, col2b = st.columns([0.5, 2])
 
             with col2b:
                 st.write("")
                 st.write("")
-                utils.update_dictionaries()
                 ns_df = pd.DataFrame(list(st.session_state["ns_dict"].items()), columns=["Prefix", "Namespace"]).iloc[::-1]
                 ns_df_last = ns_df.head(7)
-                st.markdown("""
-                    <div style='text-align: right; font-size: 14px; color: grey;'>
+                st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
                         last added namespaces
-                    </div>
-                """, unsafe_allow_html=True)
-                st.markdown("""
-                    <div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                    </div>""", unsafe_allow_html=True)
+                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
                         (complete list in 🔎 Show Namespaces)
-                    </div>
-                """, unsafe_allow_html=True)
+                    </div>""", unsafe_allow_html=True)
                 st.dataframe(ns_df_last, hide_index=True)
                 st.write("")
 
@@ -1120,33 +1108,49 @@ with tab3:
         with col1a:
             add_ns_selected_option = st.radio("", add_ns_options, label_visibility="collapsed", key="key_add_ns_radio", horizontal=True)
 
+        predefined_ns_dict = utils.get_predefined_ns_dict()
+        default_ns_dict = utils.get_default_ns_dict()
+        ontology_ns_dict = utils.get_ontology_ns_dict()
+        mapping_ns_dict = utils.get_mapping_ns_dict()
 
         if add_ns_selected_option == "✏️ Custom":
             with col1:
                 col1a, col1b = st.columns([1,2])
 
-            with col1a:           #PREFIX AND IRI INPUT
+            with col1a:           # prefix and iri input
                 prefix_input = st.text_input("Enter prefix: ", key = "key_prefix_input")
             with col1b:
                 iri_input = st.text_input("Enter an IRI for the new namespace", key="key_iri_input")
-            st.session_state["new_prefix"] = prefix_input if prefix_input else ""
-            st.session_state["new_ns"] = iri_input if iri_input else ""
+            st.session_state["new_ns_prefix"] = prefix_input if prefix_input else ""
+            st.session_state["new_ns_iri"] = iri_input if iri_input else ""
 
-            predefined_ns_dict = utils.get_predefined_ns_dict()
-            #HERE ADD ONTOLOGY NS IF ANY
+            with col1:
+                col1a, col1b = st.columns([2,1])
 
             if prefix_input:
-                with col1:
-                    col1a, col1b = st.columns([2,1])
                 valid_prefix_input = False
-                if prefix_input in predefined_ns_dict:
+                if prefix_input in ontology_ns_dict:
+                    with col1a:
+                        st.markdown(f"""<div class="custom-error-small">
+                            ❌ <b> Prefix {prefix_input} is contained in the ontology: </b> <br>
+                            You can either choose a different prefix or bind {prefix_input} directly from the ontology namespaces option.
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
+                elif prefix_input in predefined_ns_dict:
                     with col1a:
                         st.markdown(f"""<div class="custom-error-small">
                             ❌ <b> Prefix {prefix_input} is tied to a predefined namespace: </b> <br>
-                            You can either choose a different prefix or bind {prefix_input} directly from the predefined namespaces list.
+                            You can either choose a different prefix or bind {prefix_input} directly from the predefined namespaces option.
                         </div>""", unsafe_allow_html=True)
                         st.write("")
-                elif prefix_input in st.session_state["ns_dict"] and st.session_state["ns_dict"][prefix_input] != None:
+                elif prefix_input in default_ns_dict:
+                    with col1a:
+                        st.markdown(f"""<div class="custom-error-small">
+                            ❌ <b> Prefix {prefix_input} is tied to a default namespace: </b> <br>
+                            You must choose a different prefix.
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
+                elif prefix_input in mapping_ns_dict:
                     with col1a:
                         st.markdown(f"""<div class="custom-error-small">
                             ❌ <b> Prefix {prefix_input} is already in use: </b> <br>
@@ -1158,11 +1162,32 @@ with tab3:
 
             if iri_input:
                 valid_iri_input = False
-                if iri_input in predefined_ns_dict.values():
+                if iri_input in ontology_ns_dict.values():
                     with col1a:
                         st.markdown(f"""<div class="custom-error-small">
-                            ❌ <b> That IRI matches a predefined namespace: </b> <br>
-                            You can either choose a different IRI or bind {iri_input} directly from the predefined namespaces list.
+                            ❌ <b> Namespace is contained in the ontology: </b> <br>
+                            You can either choose a different IRI or bind {iri_input} directly from the ontology namespaces option.
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
+                elif iri_input in predefined_ns_dict.values():
+                    with col1a:
+                        st.markdown(f"""<div class="custom-error-small">
+                            ❌ <b> IRI matches a predefined namespace: </b> <br>
+                            You can either choose a different IRI or bind {iri_input} directly from the predefined namespaces option.
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
+                elif iri_input in default_ns_dict.values():
+                    with col1a:
+                        st.markdown(f"""<div class="custom-error-small">
+                            ❌ <b> IRI matches a default namespace: </b> <br>
+                            You must choose a different IRI.
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
+                elif URIRef(iri_input) in mapping_ns_dict.values():
+                    with col1a:
+                        st.markdown(f"""<div class="custom-error-small">
+                            ❌ <b> Namespace is already in use: </b> <br>
+                            You can either choose a different IRI or unbind {iri_input} to reassing it.
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                 elif not utils.is_valid_iri(iri_input):
@@ -1173,50 +1198,35 @@ with tab3:
                             and ends with a delimiter (/, # or :).
                         </div>""", unsafe_allow_html=True)
                         st.write("")
-                elif URIRef(iri_input) in st.session_state["ns_dict"].values():
-                    with col1a:
-                        st.markdown(f"""<div class="custom-error-small">
-                            ❌ <b> That IRI is already in use: </b> <br>
-                            You can either choose a different IRI or unbind {iri_input} to reassing it.
-                        </div>""", unsafe_allow_html=True)
-                        st.write("")
                 else:
                     valid_iri_input = True
 
             if iri_input and prefix_input:
                 if valid_iri_input and valid_prefix_input:
                     with col1a:
-                        save_new_ns = st.button("Bind namespace", on_click=bind_namespace)
+                        st.button("Bind", key="key_bind_custom_ns_button", on_click=bind_custom_namespace)
+
 
         if add_ns_selected_option == "📋 Predefined":
-            #option to bind predefined namespaces
-            predefined_ns_dict = utils.get_predefined_ns_dict()
-            predefined_ns_list = list(predefined_ns_dict.keys())
-            predefined_ns_list.insert(0, "Select a namespace")
-            predefined_ns_list.insert(1, "Bind all predefined namespaces")
-            predefined_ns_prefix = "Select a namespace"
 
-            with col1b:
-                st.markdown(
-                    """
-                    <div style="border-top:3px dashed #b5b5d0; padding-top:12px;">
-                        <span style="font-size:1.1em; font-weight:bold;">📑 Select predefined namespace:</span><br>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-                predefined_ns_prefix = st.selectbox("or select a predefined namespace from list", predefined_ns_list, key="predefined_ns_selectbox")
+            with col1a:
+                predefined_ns_list = list(predefined_ns_dict.keys())
+                predefined_ns_list.insert(0, "Bind all")
+                predefined_ns_to_bind = st.multiselect("Select predefined namespaces:", predefined_ns_list, key="key_predefined_ns_to_bind_multiselect")
 
-            if predefined_ns_prefix != "Select a namespace" and predefined_ns_prefix != "Bind all predefined namespaces":
-                st.session_state["new_prefix"] = predefined_ns_prefix
-                st.session_state["new_ns"] = predefined_ns_dict[predefined_ns_prefix]
-                with col1a:
-                    save_new_ns = st.button(f"Bind predefined namespace {st.session_state["new_prefix"]}", on_click=bind_predefined_namespace)
+            if predefined_ns_to_bind:
+                if predefined_ns_list[0] not in predefined_ns_to_bind:   # "Bind all" not selected
+                    with col1a:
+                        st.button("Bind", key="key_bind_predefined_ns_button", on_click=bind_predefined_namespaces)
+                else:
+                    with col1a:
+                        overwrite_checkbox = st.checkbox(
+                        ":gray-badge[⚠️ I want to bind all predefined namespaces]",
+                        key="overwrite_checkbox")
+                        if overwrite_checkbox:
+                            st.button("Bind", key="key_bind_all_predefined_ns_button", on_click=bind_all_predefined_namespaces)
 
-
-            if predefined_ns_prefix == "Bind all predefined namespaces":
-                with col1a:
-                    save_new_ns = st.button("Bind all predefined namespaces", on_click=bind_all_predefined_namespaces)
+        st.write("HERE2", utils.get_mapping_ns_dict())
 
         with col1:
             st.write("---")

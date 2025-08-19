@@ -335,6 +335,13 @@ def check_ontology_overlap(g1, g2):
 #___________________________________________________________________________________
 
 #_________________________________________________________
+def get_rdfolio_base_iri():
+    return "http://rdfolio.org/"
+
+#________________________________________________________
+
+#_________________________________________________________
+#HERE CHANGE (NOT USED)
 def get_ontology_base_iri():
     for s in st.session_state["g_ontology"].subjects(RDF.type, OWL.Ontology):
         try:
@@ -345,20 +352,57 @@ def get_ontology_base_iri():
             if is_valid_iri(s):
                 return s
 
-    return get_rdfolio_base_iri()
-
+    return None
 #________________________________________________________
 
-#_________________________________________________________
-def get_rdfolio_base_iri():
-    return "http://rdfolio.org/"
-
-#________________________________________________________
 
 #_________________________________________________________
-#Dictionary with predefined namespaces
-def get_predefined_ns_dict():
+#D Funtion to get dictionary with default namespaces
+# The default namespaces are automatically bound to g by rdflib (don't change)
+def get_default_ns_dict():
     return {
+    "brick": Namespace("https://brickschema.org/schema/Brick#"),
+    "csvw": Namespace("http://www.w3.org/ns/csvw#"),
+    "dc": Namespace("http://purl.org/dc/elements/1.1/"),
+    "dcam": Namespace("http://purl.org/dc/dcam/"),
+    "dcat": Namespace("http://www.w3.org/ns/dcat#"),
+    "dcmitype": Namespace("http://purl.org/dc/dcmitype/"),
+    "dcterms": Namespace("http://purl.org/dc/terms/"),
+    "doap": Namespace("http://usefulinc.com/ns/doap#"),
+    "foaf": Namespace("http://xmlns.com/foaf/0.1/"),
+    "geo": Namespace("http://www.opengis.net/ont/geosparql#"),
+    "odrl": Namespace("http://www.w3.org/ns/odrl/2/"),
+    "org": Namespace("http://www.w3.org/ns/org#"),
+    "owl": Namespace("http://www.w3.org/2002/07/owl#"),
+    "prof": Namespace("http://www.w3.org/ns/dx/prof/"),
+    "prov": Namespace("http://www.w3.org/ns/prov#"),
+    "qb": Namespace("http://purl.org/linked-data/cube#"),
+    "rdf": Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
+    "rdfs": Namespace("http://www.w3.org/2000/01/rdf-schema#"),
+    "sdo": Namespace("https://schema.org/"),
+    "sh": Namespace("http://www.w3.org/ns/shacl#"),
+    "skos": Namespace("http://www.w3.org/2004/02/skos/core#"),
+    "sosa": Namespace("http://www.w3.org/ns/sosa/"),
+    "ssn": Namespace("http://www.w3.org/ns/ssn/"),
+    "time": Namespace("http://www.w3.org/2006/time#"),
+    "vann": Namespace("http://purl.org/vocab/vann/"),
+    "void": Namespace("http://rdfs.org/ns/void#"),
+    "xml": Namespace("http://www.w3.org/XML/1998/namespace"),
+    "xsd": Namespace("http://www.w3.org/2001/XMLSchema#"),
+    "schema": Namespace("https://schema.org/"),
+    "wgs": Namespace("https://www.w3.org/2003/01/geo/wgs84_pos#")
+    }
+#________________________________________________________
+
+#_________________________________________________________
+# Dictionary with predefined namespaces
+# These are predefined so taht they can be easily bound (can be changed)
+# It will ignore the default namespaces
+def get_predefined_ns_dict():
+
+    default_ns_dict = get_default_ns_dict()
+
+    all_predefined_ns_dict = {
         "rml": Namespace("http://semweb.mmlab.be/ns/rml#"),
         "rr": Namespace("http://www.w3.org/ns/r2rml#"),
         "xsd": Namespace("http://www.w3.org/2001/XMLSchema#"),
@@ -380,10 +424,14 @@ def get_predefined_ns_dict():
         "void": Namespace("http://rdfs.org/ns/void#"),
         "qb": Namespace("http://purl.org/linked-data/cube#")}
 
+    predefined_ns_dict = {k: Namespace(v) for k, v in all_predefined_ns_dict.items() if (k not in default_ns_dict)}
+
+    return predefined_ns_dict
 #________________________________________________________
 
 #________________________________________________________
 # Binding some namespaces for future use in this page
+#HERE check if needed
 namespaces = get_predefined_ns_dict()
 RML = namespaces["rml"]
 RR = namespaces["rr"]
@@ -393,7 +441,63 @@ CLASS = namespaces["class"]
 LS = namespaces["logicalSource"]
 #________________________________________________________
 
-#HEREIGO
+#_________________________________________________________
+# Funtion to get dictionary {prefix: namespace} bound in the ontology
+def get_ontology_ns_dict():
+
+    default_ns_dict = get_default_ns_dict()
+    all_ontology_ns_dict = dict(st.session_state["g_ontology"].namespace_manager.namespaces())
+    ontology_ns_dict = {k: Namespace(v) for k, v in all_ontology_ns_dict.items() if (k not in default_ns_dict)}
+
+    return ontology_ns_dict
+#_________________________________________________________
+
+#_________________________________________________________
+# Funtion to get dictionary {prefix: namespace} bound in the ontology
+def get_mapping_ns_dict():
+
+    default_ns_dict = get_default_ns_dict()
+    all_mapping_ns_dict = dict(st.session_state["g_mapping"].namespace_manager.namespaces())
+    mapping_ns_dict = {k: Namespace(v) for k, v in all_mapping_ns_dict.items() if (k not in default_ns_dict)}
+
+    return mapping_ns_dict
+#_________________________________________________________
+
+#_________________________________________________
+#Function to check whether an IRI is valid
+def is_valid_iri(iri):
+    valid_iri_schemes = ("http://", "https://", "ftp://", "mailto:",
+    "urn:", "tag:", "doi:", "data:"
+    )
+    if not iri.startswith(valid_iri_schemes):
+        return False
+
+    try:
+        parsed = urlparse(iri)
+    except:
+        return False
+    schemes_with_netloc = {"http", "https", "ftp"}
+    if parsed.scheme in schemes_with_netloc and not parsed.netloc:
+        return False
+
+    if re.search(r"[ \t\n\r<>\"{}|\\^`]", iri):    # disallow spaces or unescaped characters
+        return False
+
+    if not iri[-1] in ("/", "#", ":"):
+        return False  # must end with a recognized delimiter
+
+    return True
+#__________________________________________________
+
+
+
+
+
+
+
+
+
+
 
 
 #______________________________________________
@@ -451,77 +555,6 @@ def get_confirm_button():
     if button_NO:
         return False
 
-
-#_________________________________________________________
-#Dictionary with predefined namespaces
-def get_default_ns_dict():
-    return {
-    "brick": "https://brickschema.org/schema/Brick#",
-    "csvw": "http://www.w3.org/ns/csvw#",
-    "dc": "http://purl.org/dc/elements/1.1/",
-    "dcam": "http://purl.org/dc/dcam/",
-    "dcat": "http://www.w3.org/ns/dcat#",
-    "dcmitype": "http://purl.org/dc/dcmitype/",
-    "dcterms": "http://purl.org/dc/terms/",
-    "doap": "http://usefulinc.com/ns/doap#",
-    "foaf": "http://xmlns.com/foaf/0.1/",
-    "geo": "http://www.opengis.net/ont/geosparql#",
-    "odrl": "http://www.w3.org/ns/odrl/2/",
-    "org": "http://www.w3.org/ns/org#",
-    "owl": "http://www.w3.org/2002/07/owl#",
-    "prof": "http://www.w3.org/ns/dx/prof/",
-    "prov": "http://www.w3.org/ns/prov#",
-    "qb": "http://purl.org/linked-data/cube#",
-    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
-    "sdo": "https://schema.org/",
-    "sh": "http://www.w3.org/ns/shacl#",
-    "skos": "http://www.w3.org/2004/02/skos/core#",
-    "sosa": "http://www.w3.org/ns/sosa/",
-    "ssn": "http://www.w3.org/ns/ssn/",
-    "time": "http://www.w3.org/2006/time#",
-    "vann": "http://purl.org/vocab/vann/",
-    "void": "http://rdfs.org/ns/void#",
-    "xml": "http://www.w3.org/XML/1998/namespace",
-    "xsd": "http://www.w3.org/2001/XMLSchema#",
-    "schema": "https://schema.org/",
-    "wgs": "https://www.w3.org/2003/01/geo/wgs84_pos#"
-    }
-#________________________________________________________
-
-
-#_________________________________________________________
-#Dictionary with predefined namespaces  HERE NOT USED
-def get_inverse_dict(my_dict):
-    return {v: k for k, v in my_dict.items()}
-#_________________________________________________________
-
-#_________________________________________________
-#Function to check whether an IRI is valid
-def is_valid_iri(iri):
-    valid_iri_schemes = ("http://", "https://", "ftp://", "mailto:",
-    "urn:", "tag:", "doi:", "data:"
-    )
-    if not iri.startswith(valid_iri_schemes):
-        return False
-
-    try:
-        parsed = urlparse(iri)
-    except:
-        return False
-    schemes_with_netloc = {"http", "https", "ftp"}
-    if parsed.scheme in schemes_with_netloc and not parsed.netloc:
-        return False
-
-    if re.search(r"[ \t\n\r<>\"{}|\\^`]", iri):    # disallow spaces or unescaped characters
-        return False
-
-    if not iri[-1] in ("/", "#", ":"):
-        return False  # must end with a recognized delimiter
-
-    return True
-#__________________________________________________
-
 #_________________________________________________
 #Allowed data formats
 def get_ds_allowed_formats():
@@ -543,29 +576,32 @@ def update_dictionaries():
 
     if st.session_state["g_label"]:
 
-        #{TripleMap label: TripleMap}
+        # {TripleMap label: TripleMap}
         triples_maps = list(st.session_state["g_mapping"].subjects(RML.logicalSource, None))
         for tm in triples_maps:
             tm_label = split_uri(tm)[1]
             st.session_state["tmap_dict"][tm_label] = tm
 
-        #{TripleMap label: data source}
+        # {TripleMap label: data source}
         for tmap_label, tmap_node in st.session_state["tmap_dict"].items():
             data_source = get_data_source_file(st.session_state["g_mapping"], tmap_node)
             st.session_state["data_source_dict"][tmap_label] = data_source
 
-        #{prefix: namespace} only custom
+        # {prefix: namespace}  namespaces bound to g_mapping
+        st.session_state["g_mapping_ns_dict_including_default"] = dict(st.session_state["g_mapping"].namespace_manager.namespaces())
+
+        # {prefix: namespace} only custom
         default_ns_dict = get_default_ns_dict()
         all_mapping_ns_dict = dict(st.session_state["g_mapping"].namespace_manager.namespaces())
-        st.session_state["mapping_ns_dict"] = {k: v for k, v in all_mapping_ns_dict.items() if (k not in default_ns_dict and v != URIRef("None"))}
+        st.session_state["g_mapping_ns_dict"] = {k: v for k, v in all_mapping_ns_dict.items() if (k not in default_ns_dict and v != URIRef("None"))}
 
-        #{prefix: namespace} only ontology
+        # {prefix: namespace} only ontology
         st.session_state["ontology_ns_dict"] = dict(st.session_state["g_ontology"].namespace_manager.namespaces())
 
-        #{prefix: namespace} custom+ontology
-        st.session_state["ns_dict"] = st.session_state["mapping_ns_dict"] | st.session_state["ontology_ns_dict"]
+        # {prefix: namespace} custom+ontology
+        st.session_state["ns_dict"] = st.session_state["g_mapping_ns_dict"] | st.session_state["ontology_ns_dict"]
 
-        #subject dictionary   {tm label: [subject_label, subject_id, subject_type]}
+        # subject dictionary   {tm label: [subject_label, subject_id, subject_type]}
         st.session_state["subject_dict"] = {}
         triples_maps = list(st.session_state["g_mapping"].subjects(RML.logicalSource, None))
         for tm in triples_maps:
