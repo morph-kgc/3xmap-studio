@@ -1441,16 +1441,29 @@ with tab4:
         with col2b:
             utils.get_corner_status_message()
 
-        with col1:
-            st.markdown("""<div class="purple-heading">
-                    💾 Save progress
-                </div>""", unsafe_allow_html=True)
+        pkl_cache_filename = "__" + st.session_state["g_label"] + "_cache__.pkl"
+        existing_pkl_file_list = [f for f in os.listdir() if f.endswith("_cache__.pkl")]
+        with col2b:
             st.write("")
-
-        with col1:
-            col1a, col1b = st.columns([2,1])
+            overwrite_checkbox = st.checkbox(
+                "💾 Save progress",
+                key="overwrite_checkbox")
+            if overwrite_checkbox:
+                st.markdown(f"""<div class="info-message-small">
+                        ℹ️ Current state of mapping <b style="color:#F63366;">
+                        {st.session_state["g_label"]}</b> will be temporarily saved.
+                        To retrieve cached work go to the <b>Select Mapping</b> panel.
+                    </span></div>""", unsafe_allow_html=True)
+                st.write("")
+                st.markdown(f"""<div class="custom-warning-small">
+                        ⚠️ Any previously cached mapping will be deleted.
+                    </div>""", unsafe_allow_html=True)
+                st.write("")
+                st.button("Save", key="key_save_progress_button", on_click=save_progress)
 
         if st.session_state["progress_saved_ok_flag"]:
+            with col1:
+                col1a, col1b = st.columns([2,1])
             with col1a:
                 st.write("")
                 st.markdown(f"""<div class="custom-success">
@@ -1460,33 +1473,51 @@ with tab4:
             time.sleep(st.session_state["success_display_time"])
             st.rerun()
 
+        # with col1:
+        #     st.markdown("""<div class="purple-heading">
+        #             💾 Save progress
+        #         </div>""", unsafe_allow_html=True)
+        #     st.write("")
+        #
+        # with col1:
+        #     col1a, col1b = st.columns([2,1])
 
-        with col1a:
-            st.markdown(f"""<div class="info-message-small">
-                    ℹ️ Current state of mapping <b style="color:#F63366;">
-                    {st.session_state["g_label"]}</b> will be temporarily saved.
-                    To retrieve cached work go to the <b>Select Mapping</b> panel.
-                </span></div>""", unsafe_allow_html=True)
-            st.write("")
-        with col1b:
-            st.markdown(f"""<div class="custom-warning-small">
-                    ⚠️ Any previously cached mapping will be deleted.
-                </div>""", unsafe_allow_html=True)
-            st.write("")
+        # if st.session_state["progress_saved_ok_flag"]:
+        #     with col1a:
+        #         st.write("")
+        #         st.markdown(f"""<div class="custom-success">
+        #             ✅ Current state of mapping <b>{st.session_state["g_label"]}</b> has been cached!
+        #         </div>""", unsafe_allow_html=True)
+        #     st.session_state["progress_saved_ok_flag"] = False
+        #     time.sleep(st.session_state["success_display_time"])
+        #     st.rerun()
 
-        pkl_cache_filename = "__" + st.session_state["g_label"] + "_cache__.pkl"
-        existing_pkl_file_list = [f for f in os.listdir() if f.endswith("_cache__.pkl")]
-        with col1a:
-            overwrite_checkbox = st.checkbox(
-                ":gray-badge[⚠️ I am completely sure I want to continue]",
-                key="overwrite_checkbox")
-            if overwrite_checkbox:
-                st.button("Save", key="key_save_progress_button", on_click=save_progress)
+
+        # with col1a:
+        #     st.markdown(f"""<div class="info-message-small">
+        #             ℹ️ Current state of mapping <b style="color:#F63366;">
+        #             {st.session_state["g_label"]}</b> will be temporarily saved.
+        #             To retrieve cached work go to the <b>Select Mapping</b> panel.
+        #         </span></div>""", unsafe_allow_html=True)
+        #     st.write("")
+        # with col1b:
+        #     st.markdown(f"""<div class="custom-warning-small">
+        #             ⚠️ Any previously cached mapping will be deleted.
+        #         </div>""", unsafe_allow_html=True)
+        #     st.write("")
+        #
+        # pkl_cache_filename = "__" + st.session_state["g_label"] + "_cache__.pkl"
+        # existing_pkl_file_list = [f for f in os.listdir() if f.endswith("_cache__.pkl")]
+        # with col1a:
+        #     overwrite_checkbox = st.checkbox(
+        #         ":gray-badge[⚠️ I am completely sure I want to continue]",
+        #         key="overwrite_checkbox")
+        #     if overwrite_checkbox:
+        #         st.button("Save", key="key_save_progress_button", on_click=save_progress)
 
             # pkl_cache_file = next((f for f in os.listdir() if f.endswith("_temp.pkl")), None)
 
         with col1:
-            st.write("____")
             st.markdown("""<div class="purple-heading">
                     📤 Export mapping
                 </div>""", unsafe_allow_html=True)
