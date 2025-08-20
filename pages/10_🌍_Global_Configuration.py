@@ -361,7 +361,7 @@ def export_mapping_to_file():
 # PANELS OF THE PAGE (tabs)
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["Select Mapping",
-    "Load Ontology", "Configure Namespaces", "Save Progress", "Export Mapping"])
+    "Load Ontology", "Configure Namespaces", "Save Mapping", "Export Mapping"])
 
 #____________________________________________________________
 # PANEL: "SELECT MAPPING"
@@ -1467,13 +1467,15 @@ with tab4:
                     To retrieve cached work go to the <b>Select Mapping</b> panel.
                 </span></div>""", unsafe_allow_html=True)
             st.write("")
+        with col1b:
             st.markdown(f"""<div class="custom-warning-small">
                     ⚠️ Any previously cached mapping will be deleted.
                 </div>""", unsafe_allow_html=True)
             st.write("")
+
+        pkl_cache_filename = "__" + st.session_state["g_label"] + "_cache__.pkl"
+        existing_pkl_file_list = [f for f in os.listdir() if f.endswith("_cache__.pkl")]
         with col1a:
-            pkl_cache_filename = "__" + st.session_state["g_label"] + "_cache__.pkl"
-            existing_pkl_file_list = [f for f in os.listdir() if f.endswith("_cache__.pkl")]
             overwrite_checkbox = st.checkbox(
                 ":gray-badge[⚠️ I am completely sure I want to continue]",
                 key="overwrite_checkbox")
@@ -1482,7 +1484,13 @@ with tab4:
 
             # pkl_cache_file = next((f for f in os.listdir() if f.endswith("_temp.pkl")), None)
 
-
+    with col1:
+        st.write("")
+        st.write("____")
+        st.markdown("""<div class="purple-heading">
+                📤 Export mapping
+            </div>""", unsafe_allow_html=True)
+        st.write("")
 
 
 
