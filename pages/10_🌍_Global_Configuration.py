@@ -116,7 +116,9 @@ if "ns_unbound_ok_flag" not in st.session_state:
 if "last_added_ns_list" not in st.session_state:
     st.session_state["last_added_ns_list"] = []
 
-
+#TAB4
+if "progress_saved_ok_flag" not in st.session_state:
+    st.session_state["progress_saved_ok_flag"] = False
 
 
 if "overwrite_checkbox" not in st.session_state:
@@ -125,7 +127,7 @@ if "new_ns_iri" not in st.session_state:
     st.session_state["new_ns_iri"] = ""
 if "new_ns_prefix" not in st.session_state:
     st.session_state["new_ns_prefix"] = ""
-if "save_progress_success" not in st.session_state:
+if "save_progress_succes" not in st.session_state:
     st.session_state["save_progress_success"] = False
 if "export_success" not in st.session_state:
     st.session_state["export_success"] = False
@@ -297,7 +299,7 @@ def bind_ontology_namespaces():
     for prefix in ontology_ns_to_bind_list:
         st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
         st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
-    st.session_state["ns_bound_ok_flag"] = True   #for success message
+    st.session_state["ns_bound_ok_flag"] = True   # for success message
     # reset fields
     st.session_state["key_ontology_ns_to_bind_multiselect"] = []
     st.session_state["key_add_ns_radio"] = "🧩 Ontology"
@@ -307,7 +309,7 @@ def bind_all_ontology_namespaces():
         if prefix not in mapping_ns_dict:
             st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
             st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
-    st.session_state["ns_bound_ok_flag"] = True   #for success message
+    st.session_state["ns_bound_ok_flag"] = True   # for success message
     # reset fields
     st.session_state["key_add_ns_radio"] = "✏️ Custom"
 
@@ -328,18 +330,24 @@ def unbind_all_namespaces():
     st.session_state["key_unbind_multiselect"] = []   # reset the variables
 
 
-
-
-
-
-
+#TAB4
 def save_progress():
-
-    with open(save_progress_file, "wb") as f:
+    #remove all cache pkl files in cwd
+    for file in existing_pkl_file_list:
+        filepath = os.path.join(os.getcwd(), file)
+        if os.path.isfile(file):
+            os.remove(file)
+    #save progress
+    with open(pkl_cache_filename, "wb") as f:
         pickle.dump(st.session_state["g_mapping"], f)
+    st.session_state["overwrite_checkbox"] = False
+    #reset fields
+    st.session_state["progress_saved_ok_flag"] = True
 
-    st.session_state["save_progress_filename_key"] = ""
-    st.session_state["save_progress_success"] = True
+
+
+
+
 
 def export_mapping_to_file():
     st.session_state["g_mapping"].serialize(destination=export_file_path, format=export_format)
@@ -364,7 +372,7 @@ with tab1:
     # OPTION: Create new mapping------------------------------
     col1,col2,col3 = st.columns([2,0.5, 1])
     with col1:
-        st.markdown("""<div class="purple_heading">
+        st.markdown("""<div class="purple-heading">
             📄 Create New Mapping
         </div>""", unsafe_allow_html=True)
         st.write("")
@@ -505,7 +513,7 @@ with tab1:
 
     # OPTION: Import existing mapping--------------------------------------
     with col1:
-        st.markdown("""<div class="purple_heading">
+        st.markdown("""<div class="purple-heading">
                 📁 Load Existing Mapping
             </div>""", unsafe_allow_html=True)
         st.write("")
@@ -782,7 +790,7 @@ with tab2:
         with col1:
             st.write("")
             st.write("")
-            st.markdown("""<div class="purple_heading">
+            st.markdown("""<div class="purple-heading">
                     🌐 Load Ontology from URL
                 </div>""", unsafe_allow_html=True)
             st.write("")
@@ -831,7 +839,7 @@ with tab2:
     #LOAD ONTOLOGY FROM FILE___________________________________
     if not st.session_state["g_ontology"]:   #no ontology is loaded yet
         with col1:
-            st.markdown("""<div class="purple_heading">
+            st.markdown("""<div class="purple-heading">
                     📁 Load Ontology from File
                 </div>    """, unsafe_allow_html=True)
             st.write("")
@@ -882,7 +890,7 @@ with tab2:
         with col1:
             st.write("")
             st.write("")
-            st.markdown("""<div class="purple_heading">
+            st.markdown("""<div class="purple-heading">
                     ➕ Extend Current Ontology
                 </div>""", unsafe_allow_html=True)
             st.write("")
@@ -1001,7 +1009,7 @@ with tab2:
     #REDUCE ONTOLOGY___________________________________
     if st.session_state["g_ontology"] and len(st.session_state["g_ontology_components_dict"]) != 1:   #ontology loaded and more than 1 component
         with col1:
-            st.markdown("""<div class="purple_heading">
+            st.markdown("""<div class="purple-heading">
                     ➖ Reduce Current Ontology
                 </div>""", unsafe_allow_html=True)
             st.write("")
@@ -1037,7 +1045,7 @@ with tab2:
     #DISCARD ONTOLOGY___________________________________
     if st.session_state["g_ontology"]:   #ontology loaded
         with col1:
-            st.markdown("""<div class="purple_heading">
+            st.markdown("""<div class="purple-heading">
                     🗑️ Discard Current Ontology
                 </div>""", unsafe_allow_html=True)
 
@@ -1131,7 +1139,7 @@ with tab3:
 
 
         with col1:
-            st.markdown("""<div class="purple_heading">
+            st.markdown("""<div class="purple-heading">
                     🆕 Add a New Namespace
                 </div>""", unsafe_allow_html=True)
             st.write("")
@@ -1433,33 +1441,47 @@ with tab4:
             utils.get_corner_status_message()
 
         with col1:
-            st.markdown("""<div class="purple_heading">
+            st.markdown("""<div class="purple-heading">
                     💾 Save progress
                 </div>""", unsafe_allow_html=True)
             st.write("")
 
         with col1:
             col1a, col1b = st.columns([2,1])
+
+        if st.session_state["progress_saved_ok_flag"]:
+            with col1a:
+                st.write("")
+                st.markdown(f"""<div class="custom-success">
+                    ✅ Current state of mapping <b>{st.session_state["g_label"]}</b> has been cached!
+                </div>""", unsafe_allow_html=True)
+            st.session_state["progress_saved_ok_flag"] = False
+            time.sleep(st.session_state["success_display_time"])
+            st.rerun()
+
+
         with col1a:
-            st.markdown(f"""<div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                <span style="font-size:0.95rem;">
+            st.markdown(f"""<div class="info-message-small">
                     ℹ️ Current state of mapping <b style="color:#F63366;">
                     {st.session_state["g_label"]}</b> will be temporarily saved.
                     To retrieve cached work go to the <b>Select Mapping</b> panel.
-                    Only one mapping can be cached, any previous cache mapping will be deleted.
                 </span></div>""", unsafe_allow_html=True)
+            st.write("")
+            st.markdown(f"""<div class="custom-warning-small">
+                    ⚠️ Any previously cached mapping will be deleted.
+                </div>""", unsafe_allow_html=True)
+            st.write("")
         with col1a:
             pkl_cache_filename = "__" + st.session_state["g_label"] + "_cache__.pkl"
-            st.code(pkl_cache_filename)
+            existing_pkl_file_list = [f for f in os.listdir() if f.endswith("_cache__.pkl")]
             overwrite_checkbox = st.checkbox(
                 ":gray-badge[⚠️ I am completely sure I want to continue]",
                 key="overwrite_checkbox")
             if overwrite_checkbox:
                 st.button("Save", key="key_save_progress_button", on_click=save_progress)
 
-            existing_pkl_file_list = [f for f in os.listdir() if f.endswith("_cache__.pkl")]
-            pkl_cache_file = next((f for f in os.listdir() if f.endswith("_temp.pkl")), None)
-            st.write(pkl_cache_file)
+            # pkl_cache_file = next((f for f in os.listdir() if f.endswith("_temp.pkl")), None)
+
 
 
 

@@ -83,7 +83,7 @@ def import_st_aesthetics():
             height: 14px !important;}
 
     /* PURPLE HEADINGS */
-            .purple_heading {background-color:#e6e6fa; border:1px solid #511D66;
+            .purple-heading {background-color:#e6e6fa; border:1px solid #511D66;
                 border-radius:5px; padding:10px; margin-bottom:8px;
                 font-size:1.1rem; font-weight:600; color:#511D66;}
 
@@ -151,6 +151,16 @@ def import_st_aesthetics():
             align-items: center;}
 
         .custom-error-small b {color: #a94442;}
+
+    /* INFO MESSAGE SMALL - Refined */
+        .info-message-small {background-color: #eaf4ff;
+            padding: 0.5em; border-radius: 5px; color: #0c5460;
+            border: 1px dashed #000000; /* dashed black border */
+            font-size: 0.92em; justify-content: center;
+            align-items: center;}
+
+        .info-message-small b {color: #003366;}
+
 
     </style>""", unsafe_allow_html=True)
 
