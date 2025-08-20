@@ -9,6 +9,7 @@ from rdflib.namespace import split_uri
 from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL
 import utils
 import uuid
+import io
 
 
 # Header-----------------------------------
@@ -361,7 +362,7 @@ def export_mapping_to_file():
 # PANELS OF THE PAGE (tabs)
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["Select Mapping",
-    "Load Ontology", "Configure Namespaces", "Save Mapping", "Export Mapping"])
+    "Load Ontology", "Configure Namespaces", "Save Mapping", "Set Style"])
 
 #____________________________________________________________
 # PANEL: "SELECT MAPPING"
@@ -1484,15 +1485,76 @@ with tab4:
 
             # pkl_cache_file = next((f for f in os.listdir() if f.endswith("_temp.pkl")), None)
 
+        with col1:
+            st.write("____")
+            st.markdown("""<div class="purple-heading">
+                    📤 Export mapping
+                </div>""", unsafe_allow_html=True)
+            st.write("")
+
+        if st.session_state["mapping_downloaded_ok_flag"]:
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                st.write("")
+                st.markdown(f"""<div class="custom-success">
+                    ✅ The mapping <b>{st.session_state["g_label"]}</b> has been exported!
+                </div>""", unsafe_allow_html=True)
+            st.session_state["key_export_filename_selectbox"] = ""
+            st.session_state["mapping_downloaded_ok_flag"] = False
+            time.sleep(st.session_state["success_display_time"])
+            st.rerun()
+
+        with col1:
+            col1a, col1b, col1c = st.columns([1,2,1])
+
+        export_extension_dict = utils.get_g_mapping_file_formats_dict()
+        export_format_list = list(export_extension_dict)
+
+        with col1a:
+            export_format = st.selectbox("Select exporting format:", export_format_list, key="key_export_format_selectbox")
+        export_extension = export_extension_dict[export_format]
+
+        with col1b:
+            export_filename = st.text_input("Enter filename (without extension)", key="key_export_filename_selectbox")
+
+        if "." in export_filename:
+            with col1c:
+                st.markdown(f"""<div class="custom-warning-small">
+                        ⚠️ The filename <b style="color:#cc9a06;">{export_filename}</b>
+                        seems to include an extension.
+                    </div>""", unsafe_allow_html=True)
+
     with col1:
-        st.write("")
-        st.write("____")
-        st.markdown("""<div class="purple-heading">
-                📤 Export mapping
-            </div>""", unsafe_allow_html=True)
-        st.write("")
+        col1a, col1b = st.columns([2,1])
 
+    export_filename_complete = export_filename + export_extension if export_filename else ""
 
+    if export_filename_complete:
+        with col1a:
+            st.markdown(f"""<div class="info-message-small">
+                    ℹ️ Current state of mapping <b>
+                    {st.session_state["g_label"]}</b> will exported
+                    to file <b style="color:#F63366;">{export_filename_complete}</b>.
+                </span></div>""", unsafe_allow_html=True)
+
+        if export_format == "pickle":
+            buffer = io.BytesIO()
+            pickle.dump(st.session_state["g_mapping"], buffer)
+            buffer.seek(0)  # Rewind to the beginning
+            with col1a:
+                st.write("")
+                st.session_state["mapping_downloaded_ok_flag"] = st.download_button(label="Export", data=buffer,
+                    file_name=export_filename_complete, mime="application/octet-stream")
+        else:    # all formats except for pickle
+            serialised_data = st.session_state["g_mapping"].serialize(format=export_format)
+            with col1a:
+                st.write("")
+                st.session_state["mapping_downloaded_ok_flag"] = st.download_button(label="Export", data=serialised_data,
+                    file_name=export_filename_complete, mime="text/plain")
+
+        if st.session_state["mapping_downloaded_ok_flag"]:
+            st.rerun()
 
 
 #_____________________________________________
@@ -1500,141 +1562,13 @@ with tab4:
 #________________________________________________
 #EXPORT OPTION
 with tab5:
-    st.write("")
-    st.write("")
 
-    col1, col2 = st.columns([2,1.5])
+    col1, col2 = st.columns([2,1])
     with col1:
-        if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
-            st.markdown(f"""
-            <div style="background-color:#f8d7da; padding:1em;
-                        border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-                ❗ You need to create or load a mapping in the
-                <b style="color:#a94442;">Select mapping option</b>."
-            </div>
-            """, unsafe_allow_html=True)
-            st.stop()
-
-    col1,col2 = st.columns([2,1.5])
-
-    with col2:
-        col2a,col2b = st.columns([1,2])
-        with col2b:
-            if st.session_state["g_label"]:
-                st.markdown(f"""
-                    <div style="background-color:#e6e6fa; padding:1em; border-radius:5px;
-                    color:#2a0134; border:1px solid #511D66;">
-                        <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-                        style="vertical-align:middle; margin-right:8px; height:20px;">
-                        You are currently working with mapping
-                        <b style="color:#007bff;">{st.session_state["g_label"]}</b>.
-                    </div>
-                """, unsafe_allow_html=True)
-
-
-            else:
-                st.markdown(f"""
-                <div style="background-color:#e6e6fa; padding:1em; border-radius:5px;
-                color:#2a0134; border:1px solid #511D66;">
-                    ✖️ <b style="color:#511D66;">No mapping</b> has been loaded yet.
-                </div>
-                """, unsafe_allow_html=True)
-
-    with col1:
-        st.markdown("""
-        <div style="background-color:#e6e6fa; border:1px solid #511D66;
-                    border-radius:5px; padding:10px; margin-bottom:8px;">
-            <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
-                📤 Export mapping
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
         st.write("")
-
-    with col1:
-        col1a, col1b = st.columns([2,1])
-
-    with col1b:
-        st.markdown(f"""
-        <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-            <span style="font-size:0.95rem;">
-                Mapping <b style="color:#007bff;"> {st.session_state["g_label"]}</b> will be exported
-                as an RDF-formatted file (e.g., <code>.ttl</code>) in folder
-                📁exported_mappings.
-            </span>
-        </div>
-        """, unsafe_allow_html=True)
-
-    export_extension_dict = {"turtle": ".ttl", "longturtle": ".ttl", "n3": ".n3",
-    "ntriples": ".nt", "nquads": "nq", "trig": ".trig", "json-ld": ".jsonld",
-    "xml": ".xml", "pretty-xml": ".xml", "trix": ".trix", "hext": ".hext",
-    "patch": ".patch"}
-
-    export_format_list = list(export_extension_dict)
-
-    valid_extensions = tuple(export_extension_dict.values())
-
-    with col1a:
-        export_format = st.selectbox("Select format for export file", export_format_list, key="export_format")
-    export_extension = export_extension_dict[export_format]
-
-    with col1a:
-        export_file_input = st.text_input("Enter export filename (without extension)", key="export_file_input")
-        if "." in export_file_input:
-            st.markdown(f"""
-                <div style="background-color:#fff3cd; padding:1em;
-                border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                    ⚠️ The filename <b style="color:#cc9a06;">{export_file_input}</b>
-                    seems to include an extension. <br> Please note that the extension
-                    <code>{export_extension_dict[export_format]}</code>
-                    will be added.</div>
-            """, unsafe_allow_html=True)
-            st.write("")
-    export_file = export_file_input + export_extension
-
-
-    if export_file_input:
-        st.session_state["export_file"] = export_file
-    export_file_path = "exported_mappings/" + export_file
-
-    existing_export_file_list = [
-        f for f in os.listdir(export_folder)
-        if f.endswith(valid_extensions)
-        ]
-
-    with col1a:
-        if export_file_input and export_file in existing_export_file_list:
-            st.markdown(f"""
-                <div style="background-color:#fff3cd; padding:1em;
-                border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                    ⚠️ The file <b style="color:#cc9a06;">{export_file}</b>
-                    is already in use. <br> Do you want to
-                    overwrite it?</div>
-            """, unsafe_allow_html=True)
-            st.write("")
-            overwrite_checkbox = st.checkbox(
-            ":gray-badge[⚠️ I am completely sure I want to overwrite it]",
-            key="overwrite_checkbox")
-        else:
-            overwrite_checkbox = True
-
-    if export_file_input and overwrite_checkbox:
-        with col1a:
-            st.button("Export mapping to file", on_click=export_mapping_to_file)
-
-    if st.session_state["export_success"]:
-        with col1a:
-            st.markdown(f"""
-            <div style="background-color:#d4edda; padding:1em;
-            border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                ✅ The mapping <b style="color:#0f5132;">{st.session_state["g_label"]}
-                </b> has been saved to file
-                <b style="color:#0f5132;">{st.session_state["export_file"]}
-                </b>.  </div>
-            """, unsafe_allow_html=True)
-            st.session_state["export_success"] = False
-            time.sleep(st.session_state["success_display_time"])
-            st.rerun()
-
+        st.write("")
+        st.markdown(f"""<div class="custom-error-small">
+            ❌ Panel <b>not ready</b> yet.
+        </div>""", unsafe_allow_html=True)
 
 #_____________________________________________

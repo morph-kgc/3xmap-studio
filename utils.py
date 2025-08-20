@@ -39,13 +39,15 @@ def import_st_aesthetics():
             background-color: #9871b5; color: white; font-weight: bold;
             box-shadow: 0 0 10px #9871b5;}
 
-    /* MAIN BUTTONS */
-        div.stButton > button {background-color: #555555; color: white;
+    /* MAIN BUTTONS (AND DOWNLOAD BUTTON) */
+        div.stButton > button,
+        div.stDownloadButton > button {background-color: #555555; color: white;
             height: 2.4em; width: auto; border-radius: 6px;
             border: 1px solid #333333; font-size: 16px;
             padding: 0.4em 1em; transition: background-color 0.2s ease;}
 
-        div.stButton > button:hover {background-color: #FF4B4B;
+        div.stButton > button:hover,
+        div.stDownloadButton > button:hover {background-color: #FF4B4B;
             color: white;}
 
     /* MULTISELECT */
@@ -155,7 +157,6 @@ def import_st_aesthetics():
     /* INFO MESSAGE SMALL - Refined */
         .info-message-small {background-color: #eaf4ff;
             padding: 0.5em; border-radius: 5px; color: #0c5460;
-            border: 1px dashed #000000; /* dashed black border */
             font-size: 0.92em; justify-content: center;
             align-items: center;}
 
@@ -219,11 +220,11 @@ def get_corner_status_message():
 #List of allowed mapping file format
 #HERE expand options, now reduced version
 def get_g_mapping_file_formats_dict():
-    # allowed_format_dict = {"pickle": ".pkl", "turtle": ".ttl", "rdf": ".rdf","xml": ".xml",
+    # allowed_format_dict = {"turtle": ".ttl", "rdf": ".rdf","xml": ".xml",
     #     "json": ".json", "json-ld": ".jsonld", "n-triples": ".nt",
-    #     "n3": ".n3","trig": ".trig","trix": ".trix"}
+    #     "n3": ".n3","trig": ".trig","trix": ".trix", "pickle": ".pkl"}
 
-    allowed_format_dict = {"pickle": ".pkl", "turtle": ".ttl"}
+    allowed_format_dict = {"turtle": ".ttl", "xml": ".xml", "pickle": ".pkl"}
 
     return allowed_format_dict
 #_______________________________________________________
