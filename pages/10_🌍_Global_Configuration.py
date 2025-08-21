@@ -62,19 +62,9 @@ CLASS = namespaces["class"]
 LS = namespaces["logicalSource"]
 
 # Directories----------------------------------------
-#HERE DELETE LAST 2
 save_mappings_folder = os.path.join(os.getcwd(), "saved_mappings")  #folder to save mappings (pkl)
 if not os.path.isdir(save_mappings_folder):   # create progress folder if it does not exist
     os.makedirs(save_mappings_folder)
-
-export_folder = os.path.join(os.getcwd(), "exported_mappings")    #filder to export mappings (ttl and others)
-if not os.path.isdir(export_folder):   # create progress folder if it does not exist
-    os.makedirs(export_folder)
-
-ontology_folder = os.path.join(os.getcwd(), "ontologies")
-if not os.path.isdir(ontology_folder):   # create progress folder if it does not exist
-    os.makedirs(ontology_folder)
-
 
 # Initialise session state variables----------------------------------------
 #TAB1
@@ -126,8 +116,8 @@ if "g_ontology_discarded_ok_flag" not in st.session_state:
 #TAB3
 if "ns_dict" not in st.session_state:
     st.session_state["ns_dict"] = {}
-if "custom_ns_bound_ok_flag" not in st.session_state:
-    st.session_state["custom_ns_bound_ok_flag"] = False
+if "bound_ns_list" not in st.session_state:
+    st.session_state["bound_ns_list"] = []
 if "ns_bound_ok_flag" not in st.session_state:
     st.session_state["ns_bound_ok_flag"] = False
 if "ns_unbound_ok_flag" not in st.session_state:
@@ -142,27 +132,6 @@ if "mapping_downloaded_ok_flag" not in st.session_state:
     st.session_state["mapping_downloaded_ok_flag"] = False
 
 
-if "overwrite_checkbox" not in st.session_state:
-    st.session_state["overwrite_checkbox"] = False
-if "new_ns_iri" not in st.session_state:
-    st.session_state["new_ns_iri"] = ""
-if "new_ns_prefix" not in st.session_state:
-    st.session_state["new_ns_prefix"] = ""
-if "save_progress_succes" not in st.session_state:
-    st.session_state["save_progress_success"] = False
-if "export_success" not in st.session_state:
-    st.session_state["export_success"] = False
-if "export_file" not in st.session_state:
-    st.session_state["export_file"] = False
-if "save_progress_filename_key" not in st.session_state:
-    st.session_state["save_progress_filename_key"] = ""
-if "load_success" not in st.session_state:
-    st.session_state["load_success"] = ""
-
-if "load_ontology_from_file_button_flag" not in st.session_state:
-    st.session_state["load_ontology_from_file_button_flag"] = False
-if "ontology_source" not in st.session_state:
-    st.session_state["ontology_source"] = ""
 
 
 # Define on_click functions-------------------------------------------------
@@ -228,6 +197,7 @@ def retrieve_cached_mapping():
         st.session_state["g_mapping"] = utils.load_mapping_from_file(f)
     utils.empty_last_added_lists()
     st.session_state["cached_mapping_retrieved_ok_flag"] = True
+    st.session_state["key_retrieve_cached_mapping_checkbox"] = False
 
 #TAB2
 def load_ontology_from_link():
@@ -296,16 +266,19 @@ def discard_ontology():
 
 #TAB3
 def bind_custom_namespace():
+    st.session_state["bound_ns_list"] = [prefix_input]    # save the tm that has been bound for display
     st.session_state["g_mapping"].bind(prefix_input, iri_input)  # bind the new namespace
     st.session_state["last_added_ns_list"].insert(0, st.session_state["new_ns_prefix"])  # to display last added ns
-    st.session_state["custom_ns_bound_ok_flag"] = True   #for success message
+    st.session_state["ns_bound_ok_flag"] = True   #for success message
     # reset fields
     st.session_state["key_iri_input"] = ""
     st.session_state["key_prefix_input"] = ""
     st.session_state["key_add_ns_radio"] = "✏️ Custom"
 
 def bind_predefined_namespaces():
+    st.session_state["bound_ns_list"] = []       # save the tm that have been bound for display
     for prefix in predefined_ns_to_bind_list:
+        st.session_state["bound_ns_list"].append(prefix)
         st.session_state["g_mapping"].bind(prefix, predefined_ns_dict[prefix])  # bind the new namespace
         st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
     st.session_state["ns_bound_ok_flag"] = True    #for success message
@@ -314,8 +287,10 @@ def bind_predefined_namespaces():
     st.session_state["key_add_ns_radio"] = "📋 Predefined"
 
 def bind_all_predefined_namespaces():
+    st.session_state["bound_ns_list"] = []       # save the tm that have been bound for display
     for prefix in predefined_ns_dict:
         if prefix not in mapping_ns_dict:
+            st.session_state["bound_ns_list"].append(prefix)
             st.session_state["g_mapping"].bind(prefix, predefined_ns_dict[prefix])  # bind the new namespace
             st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
     st.session_state["ns_bound_ok_flag"] = True   #for success message
@@ -323,7 +298,9 @@ def bind_all_predefined_namespaces():
     st.session_state["key_add_ns_radio"] = "✏️ Custom"
 
 def bind_ontology_namespaces():
+    st.session_state["bound_ns_list"] = []       # save the tm that have been bound for display
     for prefix in ontology_ns_to_bind_list:
+        st.session_state["bound_ns_list"].append(prefix)
         st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
         st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
     st.session_state["ns_bound_ok_flag"] = True   # for success message
@@ -332,8 +309,10 @@ def bind_ontology_namespaces():
     st.session_state["key_add_ns_radio"] = "🧩 Ontology"
 
 def bind_all_ontology_namespaces():
+    st.session_state["bound_ns_list"] = []       # save the tm that have been bound for display
     for prefix in ontology_ns_dict:
         if prefix not in mapping_ns_dict:
+            st.session_state["bound_ns_list"].append(prefix)
             st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
             st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
     st.session_state["ns_bound_ok_flag"] = True   # for success message
@@ -341,7 +320,9 @@ def bind_all_ontology_namespaces():
     st.session_state["key_add_ns_radio"] = "✏️ Custom"
 
 def unbind_namespaces():
+    st.session_state["removed_ns_list"] = []   # save the ns that have been deleted for display
     for prefix in ns_to_unbind_list:
+        st.session_state["removed_ns_list"].append(prefix)
         st.session_state["g_mapping"].namespace_manager.bind(prefix, None, replace=True)
         if prefix in st.session_state["last_added_ns_list"]:
             st.session_state["last_added_ns_list"].remove(prefix)   # to remove from last added if it is there
@@ -349,7 +330,9 @@ def unbind_namespaces():
     st.session_state["key_unbind_multiselect"] = []   # reset the variables
 
 def unbind_all_namespaces():
+    st.session_state["removed_ns_list"] = []   # save the ns that have been deleted for display
     for prefix in mapping_ns_dict:
+        st.session_state["removed_ns_list"].append(prefix)
         st.session_state["g_mapping"].namespace_manager.bind(prefix, None, replace=True)
         if prefix in st.session_state["last_added_ns_list"]:
             st.session_state["last_added_ns_list"].remove(prefix)    # to remove from last added if it is there
@@ -367,12 +350,9 @@ def save_progress():
     #save progress
     with open(pkl_cache_filename, "wb") as f:
         pickle.dump(st.session_state["g_mapping"], f)
-    st.session_state["overwrite_checkbox"] = False
+    st.session_state["key_save_progress_checkbox"] = False
     #reset fields
     st.session_state["progress_saved_ok_flag"] = True
-
-
-
 
 
 
@@ -749,10 +729,10 @@ with tab1:
         if pkl_cache_filename:
             with col3:
                 st.write("")
-                overwrite_checkbox = st.checkbox(
+                retrieve_cached_mapping_checkbox = st.checkbox(
                     "🗃️ Retrieve cached mapping",
-                    key="overwrite_checkbox")
-                if overwrite_checkbox:
+                    key="key_retrieve_cached_mapping_checkbox")
+                if retrieve_cached_mapping_checkbox:
                     st.markdown(f"""<div class="info-message-small">
                             ℹ️ Mapping <b style="color:#F63366;">
                             {cached_mapping_name}</b> will be loaded.
@@ -1205,29 +1185,41 @@ with tab3:
                 </div>""", unsafe_allow_html=True)
             st.write("")
 
-        if st.session_state["custom_ns_bound_ok_flag"]:
-            with col1:
-                col1a, col1b = st.columns([2,1])
-            with col1a:
-                st.write("")
-                st.markdown(f"""<div class="custom-success">
-                    ✅ The namespace <b style="color:#F63366;">{st.session_state["new_ns_prefix"]}</b> has been bound!
-                </div>""", unsafe_allow_html=True)
-            st.session_state["custom_ns_bound_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
-            st.rerun()
 
         if st.session_state["ns_bound_ok_flag"]:
             with col1:
                 col1a, col1b = st.columns([2,1])
             with col1a:
-                st.write("")
-                st.markdown(f"""<div class="custom-success">
-                    ✅ The <b>namespace/s</b> have been bound!
-                </div>""", unsafe_allow_html=True)
+                formatted_bound_ns = ", ".join(st.session_state["bound_ns_list"][:-1]) + " and " + st.session_state["bound_ns_list"][-1]
+                if len(st.session_state["bound_ns_list"]) == 1:
+                    st.write("")
+                    st.markdown(f"""<div class="custom-success">
+                        ✅ The Namespace <b style="color:#F63366;">
+                        {st.session_state["bound_ns_list"][0]}</b> has been bound!
+                    </div>""", unsafe_allow_html=True)
+                elif len(st.session_state["bound_ns_list"]) < 7:
+                    st.markdown(f"""
+                    <div style="background-color:#d4edda; padding:1em;
+                    border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                        ✅ The Namespaces <b style="color:#F63366;">
+                        {formatted_bound_ns}</b> have been succesfully bound!  </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""
+                    <div style="background-color:#d4edda; padding:1em;
+                    border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                        ✅ <b style="color:#F63366;">{len(st.session_state["bound_ns_list"])} Namespaces
+                        </b> have been succesfully bound!  </div>
+                    """, unsafe_allow_html=True)
+            st.write("")
+            st.write("")
             st.session_state["ns_bound_ok_flag"] = False
             time.sleep(st.session_state["success_display_time"])
             st.rerun()
+
+
+
+
 
         if st.session_state["g_ontology"]:
             ontology_ns_dict = utils.get_ontology_ns_dict()
@@ -1373,10 +1365,10 @@ with tab3:
                             st.button("Bind", key="key_bind_predefined_ns_button", on_click=bind_predefined_namespaces)
                     else:
                         with col1a:
-                            overwrite_checkbox = st.checkbox(
+                            bind_all_predefined_ns_button_checkbox = st.checkbox(
                             ":gray-badge[⚠️ I want to bind all predefined namespaces]",
-                            key="overwrite_checkbox")
-                            if overwrite_checkbox:
+                            key="key_bind_all_predefined_ns_button_checkbox")
+                            if bind_all_predefined_ns_button_checkbox:
                                 st.button("Bind", key="key_bind_all_predefined_ns_button", on_click=bind_all_predefined_namespaces)
 
 
@@ -1409,23 +1401,43 @@ with tab3:
                             st.button("Bind", key="key_bind_ontology_ns_button", on_click=bind_ontology_namespaces)
                     else:
                         with col1a:
-                            overwrite_checkbox = st.checkbox(
+                            bind_all_ontology_ns_checkbox = st.checkbox(
                             ":gray-badge[⚠️ I want to bind all ontology namespaces]",
-                            key="overwrite_checkbox")
-                            if overwrite_checkbox:
+                            key="key_bind_all_ontology_ns_checkbox")
+                            if bind_all_ontology_ns_checkbox:
                                 st.button("Bind", key="key_bind_all_ontology_ns_button", on_click=bind_all_ontology_namespaces)
 
 
+        # unbind ns success message - show here if "Unbind" purple heading is not going to be shown
         mapping_ns_dict = utils.get_mapping_ns_dict()
 
-        if st.session_state["ns_unbound_ok_flag"]:
+        if not mapping_ns_dict and st.session_state["ns_unbound_ok_flag"]:
             with col1:
                 col1a, col1b = st.columns([2,1])
             with col1a:
-                st.write("")
-                st.markdown(f"""<div class="custom-success">
-                    ✅ The <b>namespace/s</b> have been unbound!
-                </div>""", unsafe_allow_html=True)
+                formatted_deleted_ns = ", ".join(st.session_state["removed_ns_list"][:-1]) + " and " + st.session_state["removed_ns_list"][-1]
+                if len(st.session_state["removed_ns_list"]) == 1:
+                    st.write("")
+                    st.markdown(f"""<div class="custom-success">
+                        ✅ The Namespace <b style="color:#F63366;">
+                        {st.session_state["removed_ns_list"][0]}</b> has been unbound!
+                    </div>""", unsafe_allow_html=True)
+                elif len(st.session_state["removed_ns_list"]) < 7:
+                    st.markdown(f"""
+                    <div style="background-color:#d4edda; padding:1em;
+                    border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                        ✅ The Namespaces <b style="color:#F63366;">
+                        {formatted_deleted_ns}</b> have been succesfully deleted!  </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""
+                    <div style="background-color:#d4edda; padding:1em;
+                    border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                        ✅ <b style="color:#F63366;">{len(st.session_state["removed_ns_list"])} Namespaces
+                        </b> have been succesfully deleted!  </div>
+                    """, unsafe_allow_html=True)
+            st.write("")
+            st.write("")
             st.session_state["ns_unbound_ok_flag"] = False
             time.sleep(st.session_state["success_display_time"])
             st.rerun()
@@ -1445,6 +1457,36 @@ with tab3:
                 """, unsafe_allow_html=True)
                 st.markdown("")
 
+            if st.session_state["ns_unbound_ok_flag"]:  # show message here if "Unbind" purple heading is going to be shown
+                with col1:
+                    col1a, col1b = st.columns([2,1])
+                with col1a:
+                    formatted_deleted_ns = ", ".join(st.session_state["removed_ns_list"][:-1]) + " and " + st.session_state["removed_ns_list"][-1]
+                    if len(st.session_state["removed_ns_list"]) == 1:
+                        st.write("")
+                        st.markdown(f"""<div class="custom-success">
+                            ✅ The Namespace <b style="color:#F63366;">
+                            {st.session_state["removed_ns_list"][0]}</b> has been unbound!
+                        </div>""", unsafe_allow_html=True)
+                    elif len(st.session_state["removed_ns_list"]) < 7:
+                        st.markdown(f"""
+                        <div style="background-color:#d4edda; padding:1em;
+                        border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                            ✅ The Namespaces <b style="color:#F63366;">
+                            {formatted_deleted_ns}</b> have been succesfully deleted!  </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""
+                        <div style="background-color:#d4edda; padding:1em;
+                        border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                            ✅ <b style="color:#F63366;">{len(st.session_state["removed_ns_list"])} Namespaces
+                            </b> have been succesfully deleted!  </div>
+                        """, unsafe_allow_html=True)
+                st.write("")
+                st.session_state["ns_unbound_ok_flag"] = False
+                time.sleep(st.session_state["success_display_time"])
+                st.rerun()
+
             mapping_ns_dict = utils.get_mapping_ns_dict()
             mapping_ns_list = list(mapping_ns_dict.keys())
             if len(mapping_ns_list) > 1:
@@ -1453,7 +1495,7 @@ with tab3:
             with col1:
                 col1a, col1b = st.columns([2,1])
                 with col1a:
-                    ns_to_unbind_list = st.multiselect("Select namespaces to unbind", mapping_ns_list, key="key_unbind_multiselect")
+                    ns_to_unbind_list = st.multiselect("🖱️ Select namespace/s to unbind:*", mapping_ns_list, key="key_unbind_multiselect")
 
             if ns_to_unbind_list and "Unbind all" not in ns_to_unbind_list:
                 with col1a:
@@ -1476,10 +1518,15 @@ with tab3:
 
             elif ns_to_unbind_list:
                 with col1a:
-                    overwrite_checkbox = st.checkbox(
+                    st.markdown(f"""<div class="custom-warning-small">
+                            ⚠️ If you continue, <b>all namespaces will be deleted</b>.
+                            Make sure you want to go ahead.
+                        </div>""", unsafe_allow_html=True)
+                    st.write("")
+                    unbind_all_ns_button_checkbox = st.checkbox(
                     ":gray-badge[⚠️ I want to unbind all namespaces]",
-                    key="overwrite_checkbox")
-                    if overwrite_checkbox:
+                    key="key_unbind_all_ns_button_checkbox")
+                    if unbind_all_ns_button_checkbox:
                         st.button("Unbind", key="key_unbind_all_ns_button", on_click=unbind_all_namespaces)
 
 
@@ -1511,10 +1558,10 @@ with tab4:
         existing_pkl_file_list = [f for f in os.listdir() if f.endswith("_cache__.pkl")]
         with col2b:
             st.write("")
-            overwrite_checkbox = st.checkbox(
+            save_progress_checkbox = st.checkbox(
                 "💾 Save progress",
-                key="overwrite_checkbox")
-            if overwrite_checkbox:
+                key="key_save_progress_checkbox")
+            if save_progress_checkbox:
                 st.markdown(f"""<div class="info-message-small">
                         ℹ️ Current state of mapping <b style="color:#F63366;">
                         {st.session_state["g_label"]}</b> will be temporarily saved.
@@ -1575,10 +1622,10 @@ with tab4:
         # pkl_cache_filename = "__" + st.session_state["g_label"] + "_cache__.pkl"
         # existing_pkl_file_list = [f for f in os.listdir() if f.endswith("_cache__.pkl")]
         # with col1a:
-        #     overwrite_checkbox = st.checkbox(
+        #     save_progress_checkbox = st.checkbox(
         #         ":gray-badge[⚠️ I am completely sure I want to continue]",
-        #         key="overwrite_checkbox")
-        #     if overwrite_checkbox:
+        #         key="key_save_progress_checkbox")
+        #     if save_progress_checkbox:
         #         st.button("Save", key="key_save_progress_button", on_click=save_progress)
 
             # pkl_cache_file = next((f for f in os.listdir() if f.endswith("_temp.pkl")), None)

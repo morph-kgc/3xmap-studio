@@ -632,7 +632,35 @@ def get_ds(tm_label):
     return ds
 #_________________________________________________
 
+#_________________________________________________________________________________
+# Function to completely remove a triplesmap
+# Remove primary and secondary triples, but dont remove any triples that are used by another triplesmap
+def remove_triplesmap(tm_label):
 
+    tm_dict = get_tm_dict()
+    tm_iri = tm_dict[tm_label]   #get tm iri
+    g = st.session_state["g_mapping"]  #for convenience
+
+    logical_source = g.value(subject=tm_iri, predicate=RML.logicalSource)
+    subject_map = g.value(subject=tm_iri, predicate=RR.subjectMap)
+
+    g.remove((tm_iri, None, None))   # remove tm triple
+
+    if logical_source:
+        ls_reused = any(s != tm_iri for s, p, o in g.triples((None, RML.logicalSource, logical_source)))
+        if not ls_reused:
+            g.remove((logical_source, None, None))   # remove ls if not reused
+
+    if subject_map:
+        sm_reused = any(s != tm_iri for s, p, o in g.triples((None, RR.subjectMap, subject_map)))
+        if not sm_reused:
+            g.remove((subject_map, None, None))   # remove sm if not reused
+
+
+#______________________________________________________
+
+
+#HEREIGO
 
 
 
@@ -1136,37 +1164,6 @@ def get_tmap_exclusive_derived_triples(x_tmap_label):
 
 
 
-#_________________________________________________________________________________
-#Function to completely remove a triplesmap
-#remove primary and secondary triples, but dont remove any triples that are used by another triplesmap
-def remove_triplesmap(tmap_label):
-
-    tmap = st.session_state["tmap_dict"][tmap_label]   #get tmap iri
-    g = st.session_state["g_mapping"]  #for convenience
-    removed_triples=[]
-
-    logical_source = g.value(subject=tmap, predicate=RML.logicalSource)
-    subject_map = g.value(subject=tmap, predicate=RR.subjectMap)
-
-    triples = list(g.triples((tmap, None, None)))
-    removed_triples += list(g.triples((tmap, None, None)))
-    g.remove((tmap, None, None))
-
-    if logical_source:
-        ls_reused = any(s != tmap for s, p, o in g.triples((None, RML.logicalSource, logical_source)))
-        if not ls_reused:
-            removed_triples += list(g.triples((logical_source, None, None)))
-            g.remove((logical_source, None, None))
-
-    if subject_map:
-        sm_reused = any(s != tmap for s, p, o in g.triples((None, RR.subjectMap, subject_map)))
-        if not sm_reused:
-            removed_triples += list(g.triples((subject_map, None, None)))
-            g.remove((subject_map, None, None))
-
-    return removed_triples
-
-#______________________________________________________
 
 
 

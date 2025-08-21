@@ -78,14 +78,19 @@ if "last_added_tm_list" not in st.session_state:
     st.session_state["last_added_tm_list"] = []
 if "tm_label" not in st.session_state:
     st.session_state["tm_label"] = ""
+if "tm_saved_ok_flag" not in st.session_state:
+    st.session_state["tm_saved_ok_flag"] = False
+if "tm_deleted_ok_flag" not in st.session_state:
+    st.session_state["tm_deleted_ok_flag"] = False
+if "removed_tm_list" not in st.session_state:
+    st.session_state["removed_tm_list"] = []
 
 
 if "confirm_button" not in st.session_state:
     st.session_state["confirm_button"] = False
 if "custom_ns_dict" not in st.session_state:
     st.session_state["custom_ns_dict"] = {}
-if "tm_saved_ok_flag" not in st.session_state:
-    st.session_state["tm_saved_ok_flag"] = False
+
 if "tm_label" not in st.session_state:
     st.session_state["tm_label"] = ""
 if "selected_ds" not in st.session_state:
@@ -156,6 +161,27 @@ def save_tm_w_new_ls():   #function to save TriplesMap upon click
     st.session_state["key_tm_label_input"] = ""
     st.session_state["key_ds_uploader"] = str(uuid.uuid4())
 
+def delete_triplesmap():   #function to delete a TriplesMap
+    st.session_state["removed_tm_list"] = []   # save the tm that have been deleted for display
+    for tm in tm_to_remove_list:
+        st.session_state["removed_tm_list"].append(tm)
+        utils.remove_triplesmap(tm)      # remove the tm
+        if tm in st.session_state["last_added_tm_list"]:
+            st.session_state["last_added_tm_list"].remove(tm)       # if it is in last added list, remove
+    st.session_state["tm_deleted_ok_flag"] = True
+    #reset fields
+    st.session_state["key_tm_to_remove_list"] = []
+
+def delete_all_triplesmaps():   #function to delete a TriplesMap
+    st.session_state["removed_tm_list"] = []    # save the tm that have been deleted for display
+    for tm in utils.get_tm_dict():
+        st.session_state["removed_tm_list"].append(tm)
+        utils.remove_triplesmap(tm)      # remove the tm
+        if tm in st.session_state["last_added_tm_list"]:
+            st.session_state["last_added_tm_list"].remove(tm)       # if it is in last added list, remove
+    st.session_state["tm_deleted_ok_flag"] = True
+    #reset fields
+    st.session_state["key_tm_to_remove_list"] = []
 
 
 
@@ -164,11 +190,6 @@ def save_tm_w_new_ls():   #function to save TriplesMap upon click
 def reset_input():    #function to reset input upon click
     st.session_state["overwrite_checkbox"] = False
     st.session_state["save_g_filename_flag"] = ""
-
-def delete_triplesmap():   #function to delete a TriplesMap
-    st.session_state["deleted_triples"] = utils.remove_triplesmap(st.session_state["tm_to_remove"])
-    st.session_state["tm_to_remove"] = "Select a TriplesMap"
-    st.session_state["tm_deleted_ok"] = True
 
 def delete_labelled_subject_map():   #function to delete a Subject Map
     st.session_state["g_mapping"].remove((sm_to_remove, None, None))
@@ -388,44 +409,6 @@ ds_folder_path = utils.get_ds_folder_path()   #path to folder with data sources 
 tab1, tab2, tab3 = st.tabs(["Add TriplesMap", "Add Subject Map", "Add Predicate-Object Map"])
 
 
-
-
-
-
-
-
- #_____________________________________________
-#SELECT OPTION -> Buttons for namespace, map, subject or predicate-object
-col1, col2, col3, col4 = st.columns(4)
-
-if "20_option_button" not in st.session_state:
-    st.session_state["20_option_button"] = None
-
-with col1:
-    tm_button = st.button("Add TriplesMap")
-if tm_button:
-    st.session_state["20_option_button"] = "map"
-
-with col2:
-    s_button = st.button("Add Subject Map", key = "s_button")
-if s_button:
-    st.session_state["20_option_button"] = "s"
-
-with col3:
-    po_button = st.button("Add Predicate-Object Map", key = "po_button")
-if po_button:
-    st.session_state["20_option_button"] = "po"
-
-with col4:
-    save_progress_button = st.button("Save progress", key = "save_progress_button")
-if save_progress_button:
-    st.session_state["20_option_button"] = "save_progress"
-
-st.write("_______________")
-#_____________________________________________
-
-
-
 #________________________________________________
 #ADD TRIPLESMAP
 with tab1:
@@ -561,168 +544,152 @@ with tab1:
                             """, unsafe_allow_html=True)
                             st.write("")
 
-
-
                 if ds_file and not logical_source_label in labelled_ls_list:
                     with col1a:
                         st.button("Save", key="key_save_tm_w_new_ls", on_click=save_tm_w_new_ls)
 
-
-
-
-        # if tm_label in st.session_state["tm_dict"]:
-        #     with col1a:
-        #         st.markdown(f"""
-        #         <div style="background-color:#f8d7da; padding:1em;
-        #                     border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-        #             ❌ TriplesMap label <b style="color:#a94442;">{tm_label}</b> already in use: <br>
-        #             Please pick a different label.
-        #         </div>
-        #         """, unsafe_allow_html=True)
-        #         st.write("")
-        # elif tm_label and selected_ds != "Select a data source":
-        #     with col1a:
-        #         save_tm_button = st.button("Save new TriplesMap", on_click=save_tm)
-
-    if st.session_state["tm_saved_ok_flag"]:
-        with col1b:
-            st.session_state["tm_saved_ok_flag"] = False
-            st.write("")
-            st.markdown(f"""
-            <div style="background-color:#d4edda; padding:1em;
-            border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                ✅ You created the TriplesMap <b style="color:#0f5132;">{st.session_state["tm_label"]}
-                </b>, <br>
-                associated to the data source <b style="color:#0f5132;"> {st.session_state["selected_ds"]}</b>.  </div>
-            """, unsafe_allow_html=True)
-            st.write("")
-            st.session_state["tm_ordered_list"].insert(0, st.session_state["tm_label"])
-            time.sleep(2)
-            st.rerun()
-
-
-
-    with col1:
-        st.write("________")
-        st.markdown("""
-        <div style="background-color:#e6e6fa; border:1px solid #511D66;
-                    border-radius:5px; padding:10px; margin-bottom:8px;">
-            <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
-                🗑️ Remove Existing TriplesMap
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        st.markdown("")
-
-    with col1:
-        col1a, col1b = st.columns([2,1])
-
-    tm_to_remove_list = list(st.session_state["data_source_dict"].keys())
-    tm_to_remove_list.insert(0, "Select a TriplesMap")
-
-    if len(tm_to_remove_list) == 1:
+    # remove tm success message - show here if "Remove" purple heading is not going to be shown
+    if not utils.get_tm_dict() and st.session_state["tm_deleted_ok_flag"]:  # show message here if "Remove" purple heading is going to be shown
+        with col1:
+            col1a, col1b = st.columns([2,1])
         with col1a:
-            st.markdown(f"""
-            <div style="background-color:#fff9db; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                    <span style="font-size:0.95rem;">
-                    ⚠️ There are no TriplesMap to remove.
-                    </span>
-                </div>
+            formatted_deleted_tm = ", ".join(st.session_state["removed_tm_list"][:-1]) + " and " + st.session_state["removed_tm_list"][-1]
+            if len(st.session_state["removed_tm_list"]) == 1:
+                st.markdown(f"""
+                <div style="background-color:#d4edda; padding:1em;
+                border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                    ✅ The Triplesmap <b style="color:#F63366;">
+                    {st.session_state["removed_tm_list"][0]}</b> has been succesfully deleted!  </div>
                 """, unsafe_allow_html=True)
-    else:
-
-        with col1a:
-            tm_to_remove = st.selectbox("Select a TriplesMap", tm_to_remove_list, key="tm_to_remove")
-
-        if tm_to_remove != "Select a TriplesMap":
-            with col1a:
-                delete_triplesmap_checkbox = st.checkbox(
-                ":gray-badge[⚠️ I am completely sure I want to delete the TriplesMap]",
-                key="delete_triplesmap_checkbox")
-            if delete_triplesmap_checkbox:
-                with col1:
-                    col1a, col1b = st.columns([1,2])
-                with col1a:
-                    st.button("Delete", on_click=delete_triplesmap)
-
-
-    with col1:
-        col1a, col1b = st.columns([2,1])
-    if st.session_state["tm_deleted_ok"]:
-        with col1b:
-            st.markdown(f"""
-            <div style="background-color:#d4edda; padding:1em;
-            border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                ✅ The <b style="color:#007bff;">Triplesmap
-                </b> has been succesfully deleted!  </div>
-            """, unsafe_allow_html=True)
+            elif len(st.session_state["removed_tm_list"]) < 7:
+                st.markdown(f"""
+                <div style="background-color:#d4edda; padding:1em;
+                border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                    ✅ The Triplesmaps <b style="color:#F63366;">
+                    {formatted_deleted_tm}</b> have been succesfully deleted!  </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                <div style="background-color:#d4edda; padding:1em;
+                border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                    ✅ <b style="color:#F63366;">{len(st.session_state["removed_tm_list"])} TriplesMaps
+                    </b> have been succesfully deleted!  </div>
+                """, unsafe_allow_html=True)
             st.write("")
-        with col1a:
-            st.markdown(
-                """
-                <div style='background-color:#f0f0f0; padding:8px; border-radius:4px;'>
-                    <b>Deleted triples:</b>
-                </div>""", unsafe_allow_html=True)
-            for s, p, o in st.session_state["deleted_triples"]:
-                if isinstance(s, URIRef):
-                    s = split_uri(s)[1]
-                elif isinstance(s, BNode):
-                    s = ("BNode: " + str(s)[:5] + "...")
-                if isinstance(p, URIRef):
-                    p = split_uri(p)[1]
-                if isinstance(o, URIRef):
-                    o = split_uri(o)[1]
-                elif isinstance(o, BNode):
-                    o = ("BNode: " + str(o)[:5] + "...")
-                st.markdown(
-                    f"""
-                    <div style='background-color:#f0f0f0; padding:6px 10px; border-radius:5px;'>
-                        <small>🔹 {s} → {p} → {o}</small>
-                    </div>""", unsafe_allow_html=True)
-        st.session_state["tm_deleted_ok"] = False
-        time.sleep(5)
+        st.session_state["tm_deleted_ok_flag"] = False
+        time.sleep(st.session_state["success_display_time"])
         st.rerun()
 
-    with col1a:
-        if st.session_state["deleted_triples"] and st.toggle("🔎 Display last removed triples") and not st.session_state["tm_deleted_ok"]:
-            st.markdown(
-                """
-                <div style='background-color:#f0f0f0; padding:8px; border-radius:4px;'>
-                    <b> Last deleted triples:</b>
-                </div>""", unsafe_allow_html=True)
-            for s, p, o in st.session_state["deleted_triples"]:
-                if isinstance(s, URIRef):
-                    s = split_uri(s)[1]
-                elif isinstance(s, BNode):
-                    s = ("BNode: " + str(s)[:5] + "...")
-                if isinstance(p, URIRef):
-                    p = split_uri(p)[1]
-                if isinstance(o, URIRef):
-                    o = split_uri(o)[1]
-                elif isinstance(o, BNode):
-                    o = ("BNode: " + str(o)[:5] + "...")
-                st.markdown(
-                    f"""
-                    <div style='background-color:#f0f0f0; padding:6px 10px; border-radius:5px;'>
-                        <small>🔹 {s} → {p} → {o}</small>
-                    </div>""", unsafe_allow_html=True)
 
 
-    with col1:
-        st.write("_____")
-        st.markdown("""
-        <div style="background-color:#e6e6fa; border:1px solid #511D66;
-                    border-radius:5px; padding:10px; margin-bottom:8px;">
-            <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
-                🔎 Show TriplesMaps
+    # PURPLE HEADING - REMOVE EXISTING TRIPLESMAP
+    tm_dict = utils.get_tm_dict()
+    if tm_dict:     # only show option if there are tm that can be removed
+        with col1:
+            st.write("________")
+            st.markdown("""
+            <div style="background-color:#e6e6fa; border:1px solid #511D66;
+                        border-radius:5px; padding:10px; margin-bottom:8px;">
+                <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
+                    🗑️ Remove Existing TriplesMap
+                </div>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
-        st.markdown("")
+            """, unsafe_allow_html=True)
+            st.markdown("")
 
-        with st.expander("ℹ️ Show all TriplesMaps"):
-            st.write("")
-            st.dataframe(tm_df.drop(columns=["TriplesMap IRI"]))
+
+        if st.session_state["tm_deleted_ok_flag"]:  # show message here if "Remove" purple heading is going to be shown
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                formatted_deleted_tm = ", ".join(st.session_state["removed_tm_list"][:-1]) + " and " + st.session_state["removed_tm_list"][-1]
+                if len(st.session_state["removed_tm_list"]) == 1:
+                    st.markdown(f"""
+                    <div style="background-color:#d4edda; padding:1em;
+                    border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                        ✅ The Triplesmap <b style="color:#F63366;">
+                        {st.session_state["removed_tm_list"][0]}</b> has been succesfully deleted!  </div>
+                    """, unsafe_allow_html=True)
+                elif len(st.session_state["removed_tm_list"]) < 7:
+                    st.markdown(f"""
+                    <div style="background-color:#d4edda; padding:1em;
+                    border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                        ✅ The Triplesmaps <b style="color:#F63366;">
+                        {formatted_deleted_tm}</b> have been succesfully deleted!  </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""
+                    <div style="background-color:#d4edda; padding:1em;
+                    border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                        ✅ <b style="color:#F63366;">{len(st.session_state["removed_tm_list"])} TriplesMaps
+                        </b> have been succesfully deleted!  </div>
+                    """, unsafe_allow_html=True)
+                st.write("")
+            st.session_state["tm_deleted_ok_flag"] = False
+            time.sleep(st.session_state["success_display_time"])
+            st.rerun()
+
+        with col1:
+            col1a, col1b = st.columns([2,1])
+
+        tm_list = list(tm_dict)
+        if len(tm_list) > 1:
+            tm_list.insert(0, "Remove all")
+
+        with col1a:
+            tm_to_remove_list = st.multiselect("🖱️ Select TriplesMap/s:*", tm_list, key="key_tm_to_remove_list")
+
+        if tm_to_remove_list:
+            if "Remove all" not in tm_to_remove_list:
+                with col1a:
+                    delete_triplesmap_checkbox = st.checkbox(
+                    ":gray-badge[⚠️ I am sure I want to delete the TriplesMap/s]",
+                    key="delete_triplesmap_checkbox")
+                if delete_triplesmap_checkbox:
+                    with col1:
+                        col1a, col1b = st.columns([1,2])
+                    with col1a:
+                        st.button("Delete", on_click=delete_triplesmap)
+            else:   #if "Remove all" selected
+                with col1a:
+                    st.markdown(f"""<div class="custom-warning-small">
+                            ⚠️ If you continue, <b>all TriplesMaps will be deleted</b>.
+                            Make sure you want to go ahead.
+                        </div>""", unsafe_allow_html=True)
+                    st.write("")
+                    delete_triplesmap_checkbox = st.checkbox(
+                    ":gray-badge[⚠️ I am sure I want to delete all TriplesMaps]",
+                    key="delete_triplesmap_checkbox")
+                if delete_triplesmap_checkbox:
+                    with col1:
+                        col1a, col1b = st.columns([1,2])
+                    with col1a:
+                        st.button("Delete", on_click=delete_all_triplesmaps)
+
+
+        with col1a:
+            if st.session_state["deleted_triples"] and st.toggle("🔎 Display last removed triples") and not st.session_state["tm_deleted_ok"]:
+                st.markdown(
+                    """
+                    <div style='background-color:#f0f0f0; padding:8px; border-radius:4px;'>
+                        <b> Last deleted triples:</b>
+                    </div>""", unsafe_allow_html=True)
+                for s, p, o in st.session_state["deleted_triples"]:
+                    if isinstance(s, URIRef):
+                        s = split_uri(s)[1]
+                    elif isinstance(s, BNode):
+                        s = ("BNode: " + str(s)[:5] + "...")
+                    if isinstance(p, URIRef):
+                        p = split_uri(p)[1]
+                    if isinstance(o, URIRef):
+                        o = split_uri(o)[1]
+                    elif isinstance(o, BNode):
+                        o = ("BNode: " + str(o)[:5] + "...")
+                    st.markdown(
+                        f"""
+                        <div style='background-color:#f0f0f0; padding:6px 10px; border-radius:5px;'>
+                            <small>🔹 {s} → {p} → {o}</small>
+                        </div>""", unsafe_allow_html=True)
 
 
 #________________________________________________
@@ -731,95 +698,67 @@ with tab1:
 
 #________________________________________________
 #ADD SUBJECT MAP TO MAP
-if st.session_state["20_option_button"] == "s":
+with tab2:
+
+    st.write("")
+    st.write("")
 
     col1,col2 = st.columns([2,1.5])
 
     with col2:
         col2a,col2b = st.columns([1,2])
-        with col2b:
-            st.markdown(f"""
-                <div style="background-color:#e6e6fa; padding:1em; border-radius:5px;
-                color:#2a0134; border:1px solid #511D66;">
-                    <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-                    style="vertical-align:middle; margin-right:8px; height:20px;">
-                    You are currently working with mapping
-                    <b style="color:#007bff;">{st.session_state["g_label"]}</b>.
-                </div>
-            """, unsafe_allow_html=True)
+    with col2b:
+        utils.get_corner_status_message()
+
+    # Display last added namespaces in dataframe (also option to show all ns)
+    tm_dict = utils.get_tm_dict()
+
+    with col2:
+        col2a, col2b = st.columns([0.5, 2])
+
+    with col2b:
+        st.write("")
+        st.write("")
+        rows = [{"TriplesMap": tm, "LogicalSource": utils.get_ls(tm),
+                "DataSource": utils.get_ds(tm)} for tm in st.session_state["last_added_tm_list"]]
+        last_added_tm_df = pd.DataFrame(rows)
+        last_last_added_tm_df = last_added_tm_df.head(10)
+
+        if st.session_state["last_added_tm_list"]:
+            st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
+                    🔎 last added TriplesMaps
+                </div>""", unsafe_allow_html=True)
+            st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                    (complete list below)
+                </div>""", unsafe_allow_html=True)
+            st.dataframe(last_last_added_tm_df, hide_index=True)
             st.write("")
 
-            if st.session_state["g_ontology_components_dict"]:
-                st.markdown(f"""
-                <div style="background-color:#d4edda; padding:1em;
-                            border-radius:5px; color:#155724; border:1px solid #444;">
-                    🧩 The ontology
-                    <b style="color:#007bff;">{st.session_state["g_ontology_components_dict"]}</b>
-                    is currently loaded.
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.markdown("""
-                    <div style="background-color:#f0f0f0; padding:10px; border-radius:5px; margin-bottom:8px; border:1px solid #ccc;">
-                        <span style="font-size:0.95rem; color:#333;">
-                            🚫 <b>No ontology</b> is loaded.<br>
-                        </span>
-                        <span style="font-size:0.82rem; color:#555;">
-                            Working without an ontology could result in structural inconsistencies.
-                        </span>
-                    </div>
-                """, unsafe_allow_html=True)
 
+        #Option to show all TriplesMaps
+        rows = [{"TriplesMap": tm, "LogicalSource": utils.get_ls(tm),
+                "DataSource": utils.get_ds(tm)} for tm in reversed(list(tm_dict.keys()))]
+        tm_df = pd.DataFrame(rows)
 
-    #DISPLAY TRIPLESMAP AND SUBJECT INFO IN A DATAFRAME__________________
-    utils.update_dictionaries()
-    subject_df = utils.build_subject_df()
-
-    if not subject_df.empty:
-
-        subject_df_filtered = subject_df[subject_df["TriplesMap IRI"].isin(st.session_state["smap_ordered_list"])].copy()
-        subject_df_filtered["sort_key"] = subject_df_filtered["TriplesMap IRI"].apply(lambda x: st.session_state["smap_ordered_list"].index(x))
-        subject_df_ordered = subject_df_filtered.sort_values("sort_key").drop(columns=["sort_key", "TriplesMap IRI", "Data Source"]).reset_index(drop=True)
-
-
-        with col2:    #display the last Subject Maps in a dataframe
-            col2a,col2b = st.columns([0.1,2])
-            with col2b:
-                st.write("")
-                st.write("")
-                subject_df_last = subject_df_ordered.head(7)
-                st.markdown("""
-                    <div style='text-align: right; font-size: 14px; color: grey;'>
-                        last added Subject Maps
-                    </div>
-                """, unsafe_allow_html=True)
-                st.markdown("""
-                    <div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                        (complete Subject Map list in 🔎 Show Subject Maps)
-                    </div>
-                """, unsafe_allow_html=True)
-                st.dataframe(subject_df_last, hide_index=True)
-                st.write("")
+        with st.expander("🔎 Show all TriplesMaps"):
+            st.write("")
+            st.dataframe(tm_df, hide_index=True)
 
 
 
-#ADD NEW SUBJECT MAP_________________________________________________________
+    #PURPLE HEADING - ADD NEW TRIPLESMAP
     with col1:
-        st.markdown("""
-        <div style="background-color:#e6e6fa; border:1px solid #511D66;
-                    border-radius:5px; padding:10px; margin-bottom:8px;">
-            <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
+        st.markdown("""<div class="purple-heading">
                 🧱 Add New Subject Map
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+            </div>""", unsafe_allow_html=True)
         st.markdown("")
 
         col1a, col1b = st.columns([2,1])
 
+    st.session_state["tm_dict"] = utils.get_tm_dict() #HERE DELETE
 
     #SELECT THE TRIPLESMAP TO WHICH THE SUBJECT MAP WILL BE ADDED___________________________
-    #only triplesmaps without subject can be selected
+    #only triplesmaps without subjects can be selected
     if st.session_state["cache_tm"]:
         with col1:
             col1a, col1b = st.columns([2,1])
@@ -1959,7 +1898,7 @@ if st.session_state["20_option_button"] == "s":
 
 #________________________________________________
 #ADD PREDICATE-OBJECT MAP TO MAP
-if st.session_state["20_option_button"] == "po":
+with tab3:
 
     col1,col2, col3 = st.columns([2,0.2,0.8])
 
