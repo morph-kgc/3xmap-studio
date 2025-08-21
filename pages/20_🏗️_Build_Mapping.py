@@ -9,22 +9,39 @@ from rdflib.namespace import OWL
 from rdflib.namespace import RDF, RDFS, DC, DCTERMS
 import time
 import re
+import uuid
 
 
 
 #____________________________________________
 #PRELIMINARY
 #Aesthetics
+# st.markdown("""
+# <div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
+#             border-radius:8px; margin-bottom:16px;">
+#     <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
+#          style="width:32px; margin-right:12px;">
+#     <div>
+#         <h3 style="margin:0; font-size:1.75rem;">
+#             <span style="color:#511D66; font-weight:bold; margin-right:12px;">-----</span>
+#             Build Mapping
+#             <span style="color:#511D66; font-weight:bold; margin-left:12px;">-----</span>
+#         </h3>
+#         <p style="margin:0; font-size:0.95rem; color:#555;">
+#             Build your mapping by adding <b>Triple Maps</b>, <b>Subject Maps</b>, and <b>Predicate-Object Maps</b>.
+#         </p>
+#     </div>
+# </div>
+# """, unsafe_allow_html=True)
 st.markdown("""
 <div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
             border-radius:8px; margin-bottom:16px;">
-    <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-         style="width:32px; margin-right:12px;">
+    <span style="font-size:1.7rem; margin-right:18px;">🏗️</span>
     <div>
         <h3 style="margin:0; font-size:1.75rem;">
-            <span style="color:#511D66; font-weight:bold; margin-right:12px;">-----</span>
-            Build Mapping
-            <span style="color:#511D66; font-weight:bold; margin-left:12px;">-----</span>
+            <span style="color:#511D66; font-weight:bold; margin-right:12px;">◽◽◽◽◽</span>
+            Build mapping
+            <span style="color:#511D66; font-weight:bold; margin-left:12px;">◽◽◽◽◽</span>
         </h3>
         <p style="margin:0; font-size:0.95rem; color:#555;">
             Build your mapping by adding <b>Triple Maps</b>, <b>Subject Maps</b>, and <b>Predicate-Object Maps</b>.
@@ -52,34 +69,104 @@ RDF = namespaces["rdf"]
 
 BASE = Namespace(utils.get_rdfolio_base_iri())
 
-#define on_click functions
-def reset_input():    #function to reset input upon click
-    st.session_state["overwrite_checkbox"] = False
-    st.session_state["save_g_filename_flag"] = ""
 
-def save_tmap_new_ls():   #function to save TriplesMap upon click
+#initialise session state variables
+#TAB1
+if "key_ds_uploader" not in st.session_state:
+    st.session_state["key_ds_uploader"] = None
+if "last_added_tm_list" not in st.session_state:
+    st.session_state["last_added_tm_list"] = []
+
+
+if "confirm_button" not in st.session_state:
+    st.session_state["confirm_button"] = False
+if "custom_ns_dict" not in st.session_state:
+    st.session_state["custom_ns_dict"] = {}
+if "tm_saved_ok_flag" not in st.session_state:
+    st.session_state["tm_saved_ok_flag"] = False
+if "tm_label" not in st.session_state:
+    st.session_state["tm_label"] = ""
+if "selected_ds" not in st.session_state:
+    st.session_state["selected_ds"] = None
+if "subject_id_input" not in st.session_state:
+    st.session_state["subject_id_input"] = ""
+if "subject_saved_ok_new" not in st.session_state:
+    st.session_state["subject_saved_ok_new"] = False
+if "subject_saved_ok_existing" not in st.session_state:
+    st.session_state["subject_saved_ok_existing"] = False
+if "tm_ordered_list" not in st.session_state:
+    st.session_state["tm_ordered_list"] = []
+if "smap_ordered_list" not in st.session_state:
+    st.session_state["smap_ordered_list"] = []
+if "deleted_triples" not in st.session_state:
+    st.session_state["deleted_triples"] = []
+if "tm_deleted_ok" not in st.session_state:
+    st.session_state["tm_deleted_ok"] = False
+if "smap_deleted_ok" not in st.session_state:
+    st.session_state["smap_deleted_ok"] = False
+if "smap_unassigned_ok" not in st.session_state:
+    st.session_state["smap_unassigned_ok"] = False
+if "cache_tm" not in st.session_state:
+    st.session_state["cache_tm"] = ""
+if "pom_saved_ok" not in st.session_state:
+    st.session_state["pom_saved_ok"] = False
+if "om_template_list" not in st.session_state:
+    st.session_state["om_template_list"] = []
+
+
+
+select_cache_tm_toggle = False
+select_cache_tm_toggle_pom = False
+pom_ready_flag = False
+
+#define on_click functions
+#TAB1
+def save_tm_w_existing_ls():
+    tm_iri = MAP[f"{tm_label}"]  # change so that is can be defined by user
+    logical_source_iri =  LS[f"{selected_existing_ls}"]   # idem ns
+    st.session_state["tm_saved_ok_flag"] = True  # for success message
+    st.session_state["last_added_tm_list"].insert(0, tm_label)    # to display last added tm
+    # add triples
+    st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, logical_source_iri))    #bind to logical source
+    # reset fields
+    st.session_state["key_tm_label_input"] = ""
+
+def save_tm_w_new_ls():   #function to save TriplesMap upon click
+    tm_iri = MAP[f"{tm_label}"]
+    ds_filename = ds_file.name
     if logical_source_label:
         logical_source_iri = LS[f"{logical_source_label}"]
     else:
         logical_source_iri = BNode()
-    utils.add_logical_source(st.session_state["g_mapping"], tmap_label, selected_ds, logical_source_iri)
-    utils.update_dictionaries()             #to update tmap_dict
-    st.session_state["ds_list"] = "Select a data source"      #restart input variables
-    st.session_state["tmap_label_input"] = ""
-    st.session_state["save_tmap_success"] = True
+    st.session_state["tm_saved_ok_flag"] = True  # for success message
+    st.session_state["last_added_tm_list"].insert(0, tm_label)    # to display last added tm
+    # add triples
+    st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, logical_source_iri))    #bind to logical source
+    st.session_state["g_mapping"].add((logical_source_iri, RML.source, Literal(ds_filename)))    #bind ls to source file
+    file_extension = ds_filename.rsplit(".", 1)[-1]    # bind to reference formulation
+    if file_extension.lower() == "csv":
+        st.session_state["g_mapping"].add((logical_source_iri, QL.referenceFormulation, QL.CSV))
+    elif file_extension.lower() == "json":
+        st.session_state["g_mapping"].add((logical_source_iri, QL.referenceFormulation, QL.JSONPath))
+    elif file_extension.lower() == "xml":
+        st.session_state["g_mapping"].add((logical_source_iri, QL.referenceFormulation, QL.XPath))
+    # reset fields
+    st.session_state["key_tm_label_input"] = ""
+    st.session_state["key_ds_uploader"] = str(uuid.uuid4())
 
-def save_tmap_existing_ls():   #function to save TriplesMap upon click
-    tmap_iri = MAP[f"{tmap_label}"]
-    logical_source_iri =  LS[f"{selected_existing_logical_source}"]
-    st.session_state["g_mapping"].add((tmap_iri, RML.logicalSource, logical_source_iri))    #bind to logical source
-    st.session_state["ds_list"] = "Select a data source"      #restart input variables
-    st.session_state["tmap_label_input"] = ""
-    st.session_state["save_tmap_success"] = True
+
+
+
+
+
+def reset_input():    #function to reset input upon click
+    st.session_state["overwrite_checkbox"] = False
+    st.session_state["save_g_filename_flag"] = ""
 
 def delete_triplesmap():   #function to delete a TriplesMap
     st.session_state["deleted_triples"] = utils.remove_triplesmap(st.session_state["tm_to_remove"])
     st.session_state["tm_to_remove"] = "Select a TriplesMap"
-    st.session_state["tmap_deleted_ok"] = True
+    st.session_state["tm_deleted_ok"] = True
 
 def delete_labelled_subject_map():   #function to delete a Subject Map
     st.session_state["g_mapping"].remove((sm_to_remove, None, None))
@@ -91,7 +178,7 @@ def delete_labelled_subject_map():   #function to delete a Subject Map
 
 def unassign_subject_map():
     if len(other_tm_with_sm) != 1:       #just unassign sm to tm
-        st.session_state["g_mapping"].remove((tm_to_unassign_sm_iri, RR.subjectMap, None))
+        st.session_state["g_mapping"].remove((tm_to_unassign_sm_iri, RR.subjectm, None))
         st.session_state["smap_unassigned_ok"] = True
     else:       #completely remove sm
         st.session_state["g_mapping"].remove((sm_to_unassign, None, None))
@@ -102,9 +189,9 @@ def unassign_subject_map():
     st.session_state["delete_labelled_sm_uncollapse"] = False
 
 def save_subject_existing():
-    st.session_state["g_mapping"].add((tmap_iri_existing, RR.subjectMap, selected_existing_sm_iri))
+    st.session_state["g_mapping"].add((tm_iri_existing, RR.subjectm, selected_existing_sm_iri))
     st.session_state["subject_saved_ok_existing"] = True
-    st.session_state["smap_ordered_list"].insert(0, tmap_iri_existing)
+    st.session_state["smap_ordered_list"].insert(0, tm_iri_existing)
     st.session_state["existing_sm_uncollapse"] = False
     st.session_state["new_sm_uncollapse"] = False
 
@@ -116,13 +203,13 @@ def save_subject_template():   #function to save subject (template option)
     else:
         smap_iri = MAP[s_label]
 
-    st.session_state["g_mapping"].add((tmap_iri, RR.subjectMap, smap_iri))
+    st.session_state["g_mapping"].add((tm_iri, RR.subjectm, smap_iri))
     st.session_state["g_mapping"].add((smap_iri, RR.template, Literal(f"http://example.org/resource/{{{st.session_state["subject_id_input"]}}}")))
     st.session_state["subject_id"] = "Select a column of the data source:"
     st.session_state["subject_id_input"] = ""
     st.session_state["subject_saved_ok_new"] = True
     st.session_state["subject_label"] = ""
-    st.session_state["smap_ordered_list"].insert(0, tmap_iri)
+    st.session_state["smap_ordered_list"].insert(0, tm_iri)
     st.session_state["existing_sm_uncollapse"] = False
     st.session_state["new_sm_uncollapse"] = False
 
@@ -134,12 +221,12 @@ def save_subject_constant():   #function to save subject (template option)
     else:
         smap_iri = MAP[s_label]
 
-    st.session_state["g_mapping"].add((tmap_iri, RR.subjectMap, smap_iri))
+    st.session_state["g_mapping"].add((tm_iri, RR.subjectm, smap_iri))
     st.session_state["g_mapping"].add((smap_iri, RR.constant, Literal(f"http://example.org/resource/{st.session_state["subject_constant_input"]}")))
     st.session_state["subject_constant"] = ""
     st.session_state["subject_saved_ok_new"] = True
     st.session_state["subject_label"] = ""
-    st.session_state["smap_ordered_list"].insert(0, tmap_iri)
+    st.session_state["smap_ordered_list"].insert(0, tm_iri)
     st.session_state["existing_sm_uncollapse"] = False
     st.session_state["new_sm_uncollapse"] = False
 
@@ -151,13 +238,13 @@ def save_subject_reference():   #function to save subject (template option)
     else:
         smap_iri = MAP[s_label]
 
-    st.session_state["g_mapping"].add((tmap_iri, RR.subjectMap, smap_iri))
+    st.session_state["g_mapping"].add((tm_iri, RR.subjectm, smap_iri))
     st.session_state["g_mapping"].add((smap_iri, RML.reference, Literal(st.session_state["subject_id_input"])))
     st.session_state["subject_id"] = "Select a column of the data source:"
     st.session_state["subject_id_input"] = ""
     st.session_state["subject_saved_ok_new"] = True
     st.session_state["subject_label"] = ""
-    st.session_state["smap_ordered_list"].insert(0, tmap_iri)
+    st.session_state["smap_ordered_list"].insert(0, tm_iri)
     st.session_state["existing_sm_uncollapse"] = False
     st.session_state["new_sm_uncollapse"] = False
 
@@ -189,9 +276,9 @@ def delete_subject_graph():
     st.session_state["g_mapping"].remove((selected_subject_bnode, RR["graph"], None))
 
 def save_pom_reference():
-    st.session_state["g_mapping"].add((tmap_iri, RR.predicateObjectMap, pom_iri))
+    st.session_state["g_mapping"].add((tm_iri, RR.predicateObjectm, pom_iri))
     st.session_state["g_mapping"].add((pom_iri, RR.predicate, selected_predicate_iri))
-    st.session_state["g_mapping"].add((pom_iri, RR.objectMap, om_iri))
+    st.session_state["g_mapping"].add((pom_iri, RR.objectm, om_iri))
     st.session_state["g_mapping"].add((om_iri, RR.column, Literal(om_column_name)))
     #term type__________________________________
     if om_term_type == "📘 Literal":
@@ -222,9 +309,9 @@ def save_pom_reference():
 
 
 def save_pom_constant():
-    st.session_state["g_mapping"].add((tmap_iri, RR.predicateObjectMap, pom_iri))
+    st.session_state["g_mapping"].add((tm_iri, RR.predicateObjectm, pom_iri))
     st.session_state["g_mapping"].add((pom_iri, RR.predicate, selected_predicate_iri))
-    st.session_state["g_mapping"].add((pom_iri, RR.objectMap, om_iri))
+    st.session_state["g_mapping"].add((pom_iri, RR.objectm, om_iri))
     st.session_state["g_mapping"].add((om_iri, RR.constant, selected_constant_iri))
 
     #reset fields_____________________________________
@@ -249,9 +336,9 @@ def reset_om_template():
     st.session_state["om_template_list"] = []
 
 def save_pom_template():
-    st.session_state["g_mapping"].add((tmap_iri, RR.predicateObjectMap, pom_iri))
+    st.session_state["g_mapping"].add((tm_iri, RR.predicateObjectm, pom_iri))
     st.session_state["g_mapping"].add((pom_iri, RR.predicate, selected_predicate_iri))
-    st.session_state["g_mapping"].add((pom_iri, RR.objectMap, om_iri))
+    st.session_state["g_mapping"].add((pom_iri, RR.objectm, om_iri))
     #st.session_state["g_mapping"].add((om_iri, RR.template, URIRef(om_template)))
     #reset fields_____________________________________
     st.session_state["search_term"] = ""
@@ -264,47 +351,7 @@ def save_pom_template():
 
 
 
-#initialise session state variables
-if "confirm_button" not in st.session_state:
-    st.session_state["confirm_button"] = False
-if "custom_ns_dict" not in st.session_state:
-    st.session_state["custom_ns_dict"] = {}
-if "save_tmap_success" not in st.session_state:
-    st.session_state["save_tmap_success"] = False
-if "tmap_label" not in st.session_state:
-    st.session_state["tmap_label"] = ""
-if "selected_ds" not in st.session_state:
-    st.session_state["selected_ds"] = None
-if "subject_id_input" not in st.session_state:
-    st.session_state["subject_id_input"] = ""
-if "subject_saved_ok_new" not in st.session_state:
-    st.session_state["subject_saved_ok_new"] = False
-if "subject_saved_ok_existing" not in st.session_state:
-    st.session_state["subject_saved_ok_existing"] = False
-if "tmap_ordered_list" not in st.session_state:
-    st.session_state["tmap_ordered_list"] = []
-if "smap_ordered_list" not in st.session_state:
-    st.session_state["smap_ordered_list"] = []
-if "deleted_triples" not in st.session_state:
-    st.session_state["deleted_triples"] = []
-if "tmap_deleted_ok" not in st.session_state:
-    st.session_state["tmap_deleted_ok"] = False
-if "smap_deleted_ok" not in st.session_state:
-    st.session_state["smap_deleted_ok"] = False
-if "smap_unassigned_ok" not in st.session_state:
-    st.session_state["smap_unassigned_ok"] = False
-if "cache_tm" not in st.session_state:
-    st.session_state["cache_tm"] = ""
-if "pom_saved_ok" not in st.session_state:
-    st.session_state["pom_saved_ok"] = False
-if "om_template_list" not in st.session_state:
-    st.session_state["om_template_list"] = []
 
-
-
-select_cache_tm_toggle = False
-select_cache_tm_toggle_pom = False
-pom_ready_flag = False
 
 
 
@@ -329,6 +376,22 @@ ds_folder_path = utils.get_ds_folder_path()   #path to folder with data sources 
 
 #___________________________________________
 
+
+
+
+#REVISION STARTS HERE
+#____________________________________________________________
+# PANELS OF THE PAGE (tabs)
+
+tab1, tab2, tab3 = st.tabs(["Add TriplesMap", "Add Subject Map", "Add Predicate-Object Map"])
+
+
+
+
+
+
+
+
  #_____________________________________________
 #SELECT OPTION -> Buttons for namespace, map, subject or predicate-object
 col1, col2, col3, col4 = st.columns(4)
@@ -337,8 +400,8 @@ if "20_option_button" not in st.session_state:
     st.session_state["20_option_button"] = None
 
 with col1:
-    tmap_button = st.button("Add TriplesMap")
-if tmap_button:
+    tm_button = st.button("Add TriplesMap")
+if tm_button:
     st.session_state["20_option_button"] = "map"
 
 with col2:
@@ -363,129 +426,92 @@ st.write("_______________")
 
 #________________________________________________
 #ADD TRIPLESMAP
-if st.session_state["20_option_button"] == "map":
+with tab1:
+    st.write("")
+    st.write("")
 
     col1,col2 = st.columns([2,1.5])
 
     with col2:
         col2a,col2b = st.columns([1,2])
-        with col2b:
-            st.markdown(f"""
-                <div style="background-color:#e6e6fa; padding:1em; border-radius:5px;
-                color:#2a0134; border:1px solid #511D66;">
-                    <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-                    style="vertical-align:middle; margin-right:8px; height:20px;">
-                    You are currently working with mapping
-                    <b style="color:#007bff;">{st.session_state["g_label"]}</b>.
-                </div>
-            """, unsafe_allow_html=True)
+    with col2b:
+        utils.get_corner_status_message()
+
+    # Display last added namespaces in dataframe (also option to show all ns)
+    tm_dict = utils.get_tm_dict()
+
+    with col2:
+        col2a, col2b = st.columns([0.5, 2])
+
+    with col2b:
+        st.write("")
+        st.write("")
+        rows = [{"TriplesMap": tm, "LogicalSource": utils.get_ls(tm),
+                "DataSource": utils.get_ds(tm)} for tm in st.session_state["last_added_tm_list"]]
+        last_added_tm_df = pd.DataFrame(rows)
+        last_last_added_tm_df = last_added_tm_df.head(10)
+
+        if st.session_state["last_added_tm_list"]:
+            st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
+                    🔎 last added TriplesMaps
+                </div>""", unsafe_allow_html=True)
+            st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                    (complete list below)
+                </div>""", unsafe_allow_html=True)
+            st.dataframe(last_last_added_tm_df, hide_index=True)
             st.write("")
 
-            if st.session_state["g_ontology_components_dict"]:
-                st.markdown(f"""
-                <div style="background-color:#d4edda; padding:1em;
-                            border-radius:5px; color:#155724; border:1px solid #444;">
-                    🧩 The ontology
-                    <b style="color:#007bff;">{st.session_state["g_ontology_components_dict"]}</b>
-                    is currently loaded.
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.markdown("""
-                    <div style="background-color:#f0f0f0; padding:10px; border-radius:5px; margin-bottom:8px; border:1px solid #ccc;">
-                        <span style="font-size:0.95rem; color:#333;">
-                            🚫 <b>No ontology</b> is loaded.<br>
-                        </span>
-                        <span style="font-size:0.82rem; color:#555;">
-                            Working without an ontology could result in structural inconsistencies.
-                        </span>
-                    </div>
-                """, unsafe_allow_html=True)
 
+        #Option to show all TriplesMaps
+        rows = [{"TriplesMap": tm, "LogicalSource": utils.get_ls(tm),
+                "DataSource": utils.get_ds(tm)} for tm in reversed(list(tm_dict.keys()))]
+        tm_df = pd.DataFrame(rows)
 
-
-
-    #DISPLAY TRIPLESMAP INFO IN A DATAFRAME
-    utils.update_dictionaries()
-    with col2:    #display the last TriplesMaps in a dataframe
-        col2a,col2b = st.columns([0.5,2])
-        with col2b:
+        with st.expander("🔎 Show all TriplesMaps"):
             st.write("")
-            st.write("")
-            # tmap_df = pd.DataFrame(list(st.session_state["data_source_dict"].items()), columns=["TriplesMap label", "Data source"]).iloc[::-1]
-            tmap_df = utils.build_tmap_df()
-
-            if not tmap_df.empty:
-                tmap_df_filtered = tmap_df[tmap_df["TriplesMap Label"].isin(st.session_state["tmap_ordered_list"])].copy()
-                tmap_df_filtered["sort_key"] = tmap_df_filtered["TriplesMap Label"].apply(lambda x: st.session_state["tmap_ordered_list"].index(x))
-                tmap_df_ordered = tmap_df_filtered.sort_values("sort_key").drop(columns=["sort_key", "TriplesMap IRI"]).reset_index(drop=True)
-                if not tmap_df_ordered.empty:
-                    st.session_state["cache_tm"] = tmap_df_ordered.iloc[0,0]
-
-                # ordered_rows = [(tm_label, st.session_state["data_source_dict"][tm_label]) for tm_label in st.session_state["tmap_ordered_list"]]
-                # tmap_df_ordered = pd.DataFrame(ordered_rows, columns=["TriplesMap label", "Data source"])
-                tmap_df_last = tmap_df_ordered.head(7)
-
-                st.markdown("""
-                    <div style='text-align: right; font-size: 14px; color: grey;'>
-                        last added TriplesMaps
-                    </div>
-                """, unsafe_allow_html=True)
-                st.markdown("""
-                    <div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                        (complete TriplesMap list in 🔎 Show TriplesMaps)
-                    </div>
-                """, unsafe_allow_html=True)
-                st.dataframe(tmap_df_last, hide_index=True)
-                st.write("")
-
-
-    # st.write("HERE2")
-    # st.write(utils.get_ontology_base_iri())
-    #
-    # st.write("HERE", st.session_state["tmap_dict"])
-    # derived_triples_list = utils.get_tmap_derived_triples("AuthorsTriplesMap")
-    # derived_triples_df = pd.DataFrame(derived_triples_list, columns=["s", "p", "o"])
-    # st.dataframe(derived_triples_df)
-    #
-    # derived_triples_list = utils.get_tmap_exclusive_derived_triples("AuthorsTriplesMap")
-    # derived_triples_df = pd.DataFrame(derived_triples_list, columns=["s", "p", "o"])
-    # st.write("HERE")
-    # st.dataframe(derived_triples_df)
+            st.dataframe(tm_df, hide_index=True)
 
 
 
+    #PURPLE HEADING - ADD NEW TRIPLESMAP
     with col1:
-        st.markdown("""
-        <div style="background-color:#e6e6fa; border:1px solid #511D66;
-                    border-radius:5px; padding:10px; margin-bottom:8px;">
-            <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
+        st.markdown("""<div class="purple-heading">
                 🧱 Add New TriplesMap
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+            </div>""", unsafe_allow_html=True)
         st.markdown("")
+
+    if st.session_state["tm_saved_ok_flag"]:
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.write("")
+            st.markdown(f"""<div class="custom-success">
+                ✅ The TriplesMap has been added!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["tm_saved_ok_flag"] = False
+        time.sleep(st.session_state["success_display_time"])
+        st.rerun()
 
     with col1:
         col1a, col1b = st.columns([2,1])
     with col1a:
-        tmap_label = st.text_input("Enter label for the new TriplesMap", key="tmap_label_input")    #user-friendly name for the TriplesMap
+        tm_label = st.text_input("⌨️ Enter label for the new TriplesMap:*", key="key_tm_label_input")    #user-friendly name for the TriplesMap
 
 
-
-    labelled_logical_sources_list = []      #existing labelled logical sources
+    tm_dict = utils.get_tm_dict()
+    labelled_ls_list = []      #existing labelled logical sources
     for s, p, o in st.session_state["g_mapping"].triples((None, RML.logicalSource, None)):
-        if isinstance(o, URIRef):
-            labelled_logical_sources_list.append(split_uri(o)[1])
+        if isinstance(o, URIRef) and split_uri(o)[1] not in labelled_ls_list:
+            labelled_ls_list.append(split_uri(o)[1])
 
-    if tmap_label:   #after a label has been given
-        st.session_state["tmap_label"] = tmap_label
-        if tmap_label in st.session_state["tmap_dict"]:   #if label is already in use
+    if tm_label:   #after a label has been given
+        st.session_state["tm_label"] = tm_label
+        if tm_label in tm_dict:   #if label is already in use
             with col1a:
                 st.markdown(f"""
                 <div style="background-color:#f8d7da; padding:1em;
                             border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-                    ❌ TriplesMap label <b style="color:#a94442;">{tmap_label}</b> already in use: <br>
+                    ❌ TriplesMap label <b style="color:#a94442;">{tm_label}</b> already in use: <br>
                     Please pick a different label.
                 </div>
                 """, unsafe_allow_html=True)
@@ -493,112 +519,82 @@ if st.session_state["20_option_button"] == "map":
 
         else:    #if label is valid
 
-            with col1:
-                st.markdown("""<div style="border-top:3px dashed #b5b5d0; padding-top:12px;">
-                    </div>""", unsafe_allow_html=True)
-            with col1:
-                col1a, col1b = st.columns([2,1])
+            if labelled_ls_list:  # if there exist labelled logical sources
+                with col1a:
+                    ls_options_list = ["📑 Assing existing Logical Source", "🆕 Assign new Logical Source"]
+                    selected_ls_option = st.radio("", ls_options_list, label_visibility="collapsed")
+                    st.write("")
 
-            with col1b:
-                existing_ls_uncollapse = st.toggle("", key="existing_ls_uncollapse")
-            with col1a:
-                st.markdown("""<span style="font-size:1.1em; font-weight:bold;">📑 Assign an existing Logical Source</span><br>
-                        <small>Select an already created logical source from list</small>""",
-                    unsafe_allow_html=True)
-                st.write("")
+            else:
+                    selected_ls_option = "🆕 Assign new Logical Source"
 
-                if existing_ls_uncollapse:
+            if selected_ls_option == "📑 Assing existing Logical Source":
 
-                    labelled_logical_sources_list.insert(0, "Select a logical source")
+                labelled_ls_list.insert(0, "Select a Logical Source")
+                with col1a:
+                    selected_existing_ls = st.selectbox("🖱️ Select an existing Logical Source:*", labelled_ls_list)
 
-                    if len(labelled_logical_sources_list) == 1:
-                        st.markdown(f"""
-                            <div style="background-color:#fff9db; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                                <span style="font-size:0.95rem;">
-                                ⚠️ This option is not available. No labelled logical sources exist in mapping {st.session_state["g_label"]} yet.
-                                </span>
-                            </div>
-                            """, unsafe_allow_html=True)
-                        st.write("")
+                if selected_existing_ls != "Select a Logical Source":
+                    with col1a:
+                        save_tm_button_existing_ls = st.button("Save", key="key_save_tm_w_existing_ls", on_click=save_tm_w_existing_ls)
 
-                    else:
 
-                        selected_existing_logical_source = st.selectbox("Select an existing logical source:", labelled_logical_sources_list)
-                        st.write("")
-
-                        if selected_existing_logical_source != "Select a logical source":
-                            save_tmap_button_existing_ls = st.button("Save TriplesMap", on_click=save_tmap_existing_ls)
-
-            with col1:
-                col1a,col1b = st.columns([2,1])
-            with col1b:
-                new_ls_uncollapse = st.toggle("", key = "new_ls_uncollapse")
-            with col1a:
-                st.markdown(
-                    """
-                    <div style="border-top:3px dashed #b5b5d0; padding-top:12px;">
-                        <span style="font-size:1.1em; font-weight:bold;">🆕 Assign a new Logical Source</span><br>
-                        <small>Create logical source from scratch</small>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                    )
-                st.write("")
-
-            if new_ls_uncollapse:
+            if selected_ls_option == "🆕 Assign new Logical Source":
 
                 ds_allowed_formats = utils.get_ds_allowed_formats()            #data source for the TriplesMap
-                ds_list = [f for f in os.listdir(ds_folder_path) if f.endswith(ds_allowed_formats)]
-                ds_list.insert(0, "Select a data source") # Add a placeholder option
+                with col1:
+                    col1a, col1b = st.columns([2,1])
                 with col1a:
-                    selected_ds = st.selectbox("Choose a file:", ds_list, key="ds_list")
-                    logical_source_label = st.text_input("Enter label for the logical source (optional):")
-                    if logical_source_label in labelled_logical_sources_list:
-                        with col1a:
+                    ds_file = st.file_uploader(f"""🖱️Upload data source file*""",
+                        type=ds_allowed_formats, key=st.session_state["key_ds_uploader"])
+                with col1b:
+                    logical_source_label = st.text_input("⌨️ Enter label for the logical source (optional):")
+                    if logical_source_label in labelled_ls_list:
+                        with col1b:
                             st.markdown(f"""
                                 <div style="background-color:#fff3cd; padding:1em;
                                 border-radius:5px; color:#856404; border:1px solid #ffeeba;">
                                     ⚠️ The logical source label <b style="color:#cc9a06;">{logical_source_label}</b>
-                                    is already in use and will be ignored. Please, pick a different label.</div>
+                                    is already in use. Please, pick a different label or leave blank.</div>
                             """, unsafe_allow_html=True)
                             st.write("")
-                        logical_source_label = ""   #ignore logical source label if it already exists
 
-                if selected_ds != "Select a data source":
-                    st.session_state["selected_ds"] = selected_ds
+
+
+                if ds_file and not logical_source_label in labelled_ls_list:
                     with col1a:
-                        save_tmap_button_new_ls = st.button("Save TriplesMap", on_click=save_tmap_new_ls)
+                        st.button("Save", key="key_save_tm_w_new_ls", on_click=save_tm_w_new_ls)
 
 
 
 
-        # if tmap_label in st.session_state["tmap_dict"]:
+        # if tm_label in st.session_state["tm_dict"]:
         #     with col1a:
         #         st.markdown(f"""
         #         <div style="background-color:#f8d7da; padding:1em;
         #                     border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-        #             ❌ TriplesMap label <b style="color:#a94442;">{tmap_label}</b> already in use: <br>
+        #             ❌ TriplesMap label <b style="color:#a94442;">{tm_label}</b> already in use: <br>
         #             Please pick a different label.
         #         </div>
         #         """, unsafe_allow_html=True)
         #         st.write("")
-        # elif tmap_label and selected_ds != "Select a data source":
+        # elif tm_label and selected_ds != "Select a data source":
         #     with col1a:
-        #         save_tmap_button = st.button("Save new TriplesMap", on_click=save_tmap)
+        #         save_tm_button = st.button("Save new TriplesMap", on_click=save_tm)
 
-    if st.session_state["save_tmap_success"]:
+    if st.session_state["tm_saved_ok_flag"]:
         with col1b:
-            st.session_state["save_tmap_success"] = False
+            st.session_state["tm_saved_ok_flag"] = False
             st.write("")
             st.markdown(f"""
             <div style="background-color:#d4edda; padding:1em;
             border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                ✅ You created the TriplesMap <b style="color:#0f5132;">{st.session_state["tmap_label"]}
+                ✅ You created the TriplesMap <b style="color:#0f5132;">{st.session_state["tm_label"]}
                 </b>, <br>
                 associated to the data source <b style="color:#0f5132;"> {st.session_state["selected_ds"]}</b>.  </div>
             """, unsafe_allow_html=True)
             st.write("")
-            st.session_state["tmap_ordered_list"].insert(0, st.session_state["tmap_label"])
+            st.session_state["tm_ordered_list"].insert(0, st.session_state["tm_label"])
             time.sleep(2)
             st.rerun()
 
@@ -650,7 +646,7 @@ if st.session_state["20_option_button"] == "map":
 
     with col1:
         col1a, col1b = st.columns([2,1])
-    if st.session_state["tmap_deleted_ok"]:
+    if st.session_state["tm_deleted_ok"]:
         with col1b:
             st.markdown(f"""
             <div style="background-color:#d4edda; padding:1em;
@@ -681,12 +677,12 @@ if st.session_state["20_option_button"] == "map":
                     <div style='background-color:#f0f0f0; padding:6px 10px; border-radius:5px;'>
                         <small>🔹 {s} → {p} → {o}</small>
                     </div>""", unsafe_allow_html=True)
-        st.session_state["tmap_deleted_ok"] = False
+        st.session_state["tm_deleted_ok"] = False
         time.sleep(5)
         st.rerun()
 
     with col1a:
-        if st.session_state["deleted_triples"] and st.toggle("🔎 Display last removed triples") and not st.session_state["tmap_deleted_ok"]:
+        if st.session_state["deleted_triples"] and st.toggle("🔎 Display last removed triples") and not st.session_state["tm_deleted_ok"]:
             st.markdown(
                 """
                 <div style='background-color:#f0f0f0; padding:8px; border-radius:4px;'>
@@ -724,7 +720,7 @@ if st.session_state["20_option_button"] == "map":
 
         with st.expander("ℹ️ Show all TriplesMaps"):
             st.write("")
-            st.dataframe(tmap_df.drop(columns=["TriplesMap IRI"]))
+            st.dataframe(tm_df.drop(columns=["TriplesMap IRI"]))
 
 
 #________________________________________________
@@ -849,15 +845,15 @@ if st.session_state["20_option_button"] == "s":
     with col1a:
         st.write("")
 
-    tmap_list = list(st.session_state["tmap_dict"].values())
-    tmap_without_subject_list = []          #list of all TriplesMap which do not have a subject yet
-    for tmap_label, tmap_iri in st.session_state["tmap_dict"].items():
-        if not next(st.session_state["g_mapping"].objects(tmap_iri, RR.subjectMap), None):   #if there is no subject for that TriplesMap
-            tmap_without_subject_list.append(tmap_label)
-    tmap_without_subject_list.insert(0, "Select a TriplesMap")
+    tm_list = list(st.session_state["tm_dict"].values())
+    tm_without_subject_list = []          #list of all TriplesMap which do not have a subject yet
+    for tm_label, tm_iri in st.session_state["tm_dict"].items():
+        if not next(st.session_state["g_mapping"].objects(tm_iri, RR.subjectm), None):   #if there is no subject for that TriplesMap
+            tm_without_subject_list.append(tm_label)
+    tm_without_subject_list.insert(0, "Select a TriplesMap")
 
 
-    if not st.session_state["tmap_dict"]:
+    if not st.session_state["tm_dict"]:
         with col1a:
             st.markdown(f"""
                 <div style="background-color:#fff9db; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
@@ -869,7 +865,7 @@ if st.session_state["20_option_button"] == "s":
                     """, unsafe_allow_html=True)
             st.write("")
 
-    elif len(tmap_without_subject_list) == 1:
+    elif len(tm_without_subject_list) == 1:
         with col1a:
             st.markdown(
                 f"""
@@ -891,25 +887,25 @@ if st.session_state["20_option_button"] == "s":
 
         #first create dictionary of all the existing Subject Maps
         existing_subject_map_dict = {"Select a Subject Map": "Select a Subject Map"}
-        for sm in st.session_state["g_mapping"].objects(predicate=RR.subjectMap):
+        for sm in st.session_state["g_mapping"].objects(predicate=RR.subjectm):
             if isinstance(sm, URIRef):
                 existing_subject_map_dict[split_uri(sm)[1]] = sm
         existing_subject_map_list = list(existing_subject_map_dict.keys())
 
         if st.session_state["cache_tm"]:
             if select_cache_tm_toggle:
-                tmap_label_input = st.session_state["cache_tm"]
+                tm_label_input = st.session_state["cache_tm"]
             else:
                 with col1a:
-                    tmap_label_input = st.selectbox("or select another TriplesMap", tmap_without_subject_list, key="s_tmap_label_input")
+                    tm_label_input = st.selectbox("or select another TriplesMap", tm_without_subject_list, key="s_tm_label_input")
         else:
             with col1a:
-                tmap_label_input = st.selectbox("Select a TriplesMap", tmap_without_subject_list, key="s_tmap_label_input")
+                tm_label_input = st.selectbox("Select a TriplesMap", tm_without_subject_list, key="s_tm_label_input")
 
-        tmap_label_input_existing = tmap_label_input
-        tmap_label_input_new = tmap_label_input
+        tm_label_input_existing = tm_label_input
+        tm_label_input_new = tm_label_input
 
-        if tmap_label_input != "Select a TriplesMap":
+        if tm_label_input != "Select a TriplesMap":
 
 
             with col1:
@@ -936,10 +932,10 @@ if st.session_state["20_option_button"] == "s":
                                 </span>
                             </div>
                             """, unsafe_allow_html=True)
-                        tmap_label_input_existing = "Select a TriplesMap"
+                        tm_label_input_existing = "Select a TriplesMap"
                     else:
 
-                        if tmap_label_input_existing == "Select a TriplesMap":
+                        if tm_label_input_existing == "Select a TriplesMap":
                             pass
                             # with col1b:
                             #     st.write("")
@@ -955,7 +951,7 @@ if st.session_state["20_option_button"] == "s":
                             selected_existing_sm_label = st.selectbox("Choose an existing Subject Map", existing_subject_map_list)
                             selected_existing_sm_iri = existing_subject_map_dict[selected_existing_sm_label]
                             if selected_existing_sm_label != "Select a Subject Map":
-                                tmap_iri_existing = st.session_state["tmap_dict"][tmap_label_input_existing]
+                                tm_iri_existing = st.session_state["tm_dict"][tm_label_input_existing]
                                 save_existing_subject_map = st.button("Save", on_click=save_subject_existing)
 
 
@@ -988,9 +984,9 @@ if st.session_state["20_option_button"] == "s":
             if new_sm_uncollapse:
 
                 #GET DATA SOURCE OF THE TRIPLESMAP____________________________
-                if tmap_label_input_new == "Select a TriplesMap":
-                    tmap_iri = None
-                    tmap_logical_source_iri = None
+                if tm_label_input_new == "Select a TriplesMap":
+                    tm_iri = None
+                    tm_logical_source_iri = None
                     s_generation_type = ""
                     # with col1b:
                     #     st.write("")
@@ -1004,11 +1000,11 @@ if st.session_state["20_option_button"] == "s":
                     #         """, unsafe_allow_html=True)
 
                 else:   #TriplesMap selected
-                    tmap_iri = st.session_state["tmap_dict"][tmap_label_input_new]
-                    tmap_logical_source_iri = next(st.session_state["g_mapping"].objects(tmap_iri, RML.logicalSource), None)
+                    tm_iri = st.session_state["tm_dict"][tm_label_input_new]
+                    tm_logical_source_iri = next(st.session_state["g_mapping"].objects(tm_iri, RML.logicalSource), None)
 
                     #here we get the columns of the data source for the template option
-                    data_source = next(st.session_state["g_mapping"].objects(tmap_logical_source_iri, RML.source), None)   #name of ds file
+                    data_source = next(st.session_state["g_mapping"].objects(tm_logical_source_iri, RML.source), None)   #name of ds file
                     if data_source:
                         data_source_file = os.path.join(os.getcwd(), "data_sources", data_source)    #full path of ds file
                         columns_df = pd.read_csv(data_source_file)
@@ -1072,7 +1068,7 @@ if st.session_state["20_option_button"] == "s":
                         st.session_state["subject_id_input"] = subject_id
 
                     with col1a:
-                        if tmap_label_input_new != "Select a TriplesMap" and subject_id != "Select a column of the data source:":
+                        if tm_label_input_new != "Select a TriplesMap" and subject_id != "Select a column of the data source:":
                             st.button("Save subject", on_click=save_subject_template)
 
 
@@ -1098,7 +1094,7 @@ if st.session_state["20_option_button"] == "s":
                         st.session_state["subject_constant_input"] = subject_constant
 
                     with col1a:
-                        if tmap_label_input_new != "Select a TriplesMap" and subject_constant:
+                        if tm_label_input_new != "Select a TriplesMap" and subject_constant:
                             st.button("Save subject", on_click=save_subject_constant)
 
 
@@ -1127,7 +1123,7 @@ if st.session_state["20_option_button"] == "s":
                         st.session_state["subject_id_input"] = subject_id
 
                     with col1a:
-                        if tmap_label_input_new != "Select a TriplesMap" and subject_id != "Select a column of the data source:":
+                        if tm_label_input_new != "Select a TriplesMap" and subject_id != "Select a column of the data source:":
                             st.button("Save subject", on_click=save_subject_reference)
 
 
@@ -1196,13 +1192,13 @@ if st.session_state["20_option_button"] == "s":
     #SELECT THE TRIPLESMAP (this will give the subject if it exists)__________________________________
     #list of all triplesmaps with assigned Subject Map
     tm_with_sm_list = ["Select a TriplesMap"]
-    for tm_label, tm_iri in st.session_state["tmap_dict"].items():
-        if any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectMap, None))):
+    for tm_label, tm_iri in st.session_state["tm_dict"].items():
+        if any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectm, None))):
             tm_with_sm_list.append(tm_label)
 
     labelled_sm_list = ["Select a Subject Map"]
-    for tm_label, tm_iri in st.session_state["tmap_dict"].items():
-        sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RR.subjectMap)
+    for tm_label, tm_iri in st.session_state["tm_dict"].items():
+        sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RR.subjectm)
         if isinstance(sm_iri, URIRef) and sm_iri not in labelled_sm_list:
             if split_uri(sm_iri)[1] not in labelled_sm_list:
                 labelled_sm_list.append(split_uri(sm_iri)[1])
@@ -1211,7 +1207,7 @@ if st.session_state["20_option_button"] == "s":
     with col1:
         col1a, col1b = st.columns([2,1])
 
-    if not st.session_state["tmap_dict"]:
+    if not st.session_state["tm_dict"]:
         with col1a:
             st.markdown(f"""
                 <div style="background-color:#fff9db; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
@@ -1249,7 +1245,7 @@ if st.session_state["20_option_button"] == "s":
 
         if selected_sm_label != "Select a Subject Map":
             selected_sm_iri = MAP[selected_sm_label]
-            selected_tm = next((s for s, p, o in st.session_state["g_mapping"].triples((None, RR.subjectMap, selected_sm_iri))), None)
+            selected_tm = next((s for s, p, o in st.session_state["g_mapping"].triples((None, RR.subjectm, selected_sm_iri))), None)
             selected_tm_label = split_uri(selected_tm)[1]
 
 
@@ -1266,8 +1262,8 @@ if st.session_state["20_option_button"] == "s":
             #         """, unsafe_allow_html=True)
         else:
 
-            selected_tm = st.session_state["tmap_dict"][selected_tm_label]        #selected tm iri
-            selected_subject_bnode = st.session_state["g_mapping"].value(selected_tm, RR.subjectMap)     #subject of selected tm (BNode)
+            selected_tm = st.session_state["tm_dict"][selected_tm_label]        #selected tm iri
+            selected_subject_bnode = st.session_state["g_mapping"].value(selected_tm, RR.subjectm)     #subject of selected tm (BNode)
             selected_subject_id = st.session_state["subject_dict"][selected_tm_label][1]
             selected_subject_type = st.session_state["subject_dict"][selected_tm_label][2]
 
@@ -1297,9 +1293,9 @@ if st.session_state["20_option_button"] == "s":
                         st.write("")
             else:
                 tm_assigned_to_sm_list = []
-                for tmap_label in st.session_state["subject_dict"]:
-                    if selected_sm_label == st.session_state["subject_dict"][tmap_label][3]:
-                        tm_assigned_to_sm_list.append(tmap_label)
+                for tm_label in st.session_state["subject_dict"]:
+                    if selected_sm_label == st.session_state["subject_dict"][tm_label][3]:
+                        tm_assigned_to_sm_list.append(tm_label)
                 assigned_str = ", ".join(str(item) for item in tm_assigned_to_sm_list)
                 with col1a:
                     st.markdown(f"""
@@ -1694,14 +1690,14 @@ if st.session_state["20_option_button"] == "s":
         st.markdown("")
 
     tm_with_sm_list = ["Select a TriplesMap"]
-    for tm_label, tm_iri in st.session_state["tmap_dict"].items():
-        if any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectMap, None))):
+    for tm_label, tm_iri in st.session_state["tm_dict"].items():
+        if any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectm, None))):
             tm_with_sm_list.append(tm_label)
 
     with col1:
         col1a, col1b = st.columns([2,1])
 
-    if not st.session_state["tmap_dict"]:
+    if not st.session_state["tm_dict"]:
         with col1a:
             st.markdown(f"""
                 <div style="background-color:#fff9db; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
@@ -1770,12 +1766,12 @@ if st.session_state["20_option_button"] == "s":
                     sm_to_remove = MAP[sm_to_remove_label]
 
                 if sm_to_remove_label != "Select a Subject Map":
-                    assigned_tmap_list = []
-                    for tmap_label in st.session_state["subject_dict"]:
-                        if sm_to_remove_label == st.session_state["subject_dict"][tmap_label][3]:
-                            assigned_tmap_list.append(tmap_label)
+                    assigned_tm_list = []
+                    for tm_label in st.session_state["subject_dict"]:
+                        if sm_to_remove_label == st.session_state["subject_dict"][tm_label][3]:
+                            assigned_tm_list.append(tm_label)
                     with col1a:
-                        assigned_str = ", ".join(str(item) for item in assigned_tmap_list)
+                        assigned_str = ", ".join(str(item) for item in assigned_tm_list)
                         st.markdown(f"""
                             <div style="background-color:#fff3cd; padding:1em;
                             border-radius:5px; color:#856404; border:1px solid #ffeeba;">
@@ -1812,8 +1808,8 @@ if st.session_state["20_option_button"] == "s":
                 col1a, col1b = st.columns([2,1])
 
             tm_with_sm_list = ["Select a TriplesMap"]
-            for tm_label, tm_iri in st.session_state["tmap_dict"].items():
-                if any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectMap, None))):
+            for tm_label, tm_iri in st.session_state["tm_dict"].items():
+                if any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectm, None))):
                     tm_with_sm_list.append(tm_label)
 
             if len(tm_with_sm_list) == 1:
@@ -1833,9 +1829,9 @@ if st.session_state["20_option_button"] == "s":
                     tm_to_unassign_sm = st.selectbox("Select a TriplesMap", tm_with_sm_list, key="tm_to_unassign_sm")
 
                 if tm_to_unassign_sm != "Select a TriplesMap":
-                    tm_to_unassign_sm_iri = st.session_state["tmap_dict"][tm_to_unassign_sm]
-                    sm_to_unassign = st.session_state["g_mapping"].value(subject=tm_to_unassign_sm_iri, predicate=RR.subjectMap)
-                    other_tm_with_sm = [s for s, p, o in st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_to_unassign))]
+                    tm_to_unassign_sm_iri = st.session_state["tm_dict"][tm_to_unassign_sm]
+                    sm_to_unassign = st.session_state["g_mapping"].value(subject=tm_to_unassign_sm_iri, predicate=RR.subjectm)
+                    other_tm_with_sm = [s for s, p, o in st.session_state["g_mapping"].triples((None, RR.subjectm, sm_to_unassign))]
 
                     st.write("HERE2", other_tm_with_sm)
                     if isinstance(sm_to_unassign, URIRef):
@@ -1927,8 +1923,8 @@ if st.session_state["20_option_button"] == "s":
     #SHOW COMPLETE INFORMATION ON THE SUBJECT MAPS___________________________________
     utils.update_dictionaries()
     subject_df_complete = utils.build_complete_subject_df()
-    filtered_tmap_without_subject_list = [item for item in tmap_without_subject_list if item != "Select a TriplesMap"]
-    tmap_without_subject_df = pd.DataFrame(filtered_tmap_without_subject_list, columns=['TriplesMap without Subject Map'])
+    filtered_tm_without_subject_list = [item for item in tm_without_subject_list if item != "Select a TriplesMap"]
+    tm_without_subject_df = pd.DataFrame(filtered_tm_without_subject_list, columns=['TriplesMap without Subject Map'])
 
     with col1:
         with st.expander("ℹ️ Show all Subject Maps"):
@@ -1952,8 +1948,8 @@ if st.session_state["20_option_button"] == "s":
         with st.expander("ℹ️ Show all TriplesMap with no Subject Map"):
             st.write("")
             st.write("")
-            if not tmap_without_subject_df.empty:
-                st.dataframe(tmap_without_subject_df, hide_index=True)
+            if not tm_without_subject_df.empty:
+                st.dataframe(tm_without_subject_df, hide_index=True)
             else:
                 st.write("✔️ All TriplesMap have already been assigned Subject Maps!")
 
@@ -2001,7 +1997,7 @@ if st.session_state["20_option_button"] == "po":
 
 
     #POM_____________________________________________________
-    tmap_label = ""
+    tm_label = ""
     selected_predicate = ""
 
     with col1:
@@ -2019,11 +2015,11 @@ if st.session_state["20_option_button"] == "po":
 
     #list of all triplesmaps with assigned Subject Map
     tm_with_sm_list = ["Select a TriplesMap"]
-    for tm_label, tm_iri in st.session_state["tmap_dict"].items():
-        if any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectMap, None))):
+    for tm_label, tm_iri in st.session_state["tm_dict"].items():
+        if any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectm, None))):
             tm_with_sm_list.append(tm_label)
 
-    if not st.session_state["tmap_dict"]:
+    if not st.session_state["tm_dict"]:
         with col1a:
             st.markdown(f"""
                 <div style="background-color:#fff9db; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
@@ -2050,7 +2046,7 @@ if st.session_state["20_option_button"] == "po":
             st.stop()
 
 
-    if st.session_state["cache_tm"] and next(st.session_state["g_mapping"].objects(st.session_state["tmap_dict"][st.session_state["cache_tm"]], RR.subjectMap), None):
+    if st.session_state["cache_tm"] and next(st.session_state["g_mapping"].objects(st.session_state["tm_dict"][st.session_state["cache_tm"]], RR.subjectm), None):
         with col1:
             col1a, col1b = st.columns([2,1])
         with col1b:
@@ -2077,18 +2073,18 @@ if st.session_state["20_option_button"] == "po":
                 st.write("")
 
     if select_cache_tm_toggle_pom:   #get the cache tm
-        tmap_label = st.session_state["cache_tm"]
+        tm_label = st.session_state["cache_tm"]
     else:                    #or get the tm from a selectbox
         with col1:
             col1a, col1b = st.columns([2,1])
         with col1a:
-            tmap_label_temp = st.selectbox("🖱️ Select a Triples map*", tm_with_sm_list)
-            tmap_label = tmap_label_temp if tmap_label_temp != tm_with_sm_list[0] else ""
+            tm_label_temp = st.selectbox("🖱️ Select a Triples map*", tm_with_sm_list)
+            tm_label = tm_label_temp if tm_label_temp != tm_with_sm_list[0] else ""
 
 
-    if tmap_label:
-        tmap_iri = st.session_state["tmap_dict"][tmap_label]
-        sm_iri = st.session_state["g_mapping"].value(subject=tmap_iri, predicate=RR.subjectMap)
+    if tm_label:
+        tm_iri = st.session_state["tm_dict"][tm_label]
+        sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RR.subjectm)
 
         if st.session_state["g_ontology_components_dict"]:
             ontology_predicates_list = []
@@ -2137,7 +2133,7 @@ if st.session_state["20_option_button"] == "po":
             else:
                 selected_predicate = ""
 
-    if not tmap_label:
+    if not tm_label:
         with col1b:
             st.markdown(f"""
                 <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
@@ -2155,7 +2151,7 @@ if st.session_state["20_option_button"] == "po":
         with col1a:
             pom_label = st.text_input("🔖 Enter Predicate-Object Map label (optional)", key="pom_label")
         pom_iri = BNode() if not pom_label else MAP[pom_label]
-        if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectMap, pom_iri)), None):
+        if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectm, pom_iri)), None):
             with col1a:
                 st.markdown(f"""
                     <div style="background-color:#fff3cd; padding:1em;
@@ -2168,7 +2164,7 @@ if st.session_state["20_option_button"] == "po":
         with col1b:
             om_label = st.text_input("🔖Enter Object Map label (optional)", key="om_label")
         om_iri = BNode() if not om_label else MAP[om_label]
-        if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
+        if next(st.session_state["g_mapping"].triples((None, RR.objectm, om_iri)), None):
             with col1b:
                 st.markdown(f"""
                     <div style="background-color:#fff3cd; padding:1em;
@@ -2180,7 +2176,7 @@ if st.session_state["20_option_button"] == "po":
 
 
 
-    if tmap_label:
+    if tm_label:
         if isinstance(sm_iri, URIRef):
             sm_label = split_uri(sm_iri)[1]
         elif isinstance(sm_iri, BNode):
@@ -2188,9 +2184,9 @@ if st.session_state["20_option_button"] == "po":
         if selected_predicate:
             pom_ready_flag = True
 
-    if tmap_label:
-        tmap_logical_source_iri = next(st.session_state["g_mapping"].objects(tmap_iri, RML.logicalSource), None)
-        data_source = next(st.session_state["g_mapping"].objects(tmap_logical_source_iri, RML.source), None)
+    if tm_label:
+        tm_logical_source_iri = next(st.session_state["g_mapping"].objects(tm_iri, RML.logicalSource), None)
+        data_source = next(st.session_state["g_mapping"].objects(tm_logical_source_iri, RML.source), None)
         if data_source:
             data_source_file = os.path.join(os.getcwd(), "data_sources", data_source)    #full path of ds file
             columns_df = pd.read_csv(data_source_file)
@@ -2219,7 +2215,7 @@ if st.session_state["20_option_button"] == "po":
         )
 
 
-    if tmap_label:
+    if tm_label:
         col1, col2, col3 = st.columns([1, 0.2, 3])
         po_options = ["🔢 Reference-valued", "🔒 Constant-valued", "📐 Template-valued"]
 
@@ -2474,7 +2470,7 @@ if st.session_state["20_option_button"] == "po":
 
             <table class="vertical-table-green">
             <tr class="title-row"><td colspan="2">🔎 Predicate-Object Map</td></tr>
-            <tr><td>🔖 <b>TriplesMap*:</b></td><td>{tmap_label}</td></tr>
+            <tr><td>🔖 <b>TriplesMap*:</b></td><td>{tm_label}</td></tr>
             <tr><td><b>Subject Map*:</b></td><td>{sm_label}</td></tr>
             <tr><td><b>Predicate*:</b></td><td>{selected_predicate}</td></tr>
             <tr><td><b>POM label:</b></td><td>{pom_label}</td></tr>
@@ -2482,7 +2478,7 @@ if st.session_state["20_option_button"] == "po":
             <tr class="title-row"><td colspan="2">✔️ Required fields completed</td></tr>
             </table>
             """, unsafe_allow_html=True)
-    elif tmap_label:
+    elif tm_label:
         with col1:
             st.markdown(f"""
             <style>
@@ -2496,7 +2492,7 @@ if st.session_state["20_option_button"] == "po":
 
             <table class="vertical-table-yellow">
             <tr class="title-row"><td colspan="2">🔎 Predicate-Object Map</td></tr>
-            <tr><td>🔖 <b>TriplesMap*:</b></td><td>{tmap_label}</td></tr>
+            <tr><td>🔖 <b>TriplesMap*:</b></td><td>{tm_label}</td></tr>
             <tr><td><b>Subject Map*:</b></td><td>{sm_label}</td></tr>
             <tr><td><b>Predicate*:</b></td><td>{selected_predicate}</td></tr>
             <tr><td><b>POM label:</b></td><td>{pom_label}</td></tr>

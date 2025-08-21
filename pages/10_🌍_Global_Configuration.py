@@ -13,11 +13,27 @@ import io
 
 
 # Header-----------------------------------
+# st.markdown("""
+# <div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
+#             border-radius:8px; margin-bottom:16px;">
+#     <img src="https://www.pngmart.com/files/23/Gear-Icon-PNG-Isolated-Photo.png"
+#          style="width:32px; margin-right:12px;">
+#     <div>
+#         <h3 style="margin:0; font-size:1.75rem;">
+#             <span style="color:#511D66; font-weight:bold; margin-right:12px;">◽◽◽◽◽</span>
+#             Global Configuration
+#             <span style="color:#511D66; font-weight:bold; margin-left:12px;">◽◽◽◽◽</span>
+#         </h3>
+#         <p style="margin:0; font-size:0.95rem; color:#555;">
+#             System-wide settings: Load <b>mapping</b> and <b>ontology</b>, and <b>save work</b>.
+#         </p>
+#     </div>
+# </div>
+# """, unsafe_allow_html=True)
 st.markdown("""
 <div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
             border-radius:8px; margin-bottom:16px;">
-    <img src="https://www.pngmart.com/files/23/Gear-Icon-PNG-Isolated-Photo.png"
-         style="width:32px; margin-right:12px;">
+    <span style="font-size:1.7rem; margin-right:18px;">🌍</span>
     <div>
         <h3 style="margin:0; font-size:1.75rem;">
             <span style="color:#511D66; font-weight:bold; margin-right:12px;">◽◽◽◽◽</span>
@@ -156,7 +172,7 @@ def create_new_g_mapping():
     st.session_state["g_mapping"] = Graph()   # create a new empty mapping
     st.session_state["g_mapping_source_cache"] = ["scratch", ""]   #cache info on the mapping source
     st.session_state["new_g_mapping_created_ok_flag"] = True   #flag for success mesagge
-    st.session_state["last_added_ns_list"] = []    # empty list of last added ns
+    utils.empty_last_added_lists()
     # reset fields___________________________
     st.session_state["key_g_label_temp_new"] = ""
 
@@ -172,7 +188,7 @@ def create_new_g_mapping_and_save_current_one():
     st.session_state["g_mapping"] = Graph()
     st.session_state["g_mapping_source_cache"] = ["scratch", ""]
     st.session_state["new_g_mapping_created_ok_flag"] = True
-    st.session_state["last_added_ns_list"] = []    # empty list of last added ns
+    utils.empty_last_added_lists()
     # reset fields___________________________
     st.session_state["key_g_label_temp_new"] = ""
 
@@ -182,7 +198,7 @@ def load_existing_g_mapping():
     st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]   # consolidate the loaded mapping
     st.session_state["g_mapping_source_cache"] = ["file", selected_load_file.name]
     st.session_state["existing_g_mapping_loaded_ok_flag"] = True
-    st.session_state["last_added_ns_list"] = []    # empty list of last added ns
+    utils.empty_last_added_lists()
     # reset fields___________________________
     st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
     st.session_state["key_g_label_temp_existing"] = ""
@@ -201,7 +217,7 @@ def load_existing_g_mapping_and_save_current_one():
     st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]   #we consolidate the loaded mapping
     st.session_state["g_mapping_source_cache"] = ["file", selected_load_file.name]
     st.session_state["existing_g_mapping_loaded_ok_flag"] = True
-    st.session_state["last_added_ns_list"] = []    # empty list of last added ns
+    utils.empty_last_added_lists()
     # reset fields___________________________
     st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
     st.session_state["key_g_label_temp_existing"] = ""
@@ -210,7 +226,7 @@ def retrieve_cached_mapping():
     st.session_state["g_label"] = cached_mapping_name    # g label
     with open(pkl_cache_file_path, "rb") as f:     # load mapping
         st.session_state["g_mapping"] = utils.load_mapping_from_file(f)
-    st.session_state["last_added_ns_list"] = []    # empty list of last added ns
+    utils.empty_last_added_lists()
     st.session_state["cached_mapping_retrieved_ok_flag"] = True
 
 #TAB2
@@ -402,7 +418,7 @@ with tab1:
         st.rerun()
 
     with col1a:
-        st.session_state["g_label_temp_new"] = st.text_input("⌨️ Enter mapping label:", # just a candidate until confirmed
+        st.session_state["g_label_temp_new"] = st.text_input("⌨️ Enter mapping label:*", # just a candidate until confirmed
         key="key_g_label_temp_new")
 
     # A mapping has not been loaded yet__________
@@ -429,7 +445,7 @@ with tab1:
             with col1:
                 col1a, col1b = st.columns([1,2])
             with col1a:
-                overwrite_g_selection = st.radio("What would you like to do?:",
+                overwrite_g_selection = st.radio("What would you like to do?:*",
                     ["✏️ Overwrite", "💾 Save", "🛑 Cancel"],
                     key="key_overwrite_selection_radio_new")
 
@@ -548,11 +564,11 @@ with tab1:
 
     with col1a:
         selected_load_file = st.file_uploader(f"""🖱️
-        Upload mapping file""", type=mapping_format_list, key=st.session_state["key_mapping_uploader"])
+        Upload mapping file:*""", type=mapping_format_list, key=st.session_state["key_mapping_uploader"])
 
     with col1b:
         if selected_load_file:
-            st.session_state["g_label_temp_existing"] = st.text_input("⌨️ Enter mapping label:",   #just candidate until confirmed
+            st.session_state["g_label_temp_existing"] = st.text_input("⌨️ Enter mapping label:*",   #just candidate until confirmed
                 key="key_g_label_temp_existing", value=os.path.splitext(selected_load_file.name)[0])
 
     if selected_load_file:
@@ -589,7 +605,7 @@ with tab1:
             with col1:
                 col1a, col1b = st.columns([1,2])
             with col1a:
-                overwrite_g_selection = st.radio("What would you like to do?:",
+                overwrite_g_selection = st.radio("What would you like to do?:*",
                     ["✏️ Overwrite", "💾 Save", "🛑 Cancel"],
                     key="key_overwrite_selection_radio_existing")
 
@@ -727,7 +743,6 @@ with tab1:
     if not st.session_state["g_label"]:
         pkl_cache_filename = next((f for f in os.listdir() if f.endswith("_cache__.pkl")), None)  # fallback if no match is foun
         pkl_cache_file_path = os.path.join(os.getcwd(), pkl_cache_filename)
-        st.write("HERE", pkl_cache_file_path)
         cached_mapping_name = pkl_cache_filename.split("_cache__.pkl")[0]
         cached_mapping_name = cached_mapping_name.split("__")[1]
 
@@ -844,7 +859,7 @@ with tab2:
             col1a,col1b = st.columns([2,1])
 
         with col1a:
-            ontology_link = st.text_input("⌨️ Enter link to ontology", key="key_ontology_link")
+            ontology_link = st.text_input("⌨️ Enter link to ontology:*", key="key_ontology_link")
         st.session_state["ontology_link"] = ontology_link if ontology_link else ""
 
         if ontology_link:
@@ -896,7 +911,7 @@ with tab2:
             col1a, col1b = st.columns([2,1])
         with col1a:
             st.session_state["ontology_file"] = st.file_uploader(f"""🖱️
-                Upload ontology file""", type=ontology_format_list, key=st.session_state["key_ontology_uploader"])
+                Upload ontology file:*""", type=ontology_format_list, key=st.session_state["key_ontology_uploader"])
 
         if st.session_state["ontology_file"]:
 
@@ -947,7 +962,7 @@ with tab2:
 
         if extend_ontology_selected_option == "🌐 URL":
             with col1a:
-                ontology_link = st.text_input("⌨️ Enter link to ontology", key="key_ontology_link")
+                ontology_link = st.text_input("⌨️ Enter link to ontology:*", key="key_ontology_link")
             st.session_state["ontology_link"] = ontology_link if ontology_link else ""
 
             if ontology_link:
@@ -1002,7 +1017,7 @@ with tab2:
 
             with col1a:
                 st.session_state["ontology_file"] = st.file_uploader(f"""🖱️
-                    Upload ontology file""", type=ontology_format_list, key=st.session_state["key_ontology_uploader"])
+                    Upload ontology file:*""", type=ontology_format_list, key=st.session_state["key_ontology_uploader"])
 
             if st.session_state["ontology_file"]:
 
@@ -1144,9 +1159,10 @@ with tab3:
             utils.get_corner_status_message()
 
 
-            default_ns_dict = utils.get_default_ns_dict()
-            mapping_ns_dict = utils.get_mapping_ns_dict()
-            all_mapping_ns_dict = mapping_ns_dict | default_ns_dict
+        # Display last added namespaces in dataframe (also option to show all ns)
+        default_ns_dict = utils.get_default_ns_dict()
+        mapping_ns_dict = utils.get_mapping_ns_dict()
+        all_mapping_ns_dict = mapping_ns_dict | default_ns_dict
 
         with col2:
             col2a, col2b = st.columns([0.5, 2])
@@ -1182,7 +1198,7 @@ with tab3:
                 st.write("")
                 st.dataframe(all_ns_df, hide_index=True)
 
-
+        # PURPLE HEADING - ADD A NEW NAMESPACE
         with col1:
             st.markdown("""<div class="purple-heading">
                     🆕 Add a New Namespace
@@ -1214,7 +1230,13 @@ with tab3:
             st.rerun()
 
         if st.session_state["g_ontology"]:
-            add_ns_options = ["🧩 Ontology", "✏️ Custom", "📋 Predefined"]
+            ontology_ns_dict = utils.get_ontology_ns_dict()
+            mapping_ns_dict = utils.get_mapping_ns_dict()
+            ontology_ns_list = [key for key in ontology_ns_dict if key not in mapping_ns_dict]
+            if ontology_ns_list:
+                add_ns_options = ["🧩 Ontology", "✏️ Custom", "📋 Predefined"]
+            else:
+                add_ns_options = ["✏️ Custom", "📋 Predefined"]
         else:
             add_ns_options = ["✏️ Custom", "📋 Predefined"]
 
@@ -1233,9 +1255,9 @@ with tab3:
                 col1a, col1b = st.columns([1,2])
 
             with col1a:           # prefix and iri input
-                prefix_input = st.text_input("Enter prefix: ", key = "key_prefix_input")
+                prefix_input = st.text_input("⌨️ Enter prefix*: ", key = "key_prefix_input")
             with col1b:
-                iri_input = st.text_input("Enter an IRI for the new namespace", key="key_iri_input")
+                iri_input = st.text_input("⌨️ Enter an IRI for the new namespace:*", key="key_iri_input")
             st.session_state["new_ns_prefix"] = prefix_input if prefix_input else ""
             st.session_state["new_ns_iri"] = iri_input if iri_input else ""
 
@@ -1343,7 +1365,7 @@ with tab3:
                     predefined_ns_list = [key for key in predefined_ns_dict if key not in mapping_ns_dict]
                     if len(predefined_ns_list) > 1:
                         predefined_ns_list.insert(0, "Bind all")
-                    predefined_ns_to_bind_list = st.multiselect("Select predefined namespaces:", predefined_ns_list, key="key_predefined_ns_to_bind_multiselect")
+                    predefined_ns_to_bind_list = st.multiselect("🖱️ Select predefined namespaces:*", predefined_ns_list, key="key_predefined_ns_to_bind_multiselect")
 
                 if predefined_ns_to_bind_list:
                     if "Bind all" not in predefined_ns_to_bind_list:   # "Bind all" not selected
@@ -1379,7 +1401,7 @@ with tab3:
                     ontology_ns_list = [key for key in ontology_ns_dict if key not in mapping_ns_dict]
                     if len(ontology_ns_list) > 1:
                         ontology_ns_list.insert(0, "Bind all")
-                    ontology_ns_to_bind_list = st.multiselect("Select ontology namespaces:", ontology_ns_list, key="key_ontology_ns_to_bind_multiselect")
+                    ontology_ns_to_bind_list = st.multiselect("🖱️ Select ontology namespaces:*", ontology_ns_list, key="key_ontology_ns_to_bind_multiselect")
 
                 if ontology_ns_to_bind_list:
                     if "Bind all" not in ontology_ns_to_bind_list:   # "Bind all" not selected
@@ -1587,11 +1609,11 @@ with tab4:
         export_format_list = list(export_extension_dict)
 
         with col1a:
-            export_format = st.selectbox("Select exporting format:", export_format_list, key="key_export_format_selectbox")
+            export_format = st.selectbox("🖱️ Select format:", export_format_list, key="key_export_format_selectbox")
         export_extension = export_extension_dict[export_format]
 
         with col1b:
-            export_filename = st.text_input("Enter filename (without extension)", key="key_export_filename_selectbox")
+            export_filename = st.text_input("⌨️ Enter filename (without extension):*", key="key_export_filename_selectbox")
 
         if "." in export_filename:
             with col1c:

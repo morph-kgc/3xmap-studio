@@ -216,9 +216,24 @@ def get_corner_status_message():
 
 #_______________________________________________________
 
+#__________________________________________________
+def get_corner_status_message_or_error():
+    if not st.session_state["g_label"]:
+        col1, col2 = st.columns([2,1.5])
+        with col1:
+            utils.get_missing_g_mapping_error_message()
+
+    else:   #only allow to continue if mapping is loaded
+        col1,col2 = st.columns([2,1.5])
+
+        with col2:
+            col2a,col2b = st.columns([1,2])
+        with col2b:
+            utils.get_corner_status_message()
+
 #_______________________________________________________
-#List of allowed mapping file format
-#HERE expand options, now reduced version
+# List of allowed mapping file format
+# HERE expand options, now reduced version
 def get_g_mapping_file_formats_dict():
     # allowed_format_dict = {"turtle": ".ttl", "rdf": ".rdf","xml": ".xml",
     #     "json": ".json", "json-ld": ".jsonld", "n-triples": ".nt",
@@ -228,6 +243,12 @@ def get_g_mapping_file_formats_dict():
 
     return allowed_format_dict
 #_______________________________________________________
+
+#_______________________________________________________
+# Function to empty all lists that store last added stuff
+def empty_last_added_lists():
+    st.session_state["last_added_ns_list"] = []
+    st.session_state["last_added_tm_list"] = []
 
 #_______________________________________________________
 #Funcion to save mapping to file
@@ -556,7 +577,60 @@ def get_ontology_base_iri():
     return None
 #________________________________________________________
 
+#________________________________________________________
+# Funtion to get the dictionary of the TriplesMaps
+#{tm_label: tm}
+def get_tm_dict():
 
+    if st.session_state["g_label"]:
+
+        tm_dict = {}
+        triples_maps = list(st.session_state["g_mapping"].subjects(RML.logicalSource, None))
+
+        for tm in triples_maps:
+            tm_label = split_uri(tm)[1]
+            tm_dict[tm_label] = tm
+        return tm_dict
+
+    else:
+        return {}
+#________________________________________________________
+
+#_________________________________________________
+# Funtion to get the allowed format for the data sources
+# HERE ADD MORE (will need to update save_tm_w_new_ls())
+#HERE ssee whether RML or R2RML (R2RML data source is the data base)
+def get_ds_allowed_formats():
+    # allowed_formats_list = (".csv",".json", ".xml")
+    allowed_formats_list = (".csv")
+    return allowed_formats_list
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to get the logical soruce of a TriplesMap
+def get_ls(tm_label):
+    tm_dict = get_tm_dict()
+    tm_iri = tm_dict[tm_label]
+    ls = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RML.logicalSource)
+    if isinstance(ls, URIRef):
+        try:
+            ls_label = split_uri(ls)[1]
+        except:
+            ls_label = ls
+    elif isinstance(ls, BNode):
+        ls_label = "_:" + str(ls)[:7] + "..."
+    return ls_label
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to get the logical soruce of a TriplesMap
+def get_ds(tm_label):
+    tm_dict = get_tm_dict()
+    tm_iri = tm_dict[tm_label]
+    ls = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RML.logicalSource)
+    ds = st.session_state["g_mapping"].value(subject=ls, predicate=RML.source)
+    return ds
+#_________________________________________________
 
 
 
@@ -835,7 +909,7 @@ def add_subject_map_template(g, tmap_label, smap_label, s_generation_type, subje
 
 #___________________________________________________________________________________
 #Function to build triplesmap dataframe
-def build_tmap_df():
+def build_tm_df():
 
     update_dictionaries()
     tmap_rows = []
