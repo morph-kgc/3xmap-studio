@@ -129,24 +129,26 @@ pom_ready_flag = False
 #define on_click functions
 #TAB1
 def save_tm_w_existing_ls():
-    tm_iri = MAP[f"{tm_label}"]  # change so that is can be defined by user
+    tm_iri = MAP[f"{st.session_state["tm_label"]}"]  # change so that is can be defined by user
     logical_source_iri =  LS[f"{selected_existing_ls}"]   # idem ns
     st.session_state["tm_saved_ok_flag"] = True  # for success message
-    st.session_state["last_added_tm_list"].insert(0, tm_label)    # to display last added tm
+    st.session_state["last_added_tm_list"].insert(0, st.session_state["tm_label"])    # to display last added tm
+    st.session_state["cached_tm"] = st.session_state["tm_label"]   #cache last added tm for convenience
     # add triples
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, logical_source_iri))    #bind to logical source
     # reset fields
     st.session_state["key_tm_label_input"] = ""
 
 def save_tm_w_new_ls():   #function to save TriplesMap upon click
-    tm_iri = MAP[f"{tm_label}"]
+    tm_iri = MAP[f"{st.session_state["tm_label"]}"]
     ds_filename = ds_file.name
     if logical_source_label:
         logical_source_iri = LS[f"{logical_source_label}"]
     else:
         logical_source_iri = BNode()
     st.session_state["tm_saved_ok_flag"] = True  # for success message
-    st.session_state["last_added_tm_list"].insert(0, tm_label)    # to display last added tm
+    st.session_state["last_added_tm_list"].insert(0, st.session_state["tm_label"])    # to display last added tm
+    st.session_state["cached_tm"] = st.session_state["tm_label"]   #cache last added tm for convenience
     # add triples
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, logical_source_iri))    #bind to logical source
     st.session_state["g_mapping"].add((logical_source_iri, RML.source, Literal(ds_filename)))    #bind ls to source file
@@ -489,8 +491,8 @@ with tab1:
         if isinstance(o, URIRef) and split_uri(o)[1] not in labelled_ls_list:
             labelled_ls_list.append(split_uri(o)[1])
 
+
     if tm_label:   #after a label has been given
-        st.session_state["tm_label"] = tm_label
         if tm_label in tm_dict:   #if label is already in use
             with col1a:
                 st.markdown(f"""
@@ -506,14 +508,15 @@ with tab1:
 
             if labelled_ls_list:  # if there exist labelled logical sources
                 with col1a:
-                    ls_options_list = ["📑 Assing existing Logical Source", "🆕 Assign new Logical Source"]
+                    ls_options_list = ["📑 Assign existing Logical Source", "🆕 Assign new Logical Source"]
                     selected_ls_option = st.radio("", ls_options_list, label_visibility="collapsed")
                     st.write("")
 
             else:
                     selected_ls_option = "🆕 Assign new Logical Source"
 
-            if selected_ls_option == "📑 Assing existing Logical Source":
+            if selected_ls_option == "📑 Assign existing Logical Source":
+
 
                 labelled_ls_list.insert(0, "Select a Logical Source")
                 with col1a:
@@ -758,7 +761,7 @@ with tab2:
     st.session_state["tm_dict"] = utils.get_tm_dict() #HERE DELETE
 
     #SELECT THE TRIPLESMAP TO WHICH THE SUBJECT MAP WILL BE ADDED___________________________
-    #only triplesmaps without subjects can be selected
+    #only triplesmaps without subject map can be selected
     if st.session_state["cache_tm"]:
         with col1:
             col1a, col1b = st.columns([2,1])
