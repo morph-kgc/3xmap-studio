@@ -1600,36 +1600,36 @@ with tab4:
                         seems to include an extension.
                     </div>""", unsafe_allow_html=True)
 
-    with col1:
-        col1a, col1b = st.columns([2,1])
+        with col1:
+            col1a, col1b = st.columns([2,1])
 
-    export_filename_complete = export_filename + export_extension if export_filename else ""
+        export_filename_complete = export_filename + export_extension if export_filename else ""
 
-    if export_filename_complete:
-        with col1a:
-            st.markdown(f"""<div class="info-message-small">
-                    ℹ️ Current state of mapping <b>
-                    {st.session_state["g_label"]}</b> will exported
-                    to file <b style="color:#F63366;">{export_filename_complete}</b>.
-                </span></div>""", unsafe_allow_html=True)
-
-        if export_format == "pickle":
-            buffer = io.BytesIO()
-            pickle.dump(st.session_state["g_mapping"], buffer)
-            buffer.seek(0)  # Rewind to the beginning
+        if export_filename_complete:
             with col1a:
-                st.write("")
-                st.session_state["mapping_downloaded_ok_flag"] = st.download_button(label="Export", data=buffer,
-                    file_name=export_filename_complete, mime="application/octet-stream")
-        else:    # all formats except for pickle
-            serialised_data = st.session_state["g_mapping"].serialize(format=export_format)
-            with col1a:
-                st.write("")
-                st.session_state["mapping_downloaded_ok_flag"] = st.download_button(label="Export", data=serialised_data,
-                    file_name=export_filename_complete, mime="text/plain")
+                st.markdown(f"""<div class="info-message-small">
+                        ℹ️ Current state of mapping <b>
+                        {st.session_state["g_label"]}</b> will exported
+                        to file <b style="color:#F63366;">{export_filename_complete}</b>.
+                    </span></div>""", unsafe_allow_html=True)
 
-        if st.session_state["mapping_downloaded_ok_flag"]:
-            st.rerun()
+            if export_format == "pickle":
+                buffer = io.BytesIO()
+                pickle.dump(st.session_state["g_mapping"], buffer)
+                buffer.seek(0)  # Rewind to the beginning
+                with col1a:
+                    st.write("")
+                    st.session_state["mapping_downloaded_ok_flag"] = st.download_button(label="Export", data=buffer,
+                        file_name=export_filename_complete, mime="application/octet-stream")
+            else:    # all formats except for pickle
+                serialised_data = st.session_state["g_mapping"].serialize(format=export_format)
+                with col1a:
+                    st.write("")
+                    st.session_state["mapping_downloaded_ok_flag"] = st.download_button(label="Export", data=serialised_data,
+                        file_name=export_filename_complete, mime="text/plain")
+
+            if st.session_state["mapping_downloaded_ok_flag"]:
+                st.rerun()
 
 
 #_____________________________________________
