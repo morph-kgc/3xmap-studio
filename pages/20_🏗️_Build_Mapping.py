@@ -76,6 +76,8 @@ if "key_ds_uploader" not in st.session_state:
     st.session_state["key_ds_uploader"] = None
 if "last_added_tm_list" not in st.session_state:
     st.session_state["last_added_tm_list"] = []
+if "tm_label" not in st.session_state:
+    st.session_state["tm_label"] = ""
 
 
 if "confirm_button" not in st.session_state:
@@ -486,7 +488,7 @@ with tab1:
         with col1a:
             st.write("")
             st.markdown(f"""<div class="custom-success">
-                ✅ The TriplesMap has been added!
+                ✅ The TriplesMap <b style="color:#F63366;">{st.session_state["tm_label"]}</b> has been added!
             </div>""", unsafe_allow_html=True)
         st.session_state["tm_saved_ok_flag"] = False
         time.sleep(st.session_state["success_display_time"])
@@ -496,7 +498,7 @@ with tab1:
         col1a, col1b = st.columns([2,1])
     with col1a:
         tm_label = st.text_input("⌨️ Enter label for the new TriplesMap:*", key="key_tm_label_input")    #user-friendly name for the TriplesMap
-
+        st.session_state["tm_label"] = tm_label
 
     tm_dict = utils.get_tm_dict()
     labelled_ls_list = []      #existing labelled logical sources

@@ -410,7 +410,7 @@ with tab1:
     if st.session_state["new_g_mapping_created_ok_flag"]:
         with col1a:
             st.markdown(f"""<div class="custom-success">
-                ✅ The mapping <b>{st.session_state["g_label"]}</b> has been created!
+                ✅ The mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> has been created!
             </div>""", unsafe_allow_html=True)
         st.session_state["new_g_mapping_created_ok_flag"] = False
         time.sleep(st.session_state["success_display_time"])
@@ -556,7 +556,7 @@ with tab1:
         with col1a:
             st.write("")
             st.markdown(f"""<div class="custom-success">
-                ✅ The mapping <b>{st.session_state["g_label"]}</b> has been loaded!
+                ✅ The mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> has been loaded!
             </div>""", unsafe_allow_html=True)
         st.session_state["existing_g_mapping_loaded_ok_flag"] = False
         time.sleep(st.session_state["success_display_time"])
@@ -697,7 +697,7 @@ with tab1:
         with col3:
             st.write("")
             st.markdown(f"""<div class="custom-success">
-                ✅ Mapping <b>{st.session_state["g_label"]}</b> has been retrieved from cache!
+                ✅ Mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> has been retrieved from cache!
             </div>""", unsafe_allow_html=True)
         st.session_state["cached_mapping_retrieved_ok_flag"] = False
         time.sleep(st.session_state["success_display_time"])
@@ -787,7 +787,7 @@ with tab2:
         with col1a:
             st.write("")
             st.markdown(f"""<div class="custom-success">
-                ✅ The ontology has been reduced!
+                ✅ The <b>ontology</b> has been reduced!
             </div>""", unsafe_allow_html=True)
         st.session_state["g_ontology_reduced_ok_flag"] = False
         time.sleep(st.session_state["success_display_time"])
@@ -799,7 +799,7 @@ with tab2:
         with col1a:
             st.write("")
             st.markdown(f"""<div class="custom-success">
-                ✅ The ontology has been discarded!
+                ✅ The <b>ontology</b> has been discarded!
             </div>""", unsafe_allow_html=True)
         st.session_state["g_ontology_discarded_ok_flag"] = False
         time.sleep(st.session_state["success_display_time"])
@@ -1223,7 +1223,7 @@ with tab3:
             with col1a:
                 st.write("")
                 st.markdown(f"""<div class="custom-success">
-                    ✅ The namespace/s have been bound!
+                    ✅ The <b>namespace/s</b> have been bound!
                 </div>""", unsafe_allow_html=True)
             st.session_state["ns_bound_ok_flag"] = False
             time.sleep(st.session_state["success_display_time"])
@@ -1424,7 +1424,7 @@ with tab3:
             with col1a:
                 st.write("")
                 st.markdown(f"""<div class="custom-success">
-                    ✅ The namespace/s have been unbound!
+                    ✅ The <b>namespace/s</b> have been unbound!
                 </div>""", unsafe_allow_html=True)
             st.session_state["ns_unbound_ok_flag"] = False
             time.sleep(st.session_state["success_display_time"])
@@ -1533,7 +1533,7 @@ with tab4:
             with col1a:
                 st.write("")
                 st.markdown(f"""<div class="custom-success">
-                    ✅ Current state of mapping <b>{st.session_state["g_label"]}</b> has been cached!
+                    ✅ Current state of mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> has been cached!
                 </div>""", unsafe_allow_html=True)
             st.session_state["progress_saved_ok_flag"] = False
             time.sleep(st.session_state["success_display_time"])
@@ -1595,7 +1595,7 @@ with tab4:
             with col1a:
                 st.write("")
                 st.markdown(f"""<div class="custom-success">
-                    ✅ The mapping <b>{st.session_state["g_label"]}</b> has been exported!
+                    ✅ The mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> has been exported!
                 </div>""", unsafe_allow_html=True)
             st.session_state["key_export_filename_selectbox"] = ""
             st.session_state["mapping_downloaded_ok_flag"] = False
