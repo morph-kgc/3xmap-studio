@@ -264,6 +264,7 @@ def save_mapping_to_file(filename):
 
 #_______________________________________________________
 #Funcion to load mapping from file
+#f is a file object
 #HERE check all formats work
 def load_mapping_from_file(f):
 

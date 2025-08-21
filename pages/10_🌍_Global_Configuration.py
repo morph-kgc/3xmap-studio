@@ -80,6 +80,8 @@ if "g_mapping_source_cache" not in st.session_state:
     st.session_state["g_mapping_source_cache"] = ["",""]
 if "original_g_size_cache" not in st.session_state:
     st.session_state["original_g_size_cache"] = 0
+if "cached_mapping_retrieved_ok_flag" not in st.session_state:
+    st.session_state["cached_mapping_retrieved_ok_flag"] = False
 
 #TAB2
 if "g_ontology" not in st.session_state:
@@ -120,6 +122,8 @@ if "last_added_ns_list" not in st.session_state:
 #TAB4
 if "progress_saved_ok_flag" not in st.session_state:
     st.session_state["progress_saved_ok_flag"] = False
+if "mapping_downloaded_ok_flag" not in st.session_state:
+    st.session_state["mapping_downloaded_ok_flag"] = False
 
 
 if "overwrite_checkbox" not in st.session_state:
@@ -152,7 +156,7 @@ def create_new_g_mapping():
     st.session_state["g_mapping"] = Graph()   # create a new empty mapping
     st.session_state["g_mapping_source_cache"] = ["scratch", ""]   #cache info on the mapping source
     st.session_state["new_g_mapping_created_ok_flag"] = True   #flag for success mesagge
-    st.session_state["last_added_ns_list"] = []    #empty list of last added ns
+    st.session_state["last_added_ns_list"] = []    # empty list of last added ns
     # reset fields___________________________
     st.session_state["key_g_label_temp_new"] = ""
 
@@ -168,7 +172,7 @@ def create_new_g_mapping_and_save_current_one():
     st.session_state["g_mapping"] = Graph()
     st.session_state["g_mapping_source_cache"] = ["scratch", ""]
     st.session_state["new_g_mapping_created_ok_flag"] = True
-    st.session_state["last_added_ns_list"] = []    #empty list of last added ns
+    st.session_state["last_added_ns_list"] = []    # empty list of last added ns
     # reset fields___________________________
     st.session_state["key_g_label_temp_new"] = ""
 
@@ -178,7 +182,7 @@ def load_existing_g_mapping():
     st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]   # consolidate the loaded mapping
     st.session_state["g_mapping_source_cache"] = ["file", selected_load_file.name]
     st.session_state["existing_g_mapping_loaded_ok_flag"] = True
-    st.session_state["last_added_ns_list"] = []    #empty list of last added ns
+    st.session_state["last_added_ns_list"] = []    # empty list of last added ns
     # reset fields___________________________
     st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
     st.session_state["key_g_label_temp_existing"] = ""
@@ -197,11 +201,17 @@ def load_existing_g_mapping_and_save_current_one():
     st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]   #we consolidate the loaded mapping
     st.session_state["g_mapping_source_cache"] = ["file", selected_load_file.name]
     st.session_state["existing_g_mapping_loaded_ok_flag"] = True
-    st.session_state["last_added_ns_list"] = []    #empty list of last added ns
+    st.session_state["last_added_ns_list"] = []    # empty list of last added ns
     # reset fields___________________________
     st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
     st.session_state["key_g_label_temp_existing"] = ""
 
+def retrieve_cached_mapping():
+    st.session_state["g_label"] = cached_mapping_name    # g label
+    with open(pkl_cache_file_path, "rb") as f:     # load mapping
+        st.session_state["g_mapping"] = utils.load_mapping_from_file(f)
+    st.session_state["last_added_ns_list"] = []    # empty list of last added ns
+    st.session_state["cached_mapping_retrieved_ok_flag"] = True
 
 #TAB2
 def load_ontology_from_link():
@@ -666,6 +676,17 @@ with tab1:
                             st.button(f"""Save and create""",
                              on_click=load_existing_g_mapping_and_save_current_one,  key="key_save_existing_button_3")
 
+
+    if st.session_state["cached_mapping_retrieved_ok_flag"]:
+        with col3:
+            st.write("")
+            st.markdown(f"""<div class="custom-success">
+                ✅ Mapping <b>{st.session_state["g_label"]}</b> has been retrieved from cache!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["cached_mapping_retrieved_ok_flag"] = False
+        time.sleep(st.session_state["success_display_time"])
+        st.rerun()
+
     # g mapping INFORMATION BOX--------------------------------------------
     with col3:
         if st.session_state["g_label"]:
@@ -701,6 +722,29 @@ with tab1:
                 ✖️ <b style="color:#511D66;">No mapping</b> has been loaded yet.
             </div>
             """, unsafe_allow_html=True)
+
+    # option to retrieve mapping from cache-----------------------------------
+    if not st.session_state["g_label"]:
+        pkl_cache_filename = next((f for f in os.listdir() if f.endswith("_cache__.pkl")), None)  # fallback if no match is foun
+        pkl_cache_file_path = os.path.join(os.getcwd(), pkl_cache_filename)
+        st.write("HERE", pkl_cache_file_path)
+        cached_mapping_name = pkl_cache_filename.split("_cache__.pkl")[0]
+        cached_mapping_name = cached_mapping_name.split("__")[1]
+
+        if pkl_cache_filename:
+            with col3:
+                st.write("")
+                overwrite_checkbox = st.checkbox(
+                    "🗃️ Retrieve cached mapping",
+                    key="overwrite_checkbox")
+                if overwrite_checkbox:
+                    st.markdown(f"""<div class="info-message-small">
+                            ℹ️ Mapping <b style="color:#F63366;">
+                            {cached_mapping_name}</b> will be loaded.
+                        </span></div>""", unsafe_allow_html=True)
+                    st.write("")
+                    st.button("Load", key="key_retrieve_cached_mapping_button", on_click=retrieve_cached_mapping)
+
 
 #_______________________________________________________
 
