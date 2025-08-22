@@ -658,6 +658,63 @@ def remove_triplesmap(tm_label):
 
 
 #______________________________________________________
+#________________________________________________________
+# Funtion to get the dictionary of the Subject Maps
+# {sm_iri: [LIST]}
+# the keys are a list of:
+# 0. sm label     1. sm type (template, constant or reference)
+# 2. sm_id_iri      # 3. sm_id_label    (info on the id)
+# 4. List of all tm to shich sm is assigned
+def get_sm_dict():
+
+    sm_dict = {}
+
+    tm_list = list(st.session_state["g_mapping"].subjects(RML.logicalSource, None))
+    for tm in tm_list:
+        tm_label = split_uri(tm)[1]
+        sm_iri = st.session_state["g_mapping"].value(tm, RR.subjectMap)
+
+        template = st.session_state["g_mapping"].value(sm_iri, RR.template)
+        constant = st.session_state["g_mapping"].value(sm_iri, RR.constant)
+        reference = st.session_state["g_mapping"].value(sm_iri, RML.reference)
+
+        sm_id_iri = None
+        sm_type = None
+        sm_id_label = None
+
+        if isinstance(sm_iri, URIRef):
+            sm_label = split_uri(sm_iri)[1]
+        elif isinstance(sm_iri, BNode):
+            sm_label = "_:" + str(sm_iri)[:7] + "..."
+        else:
+            sm_label = "Unlabelled"
+
+        if template:
+            sm_type = "template"
+            sm_id_iri = str(template)
+            matches = re.findall(r"{([^}]+)}", template)   #splitting template is not so easy but we try
+            if matches:
+                sm_id_label = str(matches[-1])
+            else:
+                sm_id_label = str(template)
+
+        elif constant:
+            sm_type = "constant"
+            sm_id_iri = str(constant)
+            sm_id_label = str(split_uri(constant)[1])
+
+        elif reference:
+            sm_type = "reference"
+            sm_id_iri = str(reference)
+            sm_id_label = str(reference)
+
+        if sm_iri not in sm_dict:
+            sm_dict[sm_iri] = [sm_label, sm_type, sm_id_iri, sm_id_label, [tm_label]]
+        else:
+            sm_dict[sm_iri][4].append(tm_label)
+
+    return sm_dict
+#___________________________________________
 
 
 #HEREIGO
@@ -774,20 +831,20 @@ def update_dictionaries():
         triples_maps = list(st.session_state["g_mapping"].subjects(RML.logicalSource, None))
         for tm in triples_maps:
             tm_label = split_uri(tm)[1]
-            subject_map = st.session_state["g_mapping"].value(tm, RR.subjectMap)
+            sm_iri = st.session_state["g_mapping"].value(tm, RR.subjectMap)
 
             subject = None
             subject_type = None
             subject_id = None
 
-            template = st.session_state["g_mapping"].value(subject_map, RR.template)
-            constant = st.session_state["g_mapping"].value(subject_map, RR.constant)
-            reference = st.session_state["g_mapping"].value(subject_map, RML.reference)
+            template = st.session_state["g_mapping"].value(sm_iri, RR.template)
+            constant = st.session_state["g_mapping"].value(sm_iri, RR.constant)
+            reference = st.session_state["g_mapping"].value(sm_iri, RML.reference)
 
-            if isinstance(subject_map, URIRef):
-                subject_label = split_uri(subject_map)[1]
-            elif isinstance(subject_map, BNode):
-                subject_label = "_:" + str(subject_map)[:7] + "..."
+            if isinstance(sm_iri, URIRef):
+                subject_label = split_uri(sm_iri)[1]
+            elif isinstance(sm_iri, BNode):
+                subject_label = "_:" + str(sm_iri)[:7] + "..."
             else:
                 subject_label = "Unlabelled"
 
