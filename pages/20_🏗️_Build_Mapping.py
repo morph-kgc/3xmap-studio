@@ -141,18 +141,18 @@ pom_ready_flag = False
 #define on_click functions
 #TAB1
 def save_tm_w_existing_ls():
-    # add triples
+    # add triples___________________
     tm_iri = MAP[f"{st.session_state["tm_label"]}"]  # change so that is can be defined by user
     ls_iri =  LS[f"{selected_existing_ls}"]   # idem ns
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    #bind to logical source
-    # store information
+    # store information________________
     st.session_state["tm_saved_ok_flag"] = True  # for success message
     st.session_state["last_added_tm_list"].insert(0, st.session_state["tm_label"])    # to display last added tm
-    # reset fields
+    # reset fields_____________________
     st.session_state["key_tm_label_input"] = ""
 
 def save_tm_w_new_ls():   #function to save TriplesMap upon click
-    # add triples
+    # add triples__________________
     tm_iri = MAP[f"{st.session_state["tm_label"]}"]
     ds_filename = ds_file.name
     if logical_source_label:
@@ -168,17 +168,18 @@ def save_tm_w_new_ls():   #function to save TriplesMap upon click
         st.session_state["g_mapping"].add((ls_iri, QL.referenceFormulation, QL.JSONPath))
     elif file_extension.lower() == "xml":
         st.session_state["g_mapping"].add((ls_iri, QL.referenceFormulation, QL.XPath))
-    # store information
+    # store information____________________
     st.session_state["tm_saved_ok_flag"] = True  # for success message
     st.session_state["last_added_tm_list"].insert(0, st.session_state["tm_label"])    # to display last added tm
     if file_extension.lower() == "csv":
         columns_df = pd.read_csv(ds_file)
         st.session_state["ds_cache_dict"][Literal(ds_file.name)] = columns_df.columns.tolist()
-    # reset fields
+    # reset fields_______________________
     st.session_state["key_tm_label_input"] = ""
     st.session_state["key_ds_uploader"] = str(uuid.uuid4())
 
 def delete_triplesmap():   #function to delete a TriplesMap
+    # remove triples and store information___________
     st.session_state["removed_tm_list"] = []   # save the tm that have been deleted for display
     for tm in tm_to_remove_list:
         st.session_state["removed_tm_list"].append(tm)
@@ -186,10 +187,11 @@ def delete_triplesmap():   #function to delete a TriplesMap
         if tm in st.session_state["last_added_tm_list"]:
             st.session_state["last_added_tm_list"].remove(tm)       # if it is in last added list, remove
     st.session_state["tm_deleted_ok_flag"] = True
-    #reset fields
+    #reset fields_________________________
     st.session_state["key_tm_to_remove_list"] = []
 
 def delete_all_triplesmaps():   #function to delete a TriplesMap
+    # remove triples and store information___________
     st.session_state["removed_tm_list"] = []    # save the tm that have been deleted for display
     for tm in utils.get_tm_dict():
         st.session_state["removed_tm_list"].append(tm)
@@ -197,25 +199,56 @@ def delete_all_triplesmaps():   #function to delete a TriplesMap
         if tm in st.session_state["last_added_tm_list"]:
             st.session_state["last_added_tm_list"].remove(tm)       # if it is in last added list, remove
     st.session_state["tm_deleted_ok_flag"] = True
-    #reset fields
+    #reset fields_______________________
     st.session_state["key_tm_to_remove_list"] = []
 
 #TAB2
-def save_sm_template():   #function to save subject (template option)
-    # add triples
+def save_sm_template():   #function to save subject map (template option)
+    # add triples____________________
     if not sm_label:
         sm_iri = BNode()
     else:
         sm_iri = MAP[sm_label]
     st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, sm_iri))
     st.session_state["g_mapping"].add((sm_iri, RR.template, Literal(f"http://example.org/resource/{{{sm_id}}}")))
-    # store information
+    # store information__________________
     st.session_state["ds_cache_dict"][ds_filename_for_sm] = column_list
     st.session_state["last_added_sm_list"].insert(0, tm_label_for_sm)
     st.session_state["sm_saved_ok_new_flag"] = True
-    # reset fields
-    st.session_state["key_tm_label_input_for_sm_1"] = "Select a TriplesMap"
-    st.session_state["key_ds_uploader_for_sm"] = str(uuid.uuid4())
+    # reset fields____________________
+    st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
+
+def save_sm_constant():   #function to save subject map (constant option)
+    # add triples________________________
+    if not sm_label:
+        sm_iri = BNode()
+    else:
+        sm_iri = MAP[sm_label]
+    st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, sm_iri))
+    st.session_state["g_mapping"].add((sm_iri, RR.constant, URIRef(f"http://example.org/resource/{subject_constant}")))
+    # store information____________________
+    st.session_state["ds_cache_dict"][ds_filename_for_sm] = column_list
+    st.session_state["last_added_sm_list"].insert(0, tm_label_for_sm)
+    st.session_state["sm_saved_ok_new_flag"] = True
+    # reset fields_________________________
+    st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
+
+def save_sm_reference():   #function to save subject map (reference option)
+    # add triples____________________
+    if not sm_label:
+        sm_iri = BNode()
+    else:
+        sm_iri = MAP[sm_label]
+    st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, sm_iri))
+    st.session_state["g_mapping"].add((sm_iri, RR.reference, Literal(sm_id)))
+    # store information__________________
+    st.session_state["ds_cache_dict"][ds_filename_for_sm] = column_list
+    st.session_state["last_added_sm_list"].insert(0, tm_label_for_sm)
+    st.session_state["sm_saved_ok_new_flag"] = True
+    # reset fields____________________
+    st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
+
+
 
 
 
@@ -252,23 +285,6 @@ def save_subject_existing():
     st.session_state["existing_sm_uncollapse"] = False
     st.session_state["new_sm_uncollapse"] = False
 
-
-
-def save_subject_constant():   #function to save subject (template option)
-    utils.update_dictionaries()
-    if not sm_label:
-        smap_iri = BNode()
-    else:
-        smap_iri = MAP[sm_label]
-
-    st.session_state["g_mapping"].add((tm_iri, RR.subjectMap, smap_iri))
-    st.session_state["g_mapping"].add((smap_iri, RR.constant, Literal(f"http://example.org/resource/{st.session_state["subject_constant_input"]}")))
-    st.session_state["subject_constant"] = ""
-    st.session_state["subject_saved_ok_new"] = True
-    st.session_state["key_sm_label_input"] = ""
-    st.session_state["smap_ordered_list"].insert(0, tm_iri)
-    st.session_state["existing_sm_uncollapse"] = False
-    st.session_state["new_sm_uncollapse"] = False
 
 def save_simple_subject_class():
     st.session_state["g_mapping"].add((selected_subject_bnode, RR["class"], subject_class))
@@ -812,12 +828,12 @@ with tab2:
 
         if st.session_state["last_added_tm_list"] and st.session_state["last_added_tm_list"][0] in tm_wo_sm_list:
             with col1a:
-                tm_label_for_sm = st.selectbox("🖱️ Select a TriplesMap:*", reversed(tm_wo_sm_list), key="key_tm_label_input_for_sm_1",
+                tm_label_for_sm = st.selectbox("🖱️ Select a TriplesMap:*", reversed(tm_wo_sm_list), key="key_tm_label_input_for_sm",
                     index=list(reversed(tm_wo_sm_list)).index(st.session_state["last_added_tm_list"][0]))
         else:
             with col1a:
                 tm_wo_sm_list.append("Select a TriplesMap")   # if there is no cached tm add placeholder
-                tm_label_for_sm = st.selectbox("🖱️ Select a TriplesMap:*", reversed(tm_wo_sm_list), key="key_tm_label_input_for_sm_2")
+                tm_label_for_sm = st.selectbox("🖱️ Select a TriplesMap:*", reversed(tm_wo_sm_list), key="key_tm_label_input_for_sm")
 
         if tm_label_for_sm != "Select a TriplesMap":
             if existing_sm_list:  # if there exist labelled subject maps
@@ -889,14 +905,19 @@ with tab2:
 
 
                         #TEMPLATE OPTION______________________________
-                        if sm_generation_rule == "Template 📐":
+                        if sm_generation_rule == "Template 📐" or sm_generation_rule == "Reference 🔗":
 
                             with col1b:
                                 st.write("")
-                                st.markdown(f"""<div class="info-message-small">
-                                        <b> 📐 Template use case </b>: <br>Dynamically construct
-                                         the subject IRI using data values.
-                                    </div>""", unsafe_allow_html=True)
+                                if sm_generation_rule == "Template 📐":
+                                    st.markdown(f"""<div class="info-message-small">
+                                            <b> 📐 Template use case </b>: <br>Dynamically construct
+                                             the subject IRI using data values.
+                                        </div>""", unsafe_allow_html=True)
+                                elif sm_generation_rule == "Reference 🔗":
+                                    st.markdown(f"""<div class="info-message-small">
+                                            <b> 🔗 Reference use case </b>: <br> Directly use the data value as the subject.
+                                        </div>""", unsafe_allow_html=True)
                                 st.write("")
                                 if column_list:
                                     st.markdown(f"""<div class="info-message-small">
@@ -916,19 +937,23 @@ with tab2:
                                     ds_allowed_formats = utils.get_ds_allowed_formats()
                                     ds_file_for_sm = st.file_uploader(f"""🖱️ Upload data source file {ds_filename_for_sm}:*""",
                                         type=ds_allowed_formats, key=st.session_state["key_ds_uploader_for_sm"])
-                                    if ds_filename_for_sm != Literal(ds_file_for_sm.name):
-                                        with col1b:
-                                            st.markdown(f"""<div class="custom-warning-small">
-                                                    ⚠️ The name of the uploaded file <b>{ds_file_for_sm.name}</b> and the
-                                                    data source <b>{ds_filename_for_sm}</b> do not match.
-                                                    Please verify that you selected
-                                                    the correct file.
-                                                </div>""", unsafe_allow_html=True)
+                                if ds_file_for_sm and ds_filename_for_sm != Literal(ds_file_for_sm.name):
+                                    with col1b:
+                                        st.markdown(f"""<div class="custom-warning-small">
+                                                ⚠️ The name of the uploaded file <b>{ds_file_for_sm.name}</b> and the
+                                                data source <b>{ds_filename_for_sm}</b> do not match.
+                                                Please verify that you selected
+                                                the correct file.
+                                            </div>""", unsafe_allow_html=True)
+                                        st.write("")
 
-                                if not ds_file_for_sm :
+                                if not ds_file_for_sm:
                                     with col1a:
                                         sm_id = "Select a column of the data source"
-                                        sm_id_candidate = st.text_input("⌨️ or manually enter the column referenced in the {} template:")
+                                        if sm_generation_rule == "Template 📐":
+                                            sm_id_candidate = st.text_input("⌨️ or manually enter the column referenced in the template:")
+                                        elif sm_generation_rule == "Reference 🔗":
+                                            sm_id_candidate = st.text_input("⌨️ or manually enter the reference column:")
                                     if sm_id_candidate:
                                         with col1a:
                                             manual_sm_id_input_checkbox = st.checkbox(
@@ -943,21 +968,31 @@ with tab2:
                                             sm_id = sm_id_candidate
 
                                 if ds_file_for_sm :
-                                    columns_df = pd.read_csv(ds_file_for_sm )
+                                    columns_df = pd.read_csv(ds_file_for_sm)
                                     column_list = columns_df.columns.tolist()
 
                             if column_list:
                                 column_list_to_choose = column_list.copy()
                                 column_list_to_choose.insert(0, "Select a column of the data source")
                                 with col1a:
-                                    sm_id = st.selectbox("🖱️ AAA Select the column referenced in the {} template:*", column_list_to_choose, key="key_sm_id")
-
-
+                                    if sm_generation_rule == "Template 📐":
+                                        sm_id = st.selectbox("🖱️ Select the column referenced in the {} template:*", column_list_to_choose, key="key_sm_id")
+                                    elif sm_generation_rule == "Reference 🔗":
+                                        sm_id = st.selectbox("🖱️ Select the reference column:*", column_list_to_choose, key="key_sm_id")
                             if sm_id and sm_id != "Select a column of the data source":
                                 with col1a:
                                     st.session_state["sm_label"] = sm_label    # to be displayed
                                     st.session_state["tm_label_for_sm"] = tm_label_for_sm
-                                    st.button("Save", key="key_save_sm_button", on_click=save_sm_template)
+                                    if sm_generation_rule == "Template 📐":
+                                        st.button("Save", key="key_save_sm_button", on_click=save_sm_template)
+                                    elif sm_generation_rule == "Reference 🔗":
+                                        with col1b:
+                                            st.markdown(f"""<div class="custom-warning-small">
+                                                    ⚠️ The reference column should contain only <b>IRIs</b>.
+                                                    Please double-check that the column values meet
+                                                    this requirement.
+                                                </div>""", unsafe_allow_html=True)
+                                        st.button("Save", key="key_save_sm_button", on_click=save_sm_reference)
 
 
                         #CONSTANT OPTION______________________________
@@ -965,54 +1000,17 @@ with tab2:
 
                             with col1b:
                                 st.write("")
-                                st.write("")
-                                st.write("")
-                                st.markdown(f"""
-                                    <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                                        <span style="font-size:0.95rem;">
-                                            <b> 🔒 Constant use case </b>: <br>Every subject is the same fixed IRI.
-                                        </span>
-                                    </div>
-                                    """, unsafe_allow_html=True)
+                                st.markdown(f"""<div class="info-message-small">
+                                        <b> 🔒 Constant use case </b>: <br>Every subject is the same fixed IRI.
+                                    </div>""", unsafe_allow_html=True)
 
                             with col1a:
-                                subject_constant = st.text_input("Enter the subject constant", key="subject_constant")
+                                subject_constant = st.text_input("🖱️ Enter the subject (constant):*", key="key_sm_constant")
 
-                            if subject_constant != "Enter the subject constant":
-                                st.session_state["subject_constant_input"] = subject_constant
-
-                            with col1a:
-                                if tm_label_input_new != "Select a TriplesMap" and subject_constant:
-                                    st.button("Save subject", on_click=save_subject_constant)
-
-
-                        #REFERENCE OPTION______________________________
-                        if sm_generation_rule == "Reference 🔗":
-
-                            with col1b:
-                                st.write("")
-                                st.write("")
-                                st.write("")
-                                st.markdown(f"""
-                                    <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                                        <span style="font-size:0.95rem;">
-                                            <b> 🔗 Reference use case </b>: <br> Directly use the data value as the subject,
-                                            especially for literals or when you want full control.
-                                        </span>
-                                    </div>
-                                    """, unsafe_allow_html=True)
-
-                            #Select the column of the data source for the reference
-                            column_list.insert(0, "Select a column of the data source:")
-                            with col1a:
-                                sm_id = st.selectbox("Select the subject id", column_list, key="sm_id")
-
-                            if sm_id != "Select a column of the data source:":
-                                st.session_state["sm_id"] = sm_id
-
-                            with col1a:
-                                if tm_label_input_new != "Select a TriplesMap" and sm_id != "Select a column of the data source:":
-                                    st.button("Save subject", on_click=save_subject_reference)
+                            if subject_constant:
+                                st.session_state["subject_constant"] = subject_constant
+                                with col1a:
+                                    st.button("Save", key="key_sm_constant_button", on_click=save_sm_constant)
 
 
         if st.session_state["subject_saved_ok_existing"]:
