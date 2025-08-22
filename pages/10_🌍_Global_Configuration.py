@@ -139,32 +139,35 @@ if "mapping_downloaded_ok_flag" not in st.session_state:
 def create_new_g_mapping():
     st.session_state["g_label"] = st.session_state["g_label_temp_new"]   # consolidate g_label
     st.session_state["g_mapping"] = Graph()   # create a new empty mapping
+    # store information_____________
     st.session_state["g_mapping_source_cache"] = ["scratch", ""]   #cache info on the mapping source
     st.session_state["new_g_mapping_created_ok_flag"] = True   #flag for success mesagge
     utils.empty_last_added_lists()
-    # reset fields___________________________
+    # reset fields__________________
     st.session_state["key_g_label_temp_new"] = ""
 
 def cancel_create_new_g_mapping():
-    # reset fields___________________________
+    # reset fields_____________
     st.session_state["key_g_label_temp_new"] = ""
 
 def create_new_g_mapping_and_save_current_one():
-    # save current mapping to file_____________
+    # save current mapping to file__________
     utils.save_mapping_to_file(save_g_filename)
-    #create new mapping_________________________
+    # create new mapping___________________
     st.session_state["g_label"] = st.session_state["g_label_temp_new"]
     st.session_state["g_mapping"] = Graph()
+    # store information___________________
     st.session_state["g_mapping_source_cache"] = ["scratch", ""]
     st.session_state["new_g_mapping_created_ok_flag"] = True
     utils.empty_last_added_lists()
-    # reset fields___________________________
+    # reset fields____________________________
     st.session_state["key_g_label_temp_new"] = ""
 
 def load_existing_g_mapping():
     st.session_state["g_label"] = st.session_state["g_label_temp_existing"]   # consolidate g_label
     st.session_state["original_g_size_cache"] = utils.get_number_of_tm(st.session_state["candidate_g_mapping"])
     st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]   # consolidate the loaded mapping
+    # store information________________________
     st.session_state["g_mapping_source_cache"] = ["file", selected_load_file.name]
     st.session_state["existing_g_mapping_loaded_ok_flag"] = True
     utils.empty_last_added_lists()
@@ -178,12 +181,13 @@ def cancel_load_existing_g_mapping():
     st.session_state["key_g_label_temp_existing"] = ""
 
 def load_existing_g_mapping_and_save_current_one():
-    # save current mapping to file_____________
+    # save current mapping to file___________________________
     utils.save_mapping_to_file(save_g_filename)
-    #create new mapping_________________________
+    # create new mapping___________________________
     st.session_state["original_g_size_cache"] = utils.get_number_of_tm(st.session_state["candidate_g_mapping"])
     st.session_state["g_label"] = st.session_state["g_label_temp_existing"]   #we consolidate g_label
     st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]   #we consolidate the loaded mapping
+    #store information___________________________
     st.session_state["g_mapping_source_cache"] = ["file", selected_load_file.name]
     st.session_state["existing_g_mapping_loaded_ok_flag"] = True
     utils.empty_last_added_lists()
@@ -195,7 +199,9 @@ def retrieve_cached_mapping():
     st.session_state["g_label"] = cached_mapping_name    # g label
     with open(pkl_cache_file_path, "rb") as f:     # load mapping
         st.session_state["g_mapping"] = utils.load_mapping_from_file(f)
+    #store information___________________________
     utils.empty_last_added_lists()
+    # reset fields___________________________
     st.session_state["cached_mapping_retrieved_ok_flag"] = True
     st.session_state["key_retrieve_cached_mapping_checkbox"] = False
 
@@ -203,8 +209,8 @@ def retrieve_cached_mapping():
 def load_ontology_from_link():
     st.session_state["g_ontology"] = st.session_state["g_ontology_from_link_candidate"]  # consolidate ontology graph
     st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_link=st.session_state["key_ontology_link"])
+    #store information___________________________
     st.session_state["g_ontology_loaded_ok_flag"] = True
-    # save ontology info to dict___________________________
     st.session_state["g_ontology_components_dict"][st.session_state["g_ontology_label"]]=st.session_state["g_ontology"]
     # reset fields___________________________
     st.session_state["key_ontology_link"] = ""
@@ -213,8 +219,8 @@ def load_ontology_from_link():
 def load_ontology_from_file():
     st.session_state["g_ontology"] = st.session_state["g_ontology_from_file_candidate"]  # consolidate ontology graph
     st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_file=st.session_state["ontology_file"])
+    #store information___________________________
     st.session_state["g_ontology_loaded_ok_flag"] = True
-    # save ontology info___________________________
     st.session_state["g_ontology_components_dict"][st.session_state["g_ontology_label"]]=st.session_state["g_ontology"]
     # reset fields___________________________
     st.session_state["key_ontology_uploader"] = str(uuid.uuid4())
@@ -223,8 +229,8 @@ def load_ontology_from_file():
 def extend_ontology_from_link():
     g_ontology_new_part = st.session_state["g_ontology_from_link_candidate"]
     g_ontology_new_part_label = utils.get_ontology_human_readable_name(g_ontology_new_part, source_link=st.session_state["key_ontology_link"])
+    #store information___________________________
     st.session_state["g_ontology_loaded_ok_flag"] = True
-    # save ontology info___________________________
     st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
     # merge both ontologies___________________
     for triple in g_ontology_new_part:
@@ -237,8 +243,8 @@ def extend_ontology_from_link():
 def extend_ontology_from_file():
     g_ontology_new_part = st.session_state["g_ontology_from_file_candidate"]
     g_ontology_new_part_label = utils.get_ontology_human_readable_name(g_ontology_new_part, source_file=st.session_state["ontology_file"])
+    #store information___________________________
     st.session_state["g_ontology_loaded_ok_flag"] = True
-    # save ontology info___________________________
     st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
     # merge both ontologies___________________
     for triple in g_ontology_new_part:
@@ -250,7 +256,8 @@ def extend_ontology_from_file():
 
 def reduce_ontology():
     st.session_state["g_ontology_reduced_ok_flag"] = True
-    # drop the given ontology components from the dictionary
+    #store information___________________________
+    # (drop the given ontology components from the dictionary)
     st.session_state["g_ontology_components_dict"] = {label: ont for label, ont in st.session_state["g_ontology_components_dict"].items() if label not in ontologies_to_drop_list}
     # merge remaining ontology components
     st.session_state["g_ontology"] = Graph()
@@ -258,35 +265,40 @@ def reduce_ontology():
         st.session_state["g_ontology"] += ont  # merge the graphs using RDFLib's += operator
 
 def discard_ontology():
-    st.session_state["g_ontology_discarded_ok_flag"] = True
     st.session_state["g_ontology"] = Graph()
-    st.session_state["g_ontology_components_dict"] = {}
     st.session_state["g_ontology_label"] = ""
+    #store information___________________________
+    st.session_state["g_ontology_discarded_ok_flag"] = True
+    st.session_state["g_ontology_components_dict"] = {}
+
 
 
 #TAB3
 def bind_custom_namespace():
-    st.session_state["bound_ns_list"] = [prefix_input]    # save the tm that has been bound for display
+    # bind and store information___________________________
     st.session_state["g_mapping"].bind(prefix_input, iri_input)  # bind the new namespace
+    st.session_state["bound_ns_list"] = [prefix_input]    # save the tm that has been bound for display
     st.session_state["last_added_ns_list"].insert(0, st.session_state["new_ns_prefix"])  # to display last added ns
     st.session_state["ns_bound_ok_flag"] = True   #for success message
-    # reset fields
+    # reset fields_____________________________
     st.session_state["key_iri_input"] = ""
     st.session_state["key_prefix_input"] = ""
     st.session_state["key_add_ns_radio"] = "✏️ Custom"
 
 def bind_predefined_namespaces():
+    # bind and store information___________________________
     st.session_state["bound_ns_list"] = []       # save the tm that have been bound for display
     for prefix in predefined_ns_to_bind_list:
         st.session_state["bound_ns_list"].append(prefix)
         st.session_state["g_mapping"].bind(prefix, predefined_ns_dict[prefix])  # bind the new namespace
         st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
     st.session_state["ns_bound_ok_flag"] = True    #for success message
-    # reset fields
+    # reset fields_____________________________
     st.session_state["key_predefined_ns_to_bind_multiselect"] = []
     st.session_state["key_add_ns_radio"] = "📋 Predefined"
 
 def bind_all_predefined_namespaces():
+    # bind and store information___________________________
     st.session_state["bound_ns_list"] = []       # save the tm that have been bound for display
     for prefix in predefined_ns_dict:
         if prefix not in mapping_ns_dict:
@@ -294,21 +306,23 @@ def bind_all_predefined_namespaces():
             st.session_state["g_mapping"].bind(prefix, predefined_ns_dict[prefix])  # bind the new namespace
             st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
     st.session_state["ns_bound_ok_flag"] = True   #for success message
-    # reset fields
+    # reset fields_____________________________
     st.session_state["key_add_ns_radio"] = "✏️ Custom"
 
 def bind_ontology_namespaces():
+    # bind and store information___________________________
     st.session_state["bound_ns_list"] = []       # save the tm that have been bound for display
     for prefix in ontology_ns_to_bind_list:
         st.session_state["bound_ns_list"].append(prefix)
         st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
         st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
     st.session_state["ns_bound_ok_flag"] = True   # for success message
-    # reset fields
+    # reset fields_____________________________
     st.session_state["key_ontology_ns_to_bind_multiselect"] = []
     st.session_state["key_add_ns_radio"] = "🧩 Ontology"
 
 def bind_all_ontology_namespaces():
+    # bind and store information___________________________
     st.session_state["bound_ns_list"] = []       # save the tm that have been bound for display
     for prefix in ontology_ns_dict:
         if prefix not in mapping_ns_dict:
@@ -316,10 +330,11 @@ def bind_all_ontology_namespaces():
             st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
             st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
     st.session_state["ns_bound_ok_flag"] = True   # for success message
-    # reset fields
+    # reset fields_____________________________
     st.session_state["key_add_ns_radio"] = "✏️ Custom"
 
 def unbind_namespaces():
+    # unbind and store information___________________________
     st.session_state["removed_ns_list"] = []   # save the ns that have been deleted for display
     for prefix in ns_to_unbind_list:
         st.session_state["removed_ns_list"].append(prefix)
@@ -327,9 +342,11 @@ def unbind_namespaces():
         if prefix in st.session_state["last_added_ns_list"]:
             st.session_state["last_added_ns_list"].remove(prefix)   # to remove from last added if it is there
     st.session_state["ns_unbound_ok_flag"] = True
-    st.session_state["key_unbind_multiselect"] = []   # reset the variables
+    # reset fields_____________________________
+    st.session_state["key_unbind_multiselect"] = []
 
 def unbind_all_namespaces():
+    # unbind and store information___________________________
     st.session_state["removed_ns_list"] = []   # save the ns that have been deleted for display
     for prefix in mapping_ns_dict:
         st.session_state["removed_ns_list"].append(prefix)
@@ -337,29 +354,24 @@ def unbind_all_namespaces():
         if prefix in st.session_state["last_added_ns_list"]:
             st.session_state["last_added_ns_list"].remove(prefix)    # to remove from last added if it is there
     st.session_state["ns_unbound_ok_flag"] = True
-    st.session_state["key_unbind_multiselect"] = []   # reset the variables
+    # reset fields_____________________________
+    st.session_state["key_unbind_multiselect"] = []
 
 
 #TAB4
 def save_progress():
-    #remove all cache pkl files in cwd
+    # remove all cache pkl files in cwd_____________
     for file in existing_pkl_file_list:
         filepath = os.path.join(os.getcwd(), file)
         if os.path.isfile(file):
             os.remove(file)
-    #save progress
+    #save progress___________________________
     with open(pkl_cache_filename, "wb") as f:
         pickle.dump(st.session_state["g_mapping"], f)
+    #store information___________________________
     st.session_state["key_save_progress_checkbox"] = False
-    #reset fields
+    #reset fields__________________________________
     st.session_state["progress_saved_ok_flag"] = True
-
-
-
-def export_mapping_to_file():
-    st.session_state["g_mapping"].serialize(destination=export_file_path, format=export_format)
-    st.session_state["export_file_input"] = ""
-    st.session_state["export_success"] = True
 
 
 
@@ -1490,12 +1502,12 @@ with tab3:
             mapping_ns_dict = utils.get_mapping_ns_dict()
             mapping_ns_list = list(mapping_ns_dict.keys())
             if len(mapping_ns_list) > 1:
-                mapping_ns_list.insert(0, "Unbind all")
+                mapping_ns_list.append("Unbind all")
 
             with col1:
                 col1a, col1b = st.columns([2,1])
                 with col1a:
-                    ns_to_unbind_list = st.multiselect("🖱️ Select namespace/s to unbind:*", mapping_ns_list, key="key_unbind_multiselect")
+                    ns_to_unbind_list = st.multiselect("🖱️ Select namespace/s to unbind:*", reversed(mapping_ns_list), key="key_unbind_multiselect")
 
             if ns_to_unbind_list and "Unbind all" not in ns_to_unbind_list:
                 with col1a:
