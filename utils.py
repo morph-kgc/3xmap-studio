@@ -361,7 +361,8 @@ def is_valid_ontology(g):
     try:
         # check for presence of OWL or RDFS classes
         classes = list(g.subjects(RDF.type, OWL.Class)) + list(g.subjects(RDF.type, RDFS.Class))
-        properties = list(g.subjects(RDF.type, RDF.Property))
+        properties = (list(g.subjects(RDF.type, RDF.Property)) + list(g.subjects(RDF.type, OWL.DatatypeProperty)) +
+            list(g.subjects(RDF.type, OWL.ObjectProperty)) + list(g.subjects(RDF.type, OWL.AnnotationProperty)))
         return bool(classes or properties)  # consider it valid if it defines at least one class or property
 
     except:           # if failed to parse ontology

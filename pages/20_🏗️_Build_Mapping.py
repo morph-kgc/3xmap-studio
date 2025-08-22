@@ -258,15 +258,34 @@ def save_sm_reference():   #function to save subject map (reference option)
     st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
 
 def change_term_type_to_BNode():
+    # add triples______________________
     st.session_state["g_mapping"].remove((sm_iri_for_config, RR["termType"], RR.IRI))
     st.session_state["g_mapping"].add((sm_iri_for_config, RR["termType"], RR.BlankNode))
 
 def change_term_type_to_IRI():
+    # add triples______________________
     st.session_state["g_mapping"].remove((sm_iri_for_config, RR["termType"], RR.BlankNode))
     st.session_state["g_mapping"].add((sm_iri_for_config, RR["termType"], RR.IRI))
 
+def save_ontology_subject_class():
+    # add triples______________________
+    st.session_state["g_mapping"].add((sm_iri_for_config, RR["class"], subject_class))
 
+def save_external_subject_class():
+    # add triples______________________
+    st.session_state["g_mapping"].add((sm_iri_for_config, RR["class"], subject_class))
 
+def delete_subject_class():
+    # remove triples______________________
+    st.session_state["g_mapping"].remove((sm_iri_for_config, RR["class"], None))
+
+def save_subject_graph():
+    # add triples______________________
+    st.session_state["g_mapping"].add((sm_iri_for_config, RR["graph"], subject_graph))
+
+def delete_subject_graph():
+    # remove triples______________________
+    st.session_state["g_mapping"].remove((sm_iri_for_config, RR["graph"], None))
 
 
 
@@ -297,24 +316,10 @@ def unassign_subject_map():
 
 
 
-def save_simple_subject_class():
-    st.session_state["g_mapping"].add((subject_bnode, RR["class"], subject_class))
 
-def save_union_class():
-    st.session_state["g_mapping"].add((subject_bnode, RR["class"], union_class_BNode))
-    st.session_state["union_classm_label"] = "Select a union class"
 
-def save_external_subject_class():
-    st.session_state["g_mapping"].add((subject_bnode, RR["class"], subject_class))
 
-def delete_subject_class():
-    st.session_state["g_mapping"].remove((subject_bnode, RR["class"], None))
 
-def save_subject_graph():
-    st.session_state["g_mapping"].add((subject_bnode, RR["graph"], subject_graph))
-
-def delete_subject_graph():
-    st.session_state["g_mapping"].remove((subject_bnode, RR["graph"], None))
 
 def save_pom_reference():
     st.session_state["g_mapping"].add((tm_iri, RR.predicateObjectm, pom_iri))
@@ -1086,7 +1091,7 @@ with tab2:
 
             with col1:
                 col1a, col1b = st.columns([2,1])
-            with col1:
+            with col1a:
                 if len(corresponding_tm_list) > 1:
                     formatted_corresponding_tm = ", ".join(corresponding_tm_list[:-1]) + " and " + corresponding_tm_list[-1]
                     st.markdown(f"""<div class="info-message-small">
@@ -1155,53 +1160,29 @@ with tab2:
                         </div>""", unsafe_allow_html=True)
 
 
-            #Check whether the subject map already has a class
-            sm_class = st.session_state["g_mapping"].value(sm_iri_for_config, RR["class"])
+                #Check whether the subject map already has a class
+                sm_class = st.session_state["g_mapping"].value(sm_iri_for_config, RR["class"])
 
-            with col1a:
                 if sm_class:   # sm class already exists
-                    if isinstance(sm_class, URIRef):
-                        st.markdown(
-                            f"""
-                            <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
-                                🔒 Subject class:
-                                <b style="color:#007bff;">{split_uri(sm_class)[1]}</b><br>
-                                <small>Delete it to assign a different subject class.</small>
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-                    elif isinstance(sm_class, BNode) and utils.is_union_class(sm_class):
-                        st.markdown(
-                            f"""
-                            <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
-                                🔒 Subject class:
-                                <b style="color:#007bff;">Union class {utils.get_union_classm_label(sm_class)}</b><br>
-                                <small>Delete it to assign a different subject class.</small>
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-                    elif isinstance(sm_class, BNode):
-                        st.markdown(
-                            f"""
-                            <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
-                                🔒 Subject class:
-                                <b style="color:#007bff;">BNode</b><br> ({sm_class})<br>
-                                <small>Delete it to assign a different subject class.</small>
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-                    st.write("")
                     with col1a:
-                        delete_sm_class_checkbox = st.checkbox(
+                        if isinstance(sm_class, URIRef):
+                            st.markdown(f"""<div class="gray-preview-message">
+                                    🔒 Subject class:
+                                    <b style="color:#F63366;">{split_uri(sm_class)[1]}</b><br>
+                                    <small>Delete it to assign a different subject class.</small>
+                                </div>""", unsafe_allow_html=True)
+                        elif isinstance(sm_class, BNode):
+                            st.markdown(f"""<div class="gray-preview-message">
+                                    🔒 Subject class:
+                                    <b style="color:#F63366;">BNode</b><br> ({sm_class})<br>
+                                    <small>Delete it to assign a different subject class.</small>
+                                </div>""", unsafe_allow_html=True)
+                        st.write("")
+
+                        delete_subject_class_checkbox= st.checkbox(
                         ":gray-badge[⚠️ I am completely sure I want to delete the subject class]",
-                        key="delete_subject_class")
-                    if delete_subject_class_checkbox:
-                        with col1:
-                            col1a, col1b = st.columns([1,2])
-                        with col1a:
+                        key="key_delete_sm_class_checkbox")
+                        if delete_subject_class_checkbox:
                             st.button("Delete", on_click=delete_subject_class)
 
 
@@ -1212,7 +1193,7 @@ with tab2:
                                 <b style="color:#F63366;">not given</b><br>
                                 <small>Enter below.</small>
                             </div>""", unsafe_allow_html=True)
-                    st.write("")
+                        st.write("")
 
                     # WE ORGANISE THE ONTOLOGY CLASSES IN DIFFERENT DICTIONARIES
                     # dictionary for simple classes
@@ -1240,15 +1221,14 @@ with tab2:
                     else:
                         class_type = "🚫 Class outside ontology"
 
-
                     #ONTOLOGY CLASS
                     if class_type == "🧩 Ontology class":
 
                         with col1:
                             col1a, col1b = st.columns(2)
 
-                        # Superclass filter
-                        if superclass_dict:   # there exists at least one superclass (show option to select a superclass)
+                        # Class selection
+                        if superclass_dict:   # there exists at least one superclass (show superclass filter)
                             classes_in_superclass_dict = {}
                             with col1a:
                                 superclass_list = list(superclass_dict.keys())
@@ -1265,144 +1245,100 @@ with tab2:
                                 with col1b:
                                     subject_class = st.selectbox("🖱️ Select a class:*", class_list,
                                         key="key_subject_class")   #class label
-                                subject_class = classes_in_superclass_dict[subject_class] #we get the class iri
                             else:  #no superclass selected (list all classes)
                                 class_list = list(ontology_classes_dict.keys())
                                 class_list.insert(0, "Select a class")
                                 with col1b:
                                     subject_class = st.selectbox("🖱️ Select a class:*", class_list,
                                         key="key_subject_class")   #class label
-                                subject_class = ontology_classes_dict[subject_class] #we get the superclass iri
 
-                        else:     #no superclasses exist (don't give option to select superclass)
-                            with col1b:
-                                subject_class = st.selectbox("🖱️ Select a class:*", list(ontology_classes_dict.keys()), key="subject_class_from_all")   #class label
-                            subject_class = ontology_classes_dict[subject_class] #we get the superclass iri
-
-                        # Class selection
-                        if superclass != "Select a superclass":   # a superclass has been selected (filter)
-                            superclass = superclass_dict[superclass] #we get the superclass iri
-                            for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, superclass)))):
-                                classes_in_superclass_dict[split_uri(s)[1]] = s
-                            with col1b:
-                                subject_class = st.selectbox("🖱️ Select a class:*", list(classes_in_superclass_dict.keys()))   #class label
-                            subject_class = classes_in_superclass_dict[subject_class] #we get the class iri
-                        else:  #no superclass selected or no superclasses exist (list all classes)
-                            with col1b:
-                                subject_class = st.selectbox("🖱️ Select a class:*", list(ontology_classes_dict.keys()), key="subject_class_from_all")   #class label
-                            subject_class = ontology_classes_dict[subject_class] #we get the superclass iri
-
-
-                        if subject_class != "":
-                            with col1:
-                                col1a,col2a = st.columns([1,2])
+                        else:     #no superclasses exist (no superclass filter)
+                            class_list = list(ontology_classes_dict.keys())
+                            class_list.insert(0, "Select a class")
                             with col1a:
-                                st.button("Save", key="save_subject_class", on_click=save_simple_subject_class)
+                                subject_class = st.selectbox("🖱️ Select a class:*", class_list,
+                                    key="key_subject_class")   #class label
 
-
+                        if subject_class != "Select a class":
+                            subject_class = ontology_classes_dict[subject_class] #we get the superclass iri
+                            with col1a:
+                                st.button("Save", key="save_subject_class", on_click=save_ontology_subject_class)
 
                     #CLASS OUTSIDE ONTOLOGY
-                    if class_type == "Class outside ontology":
-                        with col1b:
-                            st.markdown("<br><br>", unsafe_allow_html=True)
-                        if st.session_state["g_ontology"] and len(class_type_option_list) == 1: #there is an ontology but it has no classes
+                    if class_type == "🚫 Class outside ontology":
+
+                        with col1:
+                            col1a, col1b = st.columns([2,1])
+
+                        if st.session_state["g_ontology"] and not ontology_classes_dict: #there is an ontology but it has no classes
                             with col1b:
                                 st.write("")
-                                st.markdown(f"""
-                                    <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                                        <span style="font-size:0.95rem;">
-                                          🚧<b> Caution</b>: The ontology {st.session_state["g_ontology_components_dict"]}
-                                          does not define any classes. <b>Classes can only be added manually</b>.
+                                st.markdown(f"""<div class="custom-warning-small">
+                                          ⚠️  Your <b>ontology</b> does not define any classes.
                                           Using an ontology with predefined classes is recommended.
-                                        </span>
-                                    </div>
-                                    """, unsafe_allow_html=True)
+                                    </div>""", unsafe_allow_html=True)
                         elif st.session_state["g_ontology"]:   #there exists an ontology and it has classes
                             with col1b:
                                 st.write("")
-                                st.markdown(f"""
-                                    <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                                        <span style="font-size:0.95rem;">
-                                          🚧<b> Caution</b>: The option \"Class outside ontology\"
-                                          <b>lacks ontology alignment</b> and could result in structural inconsistencies.
-                                          We recommend an ontology-driven approach.
-                                        </span>
-                                    </div>
-                                    """, unsafe_allow_html=True)
+                                st.markdown(f"""<div class="custom-warning-small">
+                                          ⚠️ The option <b>Class outside ontology</b> lacks ontology alignment.
+                                          An ontology-driven approach is recommended.
+                                    </div>""", unsafe_allow_html=True)
                         else:
                             with col1b:
-                                st.markdown(f"""
-                                    <div style="background-color:#fff9db; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                                        <span style="font-size:0.95rem;">
-                                          🚧<b> Caution</b>: You are working without an ontology. We recommend loading an ontology
-                                           from the <b> Global Configuration</b> panel.
-                                        </span>
-                                    </div>
-                                    """, unsafe_allow_html=True)
-
-                        subject_class_prefix_list = list(st.session_state["ns_dict"].keys())
-                        with col1a:
-                            subject_class_prefix_list.insert(0,"Select a namespace")
-                        with col1a:
-                            subject_class_prefix = st.selectbox("Select a namespace", subject_class_prefix_list)
-                        if len(subject_class_prefix_list) == 1:
-                            with col1b:
                                 st.write("")
-                                st.markdown(f"""
-                                    <div style="background-color:#f8d7da; border:1px dashed #a94442; padding:10px; border-radius:5px; margin-bottom:8px;">
-                                        <span style="font-size:0.95rem;">
-                                          ⚠️ No namespaces available. You can add namespaces in the
-                                           <b>Global Configuration</b> page.
-                                        </span>
-                                    </div>
-                                    """, unsafe_allow_html=True)
-                        if subject_class_prefix != "Select a namespace":
-                            NS = Namespace(st.session_state["ns_dict"][subject_class_prefix])
+                                st.markdown(f"""<div class="custom-warning-small">
+                                        ⚠️ You are working without an ontology. We recommend loading an ontology
+                                        from the <b> Global Configuration</b> page.
+                                    </div>""", unsafe_allow_html=True)
+
+                        mapping_ns_dict = utils.get_mapping_ns_dict()
+
+                        subject_class_prefix_list = list(mapping_ns_dict.keys())
                         with col1a:
-                            subject_class_input = st.text_input("Enter subject class")
-                        if subject_class_input and subject_class_prefix != "Select a namespace":
-                            subject_class = NS[subject_class_input]
+                            subject_class_prefix_list = list(mapping_ns_dict.keys())
+                            subject_class_prefix_list.insert(0,"Select a namespace")
+                            subject_class_prefix = st.selectbox("🖱️ Select a namespace:*", subject_class_prefix_list,
+                                key="key_subject_class_prefix")
+
+                        if not mapping_ns_dict:
                             with col1a:
-                                st.button("Save", on_click=save_external_subject_class)
+                                st.write("")
+                                st.markdown(f"""<div class="custom-error-small">
+                                        ❌ No namespaces available. You can add namespaces in the
+                                         <b>Global Configuration</b> page.
+                                    </div>""", unsafe_allow_html=True)
+                        else:
+                            if subject_class_prefix != "Select a namespace":
+                                NS = Namespace(mapping_ns_dict[subject_class_prefix])
+                            with col1a:
+                                subject_class_input = st.text_input("⌨️ Enter subject class:*", key="key_subject_class_input")
+                            if subject_class_input and subject_class_prefix != "Select a namespace":
+                                subject_class = NS[subject_class_input]
+                                with col1a:
+                                    st.button("Save", on_click=save_external_subject_class)
 
 
             #GRAPH - If not given, default graph    HERE condider if rr:graphMap option (dynamic) is worth it
-            with col1a:
-                st.write("")
-                st.markdown(
-                    """
-                    <div style="border-top:3px dashed #b5b5d0; padding-top:12px;">
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-            with col1:
-                col1a, col1b = st.columns([2,1])
-            with col1b:
-                graph_map_uncollapse = st.toggle("", key="graph_map_uncollapse")
-            with col1a:
-                st.markdown(
-                    """
-                        <span style="font-size:1.1em; font-weight:bold;">🗺️️ Graph map</span><br>
-                        <small>Indicates the target graph for the subject map triples. If not given, the default graph will be used.</small>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-                st.write("")
-
-            if graph_map_uncollapse:
-                subject_graph = st.session_state["g_mapping"].value(subject_bnode, RR["graph"])
+            if sm_config_selected_option == "🗺️️ Graph map":
 
                 with col1:
                     col1a, col1b = st.columns([2,1])
-                with col1a:
-                    if subject_graph and subject_bnode:    #subject graph already given
-                        st.markdown(
-                            f"""
-                            <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
+                with col1b:
+                    st.markdown(f"""<div class="info-message-small">
+                            <b> 🗺️️ Graph map </b>: <br>
+                             Indicates the target graph for the subject map triples.
+                        </div>""", unsafe_allow_html=True)
+                    st.write("")
+
+
+                subject_graph = st.session_state["g_mapping"].value(sm_iri_for_config, RR["graph"])
+
+                if subject_graph:    #subject graph already given
+                    with col1a:
+                        st.markdown(f"""<div class="gray-preview-message">
                                 🔒 Subject graph:
-                                <b style="color:#007bff;">{split_uri(subject_graph)[1]}</b><br>
+                                <b style="color:#F63366;">{split_uri(subject_graph)[1]}</b><br>
                                 <small>Delete it to assign a different subject graph.</small>
                             </div>
                             """,
@@ -1410,36 +1346,27 @@ with tab2:
                         )
                         st.write("")
 
+                    with col1a:
+                        delete_subject_graph_checkbox = st.checkbox(
+                        ":gray-badge[⚠️ I am completely sure I want to delete the subject graph]",
+                        key="key_delete_subject_graph_checkbox")
+                    if delete_subject_graph_checkbox:
                         with col1a:
-                            delete_subject_graph_checkbox = st.checkbox(
-                            ":gray-badge[⚠️ I am completely sure I want to delete the subject graph]",
-                            key="delete_subject_graph")
-                        if delete_subject_graph_checkbox:
-                            with col1:
-                                col1a, col1b = st.columns([1,2])
-                            with col1a:
-                                st.button("Delete", on_click=delete_subject_graph)
+                            st.button("Delete", on_click=delete_subject_graph)
 
-                    elif subject_bnode:       #subject graph not given
-                        with col1a:
-                            st.markdown(
-                                f"""
-                                <div style="background-color:#f9f9f9; padding:1em; border-radius:5px; color:#333333; border:1px solid #e0e0e0;">
-                                    🔓 Subject graph:
-                                    <b style="color:#007bff;">not given</b><br>
-                                    <small>Enter below.</small>
-                                </div>
-                                """,
-                                unsafe_allow_html=True
-                            )
+                else:       #subject graph not given
+                    with col1a:
+                        st.markdown(f"""<div class="gray-preview-message">
+                                🔓 Subject graph:
+                                <b style="color:#F63366;">not given</b><br>
+                                <small>Enter below. If no graph map is given, the default graph will be used.
+                            </small></div>""", unsafe_allow_html=True)
                         st.write("")
-                        subject_graph_input = st.text_input("Enter subject graph", key="subject_graph_input")
+
+                        subject_graph_input = st.text_input("🖱️ Enter subject graph:*", key="key_subject_graph_input")
                         subject_graph = BASE[subject_graph_input]
-                        with col1:
-                            col1a, col1b = st.columns([1,2])
-                        with col1a:
-                            if subject_graph_input:
-                                st.button("Save", on_click=save_subject_graph)
+                        if subject_graph_input:
+                            st.button("Save", on_click=save_subject_graph)
 
 
     with col1:
