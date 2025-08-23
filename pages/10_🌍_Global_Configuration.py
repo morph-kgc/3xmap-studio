@@ -1339,9 +1339,16 @@ with tab3:
                 else:
                     valid_iri_input = True
 
+
             if iri_input and prefix_input:
                 if valid_iri_input and valid_prefix_input:
                     with col1a:
+                        st.write("")
+                        st.markdown(f"""<div class="info-message-small">
+                                ℹ️ The namespace <b>{prefix_input}</b> will be bound:<br>
+                                <b>🔗 {prefix_input}</b> → {iri_input}
+                            </div>""", unsafe_allow_html=True)
+                        st.write("")
                         st.button("Bind", key="key_bind_custom_ns_button", on_click=bind_custom_namespace)
 
 
@@ -1365,11 +1372,86 @@ with tab3:
                 with col1a:
                     predefined_ns_list = [key for key in predefined_ns_dict if key not in mapping_ns_dict]
                     if len(predefined_ns_list) > 1:
-                        predefined_ns_list.insert(0, "Bind all")
+                        predefined_ns_list.insert(0, "Select all")
                     predefined_ns_to_bind_list = st.multiselect("🖱️ Select predefined namespaces:*", predefined_ns_list, key="key_predefined_ns_to_bind_multiselect")
 
+                # Information messages
+                if predefined_ns_to_bind_list and "Select all" not in predefined_ns_to_bind_list:
+                    # create a single info message
+                    inner_html = ""
+                    max_length = 6
+                    if len(predefined_ns_to_bind_list) <= max_length:
+                        for prefix in predefined_ns_to_bind_list:
+                            inner_html += f"""<div style="margin-bottom:6px;">
+                                <b>🔗 {prefix}</b> → {predefined_ns_dict[prefix]}
+                            </div>"""
+                        # wrap it all in a single info box
+                        full_html = f"""<div class="info-message-small-gray">
+                            {inner_html}</div>"""
+
+                    else:   # many sm to remove
+                        for prefix in predefined_ns_to_bind_list[:max_length]:
+                            inner_html += f"""<div style="margin-bottom:6px;">
+                                <b>🔗 {prefix}</b> → {predefined_ns_dict[prefix]}
+                            </div>"""
+                        inner_html += f"""<div style="margin-bottom:6px;">
+                            🔗 ...
+                        </div>"""
+                        # wrap it all in a single info box
+                        full_html = f"""<div class="info-message-small-gray">
+                            {inner_html}</div>"""
+                    # render
+                    with col1b:
+                        st.write("")
+                        st.markdown(full_html, unsafe_allow_html=True)
+                    with col1a:
+                        formatted_predefined_ns_to_bind = utils.format_list_for_markdown(predefined_ns_to_bind_list)
+                        st.write("")
+                        st.markdown(f"""<div class="info-message-small">
+                                ℹ️ The namespaces <b>{formatted_predefined_ns_to_bind}</b> will be bound.
+                            </div>""", unsafe_allow_html=True)
+                        st.write("")
+
+                elif predefined_ns_to_bind_list:
+                    # create a single info message
+                    inner_html = ""
+                    max_length = 6
+                    if len(predefined_ns_dict) <= max_length:
+                        for prefix in predefined_ns_dict:
+                            inner_html += f"""<div style="margin-bottom:6px;">
+                                <b>🔗 {prefix}</b> → {predefined_ns_dict[prefix]}
+                            </div>"""
+                        # wrap it all in a single info box
+                        full_html = f"""<div class="info-message-small">
+                            {inner_html}</div>"""
+
+                    else:   # many sm to remove
+                        for prefix in list(predefined_ns_dict)[:max_length]:
+                            inner_html += f"""<div style="margin-bottom:6px;">
+                                <b>🔗 {prefix}</b> → {predefined_ns_dict[prefix]}
+                            </div>"""
+                        inner_html += f"""<div style="margin-bottom:6px;">
+                            🔗 ...
+                        </div>"""
+                        # wrap it all in a single info box
+                        full_html = f"""<div class="info-message-small-gray">
+                            {inner_html}</div>"""
+                    # render
+                    with col1b:
+                        st.write("")
+                        st.markdown(full_html, unsafe_allow_html=True)
+                    with col1a:
+                        formatted_predefined_ns = utils.format_list_for_markdown(list(predefined_ns_dict))
+                        st.write("")
+                        st.markdown(f"""<div class="info-message-small">
+                                ℹ️ The namespaces <b>{formatted_predefined_ns}</b> will be bound.
+                            </div>""", unsafe_allow_html=True)
+                        st.write("")
+
+
+
                 if predefined_ns_to_bind_list:
-                    if "Bind all" not in predefined_ns_to_bind_list:   # "Bind all" not selected
+                    if "Select all" not in predefined_ns_to_bind_list:   # "Select all" not selected
                         with col1a:
                             st.button("Bind", key="key_bind_predefined_ns_button", on_click=bind_predefined_namespaces)
                     else:
@@ -1401,11 +1483,84 @@ with tab3:
                 with col1a:
                     ontology_ns_list = [key for key in ontology_ns_dict if key not in mapping_ns_dict]
                     if len(ontology_ns_list) > 1:
-                        ontology_ns_list.insert(0, "Bind all")
+                        ontology_ns_list.insert(0, "Select all")
                     ontology_ns_to_bind_list = st.multiselect("🖱️ Select ontology namespaces:*", ontology_ns_list, key="key_ontology_ns_to_bind_multiselect")
 
+                # Information messages
+                if ontology_ns_to_bind_list and "Select all" not in ontology_ns_to_bind_list:
+                    # create a single info message
+                    inner_html = ""
+                    max_length = 6
+                    if len(ontology_ns_to_bind_list) <= max_length:
+                        for prefix in ontology_ns_to_bind_list:
+                            inner_html += f"""<div style="margin-bottom:6px;">
+                                <b>🔗 {prefix}</b> → {ontology_ns_dict[prefix]}
+                            </div>"""
+                        # wrap it all in a single info box
+                        full_html = f"""<div class="info-message-small-gray">
+                            {inner_html}</div>"""
+
+                    else:   # many sm to remove
+                        for prefix in ontology_ns_to_bind_list[:max_length]:
+                            inner_html += f"""<div style="margin-bottom:6px;">
+                                <b>🔗 {prefix}</b> → {ontology_ns_dict[prefix]}
+                            </div>"""
+                        inner_html += f"""<div style="margin-bottom:6px;">
+                            🔗 ...
+                        </div>"""
+                        # wrap it all in a single info box
+                        full_html = f"""<div class="info-message-small-gray">
+                            {inner_html}</div>"""
+                    # render
+                    with col1b:
+                        st.write("")
+                        st.markdown(full_html, unsafe_allow_html=True)
+                    with col1a:
+                        formatted_ontology_ns_to_bind = utils.format_list_for_markdown(ontology_ns_to_bind_list)
+                        st.write("")
+                        st.markdown(f"""<div class="info-message-small">
+                                ℹ️ The namespaces <b>{formatted_ontology_ns_to_bind}</b> will be bound.
+                            </div>""", unsafe_allow_html=True)
+                        st.write("")
+
+                elif ontology_ns_to_bind_list:
+                    # create a single info message
+                    inner_html = ""
+                    max_length = 6
+                    if len(ontology_ns_dict) <= max_length:
+                        for prefix in ontology_ns_dict:
+                            inner_html += f"""<div style="margin-bottom:6px;">
+                                <b>🔗 {prefix}</b> → {ontology_ns_dict[prefix]}
+                            </div>"""
+                        # wrap it all in a single info box
+                        full_html = f"""<div class="info-message-small">
+                            {inner_html}</div>"""
+
+                    else:   # many sm to remove
+                        for prefix in list(ontology_ns_dict)[:max_length]:
+                            inner_html += f"""<div style="margin-bottom:6px;">
+                                <b>🔗 {prefix}</b> → {ontology_ns_dict[prefix]}
+                            </div>"""
+                        inner_html += f"""<div style="margin-bottom:6px;">
+                            🔗 ...
+                        </div>"""
+                        # wrap it all in a single info box
+                        full_html = f"""<div class="info-message-small-gray">
+                            {inner_html}</div>"""
+                    # render
+                    with col1b:
+                        st.write("")
+                        st.markdown(full_html, unsafe_allow_html=True)
+                    with col1a:
+                        formatted_ontology_ns = utils.format_list_for_markdown(list(ontology_ns_dict))
+                        st.write("")
+                        st.markdown(f"""<div class="info-message-small">
+                                ℹ️ The namespaces <b>{formatted_ontology_ns}</b> will be bound.
+                            </div>""", unsafe_allow_html=True)
+                        st.write("")
+
                 if ontology_ns_to_bind_list:
-                    if "Bind all" not in ontology_ns_to_bind_list:   # "Bind all" not selected
+                    if "Select all" not in ontology_ns_to_bind_list:   # "Select all" not selected
                         with col1a:
                             st.button("Bind", key="key_bind_ontology_ns_button", on_click=bind_ontology_namespaces)
                     else:
@@ -1502,7 +1657,7 @@ with tab3:
                 mapping_ns_list.append("Select all")
 
             with col1:
-                col1a, col1b = st.columns([2,1])
+                col1a, col1b = st.columns([2,1.2])
                 with col1a:
                     ns_to_unbind_list = st.multiselect("🖱️ Select namespace/s to unbind:*", reversed(mapping_ns_list), key="key_unbind_multiselect")
 
@@ -1513,7 +1668,7 @@ with tab3:
                 if len(ns_to_unbind_list) <= max_length:
                     for prefix in ns_to_unbind_list:
                         inner_html += f"""<div style="margin-bottom:6px;">
-                            <span style="font-size:1rem;">🔗 <strong>{prefix}</strong> → {mapping_ns_dict[prefix]}</span>
+                            <b>🔗 {prefix}</b> → {mapping_ns_dict[prefix]}
                         </div>"""
                     # wrap it all in a single info box
                     full_html = f"""<div class="info-message-small">
@@ -1522,7 +1677,7 @@ with tab3:
                 else:   # many sm to remove
                     for prefix in ns_to_unbind_list[:max_length]:
                         inner_html += f"""<div style="margin-bottom:6px;">
-                            <span style="font-size:1rem;">🔗 <strong>{prefix}</strong> → {mapping_ns_dict[prefix]}</span>
+                            <b>🔗 {prefix}</b> → {mapping_ns_dict[prefix]}
                         </div>"""
                     inner_html += f"""<div style="margin-bottom:6px;">
                         🔗 ...
@@ -1532,14 +1687,21 @@ with tab3:
                         {inner_html}</div>"""
                 # render
                 if len(ns_to_unbind_list) > 0:
-                    with col1a:
+                    with col1b:
                         st.markdown(full_html, unsafe_allow_html=True)
 
-
+                with col1a:
+                    formatted_ns_to_unbind = utils.format_list_for_markdown(ns_to_unbind_list)
+                    st.write("")
+                    st.markdown(f"""<div class="custom-warning-small">
+                            ⚠️ The namespaces <b>{formatted_ns_to_unbind}</b> will be deleted.
+                        </div>""", unsafe_allow_html=True)
+                    st.write("")
 
                 with col1a:
                     st.write("")
                     st.button(f"Unbind", key="key_unbind_ns_button", on_click=unbind_namespaces)
+
 
             elif ns_to_unbind_list:    # unbind all namespaces
                 # create a single info message
@@ -1549,7 +1711,7 @@ with tab3:
                     for prefix in mapping_ns_dict:
                         if prefix != "Select all":
                             inner_html += f"""<div style="margin-bottom:6px;">
-                                <span style="font-size:1rem;">🔗 <strong>{prefix}</strong> → {mapping_ns_dict[prefix]}</span>
+                                🔗 <b>{prefix}</b> → {mapping_ns_dict[prefix]}
                             </div>"""
                     # wrap it all in a single info box
                     full_html = f"""<div class="info-message-small">
@@ -1559,7 +1721,7 @@ with tab3:
                     for prefix in list(mapping_ns_dict)[:max_length]:
                         if prefix != "Select all":
                             inner_html += f"""<div style="margin-bottom:6px;">
-                                <span style="font-size:1rem;">🔗 <strong>{prefix}</strong> → {mapping_ns_dict[prefix]}</span>
+                                🔗 <b>{prefix}</b> → {mapping_ns_dict[prefix]}
                             </div>"""
                     inner_html += f"""<div style="margin-bottom:6px;">
                         🔗 ...
@@ -1568,14 +1730,15 @@ with tab3:
                     full_html = f"""<div class="info-message-small">
                         {inner_html}</div>"""
                 # render
-                if len(ns_to_unbind_list) > 0:
-                    with col1a:
-                        st.markdown(full_html, unsafe_allow_html=True)
+                with col1b:
+                    st.markdown(full_html, unsafe_allow_html=True)
 
                 with col1a:
+                    formatted_mapping_ns = utils.format_list_for_markdown(list(mapping_ns_dict))
                     st.write("")
                     st.markdown(f"""<div class="custom-warning-small">
-                            ⚠️ If you continue, <b>all namespaces will be deleted</b>.
+                            ⚠️ The namespaces <b>{formatted_mapping_ns}</b> will be deleted.<br>
+                            ⚠️ You are deleting <b>all namespaces</b>.
                             Make sure you want to go ahead.
                         </div>""", unsafe_allow_html=True)
                     st.write("")
