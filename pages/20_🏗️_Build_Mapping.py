@@ -233,7 +233,7 @@ def save_sm_template():   #function to save subject map (template option)
     st.session_state["g_mapping"].add((sm_iri, RR.template, Literal(f"http://example.org/resource/{{{sm_id}}}")))
     # store information__________________
     st.session_state["ds_cache_dict"][ds_filename_for_sm] = column_list
-    st.session_state["last_added_sm_list"].insert(0, tm_label_for_sm)
+    st.session_state["last_added_sm_list"].insert(0, st.session_state["sm_label"])
     st.session_state["sm_saved_ok_new_flag"] = True
     # reset fields____________________
     st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
@@ -249,7 +249,7 @@ def save_sm_constant():   #function to save subject map (constant option)
     st.session_state["g_mapping"].add((sm_iri, RR.constant, URIRef(f"http://example.org/resource/{subject_constant}")))
     # store information____________________
     st.session_state["ds_cache_dict"][ds_filename_for_sm] = column_list
-    st.session_state["last_added_sm_list"].insert(0, tm_label_for_sm)
+    st.session_state["last_added_sm_list"].insert(0, st.session_state["sm_label"])
     st.session_state["sm_saved_ok_new_flag"] = True
     # reset fields_________________________
     st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
@@ -265,7 +265,7 @@ def save_sm_reference():   #function to save subject map (reference option)
     st.session_state["g_mapping"].add((sm_iri, RR.reference, Literal(sm_id)))
     # store information__________________
     st.session_state["ds_cache_dict"][ds_filename_for_sm] = column_list
-    st.session_state["last_added_sm_list"].insert(0, tm_label_for_sm)
+    st.session_state["last_added_sm_list"].insert(0, st.session_state["sm_label"])
     st.session_state["sm_saved_ok_new_flag"] = True
     # reset fields____________________
     st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
@@ -739,37 +739,42 @@ with tab2:
 
     # Display last added namespaces in dataframe (also option to show all ns)
     tm_dict = utils.get_tm_dict()
+    sm_dict = utils.get_sm_dict()
 
     with col2:
         col2a, col2b = st.columns([0.5, 2])
 
+    #HEREIGO
     with col2b:
-        st.write("")
-        st.write("")
-        rows = [{"TriplesMap": tm, "LogicalSource": utils.get_ls(tm),
-                "DataSource": utils.get_ds(tm)} for tm in st.session_state["last_added_tm_list"]]
-        last_added_tm_df = pd.DataFrame(rows)
-        last_last_added_tm_df = last_added_tm_df.head(10)
 
-        if st.session_state["last_added_tm_list"]:
+        st.write("")
+        st.write("")
+        last_added_sm_df = pd.DataFrame([
+            {"Subject Map": v[0], "Assigned to": utils.format_list_for_markdown(v[4]),
+                "Rule": v[1],"ID/Constant": v[3]}
+            for k, v in sm_dict.items() if v[0] in st.session_state["last_added_sm_list"]])
+        last_last_added_sm_df = last_added_sm_df.head(10)
+
+
+        if st.session_state["last_added_sm_list"]:
             st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
                     🔎 last added TriplesMaps
                 </div>""", unsafe_allow_html=True)
             st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
                     (complete list below)
                 </div>""", unsafe_allow_html=True)
-            st.dataframe(last_last_added_tm_df, hide_index=True)
+            st.dataframe(last_last_added_sm_df, hide_index=True)
             st.write("")
 
 
         #Option to show all TriplesMaps
-        rows = [{"TriplesMap": tm, "LogicalSource": utils.get_ls(tm),
-                "DataSource": utils.get_ds(tm)} for tm in reversed(list(tm_dict.keys()))]
-        tm_df = pd.DataFrame(rows)
+        sm_df = pd.DataFrame([
+            {"Subject Map": v[0], "Assigned to": utils.format_list_for_markdown(v[4]),
+                "Rule": v[1], "ID/Constant": v[3]} for k, v in sm_dict.items()])
 
-        with st.expander("🔎 Show all TriplesMaps"):
+        with st.expander("🔎 Show all Subject Maps"):
             st.write("")
-            st.dataframe(tm_df, hide_index=True)
+            st.dataframe(sm_df, hide_index=True)
 
 
 
@@ -1694,53 +1699,6 @@ with tab2:
 
 
 
-    with col1:
-        st.write("---")
-        st.markdown("""
-        <div style="background-color:#e6e6fa; border:1px solid #511D66;
-                    border-radius:5px; padding:10px; margin-bottom:8px;">
-            <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
-                🔎 Subject Map Snapshot
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        st.write("")
-
-
-    #SHOW COMPLETE INFORMATION ON THE SUBJECT MAPS___________________________________
-    utils.update_dictionaries()
-    subject_df_complete = utils.build_complete_subject_df()
-    filtered_tm_wo_sm_list = [item for item in tm_wo_sm_list if item != "Select a TriplesMap"]
-    tm_without_subject_df = pd.DataFrame(filtered_tm_wo_sm_list, columns=['TriplesMap without Subject Map'])
-
-    with col1:
-        with st.expander("ℹ️ Show all Subject Maps"):
-            st.write("")
-            st.write("")
-            if not subject_df.empty:
-                st.dataframe(subject_df.drop(columns="TriplesMap IRI").copy(), hide_index=True)
-            else:
-                st.write("⚠️ No Subject Maps have been assigned yet!")
-
-    with col1:
-        with st.expander("ℹ️ Show all Subject Map entries"):
-            st.write("")
-            st.write("")
-            if not subject_df_complete.empty:
-                st.dataframe(subject_df_complete, hide_index=True)
-            else:
-                st.write("⚠️ No Subject Maps have been assigned yet!")
-
-    with col1:
-        with st.expander("ℹ️ Show all TriplesMap with no Subject Map"):
-            st.write("")
-            st.write("")
-            if not tm_without_subject_df.empty:
-                st.dataframe(tm_without_subject_df, hide_index=True)
-            else:
-                st.write("✔️ All TriplesMap have already been assigned Subject Maps!")
-
-#________________________________________________
 
 #________________________________________________
 #ADD PREDICATE-OBJECT MAP TO MAP

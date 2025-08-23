@@ -705,36 +705,38 @@ def get_sm_dict():
         sm_type = None
         sm_id_label = None
 
-        if isinstance(sm_iri, URIRef):
-            sm_label = split_uri(sm_iri)[1]
-        elif isinstance(sm_iri, BNode):
-            sm_label = "_:" + str(sm_iri)[:7] + "..."
-        else:
-            sm_label = "Unlabelled"
+        if sm_iri:
 
-        if template:
-            sm_type = "template"
-            sm_id_iri = str(template)
-            matches = re.findall(r"{([^}]+)}", template)   #splitting template is not so easy but we try
-            if matches:
-                sm_id_label = str(matches[-1])
+            if isinstance(sm_iri, URIRef):
+                sm_label = split_uri(sm_iri)[1]
+            elif isinstance(sm_iri, BNode):
+                sm_label = "_:" + str(sm_iri)[:7] + "..."
             else:
-                sm_id_label = str(template)
+                sm_label = "Unlabelled"
 
-        elif constant:
-            sm_type = "constant"
-            sm_id_iri = str(constant)
-            sm_id_label = str(split_uri(constant)[1])
+            if template:
+                sm_type = "template"
+                sm_id_iri = str(template)
+                matches = re.findall(r"{([^}]+)}", template)   #splitting template is not so easy but we try
+                if matches:
+                    sm_id_label = str(matches[-1])
+                else:
+                    sm_id_label = str(template)
 
-        elif reference:
-            sm_type = "reference"
-            sm_id_iri = str(reference)
-            sm_id_label = str(reference)
+            elif constant:
+                sm_type = "constant"
+                sm_id_iri = str(constant)
+                sm_id_label = str(split_uri(constant)[1])
 
-        if sm_iri not in sm_dict:
-            sm_dict[sm_iri] = [sm_label, sm_type, sm_id_iri, sm_id_label, [tm_label]]
-        else:
-            sm_dict[sm_iri][4].append(tm_label)
+            elif reference:
+                sm_type = "reference"
+                sm_id_iri = str(reference)
+                sm_id_label = str(reference)
+
+            if sm_iri not in sm_dict:
+                sm_dict[sm_iri] = [sm_label, sm_type, sm_id_iri, sm_id_label, [tm_label]]
+            else:
+                sm_dict[sm_iri][4].append(tm_label)
 
     return sm_dict
 #___________________________________________
