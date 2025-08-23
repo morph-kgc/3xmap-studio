@@ -154,7 +154,7 @@ def import_st_aesthetics():
 
         .custom-error-small b {color: #a94442;}
 
-    /* INFO MESSAGE SMALL - Refined */
+    /* INFO MESSAGE SMALL*/
         .info-message-small {background-color: #eaf4ff;
             padding: 0.5em; border-radius: 5px; color: #0c5460;
             font-size: 0.92em; justify-content: center;
@@ -162,6 +162,12 @@ def import_st_aesthetics():
 
         .info-message-small b {color: #003366;}
 
+    /* INFO MESSAGE SMALL GRAY */
+    .info-message-small-gray {background-color: #f5f5f5; padding: 0.5em;
+        border-radius: 5px; color: #4d4d4d; font-size: 0.92em;
+        justify-content: center; align-items: center;}
+
+    .info-message-small-gray b {color: #2b2b2b;}
 
     </style>""", unsafe_allow_html=True)
 
@@ -656,9 +662,8 @@ def remove_triplesmap(tm_label):
         sm_reused = any(s != tm_iri for s, p, o in g.triples((None, RR.subjectMap, subject_map)))
         if not sm_reused:
             g.remove((subject_map, None, None))   # remove sm if not reused
-
-
 #______________________________________________________
+
 #________________________________________________________
 # Funtion to get the dictionary of the Subject Maps
 # {sm_iri: [LIST]}
@@ -717,7 +722,13 @@ def get_sm_dict():
     return sm_dict
 #___________________________________________
 
+#________________________________________________________
+# Funtion to get the dictionary of the superclasses in the ontology
+def get_ontology_superclass_dict():
+    pass
 
+
+#________________________________________________________
 #HEREIGO
 
 

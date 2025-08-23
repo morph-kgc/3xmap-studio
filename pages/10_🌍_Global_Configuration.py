@@ -1230,9 +1230,6 @@ with tab3:
             st.rerun()
 
 
-
-
-
         if st.session_state["g_ontology"]:
             ontology_ns_dict = utils.get_ontology_ns_dict()
             mapping_ns_dict = utils.get_mapping_ns_dict()
