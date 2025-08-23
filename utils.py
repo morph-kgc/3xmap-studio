@@ -236,6 +236,23 @@ def get_corner_status_message_or_error():
             col2a,col2b = st.columns([1,2])
         with col2b:
             utils.get_corner_status_message()
+#_______________________________________________________
+
+#_______________________________________________________
+# Function to format a list
+def format_list_for_markdown(xlist):
+
+    if not xlist:
+        formatted_list = ""
+    elif len(xlist) == 1:
+        formatted_list = xlist[0]
+    else:
+        formatted_list = ", ".join(xlist[:-1]) + " and " + xlist[-1]
+
+    return formatted_list
+
+
+#_______________________________________________________
 
 #_______________________________________________________
 # List of allowed mapping file format

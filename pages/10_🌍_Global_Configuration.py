@@ -1499,14 +1499,14 @@ with tab3:
             mapping_ns_dict = utils.get_mapping_ns_dict()
             mapping_ns_list = list(mapping_ns_dict.keys())
             if len(mapping_ns_list) > 1:
-                mapping_ns_list.append("Unbind all")
+                mapping_ns_list.append("Select all")
 
             with col1:
                 col1a, col1b = st.columns([2,1])
                 with col1a:
                     ns_to_unbind_list = st.multiselect("🖱️ Select namespace/s to unbind:*", reversed(mapping_ns_list), key="key_unbind_multiselect")
 
-            if ns_to_unbind_list and "Unbind all" not in ns_to_unbind_list:
+            if ns_to_unbind_list and "Select all" not in ns_to_unbind_list:
                 # create a single info message
                 inner_html = ""
                 max_length = 6
@@ -1547,7 +1547,7 @@ with tab3:
                 max_length = 4
                 if len(mapping_ns_dict) <= max_length:
                     for prefix in mapping_ns_dict:
-                        if prefix != "Unbind all":
+                        if prefix != "Select all":
                             inner_html += f"""<div style="margin-bottom:6px;">
                                 <span style="font-size:1rem;">🔗 <strong>{prefix}</strong> → {mapping_ns_dict[prefix]}</span>
                             </div>"""
@@ -1557,7 +1557,7 @@ with tab3:
 
                 else:   # many sm to remove
                     for prefix in list(mapping_ns_dict)[:max_length]:
-                        if prefix != "Unbind all":
+                        if prefix != "Select all":
                             inner_html += f"""<div style="margin-bottom:6px;">
                                 <span style="font-size:1rem;">🔗 <strong>{prefix}</strong> → {mapping_ns_dict[prefix]}</span>
                             </div>"""
