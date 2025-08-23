@@ -1406,9 +1406,9 @@ with tab2:
 
             # create a single info message
             inner_html = f"""<div style="margin-bottom:6px;">
-                <b>Subject Map</b> →
-                <b>TriplesMaps</b>
-            </div>"""
+                    <b>Subject Map</b> →
+                    <b>TriplesMaps</b>
+                </div>"""
             if len(sm_to_remove_iri_list) <= 8:
                 for sm in sm_to_remove_iri_list:
                     sm_label = sm_dict[sm][0]

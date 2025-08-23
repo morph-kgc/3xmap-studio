@@ -1507,26 +1507,73 @@ with tab3:
                     ns_to_unbind_list = st.multiselect("🖱️ Select namespace/s to unbind:*", reversed(mapping_ns_list), key="key_unbind_multiselect")
 
             if ns_to_unbind_list and "Unbind all" not in ns_to_unbind_list:
-                with col1a:
-                    #create single box for display
-                    inner_html = ""
+                # create a single info message
+                inner_html = ""
+                max_length = 6
+                if len(ns_to_unbind_list) <= max_length:
                     for prefix in ns_to_unbind_list:
                         inner_html += f"""<div style="margin-bottom:6px;">
                             <span style="font-size:1rem;">🔗 <strong>{prefix}</strong> → {mapping_ns_dict[prefix]}</span>
                         </div>"""
-                    # wrap it all in a single dashed box
-                    full_html = f"""<div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                        {inner_html}
+                    # wrap it all in a single info box
+                    full_html = f"""<div class="info-message-small">
+                        {inner_html}</div>"""
+
+                else:   # many sm to remove
+                    for prefix in ns_to_unbind_list[:max_length]:
+                        inner_html += f"""<div style="margin-bottom:6px;">
+                            <span style="font-size:1rem;">🔗 <strong>{prefix}</strong> → {mapping_ns_dict[prefix]}</span>
+                        </div>"""
+                    inner_html += f"""<div style="margin-bottom:6px;">
+                        🔗 ...
                     </div>"""
-                    # render
-                    st.markdown(full_html, unsafe_allow_html=True)
+                    # wrap it all in a single info box
+                    full_html = f"""<div class="info-message-small">
+                        {inner_html}</div>"""
+                # render
+                if len(ns_to_unbind_list) > 0:
+                    with col1a:
+                        st.markdown(full_html, unsafe_allow_html=True)
+
+
 
                 with col1a:
                     st.write("")
                     st.button(f"Unbind", key="key_unbind_ns_button", on_click=unbind_namespaces)
 
-            elif ns_to_unbind_list:
+            elif ns_to_unbind_list:    # unbind all namespaces
+                # create a single info message
+                inner_html = ""
+                max_length = 4
+                if len(mapping_ns_dict) <= max_length:
+                    for prefix in mapping_ns_dict:
+                        if prefix != "Unbind all":
+                            inner_html += f"""<div style="margin-bottom:6px;">
+                                <span style="font-size:1rem;">🔗 <strong>{prefix}</strong> → {mapping_ns_dict[prefix]}</span>
+                            </div>"""
+                    # wrap it all in a single info box
+                    full_html = f"""<div class="info-message-small">
+                        {inner_html}</div>"""
+
+                else:   # many sm to remove
+                    for prefix in list(mapping_ns_dict)[:max_length]:
+                        if prefix != "Unbind all":
+                            inner_html += f"""<div style="margin-bottom:6px;">
+                                <span style="font-size:1rem;">🔗 <strong>{prefix}</strong> → {mapping_ns_dict[prefix]}</span>
+                            </div>"""
+                    inner_html += f"""<div style="margin-bottom:6px;">
+                        🔗 ...
+                    </div>"""
+                    # wrap it all in a single info box
+                    full_html = f"""<div class="info-message-small">
+                        {inner_html}</div>"""
+                # render
+                if len(ns_to_unbind_list) > 0:
+                    with col1a:
+                        st.markdown(full_html, unsafe_allow_html=True)
+
                 with col1a:
+                    st.write("")
                     st.markdown(f"""<div class="custom-warning-small">
                             ⚠️ If you continue, <b>all namespaces will be deleted</b>.
                             Make sure you want to go ahead.
