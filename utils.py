@@ -165,7 +165,8 @@ def import_st_aesthetics():
     /* INFO MESSAGE SMALL GRAY */
     .info-message-small-gray {background-color: #f5f5f5; padding: 0.5em;
         border-radius: 5px; color: #4d4d4d; font-size: 0.92em;
-        justify-content: center; align-items: center;}
+        justify-content: center; align-items: center; word-break: break-word;
+        overflow-wrap: anywhere; white-space: normal;}
 
     .info-message-small-gray b {color: #2b2b2b;}
 

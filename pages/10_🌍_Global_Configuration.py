@@ -1401,13 +1401,13 @@ with tab3:
                         full_html = f"""<div class="info-message-small-gray">
                             {inner_html}</div>"""
                     # render
-                    with col1b:
+                    with col1a:
                         st.write("")
                         st.markdown(full_html, unsafe_allow_html=True)
                     with col1a:
                         formatted_predefined_ns_to_bind = utils.format_list_for_markdown(predefined_ns_to_bind_list)
                         st.write("")
-                        st.markdown(f"""<div class="info-message-small">
+                        st.markdown(f"""<div class="info-message-small-gray">
                                 ℹ️ The namespaces <b>{formatted_predefined_ns_to_bind}</b> will be bound.
                             </div>""", unsafe_allow_html=True)
                         st.write("")
@@ -1422,7 +1422,7 @@ with tab3:
                                 <b>🔗 {prefix}</b> → {predefined_ns_dict[prefix]}
                             </div>"""
                         # wrap it all in a single info box
-                        full_html = f"""<div class="info-message-small">
+                        full_html = f"""<div class="info-message-small-gray">
                             {inner_html}</div>"""
 
                     else:   # many sm to remove
@@ -1437,7 +1437,7 @@ with tab3:
                         full_html = f"""<div class="info-message-small-gray">
                             {inner_html}</div>"""
                     # render
-                    with col1b:
+                    with col1a:
                         st.write("")
                         st.markdown(full_html, unsafe_allow_html=True)
                     with col1a:
@@ -1512,7 +1512,7 @@ with tab3:
                         full_html = f"""<div class="info-message-small-gray">
                             {inner_html}</div>"""
                     # render
-                    with col1b:
+                    with col1a:
                         st.write("")
                         st.markdown(full_html, unsafe_allow_html=True)
                     with col1a:
@@ -1533,7 +1533,7 @@ with tab3:
                                 <b>🔗 {prefix}</b> → {ontology_ns_dict[prefix]}
                             </div>"""
                         # wrap it all in a single info box
-                        full_html = f"""<div class="info-message-small">
+                        full_html = f"""<div class="info-message-small-gray">
                             {inner_html}</div>"""
 
                     else:   # many sm to remove
@@ -1548,7 +1548,7 @@ with tab3:
                         full_html = f"""<div class="info-message-small-gray">
                             {inner_html}</div>"""
                     # render
-                    with col1b:
+                    with col1a:
                         st.write("")
                         st.markdown(full_html, unsafe_allow_html=True)
                     with col1a:
@@ -1671,7 +1671,7 @@ with tab3:
                             <b>🔗 {prefix}</b> → {mapping_ns_dict[prefix]}
                         </div>"""
                     # wrap it all in a single info box
-                    full_html = f"""<div class="info-message-small">
+                    full_html = f"""<div class="info-message-small-gray">
                         {inner_html}</div>"""
 
                 else:   # many sm to remove
@@ -1683,11 +1683,11 @@ with tab3:
                         🔗 ...
                     </div>"""
                     # wrap it all in a single info box
-                    full_html = f"""<div class="info-message-small">
+                    full_html = f"""<div class="info-message-small-gray">
                         {inner_html}</div>"""
                 # render
                 if len(ns_to_unbind_list) > 0:
-                    with col1b:
+                    with col1a:
                         st.markdown(full_html, unsafe_allow_html=True)
 
                 with col1a:
@@ -1714,7 +1714,7 @@ with tab3:
                                 🔗 <b>{prefix}</b> → {mapping_ns_dict[prefix]}
                             </div>"""
                     # wrap it all in a single info box
-                    full_html = f"""<div class="info-message-small">
+                    full_html = f"""<div class="info-message-small-gray">
                         {inner_html}</div>"""
 
                 else:   # many sm to remove
@@ -1727,10 +1727,10 @@ with tab3:
                         🔗 ...
                     </div>"""
                     # wrap it all in a single info box
-                    full_html = f"""<div class="info-message-small">
+                    full_html = f"""<div class="info-message-small-gray">
                         {inner_html}</div>"""
                 # render
-                with col1b:
+                with col1a:
                     st.markdown(full_html, unsafe_allow_html=True)
 
                 with col1a:
