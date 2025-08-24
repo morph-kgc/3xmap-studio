@@ -169,15 +169,19 @@ def import_st_aesthetics():
 
     .info-message-small-gray b {color: #2b2b2b;}
 
-    /* INFO TABLE GRAY  (+ title row) */
-        .info-table-gray td {padding: 4px 8px; vertical-align: top;
-            font-size: 0.85rem;}
 
-        .info-table-gray  {border-collapse: collapse; width: 100%;
-            background-color: #f5f5f5; border-radius: 5px;}
+    /* INFO TABLE GRAY */
+    .info-table-gray {border-collapse: collapse; width: 100%;
+        background-color: #f5f5f5; border-radius: 5px; table-layout: auto;
+        max-width: 100%; word-break: break-word;}
 
-        .title-row td {font-size: 0.9rem;font-weight: bold;text-align: center;
-            padding-bottom: 6px;}
+    .info-table-gray td {padding: 4px 8px; vertical-align: top;
+        font-size: 0.85rem; word-wrap: break-word; white-space: normal;
+        overflow-wrap: anywhere;}
+
+    /* TITLE ROW */
+    .title-row td {font-size: 0.9rem; font-weight: bold; text-align: center;
+        padding-bottom: 6px;}
 
     </style>""", unsafe_allow_html=True)
 
