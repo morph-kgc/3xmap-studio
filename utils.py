@@ -169,8 +169,17 @@ def import_st_aesthetics():
 
     .info-message-small-gray b {color: #2b2b2b;}
 
-    </style>""", unsafe_allow_html=True)
+    /* INFO TABLE GRAY  (+ title row) */
+        .info-table-gray td {padding: 4px 8px; vertical-align: top;
+            font-size: 0.85rem;}
 
+        .info-table-gray  {border-collapse: collapse; width: 100%;
+            background-color: #f5f5f5; border-radius: 5px;}
+
+        .title-row td {font-size: 0.9rem;font-weight: bold;text-align: center;
+            padding-bottom: 6px;}
+
+    </style>""", unsafe_allow_html=True)
 
 #_______________________________________________________
 
@@ -778,13 +787,12 @@ def get_exclusion_list_for_p_search():
 #________________________________________________________
 
 #________________________________________________________
-# Funtion to get the identifier of a namespace
-# Used for the base ns of the ontology
-def get_ns_identifier(ns):
+# Funtion to identify the ontology from which a predicate was taken
+def get_ontology_identifier(ns):
 
     parts = ns.rstrip("/").split("/")
     if len(parts) >= 2:
-        return parts[-1]  # Last segment
+        return parts[-2]  # Last segment
     return None
 
 #________________________________________________________

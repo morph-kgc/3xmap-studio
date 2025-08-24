@@ -385,7 +385,13 @@ def save_pom_constant():
     st.session_state["g_mapping"].add((tm_iri, RR.predicateObjectm, pom_iri))
     st.session_state["g_mapping"].add((pom_iri, RR.predicate, predicate_iri))
     st.session_state["g_mapping"].add((pom_iri, RR.objectm, om_iri))
-    st.session_state["g_mapping"].add((om_iri, RR.constant, constant_iri))
+    if om_constant_type == "🌐 IRI":
+        om_constant_ns = mapping_ns_dict[om_constant_ns_prefix]
+        NS = Namespace(om_constant_ns)
+        om_constant_iri = NS[om_constant]
+        st.session_state["g_mapping"].add((om_iri, RR.constant, om_constant_iri))
+    elif om_constant_type == "📘 Literal":
+        st.session_state["g_mapping"].add((om_iri, RR.constant, Literal(om_constant)))
 
     #reset fields_____________________________________
     st.session_state["search_term"] = ""
@@ -1793,14 +1799,11 @@ with tab3:
             if ds_filename_for_pom in st.session_state["ds_cache_dict"]:
                 column_list = st.session_state["ds_cache_dict"][ds_filename_for_pom]
 
-
-            else:  # if data source is not cached
+            else:  # if data source is not cached - ASK FOR DATA SOURCE FILE
                 with col1a:
                     ds_allowed_formats = utils.get_ds_allowed_formats()
                     ds_file_for_pom = st.file_uploader(f"""🖱️ Upload data source file {ds_filename_for_pom}:*""",
                         type=ds_allowed_formats, key=st.session_state["key_ds_uploader_for_pom"])
-                    columns_df = pd.read_csv(ds_file_for_pom)
-                    column_list = columns_df.columns.tolist()
 
                 if not ds_file_for_pom:
                     with col1b:
@@ -1819,6 +1822,10 @@ with tab3:
                                 the correct file.
                             </div>""", unsafe_allow_html=True)
                         st.write("")
+
+                if ds_file_for_pom:
+                    columns_df = pd.read_csv(ds_file_for_pom)
+                    column_list = columns_df.columns.tolist()
 
 
             # HERE CREATE THE PREDICATE MAP
@@ -1927,8 +1934,6 @@ with tab3:
         #         """, unsafe_allow_html=True)
         #     om_label = ""
 
-        with col1:
-            st.write("______")
 
 
 
@@ -1938,35 +1943,59 @@ with tab3:
 
             with col3:
                 st.write("____")
-                st.markdown("""
-                        <span style="font-size:1.1em; font-weight:bold;">🏗️ Create the Object Map</span><br>
-                        """,unsafe_allow_html=True)
+                st.markdown("""<span style="font-size:1.1em; font-weight:bold;">
+                        🏗️ Create the Object Map</span><br>
+                    """,unsafe_allow_html=True)
+                st.write("")
+
+            om_generation_rule_list = ["Template 📐", "Constant 🔒", "Reference 🔗"]
+
+            with col3:
+                om_generation_rule = st.radio("🖱️ Define the Object Map generation rule:*",
+                    om_generation_rule_list, horizontal=True, key="key_om_generation_rule_radio")
 
 
-            if tm_label:
-                col1, col2, col3 = st.columns([1, 0.2, 3])
-                po_options = ["🔢 Reference-valued", "🔒 Constant-valued", "📐 Template-valued"]
+            #_______________________________________________
+            #CONSTANT-VALUED OBJECT MAP
+            if om_generation_rule == "Constant 🔒":
 
-                with col1:
-                    st.markdown(""" <span style="font-size:1em; font-weight:bold;">
-                    Predicate-Object Map type:</span><br></div>""",unsafe_allow_html=True)
-                    po_type = st.radio("", po_options, label_visibility="collapsed", key="po_type")
+                with col3:
+                    col3a, col3b = st.columns(2)
+                with col3a:
+                    om_constant = st.text_input("⌨️ Enter constant:*", key="key_om_constant")
 
-            else:
-                with col1:
-                    col1a, col1b = st.columns([2,1])
-                with col1a:
-                    st.markdown(f"""
-                        <div style="background-color:#fff3cd; padding:1em;
-                        border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                            ⚠️ You must select a TriplesMap to continue.</div>
-                    """, unsafe_allow_html=True)
-                po_type = ""
+                with col3b:
+                    om_constant_type = st.radio(label="🖱️ Choose constant type:*", options=["📘 Literal", "🌐 IRI"], horizontal=True, key="om_constant_type")
+
+                if om_constant_type == "🌐 IRI":
+                    mapping_ns_dict = utils.get_mapping_ns_dict()
+                    list_to_choose = list(mapping_ns_dict.keys())
+                    list_to_choose.insert(0, "Select a namespace")
+                    with col3a:
+                        om_constant_ns_prefix = st.selectbox("🖱️ Select a namespace for the constant:*", list_to_choose,
+                            key="key_om_constant_ns")
+
+                    if not mapping_ns_dict:
+                        with col3b:
+                            st.markdown(f"""<div class="custom-error-small">
+                                    ❌ You must add namespaces in
+                                    the <b>Global Configuration</b> page.
+                                </div>""", unsafe_allow_html=True)
+
+
+                #READY CONDITIONS
+                # if om_constant_type == "🌐 IRI" and om_constant and constant_ns:
+                #     constant_iri = URIRef(st.session_state["ns_dict"][constant_ns] + om_constant)
+                #     om_ready_flag_constant = True
+                # if om_constant_type == "📘 Literal" and om_constant:
+                #     constant_iri = Literal(om_constant)
+                #     om_ready_flag_constant = True
+
 
 
             #_______________________________________________
             #REFERENCE-VALUED OBJECT MAP
-            if po_type == "🔢 Reference-valued":
+            if om_generation_rule_list ==  "Reference 🔗":
                 om_datatype = ""
                 om_language_tag = ""
                 om_ready_flag_reference = False
@@ -2009,46 +2038,8 @@ with tab3:
                         om_ready_flag_reference = True
 
             #_______________________________________________
-            #CONSTANT-VALUED OBJECT MAP
-            if po_type == "🔒 Constant-valued":
-                om_ready_flag_constant = False
-
-                with col3:
-                    col3a, col3b = st.columns(2)
-                with col3a:
-                    om_constant = st.text_input("Enter constant*", key="om_constant")
-
-                with col3b:
-                    om_constant_type = st.radio(label="Choose constant type*", options=["📘 Literal", "🌐 IRI"], horizontal=True, key="om_constant_type")
-
-                if om_constant_type == "🌐 IRI":
-                    ns_prefix_list = list(st.session_state["ns_dict"].keys())
-                    ns_prefix_list.insert(0, "Select a namespace")
-                    with col3a:
-                        constant_ns_temp = st.selectbox("Select a namespace for the constant*", ns_prefix_list)
-                        constant_ns = constant_ns_temp if not constant_ns_temp == ns_prefix_list[0] else ""
-                        if len(ns_prefix_list) == 1:
-                            st.write("")
-                            with col3b:
-                                st.markdown(f"""
-                                    <div style="background-color:#fff3cd; padding:1em;
-                                    border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                                        ⚠️ No custom or ontology namespaces have been added. Please do so in
-                                        the <b style="color:#cc9a06;">Global Configuration</b> page to continue.
-                                        </div>
-                                """, unsafe_allow_html=True)
-
-
-                if om_constant_type == "🌐 IRI" and om_constant and constant_ns:
-                    constant_iri = URIRef(st.session_state["ns_dict"][constant_ns] + om_constant)
-                    om_ready_flag_constant = True
-                if om_constant_type == "📘 Literal" and om_constant:
-                    constant_iri = Literal(om_constant)
-                    om_ready_flag_constant = True
-
-            #_______________________________________________
             #TEMPLATE-VALUED OBJECT MAP
-            if po_type == "📐 Template-valued":
+            if om_generation_rule_list == "Template 📐":
                 om_ready_flag_template = False
 
                 with col3:
@@ -2156,87 +2147,223 @@ with tab3:
 
 
 
+
         st.write("______")
+        st.markdown("""<span style="font-size:1.1em; font-weight:bold;">
+            💾 Check and save Predicate-Object Map</span><br>
+        """, unsafe_allow_html=True)
+        st.write("")
 
+        col1, col2, col3, col4 = st.columns([1,1,0.2,1])
 
-        col1, col2, col3 = st.columns([2, 0.2, 0.8])
-        with col1:
-            col1a, col1b = st.columns([2,1])
-            with col1a:
-                st.markdown(
-                    """
-                        <span style="font-size:1.1em; font-weight:bold;">💾 Check and save the Predicate-Object Map</span><br>
-                    """,
-                    unsafe_allow_html=True
-                )
+        # POM MAP - ONTOLOGY PREDICATE______________________________________
+        if p_type == "🧩 Ontology predicate":
 
-        col1, col2, col3 = st.columns(3)
+            selected_p_label_display = selected_p_label if selected_p_label != "Select a predicate" else ""
+            p_ont = utils.get_ontology_identifier(selected_p_iri)
+            if p_ont:
+                selected_p_label_display += " (" + p_ont + ")"
 
-        if st.session_state["pom_saved_ok"]:
+            if selected_p_label != "Select a predicate":
+                pom_complete_flag = "✔️ Yes"
+            else:
+                pom_complete_flag = "❌ No"
+
             with col1:
-                st.markdown(f"""
-                <div style="background-color:#d4edda; padding:1em;
-                border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                    ✅ Predicate-Object Map saved correctly! </div>
-                """, unsafe_allow_html=True)
-            st.session_state["pom_saved_ok"] = False
-            time.sleep(2)
-            st.rerun()
+                st.markdown(f"""<table class="info-table-gray">
+                            <tr class="title-row"><td colspan="2">🔎 Predicate-Object Map</td></tr>
+                    <tr><td><b>TriplesMap*:</b></td><td>{tm_label_for_pom}</td></tr>
+                    <tr><td><b>Subject Map*:</b></td><td>{sm_label_for_pom}</td></tr>
+                    <tr><td><b>Predicate*:</b></td><td>{selected_p_label_display}</td></tr>
+                    <tr><td><b>POM label:</b></td><td>{pom_label}</td></tr>
+                    <tr><td><b>Required fields complete:</b></td><td>{pom_complete_flag}</td></tr>
+                </table>""", unsafe_allow_html=True)
 
+        elif p_type == "🚫 Predicate outside ontology":
 
-        if pom_ready_flag:
+            manual_p_ns_prefix_display = manual_p_ns_prefix if manual_p_ns_prefix != "Select a namespace" else ""
+
+            if manual_p_label and manual_p_ns_prefix != "Select a namespace":
+                pom_complete_flag = "✔️ Yes"
+            else:
+                pom_complete_flag = "❌ No"
+
             with col1:
-                st.markdown(f"""
-                <style>
-                .vertical-table-green td {{padding: 4px 8px; vertical-align: top;
-                    font-size: 0.85rem;}}
-                .vertical-table-green {{border-collapse: collapse; width: 100%;
-                    background-color: #edf7ef; border-radius: 5px;}}
-                .title-row td {{font-size: 0.9rem;font-weight: bold;text-align: center;
-                    padding-bottom: 6px;}}
-                </style>
+                st.markdown(f"""<table class="info-table-gray">
+                            <tr class="title-row"><td colspan="2">🔎 Predicate-Object Map</td></tr>
+                    <tr><td><b>TriplesMap*:</b></td><td>{tm_label_for_pom}</td></tr>
+                    <tr><td><b>Subject Map*:</b></td><td>{sm_label_for_pom}</td></tr>
+                    <tr><td><b>Predicate Namespace*:</b></td><td>{manual_p_ns_prefix_display}</td></tr>
+                    <tr><td><b>Predicate*:</b></td><td>{manual_p_label}</td></tr>
+                    <tr><td><b>POM label:</b></td><td>{pom_label}</td></tr>
+                    <tr><td><b>Required fields complete:</b></td><td>{pom_complete_flag}</td></tr>
+                </table>""", unsafe_allow_html=True)
 
-                <table class="vertical-table-green">
-                <tr class="title-row"><td colspan="2">🔎 Predicate-Object Map</td></tr>
-                <tr><td>🔖 <b>TriplesMap*:</b></td><td>{tm_label}</td></tr>
-                <tr><td><b>Subject Map*:</b></td><td>{sm_label}</td></tr>
-                <tr><td><b>Predicate*:</b></td><td>{predicate}</td></tr>
-                <tr><td><b>POM label:</b></td><td>{pom_label}</td></tr>
-                <tr><td><b>OM label:</b></td><td>{om_label}</td></tr>
-                <tr class="title-row"><td colspan="2">✔️ Required fields completed</td></tr>
-                </table>
-                """, unsafe_allow_html=True)
-        elif tm_label:
-            with col1:
-                st.markdown(f"""
-                <style>
-                .vertical-table-yellow td {{padding: 4px 8px; vertical-align: top;
-                    font-size: 0.85rem;}}
-                .vertical-table-yellow {{border-collapse: collapse; width: 100%;
-                    background-color: #fff9db; border-radius: 5px;}}
-                .title-row td {{font-size: 0.9rem;font-weight: bold;text-align: center;
-                    padding-bottom: 6px;}}
-                </style>
 
-                <table class="vertical-table-yellow">
-                <tr class="title-row"><td colspan="2">🔎 Predicate-Object Map</td></tr>
-                <tr><td>🔖 <b>TriplesMap*:</b></td><td>{tm_label}</td></tr>
-                <tr><td><b>Subject Map*:</b></td><td>{sm_label}</td></tr>
-                <tr><td><b>Predicate*:</b></td><td>{predicate}</td></tr>
-                <tr><td><b>POM label:</b></td><td>{pom_label}</td></tr>
-                <tr><td><b>OM label:</b></td><td>{om_label}</td></tr>
-                <tr class="title-row"><td colspan="2">⚠️ Required fields incomplete</td></tr>
-                </table>
-                """, unsafe_allow_html=True)
-        else:
-            with col1a:
-                st.markdown(f"""
-                    <div style="background-color:#fff3cd; padding:1em;
-                    border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                        ⚠️ You must select a TriplesMap to continue.</div>
-                """, unsafe_allow_html=True)
+        # OM MAP - TEMPLATE______________________________________________________-
+        if om_generation_rule == "Template 📐":
 
-        if po_type == "🔢 Reference-valued":
+            if om_ready_flag_template:
+                with col2:
+                    st.markdown(f"""
+                        <style>
+                        .vertical-table-green td {{
+                            padding: 4px 8px;
+                            vertical-align: top;
+                            font-size: 0.85rem;
+                            word-break: break-word;
+                            overflow-wrap: anywhere;
+                            max-width: 100%;
+                        }}
+                        .vertical-table-green {{
+                            border-collapse: collapse;
+                            width: 100%;
+                            background-color: #edf7ef;
+                            border-radius: 5px;
+                            table-layout: fixed;
+                        }}
+                        .title-row td {{
+                            font-size: 0.9rem;
+                            font-weight: bold;
+                            text-align: center;
+                            padding-bottom: 6px;
+                        }}
+                        </style>
+
+                        <table class="vertical-table-green">
+                            <tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
+                            <tr>
+                                <td>🔖 <b>Template namespace*:</b></td>
+                                <td><span style="display:block;">{om_template_ns}</span></td>
+                            </tr>
+                            <tr>
+                                <td>🔖 <b>Template*:</b></td>
+                                <td><span style="display:block;">{om_template}</span></td>
+                            </tr>
+                            <tr class="title-row"><td colspan="2">⚠️ Required fields incomplete</td></tr>
+                        </table>
+                    """, unsafe_allow_html=True)
+            else:
+                with col2:
+                    st.markdown(f"""
+                        <style>
+                        .vertical-table-yellow td {{
+                            padding: 4px 8px;
+                            vertical-align: top;
+                            font-size: 0.85rem;
+                            word-break: break-word;
+                            overflow-wrap: anywhere;
+                            max-width: 100%;
+                        }}
+                        .vertical-table-yellow {{
+                            border-collapse: collapse;
+                            width: 100%;
+                            background-color: #fff9db;
+                            border-radius: 5px;
+                            table-layout: fixed;
+                        }}
+                        .title-row td {{
+                            font-size: 0.9rem;
+                            font-weight: bold;
+                            text-align: center;
+                            padding-bottom: 6px;
+                        }}
+                        </style>
+
+                        <table class="vertical-table-yellow">
+                            <tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
+                            <tr>
+                                <td>🔖 <b>Template namespace*:</b></td>
+                                <td><span style="display:block;">{om_template_ns}</span></td>
+                            </tr>
+                            <tr>
+                                <td>🔖 <b>Template*:</b></td>
+                                <td><span style="display:block;">{om_template}</span></td>
+                            </tr>
+                            <tr class="title-row"><td colspan="2">⚠️ Required fields incomplete</td></tr>
+                        </table>
+                    """, unsafe_allow_html=True)
+
+
+            if pom_ready_flag and om_ready_flag_template:
+                with col3:
+                    col3a, col3b = st.columns([0.5,1.5])
+                with col3b:
+                    st.markdown(f"""
+                    <div style="background-color:#d4edda; padding:1em;
+                    border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                        ✅ All required fields are complete.<br>
+                        🧐 Double-check the information before saving. </div>
+                    """, unsafe_allow_html=True)
+                    st.write("")
+                    save_pom_template_button = st.button("Save", on_click=save_pom_template)
+            else:
+                with col3:
+                    st.markdown(f"""
+                        <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                            <span style="font-size:0.95rem;">
+                                ⚠️ All required fields (*) must be filled in order to save a Predicate-Object Map.
+                            </span>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    st.write("")
+
+
+        # OM MAP - CONSTANT____________________________________________
+        if om_generation_rule == "Constant 🔒":
+
+            if om_constant_type == "📘 Literal":
+
+                if om_constant:
+                    om_complete_flag = "✔️ Yes"
+                else:
+                    om_complete_flag = "❌ No"
+
+                with col2:
+                    st.markdown(f"""<table class="info-table-gray">
+                            <tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
+                            <tr><td><b>Generation rule*</b></td><td>{om_generation_rule}</td></tr>
+                            <tr><td><b>Constant*</b></td><td>{om_constant + " (Literal)"}</td></tr>
+                            <tr><td><b>Required fields complete</b></td><td> ✔️ Yes </td></tr>
+                        </table>""", unsafe_allow_html=True)
+
+
+            elif om_constant_type == "🌐 IRI":
+
+                om_constant_ns_prefix_display = om_constant_ns_prefix if om_constant_ns_prefix != "Select a namespace" else ""
+
+                if om_constant_ns_prefix != "Select a namespace" and om_constant:
+                    om_complete_flag = "✔️ Yes"
+                else:
+                    om_complete_flag = "❌ No"
+
+                with col2:
+                    st.markdown(f"""<table class="info-table-gray">
+                            <tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
+                            <tr><td><b>Generation rule*</b></td><td>{om_generation_rule}</td></tr>
+                            <tr><td><b>Constant namespace*</b></td><td>{om_constant_ns_prefix_display}</td></tr>
+                            <tr><td><b>Constant*</b></td><td>{om_constant + " (IRI)"}</td></tr>
+                            <tr><td><b>Required fields completed*</b></td><td> {om_complete_flag} </td></tr>
+                        </table>""", unsafe_allow_html=True)
+
+            if pom_complete_flag == "✔️ Yes" and om_complete_flag == "✔️ Yes":
+                with col4:
+                    st.markdown(f"""<div class="custom-success">
+                        ✅ All required fields are complete.<br>
+                        🧐 Double-check the information before saving. </div>
+                    """, unsafe_allow_html=True)
+                    st.write("")
+                    save_pom_constant_button = st.button("Save", on_click=save_pom_constant, key="key_save_pom_constant_button")
+            else:
+                with col4:
+                    st.markdown(f"""<div class="custom-warning">
+                            ⚠️ All <b>required fields (*)</b> must be filled in order to save a Predicate-Object Map.
+                        </div>""", unsafe_allow_html=True)
+                    st.write("")
+
+
+        # OM MAP - REFERENCE___________________________
+        if om_generation_rule_list == "Reference 🔗":
 
             if om_ready_flag_reference and om_datatype != "Natural language text":
                 with col2:
@@ -2344,213 +2471,6 @@ with tab3:
                         """, unsafe_allow_html=True)
                     st.write("")
 
-
-        if po_type == "🔒 Constant-valued":
-
-            if om_ready_flag_constant and om_constant_type == "📘 Literal":
-                with col2:
-                    st.markdown(f"""
-                    <style>
-                    .vertical-table-green td {{padding: 4px 8px; vertical-align: top;
-                        font-size: 0.85rem;}}
-                    .vertical-table-green {{border-collapse: collapse; width: 100%;
-                        background-color: #edf7ef; border-radius: 5px;}}
-                    .title-row td {{font-size: 0.9rem;font-weight: bold;text-align: center;
-                        padding-bottom: 6px;}}
-                    </style>
-
-                    <table class="vertical-table-green">
-                    <tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
-                    <tr><td>🔖 <b>Constant*:</b></td><td>{om_constant}</td></tr>
-                    <tr class="title-row"><td colspan="2">✔️ Required fields completed</td></tr>
-                    </table>
-                    """, unsafe_allow_html=True)
-            elif om_ready_flag_constant and om_constant_type == "🌐 IRI":
-                with col2:
-                    st.markdown(f"""
-                    <style>
-                    .vertical-table-green td {{padding: 4px 8px; vertical-align: top;
-                        font-size: 0.85rem;}}
-                    .vertical-table-green {{border-collapse: collapse; width: 100%;
-                        background-color: #edf7ef; border-radius: 5px;}}
-                    .title-row td {{font-size: 0.9rem;font-weight: bold;text-align: center;
-                        padding-bottom: 6px;}}
-                    </style>
-
-                    <table class="vertical-table-green">
-                    <tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
-                    <tr><td>🔖 <b>Constant prefix*:</b></td><td>{constant_ns}</td></tr>
-                    <tr><td>🔖 <b>Constant*:</b></td><td>{om_constant}</td></tr>
-                    <tr class="title-row"><td colspan="2">✔️ Required fields completed</td></tr>
-                    </table>
-                    """, unsafe_allow_html=True)
-            elif not om_ready_flag_constant and om_constant_type == "📘 Literal":
-                with col2:
-                    st.markdown(f"""
-                    <style>
-                    .vertical-table-yellow td {{padding: 4px 8px; vertical-align: top;
-                        font-size: 0.85rem;}}
-                    .vertical-table-yellow {{border-collapse: collapse; width: 100%;
-                        background-color: #fff9db; border-radius: 5px;}}
-                    .title-row td {{font-size: 0.9rem;font-weight: bold;text-align: center;
-                        padding-bottom: 6px;}}
-                    </style>
-
-                    <table class="vertical-table-yellow">
-                    <tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
-                    <tr><td>🔖 <b>Constant*:</b></td><td>{om_constant}</td></tr>
-                    <tr class="title-row"><td colspan="2">⚠️ Required fields incomplete</td></tr>
-                    </table>
-                    """, unsafe_allow_html=True)
-            elif not om_ready_flag_constant and om_constant_type == "🌐 IRI":
-                with col2:
-                    st.markdown(f"""
-                    <style>
-                    .vertical-table-yellow td {{padding: 4px 8px; vertical-align: top;
-                        font-size: 0.85rem;}}
-                    .vertical-table-yellow {{border-collapse: collapse; width: 100%;
-                        background-color: #fff9db; border-radius: 5px;}}
-                    .title-row td {{font-size: 0.9rem;font-weight: bold;text-align: center;
-                        padding-bottom: 6px;}}
-                    </style>
-
-                    <table class="vertical-table-yellow">
-                    <tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
-                    <tr><td>🔖 <b>Constant prefix*:</b></td><td>{constant_ns}</td></tr>
-                    <tr><td>🔖 <b>Constant*:</b></td><td>{om_constant}</td></tr>
-                    <tr class="title-row"><td colspan="2">⚠️ Required fields incomplete</td></tr>
-                    </table>
-                    """, unsafe_allow_html=True)
-
-            if pom_ready_flag and om_ready_flag_constant:
-                with col3:
-                    col3a, col3b = st.columns([0.5,1.5])
-                with col3b:
-                    st.markdown(f"""
-                    <div style="background-color:#d4edda; padding:1em;
-                    border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                        ✅ All required fields are complete.<br>
-                        🧐 Double-check the information before saving. </div>
-                    """, unsafe_allow_html=True)
-                    st.write("")
-                    save_pom_constant_button = st.button("Save", on_click=save_pom_constant)
-            else:
-                with col3:
-                    st.markdown(f"""
-                        <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                            <span style="font-size:0.95rem;">
-                                ⚠️ All required fields (*) must be filled in order to save a Predicate-Object Map.
-                            </span>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    st.write("")
-
-        if po_type == "📐 Template-valued":
-
-            if om_ready_flag_template:
-                with col2:
-                    st.markdown(f"""
-                        <style>
-                        .vertical-table-green td {{
-                            padding: 4px 8px;
-                            vertical-align: top;
-                            font-size: 0.85rem;
-                            word-break: break-word;
-                            overflow-wrap: anywhere;
-                            max-width: 100%;
-                        }}
-                        .vertical-table-green {{
-                            border-collapse: collapse;
-                            width: 100%;
-                            background-color: #edf7ef;
-                            border-radius: 5px;
-                            table-layout: fixed;
-                        }}
-                        .title-row td {{
-                            font-size: 0.9rem;
-                            font-weight: bold;
-                            text-align: center;
-                            padding-bottom: 6px;
-                        }}
-                        </style>
-
-                        <table class="vertical-table-green">
-                            <tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
-                            <tr>
-                                <td>🔖 <b>Template namespace*:</b></td>
-                                <td><span style="display:block;">{om_template_ns}</span></td>
-                            </tr>
-                            <tr>
-                                <td>🔖 <b>Template*:</b></td>
-                                <td><span style="display:block;">{om_template}</span></td>
-                            </tr>
-                            <tr class="title-row"><td colspan="2">⚠️ Required fields incomplete</td></tr>
-                        </table>
-                    """, unsafe_allow_html=True)
-            else:
-                with col2:
-                    st.markdown(f"""
-                        <style>
-                        .vertical-table-yellow td {{
-                            padding: 4px 8px;
-                            vertical-align: top;
-                            font-size: 0.85rem;
-                            word-break: break-word;
-                            overflow-wrap: anywhere;
-                            max-width: 100%;
-                        }}
-                        .vertical-table-yellow {{
-                            border-collapse: collapse;
-                            width: 100%;
-                            background-color: #fff9db;
-                            border-radius: 5px;
-                            table-layout: fixed;
-                        }}
-                        .title-row td {{
-                            font-size: 0.9rem;
-                            font-weight: bold;
-                            text-align: center;
-                            padding-bottom: 6px;
-                        }}
-                        </style>
-
-                        <table class="vertical-table-yellow">
-                            <tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
-                            <tr>
-                                <td>🔖 <b>Template namespace*:</b></td>
-                                <td><span style="display:block;">{om_template_ns}</span></td>
-                            </tr>
-                            <tr>
-                                <td>🔖 <b>Template*:</b></td>
-                                <td><span style="display:block;">{om_template}</span></td>
-                            </tr>
-                            <tr class="title-row"><td colspan="2">⚠️ Required fields incomplete</td></tr>
-                        </table>
-                    """, unsafe_allow_html=True)
-
-
-            if pom_ready_flag and om_ready_flag_template:
-                with col3:
-                    col3a, col3b = st.columns([0.5,1.5])
-                with col3b:
-                    st.markdown(f"""
-                    <div style="background-color:#d4edda; padding:1em;
-                    border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                        ✅ All required fields are complete.<br>
-                        🧐 Double-check the information before saving. </div>
-                    """, unsafe_allow_html=True)
-                    st.write("")
-                    save_pom_template_button = st.button("Save", on_click=save_pom_template)
-            else:
-                with col3:
-                    st.markdown(f"""
-                        <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                            <span style="font-size:0.95rem;">
-                                ⚠️ All required fields (*) must be filled in order to save a Predicate-Object Map.
-                            </span>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    st.write("")
 
 
 
