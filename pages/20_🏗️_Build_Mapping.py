@@ -107,7 +107,8 @@ if "sm_unassigned_ok_flag" not in st.session_state:
 #TAB3
 if "key_ds_uploader_for_pom" not in st.session_state:
     st.session_state["key_ds_uploader_for_pom"] = str(uuid.uuid4())
-
+if "template_om_is_iri_flag" not in st.session_state:
+    st.session_state["template_om_is_iri_flag"]  = False
 
 
 
@@ -413,6 +414,13 @@ def save_om_template_variable_part():
 
 def reset_om_template():
     st.session_state["om_template_list"] = []
+
+def add_ns_to_om_template():
+    if om_template_ns == "Select a namespace":
+        st.session_state["template_om_is_iri_flag"] = False
+    else:
+        st.session_state["template_om_is_iri_flag"] = True
+        st.session_state["om_template_list"].insert(0, om_template_ns)
 
 def save_pom_template():
     st.session_state["g_mapping"].add((tm_iri, RR.predicateObjectm, pom_iri))
@@ -1795,6 +1803,7 @@ with tab3:
             ds_filename_for_pom = next(st.session_state["g_mapping"].objects(ls_iri_for_pom, RML.source), None)
 
             selected_p_iri = ""   # initialise
+            column_list = []   # initialise
 
             if ds_filename_for_pom in st.session_state["ds_cache_dict"]:
                 column_list = st.session_state["ds_cache_dict"][ds_filename_for_pom]
@@ -1802,14 +1811,14 @@ with tab3:
             else:  # if data source is not cached - ASK FOR DATA SOURCE FILE
                 with col1a:
                     ds_allowed_formats = utils.get_ds_allowed_formats()
-                    ds_file_for_pom = st.file_uploader(f"""🖱️ Upload data source file {ds_filename_for_pom}:*""",
+                    ds_file_for_pom = st.file_uploader(f"""🖱️ Upload data source file {ds_filename_for_pom} (optional):""",
                         type=ds_allowed_formats, key=st.session_state["key_ds_uploader_for_pom"])
 
                 if not ds_file_for_pom:
                     with col1b:
-                        st.markdown(f"""<div class="custom-warning-small">
-                                ⚠️ The data source <b>{ds_filename_for_pom}</b> is not cached. Please
-                                load it here or enter column manually.
+                        st.markdown(f"""<div class="info-message-small-gray">
+                                ⚠️ The data source <b>{ds_filename_for_pom}</b> is not cached.
+                                Load it here <b>if needed</b>.
                             </div>""", unsafe_allow_html=True)
                         st.write("")
 
@@ -1936,15 +1945,129 @@ with tab3:
                 """,unsafe_allow_html=True)
             st.write("")
 
-        om_generation_rule_list = ["Template 📐", "Constant 🔒", "Reference 🔗"]
+        om_generation_rule_list = ["Template 📐", "Constant 🔒", "Reference 🔗", "BNode ⚪"]
 
         with col3:
             om_generation_rule = st.radio("🖱️ Define the Object Map generation rule:*",
                 om_generation_rule_list, horizontal=True, key="key_om_generation_rule_radio")
 
+        #_______________________________________________
+        # OBJECT MAP - TEMPLATE
+        if om_generation_rule == "Template 📐":
+
+            with col3:
+                col3a, col3b = st.columns([1,1.5])
+            with col3a:
+                fixed_or_variable_part_radio = st.radio(
+                    label="", options=["🔒 Add fixed part", "📈 Add variable part", "🏷️ Add Namespace", "🗑️ Reset template"],
+                    label_visibility="collapsed",
+                    key="fixed_or_variable_part_radio")
+
+
+            with col3b:
+                if fixed_or_variable_part_radio == "🔒 Add fixed part":
+                    om_template_fixed_part = st.text_input("⌨️ Enter fixed part*:", key="om_fixed_part_temp")
+                    if re.search(r"[ \t\n\r<>\"{}|\\^`]", om_template_fixed_part):
+                        st.markdown(f"""
+                            <div style="background-color:#fff3cd; padding:1em;
+                            border-radius:5px; color:#856404; border:1px solid #ffeeba;">
+                                ⚠️ You included a space or an unescaped character, which is discouraged.</div>
+                        """, unsafe_allow_html=True)
+                        st.write("")
+                    if om_template_fixed_part:
+                        save_om_template_fixed_part_button = st.button("Add", key="key_save_om_template_fixed_part_button", on_click=save_om_template_fixed_part)
+
+                elif fixed_or_variable_part_radio == "📈 Add variable part":
+                    if not column_list:   #data source is not available (load)
+                        st.markdown(f"""<div class="custom-error-small">
+                                ❌ You must load the
+                                <b>data source file</b> to continue.
+                            </div>""", unsafe_allow_html=True)
+                    else:  # data source is available
+                        list_to_choose = column_list
+                        list_to_choose.insert(0, "Select a column")
+                        om_template_variable_part_temp = st.selectbox("🖱️ Select the column of the data source:*", list_to_choose, key="key_om_template_variable_part_temp")
+                        om_template_variable_part = om_template_variable_part_temp if om_template_variable_part_temp != "Select a column" else ""
+                        if st.session_state["om_template_list"] and st.session_state["om_template_list"][-1].endswith("}"):
+                            st.markdown(f"""<div class="custom-warning-small">
+                                    ⚠️ Including two adjacent variable parts is strongly discouraged.
+                                    <b>Best practice:</b> Add a separator between variables to improve clarity.</div>
+                            """, unsafe_allow_html=True)
+                        if om_template_variable_part:
+                            save_om_template_variable_part_button = st.button("Add", key="save_om_template_variable_part_button", on_click=save_om_template_variable_part)
+
+
+                elif fixed_or_variable_part_radio == "🏷️ Add Namespace":
+                    with col3b:
+                        st.write("")
+                        mapping_ns_dict = utils.get_mapping_ns_dict()
+                        list_to_choose = list(mapping_ns_dict.keys())
+                        list_to_choose.insert(0, "Select a namespace")
+                        om_template_ns_prefix = st.selectbox("🖱️ Select a namespace for the template:", list_to_choose, key="key_om_template_ns_prefix")
+                        om_template_ns = mapping_ns_dict[om_template_ns_prefix]
+                        if not mapping_ns_dict:
+                            st.markdown(f"""<div class="custom-error-small">
+                                    ❌ No namespaces available. You can add namespaces in the
+                                     <b>Global Configuration</b> page.
+                                </div>""", unsafe_allow_html=True)
+                        else:
+                            st.markdown(f"""<div class="info-message-small">
+                                    ℹ️ If a namespace is added, the resulting template will be an <b>IRI</b>.
+                                    Leave unselected to get a <b>Literal</b>.
+                                </div>""", unsafe_allow_html=True)
+
+                        if om_template_ns != "Select a namespace":
+                            st.button("Add", key="key_add_ns_to_om_template_button", on_click=add_ns_to_om_template)
+
+
+                elif fixed_or_variable_part_radio == "🗑️ Reset template":
+                    st.button("Reset", on_click=reset_om_template)
+
+            with col3:
+                om_template = "".join(st.session_state["om_template_list"])
+                if om_template:
+                    st.write("")
+                    st.write("")
+                    st.markdown(f"""
+                    <div style="background-color:#f2f2f2; padding:10px; border-radius:5px; margin-bottom:8px;">
+                        <span style="font-size:0.95rem; word-wrap:break-word; overflow-wrap:anywhere; display:block;">
+                            <b> 📐 Your template so far</b>: <br>
+                            {om_template}
+                        </span>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    st.markdown(f"""
+                        <div style="padding:0px; margin-bottom:8px;">
+                            <span style="font-size:0.85rem; word-wrap:break-word; overflow-wrap:anywhere; display:block;">
+                                🛈 You can keep adding more parts.
+                            </span>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    if not om_template_ns:
+                        if "" in st.session_state["ns_dict"]:
+                            st.markdown(f"""
+                                <div style="padding:0px; margin-bottom:8px;">
+                                    <span style="font-size:0.85rem; word-wrap:break-word; overflow-wrap:anywhere; display:block;">
+                                        ⚠ You are using the default namespace provided by the ontology.
+                                        To select a different option, use the dropdown menu.
+                                    </span>
+                                </div>
+                            """, unsafe_allow_html=True)
+                        else:
+                            st.markdown(f"""
+                                <div style="padding:0px; margin-bottom:8px;">
+                                    <span style="font-size:0.85rem; word-wrap:break-word; overflow-wrap:anywhere; display:block;">
+                                        ⚠ You need to select a namespace.
+                                    </span>
+                                </div>
+                            """, unsafe_allow_html=True)
+
+            if om_template_base and om_template_ns_iri:
+                om_ready_flag_template = True
+
 
         #_______________________________________________
-        #CONSTANT-VALUED OBJECT MAP
+        # OBJECT MAP - CONSTANT
         if om_generation_rule == "Constant 🔒":
 
             with col3:
@@ -2025,113 +2148,7 @@ with tab3:
                 if om_column_name and om_term_type and om_language_tag:
                     om_ready_flag_reference = True
 
-        #_______________________________________________
-        #TEMPLATE-VALUED OBJECT MAP
-        if om_generation_rule_list == "Template 📐":
-            om_ready_flag_template = False
 
-            with col3:
-                col3a, col3b, col3c = st.columns([1,0.1,1])
-            with col3a:
-                ns_prefix_list = list(st.session_state["ns_dict"].keys())
-                ns_prefix_list.insert(0, "Select a namespace")
-                with col3a:
-                    om_template_ns_temp = st.selectbox("Select a namespace for the template*", ns_prefix_list)
-                    om_template_ns = om_template_ns_temp if not om_template_ns_temp == ns_prefix_list[0] else ""
-                    if len(ns_prefix_list) == 1:
-                        st.write("")
-                        with col3b:
-                            st.markdown(f"""
-                                <div style="background-color:#fff3cd; padding:1em;
-                                border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                                    ⚠️ No custom or ontology namespaces have been added. Please do so in
-                                    the <b style="color:#cc9a06;">Global Configuration</b> page to continue.
-                                    </div>
-                            """, unsafe_allow_html=True)
-
-                fixed_or_variable_part_radio = st.radio(
-                    label="", options=["🔒 Add fixed part", "📈 Add variable part", "🗑️ Reset template"],
-                    label_visibility="collapsed",
-                    key="fixed_or_variable_part_radio")
-
-            with col3a:
-                if fixed_or_variable_part_radio == "🔒 Add fixed part":
-                    om_template_fixed_part = st.text_input("Enter fixed part", key="om_fixed_part_temp")
-                    if re.search(r"[ \t\n\r<>\"{}|\\^`]", om_template_fixed_part):
-                        st.markdown(f"""
-                            <div style="background-color:#fff3cd; padding:1em;
-                            border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                                ⚠️ You included a space or an unescaped character, which is discouraged.</div>
-                        """, unsafe_allow_html=True)
-                        st.write("")
-                    if om_template_fixed_part:
-                        save_om_template_fixed_part_button = st.button("Add", key="save_om_template_fixed_part_button", on_click=save_om_template_fixed_part)
-
-                elif fixed_or_variable_part_radio == "📈 Add variable part":
-                    om_template_variable_part_temp = st.selectbox("Select the column of the data source", column_list, key="om_template_variable_part_temp")
-                    om_template_variable_part = om_template_variable_part_temp if om_template_variable_part_temp != column_list[0] else ""
-                    if st.session_state["om_template_list"] and st.session_state["om_template_list"][-1].endswith("}"):
-                        st.markdown(f"""
-                            <div style="background-color:#fff3cd; padding:1em;
-                            border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                                ⚠️ Including two adjacent variable parts is strongly discouraged.
-                                <b>Best practice:</b> Add a separator between variables to improve clarity.</div>
-                        """, unsafe_allow_html=True)
-                        st.write("")
-                    if om_template_variable_part:
-                        save_om_template_variable_part_button = st.button("Add", key="save_om_template_variable_part_button", on_click=save_om_template_variable_part)
-
-                elif fixed_or_variable_part_radio == "🗑️ Reset template":
-                    st.button("Reset", on_click=reset_om_template)
-
-            with col3c:
-                om_template_base = "".join(st.session_state["om_template_list"])
-                if om_template_ns:
-                    om_template_ns_iri = st.session_state["ns_dict"][om_template_ns]
-                elif not om_template_ns and "" in st.session_state["ns_dict"]:
-                    om_template_ns_iri = st.session_state["ns_dict"][om_template_ns]
-                else:
-                    om_template_ns_iri = ""
-                if om_template_base:
-                    om_template = om_template_ns_iri + om_template_base
-                    st.write("")
-                    st.write("")
-                    st.markdown(f"""
-                    <div style="background-color:#f2f2f2; padding:10px; border-radius:5px; margin-bottom:8px;">
-                        <span style="font-size:0.95rem; word-wrap:break-word; overflow-wrap:anywhere; display:block;">
-                            <b> 📐 Your template so far</b>: <br>
-                            {om_template}
-                        </span>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    st.markdown(f"""
-                        <div style="padding:0px; margin-bottom:8px;">
-                            <span style="font-size:0.85rem; word-wrap:break-word; overflow-wrap:anywhere; display:block;">
-                                🛈 You can keep adding more parts.
-                            </span>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    if not om_template_ns:
-                        if "" in st.session_state["ns_dict"]:
-                            st.markdown(f"""
-                                <div style="padding:0px; margin-bottom:8px;">
-                                    <span style="font-size:0.85rem; word-wrap:break-word; overflow-wrap:anywhere; display:block;">
-                                        ⚠ You are using the default namespace provided by the ontology.
-                                        To select a different option, use the dropdown menu.
-                                    </span>
-                                </div>
-                            """, unsafe_allow_html=True)
-                        else:
-                            st.markdown(f"""
-                                <div style="padding:0px; margin-bottom:8px;">
-                                    <span style="font-size:0.85rem; word-wrap:break-word; overflow-wrap:anywhere; display:block;">
-                                        ⚠ You need to select a namespace.
-                                    </span>
-                                </div>
-                            """, unsafe_allow_html=True)
-
-            if om_template_base and om_template_ns_iri:
-                om_ready_flag_template = True
 
 
 
