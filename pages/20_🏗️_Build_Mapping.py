@@ -154,7 +154,7 @@ select_cache_tm_toggle_pom = False
 pom_ready_flag = False
 
 #define on_click functions
-#TAB1
+# TAB1
 def save_tm_w_existing_ls():
     # add triples___________________
     tm_iri = MAP[f"{st.session_state["tm_label"]}"]  # change so that is can be defined by user
@@ -217,7 +217,7 @@ def delete_all_triplesmaps():   #function to delete a TriplesMap
     #reset fields_______________________
     st.session_state["key_tm_to_remove_list"] = []
 
-#TAB2
+# TAB2
 def save_sm_existing():
     # add triples____________________
     st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, st.session_state["sm_iri"]))
@@ -329,6 +329,37 @@ def unassign_sm():
     # reset fields__________________
     st.session_state["key_tm_to_unassign_sm"] = []
 
+# TAB3
+def add_ns_to_om_template():
+    # update template and store information_________
+    if not st.session_state["template_om_is_iri_flag"]:    # no ns added yet
+        st.session_state["template_om_is_iri_flag"] = True
+        st.session_state["om_template_list"].insert(0, om_template_ns)
+    else:   # a ns was added (replace)
+        st.session_state["om_template_list"][0] = om_template_ns
+    # reset fields_____________
+    st.session_state["key_om_template_ns_prefix"] = "Select a namespace"
+    st.session_state["fixed_or_variable_part_radio"] = "📈 Add variable part"
+
+def save_om_template_fixed_part():
+    # update template_____________
+    st.session_state["om_template_list"].append(om_template_fixed_part)
+    # reset fields_____________
+    st.session_state["fixed_or_variable_part_radio"] = "📈 Add variable part"
+
+def save_om_template_variable_part():
+    # update template_____________
+    st.session_state["om_template_list"].append("{" + om_template_variable_part + "}")
+    # reset fields_____________
+    st.session_state["fixed_or_variable_part_radio"] = "🔒 Add fixed part"
+
+def reset_om_template():
+    # store information____________________
+    st.session_state["template_om_is_iri_flag"] = False
+    # reset fields_____________
+    st.session_state["om_template_list"] = []
+
+
 
 
 
@@ -338,14 +369,6 @@ def unassign_sm():
 def reset_input():    #function to reset input upon click
     st.session_state["overwrite_checkbox"] = False
     st.session_state["save_g_filename_flag"] = ""
-
-
-
-
-
-
-
-
 
 
 
@@ -404,23 +427,7 @@ def save_pom_constant():
     st.session_state["po_type"] = "🔢 Reference-valued"
     st.session_state["pom_saved_ok"] = True
 
-def save_om_template_fixed_part():
-    st.session_state["om_template_list"].append(om_template_fixed_part)
-    st.session_state["fixed_or_variable_part_radio"] = "📈 Add variable part"
 
-def save_om_template_variable_part():
-    st.session_state["om_template_list"].append("{" + om_template_variable_part + "}")
-    st.session_state["fixed_or_variable_part_radio"] = "🔒 Add fixed part"
-
-def reset_om_template():
-    st.session_state["om_template_list"] = []
-
-def add_ns_to_om_template():
-    if om_template_ns == "Select a namespace":
-        st.session_state["template_om_is_iri_flag"] = False
-    else:
-        st.session_state["template_om_is_iri_flag"] = True
-        st.session_state["om_template_list"].insert(0, om_template_ns)
 
 def save_pom_template():
     st.session_state["g_mapping"].add((tm_iri, RR.predicateObjectm, pom_iri))
@@ -1959,7 +1966,7 @@ with tab3:
                 col3a, col3b = st.columns([1,1.5])
             with col3a:
                 fixed_or_variable_part_radio = st.radio(
-                    label="", options=["🔒 Add fixed part", "📈 Add variable part", "🏷️ Add Namespace", "🗑️ Reset template"],
+                    label="", options=["🏷️ Add Namespace", "🔒 Add fixed part", "📈 Add variable part", "🗑️ Reset template"],
                     label_visibility="collapsed",
                     key="fixed_or_variable_part_radio")
 
@@ -2004,7 +2011,6 @@ with tab3:
                         list_to_choose = list(mapping_ns_dict.keys())
                         list_to_choose.insert(0, "Select a namespace")
                         om_template_ns_prefix = st.selectbox("🖱️ Select a namespace for the template:", list_to_choose, key="key_om_template_ns_prefix")
-                        om_template_ns = mapping_ns_dict[om_template_ns_prefix]
                         if not mapping_ns_dict:
                             st.markdown(f"""<div class="custom-error-small">
                                     ❌ No namespaces available. You can add namespaces in the
@@ -2016,7 +2022,8 @@ with tab3:
                                     Leave unselected to get a <b>Literal</b>.
                                 </div>""", unsafe_allow_html=True)
 
-                        if om_template_ns != "Select a namespace":
+                        if om_template_ns_prefix != "Select a namespace":
+                            om_template_ns = mapping_ns_dict[om_template_ns_prefix]
                             st.button("Add", key="key_add_ns_to_om_template_button", on_click=add_ns_to_om_template)
 
 
@@ -2036,31 +2043,17 @@ with tab3:
                         </span>
                     </div>
                     """, unsafe_allow_html=True)
-                    st.markdown(f"""
-                        <div style="padding:0px; margin-bottom:8px;">
-                            <span style="font-size:0.85rem; word-wrap:break-word; overflow-wrap:anywhere; display:block;">
-                                🛈 You can keep adding more parts.
-                            </span>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    if not om_template_ns:
-                        if "" in st.session_state["ns_dict"]:
-                            st.markdown(f"""
-                                <div style="padding:0px; margin-bottom:8px;">
-                                    <span style="font-size:0.85rem; word-wrap:break-word; overflow-wrap:anywhere; display:block;">
-                                        ⚠ You are using the default namespace provided by the ontology.
-                                        To select a different option, use the dropdown menu.
-                                    </span>
-                                </div>
-                            """, unsafe_allow_html=True)
-                        else:
-                            st.markdown(f"""
-                                <div style="padding:0px; margin-bottom:8px;">
-                                    <span style="font-size:0.85rem; word-wrap:break-word; overflow-wrap:anywhere; display:block;">
-                                        ⚠ You need to select a namespace.
-                                    </span>
-                                </div>
-                            """, unsafe_allow_html=True)
+                    if st.session_state["template_om_is_iri_flag"]:
+                        st.markdown(f"""<div style="padding:0px; margin-bottom:8px;">
+                                <span style="font-size:0.85rem; word-wrap:break-word; overflow-wrap:anywhere; display:block;">
+                                    🛈 You can keep adding more parts. Template is an IRI.
+                                </span></div>""", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""<div style="padding:0px; margin-bottom:8px;">
+                                <span style="font-size:0.85rem; word-wrap:break-word; overflow-wrap:anywhere; display:block;">
+                                    🛈 You can keep adding more parts. Template is a Literal.
+                                </span></div>""", unsafe_allow_html=True)
+
 
             if om_template_base and om_template_ns_iri:
                 om_ready_flag_template = True
