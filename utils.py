@@ -10,7 +10,7 @@ import csv
 import rdflib
 from rdflib import Graph, URIRef, Literal, Namespace, BNode
 from rdflib.namespace import split_uri
-from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL
+from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL, XSD
 from io import IOBase
 
 
@@ -564,9 +564,13 @@ def get_mapping_ns_dict():
 #Function to check whether an IRI is valid
 def is_valid_iri(iri):
     valid_iri_schemes = ("http://", "https://", "ftp://", "mailto:",
-    "urn:", "tag:", "doi:", "data:"
-    )
+        "urn:", "tag:", "doi:", "data:")
+
+    if isinstance(iri, URIRef):
+        iri = str(iri)
+
     if not iri.startswith(valid_iri_schemes):
+        st.write("FLAG")
         return False
 
     try:
@@ -587,18 +591,20 @@ def is_valid_iri(iri):
 #__________________________________________________
 
 #_________________________________________________________
-#HERE CHANGE (NOT USED)
+# Function to get the ontology base iri
+# Returns a list because the ontology can have several components
 def get_ontology_base_iri():
+    base_iri_list = []
     for s in st.session_state["g_ontology"].subjects(RDF.type, OWL.Ontology):
         try:
             split_uri(s)
             if is_valid_iri(split_uri(s)[0]):
-                return split_uri(s)[0]
+                base_iri_list.append(split_uri(s)[0])
         except:
             if is_valid_iri(s):
-                return s
+                base_iri_list.append(s)
 
-    return None
+    return base_iri_list
 #________________________________________________________
 
 #________________________________________________________
@@ -748,6 +754,64 @@ def get_ontology_superclass_dict():
 
 
 #________________________________________________________
+
+#________________________________________________________
+# Funtion to get exclusions when looking for predicates in an ontology
+def get_exclusion_list_for_p_search():
+
+    excluded_types = {
+        # OWL structural types
+        OWL.Class, OWL.Ontology, OWL.Restriction, OWL.FunctionalProperty,
+        OWL.AnnotationProperty, OWL.ObjectProperty, OWL.DatatypeProperty,
+        OWL.SymmetricProperty, OWL.TransitiveProperty, OWL.InverseFunctionalProperty,
+
+        # RDF/RDFS structural types
+        RDF.Property, RDF.Statement, RDF.List, RDF.Seq, RDF.Bag,
+        RDF.Alt, RDF.XMLLiteral, RDFS.Class, RDFS.Resource, RDFS.Container,
+        RDFS.ContainerMembershipProperty,
+        URIRef("http://www.w3.org/2000/01/rdf-schema#Datatype"),
+
+        # Legacy or datatype URIs
+        XSD.string, XSD.integer, XSD.date, XSD.boolean, XSD.float, XSD.double}
+
+    return excluded_types
+#________________________________________________________
+
+#________________________________________________________
+# Funtion to get the identifier of a namespace
+# Used for the base ns of the ontology
+def get_ns_identifier(ns):
+
+    parts = ns.rstrip("/").split("/")
+    if len(parts) >= 2:
+        return parts[-1]  # Last segment
+    return None
+
+#________________________________________________________
+
+#________________________________________________________
+# Funtion to get the predicates defined by the ontology
+def get_ontology_defined_p():
+
+    ontology_base_iri_list = get_ontology_base_iri()
+    p_types_list = [RDF.Property, OWL.ObjectProperty, OWL.DatatypeProperty]
+    p_exclusion_list = [RDFS.label, RDFS.comment, OWL.versionInfo, OWL.deprecated, RDF.type]
+
+    p_set = set()
+
+    if ontology_base_iri_list:
+        for s, p, o in st.session_state["g_ontology"].triples((None, RDF.type, None)):
+            if o in p_types_list and str(s).startswith(tuple(ontology_base_iri_list)):
+                if s not in p_exclusion_list:
+                    p_set.add(s)
+
+    else:   # if no ontology base iri, don't filter by namespace
+        if o in p_types_list:
+            if s not in p_exclusion_list:
+                p_set.add(s)
+
+    return sorted(list(p_set))
+#______________________________________________
 #HEREIGO
 
 
