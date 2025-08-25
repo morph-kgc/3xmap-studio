@@ -154,13 +154,13 @@ def import_st_aesthetics():
 
         .custom-error-small b {color: #a94442;}
 
-    /* INFO MESSAGE SMALL*/
-        .info-message-small {background-color: #eaf4ff;
-            padding: 0.5em; border-radius: 5px; color: #0c5460;
-            font-size: 0.92em; justify-content: center;
-            align-items: center;}
+    /* INFO MESSAGE SMALL */
+    .info-message-small {background-color: #eaf4ff; padding: 0.5em;
+        border-radius: 5px; color: #0c5460; font-size: 0.92em;
+        justify-content: center; align-items: center; word-break: break-word;
+        overflow-wrap: anywhere; white-space: normal;}
 
-        .info-message-small b {color: #003366;}
+    .info-message-small b {color: #003366;}
 
     /* INFO MESSAGE SMALL GRAY */
     .info-message-small-gray {background-color: #f5f5f5; padding: 0.5em;

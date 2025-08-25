@@ -1345,7 +1345,6 @@ with tab3:
                     with col1a:
                         st.write("")
                         st.markdown(f"""<div class="info-message-small">
-                                ℹ️ The namespace <b>{prefix_input}</b> will be bound:<br>
                                 <b>🔗 {prefix_input}</b> → {iri_input}
                             </div>""", unsafe_allow_html=True)
                         st.write("")
@@ -1379,15 +1378,19 @@ with tab3:
                 if predefined_ns_to_bind_list and "Select all" not in predefined_ns_to_bind_list:
                     # create a single info message
                     inner_html = ""
-                    max_length = 6
+                    max_length = 5
                     if len(predefined_ns_to_bind_list) <= max_length:
                         for prefix in predefined_ns_to_bind_list:
                             inner_html += f"""<div style="margin-bottom:6px;">
                                 <b>🔗 {prefix}</b> → {predefined_ns_dict[prefix]}
                             </div>"""
                         # wrap it all in a single info box
-                        full_html = f"""<div class="info-message-small-gray">
+                        full_html = f"""<div class="info-message-small">
                             {inner_html}</div>"""
+                        # render
+                        with col1a:
+                            st.write("")
+                            st.markdown(full_html, unsafe_allow_html=True)
 
                     else:   # many sm to remove
                         for prefix in predefined_ns_to_bind_list[:max_length]:
@@ -1400,17 +1403,17 @@ with tab3:
                         # wrap it all in a single info box
                         full_html = f"""<div class="info-message-small-gray">
                             {inner_html}</div>"""
-                    # render
-                    with col1a:
-                        st.write("")
-                        st.markdown(full_html, unsafe_allow_html=True)
-                    with col1a:
-                        formatted_predefined_ns_to_bind = utils.format_list_for_markdown(predefined_ns_to_bind_list)
-                        st.write("")
-                        st.markdown(f"""<div class="info-message-small-gray">
-                                ℹ️ The namespaces <b>{formatted_predefined_ns_to_bind}</b> will be bound.
-                            </div>""", unsafe_allow_html=True)
-                        st.write("")
+                        # render
+                        with col1a:
+                            st.write("")
+                            st.markdown(full_html, unsafe_allow_html=True)
+                        with col1a:
+                            formatted_predefined_ns_to_bind = utils.format_list_for_markdown(predefined_ns_to_bind_list)
+                            st.write("")
+                            st.markdown(f"""<div class="info-message-small-gray">
+                                    ℹ️ The namespaces <b>{formatted_predefined_ns_to_bind}</b> will be bound.
+                                </div>""", unsafe_allow_html=True)
+                            st.write("")
 
                 elif predefined_ns_to_bind_list:
                     # create a single info message
@@ -1490,15 +1493,18 @@ with tab3:
                 if ontology_ns_to_bind_list and "Select all" not in ontology_ns_to_bind_list:
                     # create a single info message
                     inner_html = ""
-                    max_length = 6
+                    max_length = 5
                     if len(ontology_ns_to_bind_list) <= max_length:
                         for prefix in ontology_ns_to_bind_list:
                             inner_html += f"""<div style="margin-bottom:6px;">
                                 <b>🔗 {prefix}</b> → {ontology_ns_dict[prefix]}
                             </div>"""
                         # wrap it all in a single info box
-                        full_html = f"""<div class="info-message-small-gray">
+                        full_html = f"""<div class="info-message-small">
                             {inner_html}</div>"""
+                        # render
+                        with col1a:
+                            st.markdown(full_html, unsafe_allow_html=True)
 
                     else:   # many sm to remove
                         for prefix in ontology_ns_to_bind_list[:max_length]:
@@ -1511,17 +1517,17 @@ with tab3:
                         # wrap it all in a single info box
                         full_html = f"""<div class="info-message-small-gray">
                             {inner_html}</div>"""
-                    # render
-                    with col1a:
-                        st.write("")
-                        st.markdown(full_html, unsafe_allow_html=True)
-                    with col1a:
-                        formatted_ontology_ns_to_bind = utils.format_list_for_markdown(ontology_ns_to_bind_list)
-                        st.write("")
-                        st.markdown(f"""<div class="info-message-small">
-                                ℹ️ The namespaces <b>{formatted_ontology_ns_to_bind}</b> will be bound.
-                            </div>""", unsafe_allow_html=True)
-                        st.write("")
+                        # render
+                        with col1a:
+                            st.write("")
+                            st.markdown(full_html, unsafe_allow_html=True)
+                        with col1a:
+                            formatted_ontology_ns_to_bind = utils.format_list_for_markdown(ontology_ns_to_bind_list)
+                            st.write("")
+                            st.markdown(f"""<div class="info-message-small">
+                                    ℹ️ The namespaces <b>{formatted_ontology_ns_to_bind}</b> will be bound.
+                                </div>""", unsafe_allow_html=True)
+                            st.write("")
 
                 elif ontology_ns_to_bind_list:
                     # create a single info message

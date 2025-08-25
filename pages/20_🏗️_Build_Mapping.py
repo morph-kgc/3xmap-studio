@@ -372,6 +372,42 @@ def reset_input():    #function to reset input upon click
 
 
 
+
+def save_pom_template():
+    st.session_state["g_mapping"].add((tm_iri, RR.predicateObjectm, pom_iri))
+    st.session_state["g_mapping"].add((pom_iri, RR.predicate, predicate_iri))
+    st.session_state["g_mapping"].add((pom_iri, RR.objectm, om_iri))
+    #st.session_state["g_mapping"].add((om_iri, RR.template, URIRef(om_template)))
+    #reset fields_____________________________________
+    st.session_state["search_term"] = ""
+    st.session_state["key_selected_p_label"] = "Select a predicate"
+    st.session_state["predicate_textinput"] = ""
+    st.session_state["pom_label"] = ""
+    st.session_state["om_label"] = ""
+    st.session_state["po_type"] = "🔢 Reference-valued"
+    st.session_state["om_template_list"] = []
+
+def save_pom_constant():
+    st.session_state["g_mapping"].add((tm_iri, RR.predicateObjectm, pom_iri))
+    st.session_state["g_mapping"].add((pom_iri, RR.predicate, predicate_iri))
+    st.session_state["g_mapping"].add((pom_iri, RR.objectm, om_iri))
+    if om_constant_type == "🌐 IRI":
+        om_constant_ns = mapping_ns_dict[om_constant_ns_prefix]
+        NS = Namespace(om_constant_ns)
+        om_constant_iri = NS[om_constant]
+        st.session_state["g_mapping"].add((om_iri, RR.constant, om_constant_iri))
+    elif om_constant_type == "📘 Literal":
+        st.session_state["g_mapping"].add((om_iri, RR.constant, Literal(om_constant)))
+    #reset fields_____________________________________
+    st.session_state["search_term"] = ""
+    st.session_state["key_selected_p_label"] = "Select a predicate"
+    st.session_state["predicate_textinput"] = ""
+    st.session_state["pom_label"] = ""
+    st.session_state["om_label"] = ""
+    st.session_state["om_term_type"] = "📘 Literal"
+    st.session_state["po_type"] = "🔢 Reference-valued"
+    st.session_state["pom_saved_ok"] = True
+
 def save_pom_reference():
     st.session_state["g_mapping"].add((tm_iri, RR.predicateObjectm, pom_iri))
     st.session_state["g_mapping"].add((pom_iri, RR.predicate, predicate_iri))
@@ -404,44 +440,10 @@ def save_pom_reference():
     st.session_state["po_type"] = "🔢 Reference-valued"
     st.session_state["pom_saved_ok"] = True
 
-
-def save_pom_constant():
-    st.session_state["g_mapping"].add((tm_iri, RR.predicateObjectm, pom_iri))
-    st.session_state["g_mapping"].add((pom_iri, RR.predicate, predicate_iri))
-    st.session_state["g_mapping"].add((pom_iri, RR.objectm, om_iri))
-    if om_constant_type == "🌐 IRI":
-        om_constant_ns = mapping_ns_dict[om_constant_ns_prefix]
-        NS = Namespace(om_constant_ns)
-        om_constant_iri = NS[om_constant]
-        st.session_state["g_mapping"].add((om_iri, RR.constant, om_constant_iri))
-    elif om_constant_type == "📘 Literal":
-        st.session_state["g_mapping"].add((om_iri, RR.constant, Literal(om_constant)))
-
-    #reset fields_____________________________________
-    st.session_state["search_term"] = ""
-    st.session_state["key_selected_p_label"] = "Select a predicate"
-    st.session_state["predicate_textinput"] = ""
-    st.session_state["pom_label"] = ""
-    st.session_state["om_label"] = ""
-    st.session_state["om_term_type"] = "📘 Literal"
-    st.session_state["po_type"] = "🔢 Reference-valued"
-    st.session_state["pom_saved_ok"] = True
+def save_pom_bnode():
+    pass
 
 
-
-def save_pom_template():
-    st.session_state["g_mapping"].add((tm_iri, RR.predicateObjectm, pom_iri))
-    st.session_state["g_mapping"].add((pom_iri, RR.predicate, predicate_iri))
-    st.session_state["g_mapping"].add((pom_iri, RR.objectm, om_iri))
-    #st.session_state["g_mapping"].add((om_iri, RR.template, URIRef(om_template)))
-    #reset fields_____________________________________
-    st.session_state["search_term"] = ""
-    st.session_state["key_selected_p_label"] = "Select a predicate"
-    st.session_state["predicate_textinput"] = ""
-    st.session_state["pom_label"] = ""
-    st.session_state["om_label"] = ""
-    st.session_state["po_type"] = "🔢 Reference-valued"
-    st.session_state["om_template_list"] = []
 
 
 col1, col2 = st.columns([2,1.5])
@@ -1828,6 +1830,7 @@ with tab3:
 
                 with col1b:
                     if not ds_file_for_pom:
+                        st.write("")
                         st.markdown(f"""<div class="info-message-small">
                                 🛢️ The data source <b>{ds_filename_for_pom}</b> is not cached.
                                 Load it here <b>if needed</b>.
@@ -1963,7 +1966,7 @@ with tab3:
                     om_generation_rule_list, horizontal=True, key="key_om_generation_rule_radio")
 
             #_______________________________________________
-            # OBJECT MAP - TEMPLATE
+            # OBJECT MAP - TEMPLATE-VALUED
             if om_generation_rule == "Template 📐":
 
                 with col3:
@@ -2063,7 +2066,7 @@ with tab3:
 
 
             #_______________________________________________
-            # OBJECT MAP - CONSTANT
+            # OBJECT MAP - CONSTANT-VALUED
             if om_generation_rule == "Constant 🔒":
 
                 with col3:
@@ -2101,7 +2104,7 @@ with tab3:
 
 
             #_______________________________________________
-            #REFERENCE-VALUED OBJECT MAP
+            #OBJECT MAP - REFERENCED-VALUED
             if om_generation_rule_list ==  "Reference 🔗":
                 om_datatype = ""
                 om_language_tag = ""
@@ -2144,7 +2147,10 @@ with tab3:
                     if om_column_name and om_term_type and om_language_tag:
                         om_ready_flag_reference = True
 
-
+            #_______________________________________________
+            #OBJECT MAP - BNODE
+            if om_generation_rule_list ==  "BNode ⚪":
+                pass
 
 
 
@@ -2208,7 +2214,7 @@ with tab3:
                 st.write("")
 
 
-        # OM MAP - TEMPLATE______________________________________________________-
+        # OBJECT MAP - TEMPLATE______________________________________________________-
         if om_generation_rule == "Template 📐":
 
             if om_template:
@@ -2216,11 +2222,10 @@ with tab3:
             else:
                 om_complete_flag = "❌ No"
 
-            #HEREIGO Generate table dynamically
-
             with col2:
                 st.markdown(f"""<table class="info-table-gray">
                         <tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
+                        <tr><td><b>Generation rule*</b></td><td>{om_generation_rule}</td></tr>
                         <tr><td><b>Template*</b></td><td>{om_template}</td></tr>
                         <tr><td><b>Required fields complete</b></td><td> {om_complete_flag} </td></tr>
                     </table>""", unsafe_allow_html=True)
@@ -2228,7 +2233,7 @@ with tab3:
 
 
 
-        # OM MAP - CONSTANT____________________________________________
+        # OBJECT MAP - CONSTANT____________________________________________
         if om_generation_rule == "Constant 🔒":
 
             if om_constant_type == "📘 Literal":
@@ -2265,7 +2270,7 @@ with tab3:
                             <tr><td><b>Required fields completed*</b></td><td> {om_complete_flag} </td></tr>
                         </table>""", unsafe_allow_html=True)
 
-        # OM MAP - REFERENCE___________________________
+        # OBJECT MAP - REFERENCE___________________________
         if om_generation_rule_list == "Reference 🔗":
 
             if om_ready_flag_reference and om_datatype != "Natural language text":
@@ -2282,6 +2287,7 @@ with tab3:
 
                     <table class="vertical-table-green">
                     <tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
+                    <tr><td><b>Generation rule*</b></td><td>{om_generation_rule}</td></tr>
                     <tr><td>🔖 <b>Column name*:</b></td><td>{om_column_name}</td></tr>
                     <tr><td><b>Term type*:</b></td><td>{om_term_type}</td></tr>
                     <tr><td><b>Data type:</b></td><td>{om_datatype}</td></tr>
@@ -2374,6 +2380,21 @@ with tab3:
                         """, unsafe_allow_html=True)
                     st.write("")
 
+        # OBJECT MAP - BNODE___________________________
+        if om_generation_rule ==  "BNode ⚪":
+
+            st.write("HERE")
+
+            om_complete_flag = "✔️ Yes"
+
+            with col2:
+                st.markdown(f"""<table class="info-table-gray">
+                        <tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
+                        <tr><td><b>Generation rule*</b></td><td>{om_generation_rule}</td></tr>
+                        <tr><td><b>Required fields complete</b></td><td> {om_complete_flag} </td></tr>
+                    </table>""", unsafe_allow_html=True)
+
+
         # INFO AND SAVE BUTTON____________________________________
         if pom_complete_flag == "✔️ Yes" and om_complete_flag == "✔️ Yes":
             with col4:
@@ -2388,6 +2409,9 @@ with tab3:
                     save_pom_constant_button = st.button("Save", on_click=save_pom_constant, key="key_save_pom_constant_button")
                 elif om_generation_rule_list == "Reference 🔗":
                     save_pom_reference_button = st.button("Save", on_click=save_pom_constant, key="key_save_pom_reference_button")
+                elif om_generation_rule_list == "BNode ⚪":
+                    save_pom_reference_button = st.button("Save", on_click=save_pom_bnode, key="key_save_pom_bnode_button")
+
         else:
             with col4:
                 st.markdown(f"""<div class="custom-warning">
