@@ -1865,7 +1865,7 @@ with tab3:
             with col1:
                 col1a, col1b = st.columns([1.2,1])
             with col1a:
-                pom_label = st.text_input("⌨️ Enter Object Map label (optional)", key= "key_pom_label")
+                pom_label = st.text_input("⌨️ Enter Predicate-Object Map label (optional)", key= "key_pom_label")
             pom_iri = BNode() if not pom_label else MAP[pom_label]
             if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectm, pom_iri)), None):
                 with col1a:
@@ -1959,6 +1959,8 @@ with tab3:
                             is already in use and will be ignored. Please, pick a different label.</div>
                     """, unsafe_allow_html=True)
                 om_label = ""
+            with col3:
+                st.write("_____")
 
             om_generation_rule_list = ["Template 📐", "Constant 🔒", "Reference 📊", "BNode 👻"]
 
@@ -2086,25 +2088,19 @@ with tab3:
                                     </span></div>""", unsafe_allow_html=True)
 
                         if not st.session_state["template_om_is_iri_flag"]:
+
+                            rdf_datatypes = utils.get_data_types_list()
+
+                            with col3:
+                                st.write("_____")
                             with col3:
                                 col3a, col3b = st.columns(2)
-
-
-                            rdf_datatypes = [
-                                "Select data type", "Natural language text", "xsd:string",
-                                "xsd:integer", "xsd:decimal", "xsd:float", "xsd:double",
-                                "xsd:boolean", "xsd:date", "xsd:dateTime", "xsd:time",
-                                "xsd:anyURI", "rdf:XMLLiteral", "rdf:HTML", "rdf:JSON"]
-
                             with col3a:
-                                st.write("")
                                 om_datatype_template = st.selectbox("🖱️ Select data type (optional):", rdf_datatypes,
                                     key="key_om_datatype_template")
 
                             if om_datatype_template == "Natural language text":
-                                language_tags = [
-                                    "Select language tag", "en", "es", "fr", "de", "zh",
-                                    "ja", "pt-BR", "en-US", "ar", "ru", "hi", "zh-Hans", "sr-Cyrl"]
+                                language_tags = utils.get_language_tags_list()
 
                                 with col3b:
                                     st.write("")
@@ -2142,27 +2138,20 @@ with tab3:
                                 </div>""", unsafe_allow_html=True)
 
                 if om_term_type_constant == "📘 Literal":
+                    rdf_datatypes = utils.get_data_types_list()
+
+                    with col3:
+                        st.write("______")
                     with col3:
                         col3a, col3b = st.columns(2)
-
-                    rdf_datatypes = [
-                        "Select data type", "Natural language text", "xsd:string",
-                        "xsd:integer", "xsd:decimal", "xsd:float", "xsd:double",
-                        "xsd:boolean", "xsd:date", "xsd:dateTime", "xsd:time",
-                        "xsd:anyURI", "rdf:XMLLiteral", "rdf:HTML", "rdf:JSON"]
-
                     with col3a:
-                        st.write("")
                         om_datatype_template = st.selectbox("🖱️ Select data type (optional):", rdf_datatypes,
                             key="key_om_datatype_template")
 
                     if om_datatype_template == "Natural language text":
-                        language_tags = [
-                            "Select language tag", "en", "es", "fr", "de", "zh",
-                            "ja", "pt-BR", "en-US", "ar", "ru", "hi", "zh-Hans", "sr-Cyrl"]
+                        language_tags = utils.get_language_tags_list()
 
                         with col3b:
-                            st.write("")
                             om_language_tag_template = st.selectbox("🖱️ Select language tag:*", language_tags,
                                 key="key_om_language_tag_template")
 
@@ -2199,8 +2188,12 @@ with tab3:
                     if om_column_name and om_term_type == "📘 Literal":
                         rdf_datatypes = utils.get_data_types_list()
 
+                        with col3:
+                            st.write("_______")
+                        with col3:
+                            col3a, col3b = st.columns(2)
                         with col3a:
-                            om_datatype_reference = st.selectbox("🖱️ Select data type (optional)", rdf_datatypes,
+                            om_datatype_reference = st.selectbox("🖱️ Select data type (optional):", rdf_datatypes,
                             key="key_om_datatype_reference")
 
                         if om_datatype_reference == "Natural language text":
@@ -2216,6 +2209,14 @@ with tab3:
                                     ⚠️ Make sure that the valued in the referenced column
                                     are <b>valid IRIs</b>.
                                 </div>""", unsafe_allow_html=True)
+
+            if om_generation_rule == "BNode 👻":
+                with col3:
+                    col3a, col3b = st.columns([2,1])
+                with col3a:
+                    st.markdown(f"""<div class="custom-warning-small">
+                            ⚠️ Term type is <b>👻 BNode</b>. This option is disencouraged.</b>.
+                        </div>""", unsafe_allow_html=True)
 
 
         st.write("______")
@@ -2336,7 +2337,7 @@ with tab3:
                         </table>""", unsafe_allow_html=True)
 
         # OBJECT MAP - REFERENCE___________________________
-        if om_generation_rule_list == "Reference 📊":
+        if om_generation_rule == "Reference 📊":
 
             if om_ready_flag_reference and om_datatype != "Natural language text":
                 with col2:
@@ -2454,11 +2455,11 @@ with tab3:
                     🧐 Double-check the information before saving. </div>
                 """, unsafe_allow_html=True)
                 st.write("")
-                if om_generation_rule_list == "Template 📐":
+                if om_generation_rule == "Template 📐":
                     save_pom_template_button = st.button("Save", on_click=save_pom_constant, key="key_save_pom_template_button")
-                elif om_generation_rule_list == "Constant 🔒":
+                elif om_generation_rule == "Constant 🔒":
                     save_pom_constant_button = st.button("Save", on_click=save_pom_constant, key="key_save_pom_constant_button")
-                elif om_generation_rule_list == "Reference 📊":
+                elif om_generation_rule == "Reference 📊":
                     save_pom_reference_button = st.button("Save", on_click=save_pom_constant, key="key_save_pom_reference_button")
         else:
             with col4:
