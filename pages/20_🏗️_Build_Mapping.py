@@ -1862,21 +1862,6 @@ with tab3:
                     """,unsafe_allow_html=True)
                 st.write("")
 
-            with col1:
-                col1a, col1b = st.columns([1.2,1])
-            with col1a:
-                pom_label = st.text_input("⌨️ Enter Predicate-Object Map label (optional)", key= "key_pom_label")
-            pom_iri = BNode() if not pom_label else MAP[pom_label]
-            if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectm, pom_iri)), None):
-                with col1a:
-                    st.markdown(f"""
-                        <div style="background-color:#fff3cd; padding:1em;
-                        border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                            ⚠️ The Predicate-Object Map label <b style="color:#cc9a06;">{pom_label}</b>
-                            is already in use and will be ignored. Please, pick a different label.</div>
-                    """, unsafe_allow_html=True)
-                om_label = ""
-
 
             if st.session_state["g_ontology_components_dict"]:
                 ontology_p_list = utils.get_ontology_defined_p()
@@ -1937,6 +1922,21 @@ with tab3:
                     selected_p_iri = NS[manual_p_label]
 
 
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                pom_label = st.text_input("⌨️ Enter Predicate-Object Map label (optional)", key= "key_pom_label")
+            pom_iri = BNode() if not pom_label else MAP[pom_label]
+            if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectm, pom_iri)), None):
+                with col1a:
+                    st.markdown(f"""
+                        <div style="background-color:#fff3cd; padding:1em;
+                        border-radius:5px; color:#856404; border:1px solid #ffeeba;">
+                            ⚠️ The Predicate-Object Map label <b style="color:#cc9a06;">{pom_label}</b>
+                            is already in use and will be ignored. Please, pick a different label.</div>
+                    """, unsafe_allow_html=True)
+                om_label = ""
+
             # BUILD OBJECT MAP_______________________________________________
             with col3:
                 st.write("____")
@@ -1945,22 +1945,6 @@ with tab3:
                     """,unsafe_allow_html=True)
                 st.write("")
 
-            with col3:
-                col3a, col3b = st.columns([1.2,1])
-            with col3a:
-                om_label = st.text_input("⌨️ Enter Object Map label (optional)", key= "key_om_label")
-            om_iri = BNode() if not om_label else MAP[om_label]
-            if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectm, om_iri)), None):
-                with col3a:
-                    st.markdown(f"""
-                        <div style="background-color:#fff3cd; padding:1em;
-                        border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                            ⚠️ The Object Map label <b style="color:#cc9a06;">{pom_label}</b>
-                            is already in use and will be ignored. Please, pick a different label.</div>
-                    """, unsafe_allow_html=True)
-                om_label = ""
-            with col3:
-                st.write("_____")
 
             om_generation_rule_list = ["Template 📐", "Constant 🔒", "Reference 📊", "BNode 👻"]
 
@@ -2081,18 +2065,22 @@ with tab3:
                                     <span style="font-size:0.85rem; word-wrap:break-word; overflow-wrap:anywhere; display:block;">
                                         🛈 You can keep adding more parts. Term type: <b style="color:#F63366;">🌐 IRI</b>
                                     </span></div>""", unsafe_allow_html=True)
+                            st.markdown(f"""<div class="gray-preview-message">
+                                    Term type: <b style="color:#F63366;">🌐 IRI</b>
+                                </div>""", unsafe_allow_html=True)
                         else:
                             st.markdown(f"""<div style="padding:0px; margin-bottom:8px;">
                                     <span style="font-size:0.85rem; word-wrap:break-word; overflow-wrap:anywhere; display:block;">
                                         🛈 You can keep adding more parts. Term type: <b style="color:#F63366;">📘 Literal</b>.
                                     </span></div>""", unsafe_allow_html=True)
+                            st.markdown(f"""<div class="gray-preview-message">
+                                    Term type: <b style="color:#F63366;">📘 Literal</b>
+                                </div>""", unsafe_allow_html=True)   #HEREHEREHERE
 
                         if not st.session_state["template_om_is_iri_flag"]:
 
                             rdf_datatypes = utils.get_data_types_list()
 
-                            with col3:
-                                st.write("_____")
                             with col3:
                                 col3a, col3b = st.columns(2)
                             with col3a:
@@ -2107,7 +2095,21 @@ with tab3:
                                     om_language_tag_template = st.selectbox("🖱️ Select language tag:*", language_tags,
                                         key="key_om_language_tag_template")
 
-
+                    if st.session_state["om_template_list"]:
+                        with col3:
+                            col3a, col3b = st.columns([1.2,1])
+                        with col3a:
+                            om_label = st.text_input("⌨️ Enter Object Map label (optional)", key= "key_om_label")
+                        om_iri = BNode() if not om_label else MAP[om_label]
+                        if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectm, om_iri)), None):
+                            with col3a:
+                                st.markdown(f"""
+                                    <div style="background-color:#fff3cd; padding:1em;
+                                    border-radius:5px; color:#856404; border:1px solid #ffeeba;">
+                                        ⚠️ The Object Map label <b style="color:#cc9a06;">{pom_label}</b>
+                                        is already in use and will be ignored. Please, pick a different label.</div>
+                                """, unsafe_allow_html=True)
+                            om_label = ""
 
 
             #_______________________________________________
@@ -2122,7 +2124,7 @@ with tab3:
                 with col3b:
                     om_term_type_constant = st.radio(label="🖱️ Select Term type:*", options=["📘 Literal", "🌐 IRI"], horizontal=True, key="om_term_type_constant")
 
-                if om_term_type_constant == "🌐 IRI":
+                if om_constant and om_term_type_constant == "🌐 IRI":
                     mapping_ns_dict = utils.get_mapping_ns_dict()
                     list_to_choose = list(mapping_ns_dict.keys())
                     list_to_choose.insert(0, "Select a namespace")
@@ -2137,11 +2139,10 @@ with tab3:
                                     the <b>Global Configuration</b> page.
                                 </div>""", unsafe_allow_html=True)
 
-                if om_term_type_constant == "📘 Literal":
+                if om_constant and om_term_type_constant == "📘 Literal":
                     rdf_datatypes = utils.get_data_types_list()
 
-                    with col3:
-                        st.write("______")
+
                     with col3:
                         col3a, col3b = st.columns(2)
                     with col3a:
@@ -2155,6 +2156,22 @@ with tab3:
                             om_language_tag_template = st.selectbox("🖱️ Select language tag:*", language_tags,
                                 key="key_om_language_tag_template")
 
+                if om_constant:
+                    with col3:
+                        col3a, col3b = st.columns(2)
+                    with col3a:
+                        om_label = st.text_input("⌨️ Enter Object Map label (optional)", key= "key_om_label")
+                    om_iri = BNode() if not om_label else MAP[om_label]
+                    if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectm, om_iri)), None):
+                        with col3a:
+                            st.markdown(f"""
+                                <div style="background-color:#fff3cd; padding:1em;
+                                border-radius:5px; color:#856404; border:1px solid #ffeeba;">
+                                    ⚠️ The Object Map label <b style="color:#cc9a06;">{pom_label}</b>
+                                    is already in use and will be ignored. Please, pick a different label.</div>
+                            """, unsafe_allow_html=True)
+                        om_label = ""
+
 
 
             #_______________________________________________
@@ -2166,7 +2183,7 @@ with tab3:
 
 
                 with col3:
-                    col3a, col3b = st.columns([1.5,2])
+                    col3a, col3b = st.columns(2)
                 with col3a:
                     list_to_choose = column_list.copy()
                     list_to_choose.insert(0, "Select a column")
@@ -2185,11 +2202,9 @@ with tab3:
                     with col3b:
                         om_term_type = st.radio(label="🖱️ Select Term type*", options=["📘 Literal", "🌐 IRI"], horizontal=True, key="om_term_type")
 
-                    if om_column_name and om_term_type == "📘 Literal":
+                    if om_column_name != "Select a column" and om_term_type == "📘 Literal":
                         rdf_datatypes = utils.get_data_types_list()
 
-                        with col3:
-                            st.write("_______")
                         with col3:
                             col3a, col3b = st.columns(2)
                         with col3a:
@@ -2200,23 +2215,71 @@ with tab3:
                             language_tags = utils.get_language_tags_list()
 
                             with col3b:
-                                om_language_tag_reference = st.selectbox("🌍 Select language tag*", language_tags,
+                                om_language_tag_reference = st.selectbox("🖱️ Select language tag*", language_tags,
                                     key="key_om_language_tag_reference")
 
-                    elif om_column_name and om_term_type == "🌐 IRI":
+                        with col3:
+                            col3a, col3b = st.columns([1.2,1])
+                        with col3a:
+                            om_label = st.text_input("⌨️ Enter Object Map label (optional)", key= "key_om_label")
+                        om_iri = BNode() if not om_label else MAP[om_label]
+                        if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectm, om_iri)), None):
+                            with col3a:
+                                st.markdown(f"""
+                                    <div style="background-color:#fff3cd; padding:1em;
+                                    border-radius:5px; color:#856404; border:1px solid #ffeeba;">
+                                        ⚠️ The Object Map label <b style="color:#cc9a06;">{pom_label}</b>
+                                        is already in use and will be ignored. Please, pick a different label.</div>
+                                """, unsafe_allow_html=True)
+                            om_label = ""
+
+                    elif om_column_name != "Select a column" and om_term_type == "🌐 IRI":
+                        with col3:
+                            col3a, col3b = st.columns([1.2,1])
+                        with col3a:
+                            om_label = st.text_input("⌨️ Enter Object Map label (optional)", key= "key_om_label")
+                        om_iri = BNode() if not om_label else MAP[om_label]
+                        if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectm, om_iri)), None):
+                            with col3a:
+                                st.markdown(f"""
+                                    <div style="background-color:#fff3cd; padding:1em;
+                                    border-radius:5px; color:#856404; border:1px solid #ffeeba;">
+                                        ⚠️ The Object Map label <b style="color:#cc9a06;">{pom_label}</b>
+                                        is already in use and will be ignored. Please, pick a different label.</div>
+                                """, unsafe_allow_html=True)
+                            om_label = ""
+
                         with col3b:
                             st.markdown(f"""<div class="custom-warning-small">
                                     ⚠️ Make sure that the valued in the referenced column
                                     are <b>valid IRIs</b>.
                                 </div>""", unsafe_allow_html=True)
 
+
+
+
             if om_generation_rule == "BNode 👻":
                 with col3:
                     col3a, col3b = st.columns([2,1])
-                with col3a:
+                with col3b:
+                    st.write("")
                     st.markdown(f"""<div class="custom-warning-small">
-                            ⚠️ Term type is <b>👻 BNode</b>. This option is disencouraged.</b>.
+                            ⚠️ Term type is <b>👻 BNode</b>. This option is discouraged.</b>
                         </div>""", unsafe_allow_html=True)
+                with col3a:
+                    st.write("")
+                    om_label = st.text_input("⌨️ Enter Object Map label (optional)", key= "key_om_label")
+                om_iri = BNode() if not om_label else MAP[om_label]
+                if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectm, om_iri)), None):
+                    with col3a:
+                        st.markdown(f"""
+                            <div style="background-color:#fff3cd; padding:1em;
+                            border-radius:5px; color:#856404; border:1px solid #ffeeba;">
+                                ⚠️ The Object Map label <b style="color:#cc9a06;">{pom_label}</b>
+                                is already in use and will be ignored. Please, pick a different label.</div>
+                        """, unsafe_allow_html=True)
+                    om_label = ""
+
 
 
         st.write("______")
