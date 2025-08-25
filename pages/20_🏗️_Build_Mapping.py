@@ -2031,11 +2031,7 @@ with tab3:
                                     ❌ No namespaces available. You can add namespaces in the
                                      <b>Global Configuration</b> page.
                                 </div>""", unsafe_allow_html=True)
-                        else:
-                            st.markdown(f"""<div class="info-message-small">
-                                    ℹ️ If a namespace is added, <b>Term type</b> will be <b>🌐 IRI</b>.
-                                    Leave unselected to get <b>📘 Literal</b>.
-                                </div>""", unsafe_allow_html=True)
+
 
                         if om_template_ns_prefix != "Select a namespace":
                             om_template_ns = mapping_ns_dict[om_template_ns_prefix]
@@ -2058,25 +2054,30 @@ with tab3:
                         st.write("")
                         st.markdown(f"""<div class="gray-preview-message">
                                 📐 <b>Your <b style="color:#F63366;">template</b> so far:</b> <br>
-                                {om_template}
-                            </div>""", unsafe_allow_html=True)
+                                {om_template}<br>
+                            <div style="font-size:11px; color:#666666; margin-top:0.2em;">
+                                🛈 You can keep adding more parts.
+                            </div></div>""", unsafe_allow_html=True)
                         if st.session_state["template_om_is_iri_flag"]:
-                            st.markdown(f"""<div style="padding:0px; margin-bottom:8px;">
-                                    <span style="font-size:0.85rem; word-wrap:break-word; overflow-wrap:anywhere; display:block;">
-                                        🛈 You can keep adding more parts. Term type: <b style="color:#F63366;">🌐 IRI</b>
-                                    </span></div>""", unsafe_allow_html=True)
-                            st.markdown(f"""<div class="gray-preview-message">
-                                    Term type: <b style="color:#F63366;">🌐 IRI</b>
-                                </div>""", unsafe_allow_html=True)
+                            with col3b:
+                                st.write("")
+                                st.markdown(f"""
+                                    <div class="gray-preview-message" style="padding:0.2em 0.5em;">
+                                            <b>Term type</b>: <br>
+                                            <b style="color:#F63366;">🌐 IRI</b>
+                                        <div style="font-size:11px; color:#666666; margin-top:0.2em;">
+                                            🛈 Enter template without a Namespace to change to <b>📘 Literal</b>.
+                                        </div></div>""", unsafe_allow_html=True)
                         else:
-                            st.markdown(f"""<div style="padding:0px; margin-bottom:8px;">
-                                    <span style="font-size:0.85rem; word-wrap:break-word; overflow-wrap:anywhere; display:block;">
-                                        🛈 You can keep adding more parts. Term type: <b style="color:#F63366;">📘 Literal</b>.
-                                    </span></div>""", unsafe_allow_html=True)
-                            st.markdown(f"""<div class="gray-preview-message">
-                                    Term type: <b style="color:#F63366;">📘 Literal</b>
-                                </div>""", unsafe_allow_html=True)   #HEREHEREHERE
-
+                            with col3b:
+                                st.write("")
+                                st.markdown(f"""
+                                    <div class="gray-preview-message" style="padding:0.2em 0.5em;">
+                                            <b>Term type</b>: <br>
+                                            <b style="color:#F63366;">📘 Literal</b>
+                                        <div style="font-size:11px; color:#666666; margin-top:0.2em;">
+                                            🛈 Add a Namespace to change to <b>🌐 IRI</b>.
+                                        </div></div>""", unsafe_allow_html=True)
                         if not st.session_state["template_om_is_iri_flag"]:
 
                             rdf_datatypes = utils.get_data_types_list()
@@ -2084,6 +2085,7 @@ with tab3:
                             with col3:
                                 col3a, col3b = st.columns(2)
                             with col3a:
+                                st.write("")
                                 om_datatype_template = st.selectbox("🖱️ Select data type (optional):", rdf_datatypes,
                                     key="key_om_datatype_template")
 
@@ -2097,9 +2099,9 @@ with tab3:
 
                     if st.session_state["om_template_list"]:
                         with col3:
-                            col3a, col3b = st.columns([1.2,1])
+                            col3a, col3b = st.columns(2)
                         with col3a:
-                            om_label = st.text_input("⌨️ Enter Object Map label (optional)", key= "key_om_label")
+                            om_label = st.text_input("⌨️ Enter Object Map label (optional):", key= "key_om_label")
                         om_iri = BNode() if not om_label else MAP[om_label]
                         if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectm, om_iri)), None):
                             with col3a:
@@ -2160,7 +2162,7 @@ with tab3:
                     with col3:
                         col3a, col3b = st.columns(2)
                     with col3a:
-                        om_label = st.text_input("⌨️ Enter Object Map label (optional)", key= "key_om_label")
+                        om_label = st.text_input("⌨️ Enter Object Map label (optional):", key= "key_om_label")
                     om_iri = BNode() if not om_label else MAP[om_label]
                     if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectm, om_iri)), None):
                         with col3a:
@@ -2221,7 +2223,7 @@ with tab3:
                         with col3:
                             col3a, col3b = st.columns([1.2,1])
                         with col3a:
-                            om_label = st.text_input("⌨️ Enter Object Map label (optional)", key= "key_om_label")
+                            om_label = st.text_input("⌨️ Enter Object Map label (optional):", key= "key_om_label")
                         om_iri = BNode() if not om_label else MAP[om_label]
                         if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectm, om_iri)), None):
                             with col3a:
@@ -2237,7 +2239,7 @@ with tab3:
                         with col3:
                             col3a, col3b = st.columns([1.2,1])
                         with col3a:
-                            om_label = st.text_input("⌨️ Enter Object Map label (optional)", key= "key_om_label")
+                            om_label = st.text_input("⌨️ Enter Object Map label (optional):", key= "key_om_label")
                         om_iri = BNode() if not om_label else MAP[om_label]
                         if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectm, om_iri)), None):
                             with col3a:
@@ -2268,7 +2270,7 @@ with tab3:
                         </div>""", unsafe_allow_html=True)
                 with col3a:
                     st.write("")
-                    om_label = st.text_input("⌨️ Enter Object Map label (optional)", key= "key_om_label")
+                    om_label = st.text_input("⌨️ Enter Object Map label (optional):", key= "key_om_label")
                 om_iri = BNode() if not om_label else MAP[om_label]
                 if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectm, om_iri)), None):
                     with col3a:
@@ -2308,8 +2310,8 @@ with tab3:
                     <tr class="title-row"><td colspan="2">🔎 Predicate-Object Map</td></tr>
                     <tr><td><b>TriplesMap*:</b></td><td>{tm_label_for_pom}</td></tr>
                     <tr><td><b>Subject Map*</b></td><td>{sm_label_for_pom}</td></tr>
-                    <tr><td><b>Predicate-Object Map label</b></td><td>{pom_label}</td></tr>
                     <tr><td><b>Predicate*</b></td><td>{selected_p_label_display}</td></tr>
+                    <tr><td><b>Predicate-Object Map label</b></td><td>{pom_label}</td></tr>
                     <tr><td><b>Required fields complete</b></td><td>{pom_complete_flag}</td></tr>
                 </table>""", unsafe_allow_html=True)
 
@@ -2327,9 +2329,9 @@ with tab3:
                     <tr class="title-row"><td colspan="2">🔎 Predicate-Object Map</td></tr>
                     <tr><td><b>TriplesMap*</b></td><td>{tm_label_for_pom}</td></tr>
                     <tr><td><b>Subject Map*</b></td><td>{sm_label_for_pom}</td></tr>
-                    <tr><td><b>Predicate-Object Map label</b></td><td>{pom_label}</td></tr>
                     <tr><td><b>Predicate Namespace*</b></td><td>{manual_p_ns_prefix_display}</td></tr>
                     <tr><td><b>Predicate*</b></td><td>{manual_p_label}</td></tr>
+                    <tr><td><b>Predicate-Object Map label</b></td><td>{pom_label}</td></tr>
                     <tr><td><b>Required fields complete</b></td><td>{pom_complete_flag}</td></tr>
                 </table>""", unsafe_allow_html=True)
 
@@ -2350,13 +2352,36 @@ with tab3:
                 om_complete_flag = "❌ No"
 
             with col2:
-                st.markdown(f"""<table class="info-table-gray">
-                        <tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
-                        <tr><td><b>Object Map label</b></td><td> {om_label} </td></tr>
+
+                inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
                         <tr><td><b>Generation rule*</b></td><td>{om_generation_rule}</td></tr>
-                        <tr><td><b>Template*</b></td><td>{om_template}</td></tr>
-                        <tr><td><b>Required fields complete</b></td><td> {om_complete_flag} </td></tr>
-                    </table>""", unsafe_allow_html=True)
+                        <tr><td><b>Template*</b></td><td>{om_template}</td></tr>"""
+
+                if st.session_state["template_om_is_iri_flag"]:    # term type IRI
+                    inner_html += f"""<tr><td><b>Term type*</b></td><td>🌐 IRI</td></tr>"""
+
+                else:    #term type Literal
+                    om_datatype_display = om_datatype_template if om_datatype_template != "Select data type" else ""
+                    inner_html += f"""<tr><td><b>Term type*</b></td><td>📘 Literal</td></tr>
+                            <tr><td><b>Data type</b></td><td>{om_datatype_display}</td></tr>"""
+
+
+                    if not om_datatype_template != "Natural language text":
+
+                        om_language_tag_template_display = om_language_tag_template if om_language_tag_template != "Select language tag" else ""
+                        inner_html += f"""<tr><td><b>Language tag*</b></td><td>{om_language_tag_template_display}</td></tr>"""
+
+                inner_html += f"""<tr><td><b>Object Map label</b></td><td> {om_label} </td></tr>
+                        <tr><td><b>Required fields complete</b></td><td> {om_complete_flag} </td></tr>"""
+
+                full_html = f"""<table class="info-table-gray">
+                        {inner_html}
+                    </table>"""
+
+                # render
+                with col2:
+                    st.markdown(full_html, unsafe_allow_html=True)
+
 
 
 
