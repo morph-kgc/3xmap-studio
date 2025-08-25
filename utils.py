@@ -825,6 +825,30 @@ def get_ontology_defined_p():
 
     return sorted(list(p_set))
 #______________________________________________
+
+#______________________________________________
+# Funtion to get list of data types
+def get_data_types_list():
+
+    data_type_list = ["Select data type", "Natural language text", "xsd:string",
+        "xsd:integer", "xsd:decimal", "xsd:float", "xsd:double",
+        "xsd:boolean", "xsd:date", "xsd:dateTime", "xsd:time",
+        "xsd:anyURI", "rdf:XMLLiteral", "rdf:HTML", "rdf:JSON"]
+
+    return data_type_list
+#______________________________________________
+
+#______________________________________________
+# Funtion to get list of language tags
+def get_language_tags_list():
+
+    language_tags_list = ["Select language tag", "en", "es", "fr", "de", "zh",
+        "ja", "pt-BR", "en-US", "ar", "ru", "hi", "zh-Hans", "sr-Cyrl"]
+
+    return language_tags_list
+#______________________________________________
+
+
 #HEREIGO
 
 
