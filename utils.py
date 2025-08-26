@@ -827,15 +827,25 @@ def get_ontology_defined_p():
 #______________________________________________
 
 #______________________________________________
-# Funtion to get list of data types
-def get_data_types_list():
+# Funtion to get list of datatypes
+def get_datatypes_dict():
 
-    data_type_list = ["Select data type", "Natural language text", "xsd:string",
-        "xsd:integer", "xsd:decimal", "xsd:float", "xsd:double",
-        "xsd:boolean", "xsd:date", "xsd:dateTime", "xsd:time",
-        "xsd:anyURI", "rdf:XMLLiteral", "rdf:HTML", "rdf:JSON"]
+    # datatype_list = ["Select datatype", "Natural language text", "xsd:string",
+    #     "xsd:integer", "xsd:decimal", "xsd:float", "xsd:double",
+    #     "xsd:boolean", "xsd:date", "xsd:dateTime", "xsd:time",
+    #     "xsd:anyURI", "rdf:XMLLiteral", "rdf:HTML", "rdf:JSON"]
 
-    return data_type_list
+    datatype_dict = {"Select datatype" : "", "Natural language text": "",
+        "xsd:string": XSD.string, "xsd:integer": XSD.integer,
+        "xsd:decimal": XSD.decimal, "xsd:float": XSD.float,
+        "xsd:double": XSD. double, "xsd:boolean": XSD.boolean,
+        "xsd:date": XSD.date, "xsd:dateTime": XSD.dateTime,
+        "xsd:time": XSD.time, "xsd:anyURI": XSD.anyURI,
+        "rdf:XMLLiteral": XSD.XMLLiteral, "rdf:HTML": RDF.HTML,
+        "rdf:JSON": RDF.JSON}
+
+
+    return datatype_dict
 #______________________________________________
 
 #______________________________________________
