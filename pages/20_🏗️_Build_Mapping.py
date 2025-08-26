@@ -635,8 +635,17 @@ with tab1:
                             st.write("")
 
                 if ds_file and not logical_source_label in labelled_ls_list:
-                    with col1a:
-                        st.button("Save", key="key_save_tm_w_new_ls", on_click=save_tm_w_new_ls)
+                    try:
+                        columns_df = pd.read_csv(ds_file)
+                        column_list = columns_df.columns.tolist()
+                        with col1a:
+                            st.button("Save", key="key_save_tm_w_new_ls", on_click=save_tm_w_new_ls)
+                    except:    # empty file
+                        with col1a:
+                            st.markdown(f"""<div class="custom-error-small">
+                                ❌ The file <b>{ds_file.name}</b> is empty. Please load a valid file.
+                            </div>""", unsafe_allow_html=True)
+                            st.write("")
 
     # remove tm success message - show here if "Remove" purple heading is not going to be shown
     if not utils.get_tm_dict() and st.session_state["tm_deleted_ok_flag"]:  # show message here if "Remove" purple heading is going to be shown
@@ -1882,7 +1891,7 @@ with tab3:
                             </div>""", unsafe_allow_html=True)
                         except:   # empty file
                             st.markdown(f"""<div class="custom-error-small">
-                                ❌ <b>{ds_file_for_pom.name}</b> is empty.
+                                ❌ The file <b>{ds_file_for_pom.name}</b> is empty.
                                 Please upload the correct file for the data source.
                             </div>""", unsafe_allow_html=True)
                             column_list = []

@@ -235,6 +235,8 @@ def extend_ontology_from_link():
     # merge both ontologies___________________
     for triple in g_ontology_new_part:
         st.session_state["g_ontology"].add(triple)
+    for prefix, namespace in g_ontology_new_part.namespaces():
+        st.session_state["g_ontology"].bind(prefix, namespace)
     # reset fields___________________________
     st.session_state["key_ontology_link"] = ""
     st.session_state["ontology_link"] = ""
@@ -249,6 +251,8 @@ def extend_ontology_from_file():
     # merge both ontologies___________________
     for triple in g_ontology_new_part:
         st.session_state["g_ontology"].add(triple)
+    for prefix, namespace in g_ontology_new_part.namespaces():
+        st.session_state["g_ontology"].bind(prefix, namespace)
     # reset fields___________________________
     st.session_state["key_ontology_uploader"] = str(uuid.uuid4())
     st.session_state["ontology_file"] = None
@@ -360,6 +364,8 @@ def unbind_all_namespaces():
 
 #TAB4
 def save_progress():
+    pkl_cache_filename = "__" + st.session_state["g_label"] + "_cache__.pkl"
+    existing_pkl_file_list = [f for f in os.listdir() if f.endswith("_cache__.pkl")]
     # remove all cache pkl files in cwd_____________
     for file in existing_pkl_file_list:
         filepath = os.path.join(os.getcwd(), file)
@@ -733,12 +739,12 @@ with tab1:
 
     # option to retrieve mapping from cache-----------------------------------
     if not st.session_state["g_label"]:
-        pkl_cache_filename = next((f for f in os.listdir() if f.endswith("_cache__.pkl")), None)  # fallback if no match is foun
-        pkl_cache_file_path = os.path.join(os.getcwd(), pkl_cache_filename)
-        cached_mapping_name = pkl_cache_filename.split("_cache__.pkl")[0]
-        cached_mapping_name = cached_mapping_name.split("__")[1]
+        pkl_cache_filename = next((f for f in os.listdir() if f.endswith("_cache__.pkl")), None)  # fallback if no match is found
 
         if pkl_cache_filename:
+            pkl_cache_file_path = os.path.join(os.getcwd(), pkl_cache_filename)
+            cached_mapping_name = pkl_cache_filename.split("_cache__.pkl")[0]
+            cached_mapping_name = cached_mapping_name.split("__")[1]
             with col3:
                 st.write("")
                 retrieve_cached_mapping_checkbox = st.checkbox(
@@ -1231,10 +1237,7 @@ with tab3:
             ontology_ns_dict = utils.get_ontology_ns_dict()
             mapping_ns_dict = utils.get_mapping_ns_dict()
             ontology_ns_list = [key for key in ontology_ns_dict if key not in mapping_ns_dict]
-            if ontology_ns_list:
-                add_ns_options = ["🧩 Ontology", "✏️ Custom", "📋 Predefined"]
-            else:
-                add_ns_options = ["✏️ Custom", "📋 Predefined"]
+            add_ns_options = ["🧩 Ontology", "✏️ Custom", "📋 Predefined"]
         else:
             add_ns_options = ["✏️ Custom", "📋 Predefined"]
 
@@ -1360,7 +1363,7 @@ with tab3:
                 with col1a:
                     st.write("")
                     st.markdown(f"""<div class="custom-error-small">
-                        ❌ <b> All predefined namespaces are already bound </b>
+                        ❌ All <b>predefined namespaces<b> are already bound.
                     </div>""", unsafe_allow_html=True)
                     st.write("")
             else:
@@ -1466,6 +1469,8 @@ with tab3:
         if add_ns_selected_option == "🧩 Ontology":
 
             there_are_ontology_ns_unbound_flag = False
+            ontology_ns_dict = utils.get_ontology_ns_dict()
+            st.write("HEREHERE", ontology_ns_dict)
             for prefix in ontology_ns_dict:
                 if not prefix in mapping_ns_dict:
                     there_are_ontology_ns_unbound_flag = True
@@ -1475,7 +1480,7 @@ with tab3:
                 with col1a:
                     st.write("")
                     st.markdown(f"""<div class="custom-error-small">
-                        ❌ <b> All ontology namespaces are already bound </b>
+                        ❌ All <b>ontology namespaces</b> are already bound.
                     </div>""", unsafe_allow_html=True)
                     st.write("")
             else:
@@ -1776,8 +1781,6 @@ with tab4:
         with col2b:
             utils.get_corner_status_message()
 
-        pkl_cache_filename = "__" + st.session_state["g_label"] + "_cache__.pkl"
-        existing_pkl_file_list = [f for f in os.listdir() if f.endswith("_cache__.pkl")]
         with col2b:
             st.write("")
             save_progress_checkbox = st.checkbox(
@@ -1808,49 +1811,6 @@ with tab4:
             time.sleep(st.session_state["success_display_time"])
             st.rerun()
 
-        # with col1:
-        #     st.markdown("""<div class="purple-heading">
-        #             💾 Save progress
-        #         </div>""", unsafe_allow_html=True)
-        #     st.write("")
-        #
-        # with col1:
-        #     col1a, col1b = st.columns([2,1])
-
-        # if st.session_state["progress_saved_ok_flag"]:
-        #     with col1a:
-        #         st.write("")
-        #         st.markdown(f"""<div class="custom-success">
-        #             ✅ Current state of mapping <b>{st.session_state["g_label"]}</b> has been cached!
-        #         </div>""", unsafe_allow_html=True)
-        #     st.session_state["progress_saved_ok_flag"] = False
-        #     time.sleep(st.session_state["success_display_time"])
-        #     st.rerun()
-
-
-        # with col1a:
-        #     st.markdown(f"""<div class="info-message-small">
-        #             ℹ️ Current state of mapping <b style="color:#F63366;">
-        #             {st.session_state["g_label"]}</b> will be temporarily saved.
-        #             To retrieve cached work go to the <b>Select Mapping</b> panel.
-        #         </span></div>""", unsafe_allow_html=True)
-        #     st.write("")
-        # with col1b:
-        #     st.markdown(f"""<div class="custom-warning-small">
-        #             ⚠️ Any previously cached mapping will be deleted.
-        #         </div>""", unsafe_allow_html=True)
-        #     st.write("")
-        #
-        # pkl_cache_filename = "__" + st.session_state["g_label"] + "_cache__.pkl"
-        # existing_pkl_file_list = [f for f in os.listdir() if f.endswith("_cache__.pkl")]
-        # with col1a:
-        #     save_progress_checkbox = st.checkbox(
-        #         ":gray-badge[⚠️ I am completely sure I want to continue]",
-        #         key="key_save_progress_checkbox")
-        #     if save_progress_checkbox:
-        #         st.button("Save", key="key_save_progress_button", on_click=save_progress)
-
-            # pkl_cache_file = next((f for f in os.listdir() if f.endswith("_temp.pkl")), None)
 
         with col1:
             st.markdown("""<div class="purple-heading">
