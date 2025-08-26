@@ -370,16 +370,16 @@ def save_pom_template():
     # add triples om________________________
     st.session_state["g_mapping"].add((om_iri, RDF.type, RR.ObjectMap))
     st.session_state["g_mapping"].add((om_iri, RR.template, Literal(om_template)))
-    if om_term_type == "📘 Literal":
+    if om_term_type_template == "📘 Literal":
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.Literal))
         if om_datatype != "Select datatype" and om_datatype != "Natural language tag":
             datatype_dict = utils.get_datatypes_dict()
             st.session_state["g_mapping"].add((om_iri, RR.datatype, datatype_dict[om_datatype]))
         elif om_datatype == "Natural language tag":
             st.session_state["g_mapping"].add((om_iri, RR.language, om_language_tag))
-    elif om_term_type == "🌐 IRI":
+    elif om_term_type_template == "🌐 IRI":
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.IRI))
-    elif om_term_type == "BNode 👻":
+    elif om_term_type_template == "BNode 👻":
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.BlankNode))
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
@@ -391,9 +391,9 @@ def save_pom_template():
     st.session_state["key_build_template_action"] = "🏷️ Add Namespace"
     st.session_state["key_om_template_ns_prefix"] = "Select a namespace"
     st.session_state["om_template_list"] = []    # reset template
-    st.session_state["om_term_type"] = "🌐 IRI"
+    st.session_state["om_term_type_template"] = "🌐 IRI"
     st.session_state["key_om_label"] = ""
-    # cache data source if it is not cached
+    # cache data source if given_________________
     if not ds_filename_for_pom in st.session_state["ds_cache_dict"] and column_list:
         st.session_state["ds_cache_dict"][ds_filename_for_pom] = column_list
 
@@ -404,13 +404,13 @@ def save_pom_constant():
     st.session_state["g_mapping"].add((pom_iri, RR.objectMap, om_iri))
     # add triples om________________________
     st.session_state["g_mapping"].add((om_iri, RDF.type, RR.ObjectMap))
-    if om_term_type == "🌐 IRI":
+    if om_term_type_constant == "🌐 IRI":
         om_constant_ns = mapping_ns_dict[om_constant_ns_prefix]
         NS = Namespace(om_constant_ns)
         om_constant_iri = NS[om_constant]
         st.session_state["g_mapping"].add((om_iri, RR.constant, om_constant_iri))
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.IRI))
-    elif om_term_type == "📘 Literal":
+    elif om_term_type_constant == "📘 Literal":
         st.session_state["g_mapping"].add((om_iri, RR.constant, Literal(om_constant)))
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.Literal))
         if om_datatype != "Select datatype" and om_datatype != "Natural language tag":
@@ -426,8 +426,11 @@ def save_pom_constant():
     st.session_state["key_manual_p_label"] = ""
     st.session_state["key_pom_label"] = ""
     st.session_state["key_om_constant"] = ""
-    st.session_state["om_term_type"] = "📘 Literal"
+    st.session_state["om_term_type_constant"] = "📘 Literal"
     st.session_state["key_om_label"] = ""
+    # cache data source if given_________________
+    if not ds_filename_for_pom in st.session_state["ds_cache_dict"] and column_list:
+        st.session_state["ds_cache_dict"][ds_filename_for_pom] = column_list
 
 def save_pom_reference():
     # add triples pom________________________
@@ -437,16 +440,16 @@ def save_pom_reference():
     # add triples om________________________
     st.session_state["g_mapping"].add((om_iri, RDF.type, RR.ObjectMap))
     st.session_state["g_mapping"].add((om_iri, RR.reference, Literal(om_reference)))    #HERE change to RR.column in R2RML
-    if om_term_type == "📘 Literal":
+    if om_term_type_reference == "📘 Literal":
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.Literal))
         if om_datatype != "Select datatype" and om_datatype != "Natural language tag":
             datatype_dict = utils.get_datatypes_dict()
             st.session_state["g_mapping"].add((om_iri, RR.datatype, datatype_dict[om_datatype]))
         elif om_datatype == "Natural language tag":
             st.session_state["g_mapping"].add((om_iri, RR.language, om_language_tag))
-    elif om_term_type == "🌐 IRI":
+    elif om_term_type_reference == "🌐 IRI":
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.IRI))
-    elif om_term_type == "BNode 👻":
+    elif om_term_type_reference == "BNode 👻":
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.BlankNode))
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
@@ -456,24 +459,15 @@ def save_pom_reference():
     st.session_state["key_manual_p_label"] = ""
     st.session_state["key_pom_label"] = ""
     st.session_state["key_om_column_name"] = "Select a column"
-    st.session_state["om_term_type"] = "📘 Literal"
+    st.session_state["om_term_type_reference"] = "📘 Literal"
     st.session_state["key_om_label"] = ""
-    # cache data source if it is not cached
+    # cache data source if given_________________
     if not ds_filename_for_pom in st.session_state["ds_cache_dict"]:
         st.session_state["ds_cache_dict"][ds_filename_for_pom] = column_list
 
-def save_pom_bnode():
-    # add triples pom________________________
-    st.session_state["g_mapping"].add((tm_iri_for_pom, RR.predicateObjectMap, pom_iri))
-    st.session_state["g_mapping"].add((pom_iri, RR.predicate, selected_p_iri))
-    st.session_state["g_mapping"].add((pom_iri, RR.objectMap, om_iri))
-    st.session_state["g_mapping"].add((om_iri, RR.template, Literal("_:bnode_{column1}")))
-    st.session_state["g_mapping"].add((om_iri, RR.reference, Literal("column1")))
-    # add triples om________________________
-    st.session_state["g_mapping"].add((om_iri, RDF.type, RR.ObjectMap))
-    st.session_state["g_mapping"].add((om_iri, RR.termType, RR.BlankNode))
-    # reset fields_____________________________
-    st.session_state["key_om_label"] = ""
+
+
+
 
 
 
@@ -1022,8 +1016,8 @@ with tab2:
                                 if ds_file_for_sm and ds_filename_for_sm != Literal(ds_file_for_sm.name):
                                     with col1b:
                                         st.markdown(f"""<div class="custom-warning-small">
-                                                ⚠️ The name of the uploaded file <b>{ds_file_for_sm.name}</b> and the
-                                                data source <b>{ds_filename_for_sm}</b> do not match.
+                                                ⚠️ The name of the uploaded file <b>({ds_file_for_sm.name})</b> and the
+                                                data source <b>({ds_filename_for_sm})</b> do not match.
                                                 Please verify that you selected
                                                 the correct file.
                                             </div>""", unsafe_allow_html=True)
@@ -1058,7 +1052,7 @@ with tab2:
                                 column_list_to_choose.insert(0, "Select a column of the data source")
                                 with col1a:
                                     if sm_generation_rule == "Template 📐":
-                                        sm_id = st.selectbox("🖱️ Select the column referenced in the {} template:*", column_list_to_choose, key="key_sm_id")
+                                        sm_id = st.selectbox("🖱️ Select the column referenced in the template:*", column_list_to_choose, key="key_sm_id")
                                     elif sm_generation_rule == "Reference 📊":
                                         sm_id = st.selectbox("🖱️ Select the reference column:*", column_list_to_choose, key="key_sm_id")
                             if sm_id and sm_id != "Select a column of the data source":
@@ -1798,6 +1792,7 @@ with tab3:
         st.write("")
 
 
+
     #POM_____________________________________________________
     with col1:
         col1a, col1b = st.columns([2,1])
@@ -1873,18 +1868,19 @@ with tab3:
 
 
                     if ds_file_for_pom and ds_filename_for_pom != Literal(ds_file_for_pom.name):
-                        st.markdown(f"""<div class="custom-warning-small">
-                                ⚠️ The name of the uploaded file <b>{ds_file_for_pom.name}</b> and the
-                                data source <b>{ds_filename_for_pom}</b> do not match.
-                                Please verify that you selected
-                                the correct file.
-                            </div>""", unsafe_allow_html=True)
+                        st.markdown(f"""<div class="custom-error-small">
+                            ❌ The names of the uploaded file <b>({ds_file_for_pom.name})</b> and the
+                            data source <b>({ds_filename_for_pom})</b> do not match.
+                        </div>""", unsafe_allow_html=True)
                         st.write("")
 
-                    if ds_file_for_pom:
+                    elif ds_file_for_pom:
+                        st.markdown(f"""<div class="custom-success-small">
+                            ✔️ The data source <b>{ds_filename_for_pom}</b> is loaded correctly.
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
                         columns_df = pd.read_csv(ds_file_for_pom)
                         column_list = columns_df.columns.tolist()
-
 
             # HERE CREATE THE PREDICATE MAP
 
@@ -1959,16 +1955,13 @@ with tab3:
                 col1a, col1b = st.columns([2,1])
             with col1a:
                 pom_label = st.text_input("⌨️ Enter Predicate-Object Map label (optional)", key= "key_pom_label")
-            pom_iri = BNode() if not pom_label else MAP[pom_label]
-            if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectm, pom_iri)), None):
+                pom_iri = BNode() if not pom_label else MAP[pom_label]
+            if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectMap, pom_iri)), None):
                 with col1a:
-                    st.markdown(f"""
-                        <div style="background-color:#fff3cd; padding:1em;
-                        border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                            ⚠️ The Predicate-Object Map label <b style="color:#cc9a06;">{pom_label}</b>
-                            is already in use and will be ignored. Please, pick a different label.</div>
-                    """, unsafe_allow_html=True)
-                pom_label = ""
+                    st.markdown(f"""<div class="custom-error-small">
+                        ❌ That <b>Predicate-Object Map label</b> is already in use. Please pick another label or leave blank.
+                    </div>""", unsafe_allow_html=True)
+
 
             # BUILD OBJECT MAP_______________________________________________
             with col3:
@@ -2016,10 +2009,17 @@ with tab3:
                 elif build_template_action == "📈 Add variable part":
                     with col3b:
                         if not column_list:   #data source is not available (load)
-                            st.markdown(f"""<div class="custom-error-small">
-                                    ❌ You must load the
-                                    <b>data source file</b> to add a variable part.
-                                </div>""", unsafe_allow_html=True)
+                            if not ds_file_for_pom:
+                                st.markdown(f"""<div class="custom-error-small">
+                                        ❌ You must load the
+                                        <b>data source file</b> to add a variable part.
+                                    </div>""", unsafe_allow_html=True)
+                            else:
+                                st.markdown(f"""<div class="custom-error-small">
+                                    ❌ The names of the uploaded file <b>({ds_file_for_pom.name})</b> and the
+                                    data source <b>({ds_filename_for_pom})</b> do not match. You must add the
+                                    correct file to add a variable part.
+                                    </div>""", unsafe_allow_html=True)
                         else:  # data source is available
                             list_to_choose = column_list.copy()
                             list_to_choose.insert(0, "Select a column")
@@ -2091,10 +2091,10 @@ with tab3:
 
                 with col3b:
                     st.write("")
-                    om_term_type = st.radio(label="🖱️ Select Term type:*", options=["🌐 IRI", "📘 Literal", "BNode 👻"],
-                        key="om_term_type")
+                    om_term_type_template = st.radio(label="🖱️ Select Term type:*", options=["🌐 IRI", "📘 Literal", "BNode 👻"],
+                        key="om_term_type_template")
 
-                if om_term_type == "🌐 IRI" and st.session_state["om_template_ns_prefix"] == "Select a namespace" and om_template:
+                if om_term_type_template == "🌐 IRI" and st.session_state["om_template_ns_prefix"] == "Select a namespace" and om_template:
                     with col3a:
 
                         st.markdown(f"""<div class="custom-error-small">
@@ -2102,7 +2102,7 @@ with tab3:
                         </div>""", unsafe_allow_html=True)
                         st.write("")
 
-                if om_term_type == "📘 Literal":
+                if om_term_type_template == "📘 Literal":
                     rdf_datatypes = list(utils.get_datatypes_dict().keys())
 
                     with col3:
@@ -2124,15 +2124,11 @@ with tab3:
                 with col3a:
                     om_label = st.text_input("⌨️ Enter Object Map label (optional):", key= "key_om_label")
                 om_iri = BNode() if not om_label else MAP[om_label]
-                if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectm, om_iri)), None):
+                if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
                     with col3a:
-                        st.markdown(f"""
-                            <div style="background-color:#fff3cd; padding:1em;
-                            border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                                ⚠️ The Object Map label <b style="color:#cc9a06;">{pom_label}</b>
-                                is already in use and will be ignored. Please, pick a different label.</div>
-                        """, unsafe_allow_html=True)
-                    om_label = ""
+                        st.markdown(f"""<div class="custom-error-small">
+                            ❌ That <b>Object Map label</b> is already in use. Please pick another label or leave blank.
+                        </div>""", unsafe_allow_html=True)
 
 
             #_______________________________________________
@@ -2145,10 +2141,10 @@ with tab3:
                     om_constant = st.text_input("⌨️ Enter constant:*", key="key_om_constant")
 
                 with col3b:
-                    om_term_type = st.radio(label="🖱️ Select Term type:*", options=["📘 Literal", "🌐 IRI"], horizontal=True,
-                        key="om_term_type")
+                    om_term_type_constant = st.radio(label="🖱️ Select Term type:*", options=["📘 Literal", "🌐 IRI"], horizontal=True,
+                        key="om_term_type_constant")
 
-                if om_constant and om_term_type == "🌐 IRI":
+                if om_constant and om_term_type_constant == "🌐 IRI":
                     mapping_ns_dict = utils.get_mapping_ns_dict()
                     list_to_choose = list(mapping_ns_dict.keys())
                     list_to_choose.insert(0, "Select a namespace")
@@ -2163,7 +2159,7 @@ with tab3:
                                     the <b>Global Configuration</b> page.
                                 </div>""", unsafe_allow_html=True)
 
-                if om_constant and om_term_type == "📘 Literal":
+                if om_term_type_constant == "📘 Literal":
                     rdf_datatypes = list(utils.get_datatypes_dict().keys())
 
 
@@ -2185,15 +2181,11 @@ with tab3:
                 with col3a:
                     om_label = st.text_input("⌨️ Enter Object Map label (optional):", key= "key_om_label")
                 om_iri = BNode() if not om_label else MAP[om_label]
-                if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectm, om_iri)), None):
+                if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
                     with col3a:
-                        st.markdown(f"""
-                            <div style="background-color:#fff3cd; padding:1em;
-                            border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                                ⚠️ The Object Map label <b style="color:#cc9a06;">{pom_label}</b>
-                                is already in use and will be ignored. Please, pick a different label.</div>
-                        """, unsafe_allow_html=True)
-                    om_label = ""
+                        st.markdown(f"""<div class="custom-error-small">
+                            ❌ That <b>Object Map label</b> is already in use. Please pick another label or leave blank.
+                        </div>""", unsafe_allow_html=True)
 
 
 
@@ -2220,18 +2212,25 @@ with tab3:
                 if not column_list:   #data source is not available (load)
                     with col3b:
                         st.write("")
-                        st.markdown(f"""<div class="custom-error-small">
-                                ❌ You must load the
-                                <b>data source file</b> to continue.
-                            </div>""", unsafe_allow_html=True)
+                        if not ds_file_for_pom:
+                            st.markdown(f"""<div class="custom-error-small">
+                                    ❌ You must load the
+                                    <b>data source file</b> to continue.
+                                </div>""", unsafe_allow_html=True)
+                        else:
+                            st.markdown(f"""<div class="custom-error-small">
+                                ❌ The names of the uploaded file <b>({ds_file_for_pom.name})</b> and the
+                                data source <b>({ds_filename_for_pom})</b> do not match. You must add the
+                                correct file to continue.
+                                </div>""", unsafe_allow_html=True)
 
                 else:
 
                     with col3b:
-                        om_term_type = st.radio(label="🖱️ Select Term type:*", options=["📘 Literal", "🌐 IRI", "BNode 👻"],
-                            horizontal=True, key="om_term_type")
+                        om_term_type_reference = st.radio(label="🖱️ Select Term type:*", options=["📘 Literal", "🌐 IRI", "BNode 👻"],
+                            horizontal=True, key="om_term_type_reference")
 
-                    if om_column_name != "Select a column" and om_term_type == "📘 Literal":
+                    if om_term_type_reference == "📘 Literal":
                         rdf_datatypes = list(utils.get_datatypes_dict().keys())
 
                         with col3:
@@ -2247,7 +2246,7 @@ with tab3:
                                 om_language_tag_reference = st.selectbox("🖱️ Select language tag*", language_tags,
                                     key="key_om_language_tag_reference")
 
-                    elif om_column_name != "Select a column" and om_term_type == "🌐 IRI":
+                    elif om_column_name != "Select a column" and om_term_type_reference == "🌐 IRI":
                         with col3b:
                             st.markdown(f"""<div class="custom-warning-small">
                                     ⚠️ Term type is <b>🌐 IRI</b>: Make sure that the values in the referenced column
@@ -2260,38 +2259,11 @@ with tab3:
                     with col3a:
                         om_label = st.text_input("⌨️ Enter Object Map label (optional):", key= "key_om_label")
                     om_iri = BNode() if not om_label else MAP[om_label]
-                    if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectm, om_iri)), None):
+                    if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
                         with col3a:
-                            st.markdown(f"""
-                                <div style="background-color:#fff3cd; padding:1em;
-                                border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                                    ⚠️ The Object Map label <b style="color:#cc9a06;">{pom_label}</b>
-                                    is already in use and will be ignored. Please, pick a different label.</div>
-                            """, unsafe_allow_html=True)
-                        om_label = ""
-
-
-            if om_generation_rule == "BNode 👻":
-                with col3:
-                    col3a, col3b = st.columns([2,1])
-                with col3b:
-                    st.write("")
-                    st.markdown(f"""<div class="custom-warning-small">
-                            ⚠️ Term type is <b>👻 BNode</b>. This option is discouraged.</b>
-                        </div>""", unsafe_allow_html=True)
-                with col3a:
-                    st.write("")
-                    om_label = st.text_input("⌨️ Enter Object Map label (optional):", key= "key_om_label")
-                om_iri = BNode() if not om_label else MAP[om_label]
-                if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectm, om_iri)), None):
-                    with col3a:
-                        st.markdown(f"""
-                            <div style="background-color:#fff3cd; padding:1em;
-                            border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                                ⚠️ The Object Map label <b style="color:#cc9a06;">{pom_label}</b>
-                                is already in use and will be ignored. Please, pick a different label.</div>
-                        """, unsafe_allow_html=True)
-                    om_label = ""
+                            st.markdown(f"""<div class="custom-error-small">
+                                ❌ That <b>Object Map label</b> is already in use. Please pick another label or leave blank.
+                            </div>""", unsafe_allow_html=True)
 
 
         if tm_label_for_pom != "Select a TriplesMap":
@@ -2301,57 +2273,61 @@ with tab3:
             """, unsafe_allow_html=True)
             st.write("")
 
+
+            if st.session_state["pom_saved_ok_flag"]:
+                with col1:
+                    st.write("")
+                    st.markdown(f"""<div class="custom-success">
+                        ✅ The <b style="color:#F63366;">Predicate-Object Map</b> has been created!
+                    </div>""", unsafe_allow_html=True)
+                st.session_state["pom_saved_ok_flag"] = False
+                time.sleep(st.session_state["success_display_time"])
+                st.rerun()
+
             col1, col2, col3, col4 = st.columns([1,1,0.2,1])
 
-            # POM MAP - ONTOLOGY PREDICATE______________________________________
+            # POM MAP ______________________________________
+            inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Predicate-Object Map</td></tr>
+                <tr><td><b>TriplesMap*:</b></td><td>{tm_label_for_pom}</td></tr>
+                <tr><td><b>Subject Map*</b></td><td>{sm_label_for_pom}</td></tr>"""
+
             if p_type == "🧩 Ontology predicate":
 
+                pom_complete_flag = "✔️ Yes" if selected_p_label != "Select a predicate" else "❌ No"
                 selected_p_label_display = selected_p_label if selected_p_label != "Select a predicate" else ""
                 p_ont = utils.get_ontology_identifier(selected_p_iri)
-                if p_ont:
-                    selected_p_label_display += " (" + p_ont + ")"
+                selected_p_label_display += " (" + p_ont + ")" if p_ont else selected_p_label_display
 
-                if selected_p_label != "Select a predicate":
-                    pom_complete_flag = "✔️ Yes"
-                else:
-                    pom_complete_flag = "❌ No"
-
-                with col1:
-                    st.markdown(f"""<table class="info-table-gray">
-                        <tr class="title-row"><td colspan="2">🔎 Predicate-Object Map</td></tr>
-                        <tr><td><b>TriplesMap*:</b></td><td>{tm_label_for_pom}</td></tr>
-                        <tr><td><b>Subject Map*</b></td><td>{sm_label_for_pom}</td></tr>
-                        <tr><td><b>Predicate*</b></td><td>{selected_p_label_display}</td></tr>
-                        <tr><td><b>Predicate-Object Map label</b></td><td>{pom_label}</td></tr>
-                        <tr><td><b>Required fields complete</b></td><td>{pom_complete_flag}</td></tr>
-                    </table>""", unsafe_allow_html=True)
+                inner_html += f"""<tr><td><b>Predicate*</b></td><td>{selected_p_label_display}</td></tr>"""
 
             elif p_type == "🚫 Predicate outside ontology":
 
+                pom_complete_flag = "✔️ Yes" if (manual_p_label and manual_p_ns_prefix != "Select a namespace") else "❌ No"
                 manual_p_ns_prefix_display = manual_p_ns_prefix if manual_p_ns_prefix != "Select a namespace" else ""
 
-                if manual_p_label and manual_p_ns_prefix != "Select a namespace":
-                    pom_complete_flag = "✔️ Yes"
-                else:
-                    pom_complete_flag = "❌ No"
+                inner_html += f"""<tr><td><b>Predicate Namespace*</b></td><td>{manual_p_ns_prefix_display}</td></tr>
+                    <tr><td><b>Predicate*</b></td><td>{manual_p_label}</td></tr>"""
 
-                with col1:
-                    st.markdown(f"""<table class="info-table-gray">
-                        <tr class="title-row"><td colspan="2">🔎 Predicate-Object Map</td></tr>
-                        <tr><td><b>TriplesMap*</b></td><td>{tm_label_for_pom}</td></tr>
-                        <tr><td><b>Subject Map*</b></td><td>{sm_label_for_pom}</td></tr>
-                        <tr><td><b>Predicate Namespace*</b></td><td>{manual_p_ns_prefix_display}</td></tr>
-                        <tr><td><b>Predicate*</b></td><td>{manual_p_label}</td></tr>
-                        <tr><td><b>Predicate-Object Map label</b></td><td>{pom_label}</td></tr>
-                        <tr><td><b>Required fields complete</b></td><td>{pom_complete_flag}</td></tr>
-                    </table>""", unsafe_allow_html=True)
+            if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectMap, pom_iri)), None):
+                pom_complete_flag = "❌ No"
+                inner_html += f"""<tr><td><b>Predicate-Object Map label</b></td>
+                <td>{pom_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
+            else:
+                inner_html += f"""<tr><td><b>Predicate-Object Map label</b></td><td>{pom_label}</td></tr>"""
 
-                with col4:
-                    st.markdown(f"""<div class="custom-warning">
-                            ⚠️ Manual predicate input is <b>discouraged</b>. Use an ontology
-                            for safer results.
-                        </div>""", unsafe_allow_html=True)
-                    st.write("")
+            inner_html += f"""<tr><td><b>Required fields complete</b></td><td>{pom_complete_flag}</td></tr>"""
+
+            if p_type == "🚫 Predicate outside ontology":
+                inner_html += f"""<tr><td colspan="2" style="font-size:12px; padding-top:6px;">
+                    ⚠️ Manual predicate input is <b>discouraged</b>.
+                    Use an ontology for safer results.</td></tr>"""
+
+            full_html = f"""<table class="info-table-gray">
+                    {inner_html}</table>"""
+            # render
+            with col1:
+                st.markdown(full_html, unsafe_allow_html=True)
+
 
 
             # OBJECT MAP - TEMPLATE______________________________________________________-
@@ -2376,8 +2352,15 @@ with tab3:
                         om_language_tag_display = om_language_tag if om_language_tag != "Select language tag" else ""
                         inner_html += f"""<tr><td><b>Language tag*</b></td><td>{om_language_tag_display}</td></tr>"""
 
-                inner_html += f"""<tr><td><b>Object Map label</b></td><td> {om_label} </td></tr>
-                    <tr><td><b>Required fields complete</b></td><td> {om_complete_flag} </td></tr>"""
+                if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
+                    om_complete_flag = "❌ No"
+                    inner_html += f"""<tr><td><b>Object Map label</b></td>
+                    <td>{om_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
+                else:
+                    inner_html += f"""<tr><td><b>Object Map label</b></td><td>{om_label}</td></tr>"""
+
+                inner_html += f"""<tr><td><b>Required fields complete</b></td><td> {om_complete_flag} </td></tr>"""
+
                 full_html = f"""<table class="info-table-gray">
                         {inner_html}</table>"""
                 # render
@@ -2409,8 +2392,14 @@ with tab3:
                         <tr><td><b>Constant namespace*</b></td><td>{om_constant_ns_prefix_display}</td></tr>
                         <tr><td><b>Constant*</b></td><td>{om_constant}</td></tr>"""
 
-                inner_html += f"""<tr><td><b>Object Map label</b></td><td> {om_label} </td></tr>
-                    <tr><td><b>Required fields completed*</b></td><td> {om_complete_flag} </td></tr>"""
+                if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
+                    om_complete_flag = "❌ No"
+                    inner_html += f"""<tr><td><b>Object Map label</b></td>
+                    <td>{om_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
+                else:
+                    inner_html += f"""<tr><td><b>Object Map label</b></td><td>{om_label}</td></tr>"""
+
+                inner_html += f"""<tr><td><b>Required fields complete</b></td><td> {om_complete_flag} </td></tr>"""
 
                 full_html = f"""<table class="info-table-gray">
                         {inner_html}</table>"""
@@ -2437,31 +2426,20 @@ with tab3:
                         om_complete_flag == "✔️ Yes" if om_language_tag else "❌ No"
                         inner_html += f"""<tr><td><b>Language tag*</b></td><td>{language_tag}</td></tr>"""
 
-                inner_html += f"""<tr><td><b>Object Map label</b></td><td> {om_label} </td></tr>
-                    <tr><td><b>Required fields completed*</b></td><td> {om_complete_flag} </td></tr>"""
+                if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
+                    om_complete_flag = "❌ No"
+                    inner_html += f"""<tr><td><b>Object Map label</b></td>
+                    <td>{om_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
+                else:
+                    inner_html += f"""<tr><td><b>Object Map label</b></td><td>{om_label}</td></tr>"""
+
+                inner_html += f"""<tr><td><b>Required fields complete</b></td><td> {om_complete_flag} </td></tr>"""
 
                 full_html = f"""<table class="info-table-gray">
                         {inner_html}</table>"""
                 # render
                 with col2:
                     st.markdown(full_html, unsafe_allow_html=True)
-
-            # OBJECT MAP - REFERENCE___________________________
-            if om_generation_rule == "BNode 👻":
-
-                om_complete_flag = "✔️ Yes"
-
-                inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
-                    <tr><td><b>Generation rule*</b></td><td>{om_generation_rule}</td></tr>
-                    <tr><td><b>Object Map label</b></td><td> {om_label} </td></tr>
-                    <tr><td><b>Required fields completed*</b></td><td> {om_complete_flag} </td></tr>"""
-
-                full_html = f"""<table class="info-table-gray">
-                        {inner_html}</table>"""
-                # render
-                with col2:
-                    st.markdown(full_html, unsafe_allow_html=True)
-
 
 
             # INFO AND SAVE BUTTON____________________________________
