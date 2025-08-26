@@ -107,8 +107,8 @@ if "sm_unassigned_ok_flag" not in st.session_state:
 #TAB3
 if "key_ds_uploader_for_pom" not in st.session_state:
     st.session_state["key_ds_uploader_for_pom"] = str(uuid.uuid4())
-if "template_om_is_iri_flag" not in st.session_state:
-    st.session_state["template_om_is_iri_flag"]  = False
+if "om_template_ns_prefix" not in st.session_state:
+    st.session_state["om_template_ns_prefix"] = False
 if "pom_saved_ok_flag" not in st.session_state:
     st.session_state["pom_saved_ok_flag"] = False
 
@@ -333,8 +333,7 @@ def unassign_sm():
 # TAB3
 def add_ns_to_om_template():
     # update template and store information_________
-    if not st.session_state["template_om_is_iri_flag"]:    # no ns added yet
-        st.session_state["template_om_is_iri_flag"] = True
+    if st.session_state["om_template_ns_prefix"] != "Select a namespace":    # no ns added yet
         st.session_state["om_template_list"].insert(0, om_template_ns)
     else:   # a ns was added (replace)
         st.session_state["om_template_list"][0] = om_template_ns
@@ -358,6 +357,7 @@ def reset_om_template():
     # reset template
     st.session_state["om_template_list"] = []
     # store information____________________
+    st.session_state["om_template_ns_prefix"] = "Select a namespace"
     st.session_state["template_om_is_iri_flag"] = False
     # reset fields_____________
     st.session_state["key_build_template_action"] = "🔒 Add fixed part"
@@ -369,17 +369,18 @@ def save_pom_template():
     st.session_state["g_mapping"].add((pom_iri, RR.objectMap, om_iri))
     # add triples om________________________
     st.session_state["g_mapping"].add((om_iri, RDF.type, RR.ObjectMap))
-    if not st.session_state["template_om_is_iri_flag"]:   # template is a Literal
-        st.session_state["g_mapping"].add((om_iri, RR.template, Literal(om_template)))
+    st.session_state["g_mapping"].add((om_iri, RR.template, Literal(om_template)))
+    if om_term_type == "📘 Literal":
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.Literal))
         if om_datatype != "Select datatype" and om_datatype != "Natural language tag":
             datatype_dict = utils.get_datatypes_dict()
             st.session_state["g_mapping"].add((om_iri, RR.datatype, datatype_dict[om_datatype]))
         elif om_datatype == "Natural language tag":
             st.session_state["g_mapping"].add((om_iri, RR.language, om_language_tag))
-    else:    # template is an IRI
-        st.session_state["g_mapping"].add((om_iri, RR.template, Literal(om_template)))
+    elif om_term_type == "🌐 IRI":
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.IRI))
+    elif om_term_type == "BNode 👻":
+        st.session_state["g_mapping"].add((om_iri, RR.termType, RR.BlankNode))
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
     # reset fields_____________________________
@@ -387,9 +388,10 @@ def save_pom_template():
     st.session_state["key_manual_p_ns_prefix"] = "Select a namespace"
     st.session_state["key_manual_p_label"] = ""
     st.session_state["key_pom_label"] = ""
-    st.session_state["om_template_list"] = []    # reset template
     st.session_state["key_build_template_action"] = "🏷️ Add Namespace"
     st.session_state["key_om_template_ns_prefix"] = "Select a namespace"
+    st.session_state["om_template_list"] = []    # reset template
+    st.session_state["om_term_type"] = "🌐 IRI"
     st.session_state["key_om_label"] = ""
     # cache data source if it is not cached
     if not ds_filename_for_pom in st.session_state["ds_cache_dict"] and column_list:
@@ -402,13 +404,13 @@ def save_pom_constant():
     st.session_state["g_mapping"].add((pom_iri, RR.objectMap, om_iri))
     # add triples om________________________
     st.session_state["g_mapping"].add((om_iri, RDF.type, RR.ObjectMap))
-    if om_term_type_constant == "🌐 IRI":
+    if om_term_type == "🌐 IRI":
         om_constant_ns = mapping_ns_dict[om_constant_ns_prefix]
         NS = Namespace(om_constant_ns)
         om_constant_iri = NS[om_constant]
         st.session_state["g_mapping"].add((om_iri, RR.constant, om_constant_iri))
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.IRI))
-    elif om_term_type_constant == "📘 Literal":
+    elif om_term_type == "📘 Literal":
         st.session_state["g_mapping"].add((om_iri, RR.constant, Literal(om_constant)))
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.Literal))
         if om_datatype != "Select datatype" and om_datatype != "Natural language tag":
@@ -424,7 +426,7 @@ def save_pom_constant():
     st.session_state["key_manual_p_label"] = ""
     st.session_state["key_pom_label"] = ""
     st.session_state["key_om_constant"] = ""
-    st.session_state["om_term_type_constant"] = "📘 Literal"
+    st.session_state["om_term_type"] = "📘 Literal"
     st.session_state["key_om_label"] = ""
 
 def save_pom_reference():
@@ -444,6 +446,8 @@ def save_pom_reference():
             st.session_state["g_mapping"].add((om_iri, RR.language, om_language_tag))
     elif om_term_type == "🌐 IRI":
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.IRI))
+    elif om_term_type == "BNode 👻":
+        st.session_state["g_mapping"].add((om_iri, RR.termType, RR.BlankNode))
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
     # reset fields_____________________________
@@ -1974,7 +1978,7 @@ with tab3:
                     """,unsafe_allow_html=True)
 
 
-            om_generation_rule_list = ["Template 📐", "Constant 🔒", "Reference 📊", "BNode 👻"]
+            om_generation_rule_list = ["Template 📐", "Constant 🔒", "Reference 📊"]
 
             with col3:
                 col3a, col3b = st.columns([2.3,1])
@@ -1982,22 +1986,6 @@ with tab3:
             with col3:
                 om_generation_rule = st.radio("🖱️ Define the Object Map generation rule:*",
                     om_generation_rule_list, horizontal=True, key="key_om_generation_rule_radio")
-            # with col3b:   HERE
-            #     if om_generation_rule == "Template 📐":
-            #         with col3b:
-            #             st.markdown(f"""<div class="info-message-small">
-            #                     <b> 📐 Template use case</b>: <br>Dynamically construct
-            #                      the object using data values and fixed parts.
-            #                 </div>""", unsafe_allow_html=True)
-            #     elif om_generation_rule == "Constant 🔒":
-            #         st.markdown(f"""<div class="info-message-small">
-            #                 <b> 🔒 Constant use case </b>: <br>The object is a fixed value.
-            #             </div>""", unsafe_allow_html=True)
-            #     elif om_generation_rule == "Reference 📊":
-            #         st.markdown(f"""<div class="info-message-small">
-            #                 <b> 📊 Reference use case </b>: <br> Directly use the data value as the object.
-            #             </div>""", unsafe_allow_html=True)
-            #     st.write("")
 
             #_______________________________________________
             # OBJECT MAP - TEMPLATE-VALUED
@@ -2056,6 +2044,7 @@ with tab3:
                         list_to_choose = list(mapping_ns_dict.keys())
                         list_to_choose.insert(0, "Select a namespace")
                         om_template_ns_prefix = st.selectbox("🖱️ Select a namespace for the template:", list_to_choose, key="key_om_template_ns_prefix")
+                        st.session_state["om_template_ns_prefix"] = om_template_ns_prefix
                         if not mapping_ns_dict:
                             st.markdown(f"""<div class="custom-error-small">
                                     ❌ No namespaces available. You can add namespaces in the
@@ -2088,60 +2077,62 @@ with tab3:
                             <div style="font-size:11px; color:#666666; margin-top:0.2em;">
                                 🛈 You can keep adding more parts.
                             </div></div>""", unsafe_allow_html=True)
-                        if st.session_state["template_om_is_iri_flag"]:
-                            with col3b:
-                                st.write("")
-                                st.markdown(f"""
-                                    <div class="gray-preview-message" style="padding:0.2em 0.5em;">
-                                            <b>Term type</b>: <br>
-                                            <b style="color:#F63366;">🌐 IRI</b>
-                                        <div style="font-size:11px; color:#666666; margin-top:0.2em;">
-                                            🛈 Enter template without a Namespace to change to <b>📘 Literal</b>.
-                                        </div></div>""", unsafe_allow_html=True)
-                                st.checkbox("Set Term type to BNode")
-                        else:
-                            with col3b:
-                                st.write("")
-                                st.markdown(f"""
-                                    <div class="gray-preview-message" style="padding:0.2em 0.5em;">
-                                            <b>Term type</b>: <br>
-                                            <b style="color:#F63366;">📘 Literal</b>
-                                        <div style="font-size:11px; color:#666666; margin-top:0.2em;">
-                                            🛈 Add a Namespace to change to <b>🌐 IRI</b>.
-                                        </div></div>""", unsafe_allow_html=True)
+                        st.write("")
+                    else:
+                        st.write("")
+                        st.markdown(f"""<div class="gray-preview-message">
+                                📐 <b> Build your <b style="color:#F63366;">template</b> and preview it here.</b> <br>
+                            <div style="font-size:11px; color:#666666; margin-top:0.2em;">
+                                🛈 You can add as many parts as you need.
+                                For <b style="color:#F63366;">🌐 IRI term type</b>, make sure to add a namespace.
+                            </div></div>""", unsafe_allow_html=True)
+                        st.write("")
 
-                        if not st.session_state["template_om_is_iri_flag"]:
-                            rdf_datatypes = list(utils.get_datatypes_dict().keys())
 
-                            with col3:
-                                col3a, col3b = st.columns(2)
-                            with col3a:
-                                st.write("")
-                                om_datatype = st.selectbox("🖱️ Select datatype (optional):", rdf_datatypes,
-                                    key="key_om_datatype")
+                with col3b:
+                    st.write("")
+                    om_term_type = st.radio(label="🖱️ Select Term type:*", options=["🌐 IRI", "📘 Literal", "BNode 👻"],
+                        key="om_term_type")
 
-                            if om_datatype == "Natural language text":
-                                language_tags = utils.get_language_tags_list()
+                if om_term_type == "🌐 IRI" and st.session_state["om_template_ns_prefix"] == "Select a namespace" and om_template:
+                    with col3a:
 
-                                with col3b:
-                                    st.write("")
-                                    om_language_tag = st.selectbox("🖱️ Select language tag:*", language_tags,
-                                        key="key_om_language_tag")
+                        st.markdown(f"""<div class="custom-error-small">
+                            ❌ Term type is <b>🌐 IRI</b>: You must <b>add a namespace</b>.
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
+
+                if om_term_type == "📘 Literal":
+                    rdf_datatypes = list(utils.get_datatypes_dict().keys())
 
                     with col3:
                         col3a, col3b = st.columns(2)
                     with col3a:
-                        om_label = st.text_input("⌨️ Enter Object Map label (optional):", key= "key_om_label")
-                    om_iri = BNode() if not om_label else MAP[om_label]
-                    if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectm, om_iri)), None):
-                        with col3a:
-                            st.markdown(f"""
-                                <div style="background-color:#fff3cd; padding:1em;
-                                border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                                    ⚠️ The Object Map label <b style="color:#cc9a06;">{pom_label}</b>
-                                    is already in use and will be ignored. Please, pick a different label.</div>
-                            """, unsafe_allow_html=True)
-                        om_label = ""
+                        om_datatype = st.selectbox("🖱️ Select datatype (optional):", rdf_datatypes,
+                            key="key_om_datatype")
+
+                    if om_datatype == "Natural language text":
+                        language_tags = utils.get_language_tags_list()
+
+                        with col3b:
+                            st.write("")
+                            om_language_tag = st.selectbox("🖱️ Select language tag:*", language_tags,
+                                key="key_om_language_tag")
+
+                with col3:
+                    col3a, col3b = st.columns(2)
+                with col3a:
+                    om_label = st.text_input("⌨️ Enter Object Map label (optional):", key= "key_om_label")
+                om_iri = BNode() if not om_label else MAP[om_label]
+                if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectm, om_iri)), None):
+                    with col3a:
+                        st.markdown(f"""
+                            <div style="background-color:#fff3cd; padding:1em;
+                            border-radius:5px; color:#856404; border:1px solid #ffeeba;">
+                                ⚠️ The Object Map label <b style="color:#cc9a06;">{pom_label}</b>
+                                is already in use and will be ignored. Please, pick a different label.</div>
+                        """, unsafe_allow_html=True)
+                    om_label = ""
 
 
             #_______________________________________________
@@ -2154,10 +2145,10 @@ with tab3:
                     om_constant = st.text_input("⌨️ Enter constant:*", key="key_om_constant")
 
                 with col3b:
-                    om_term_type_constant = st.radio(label="🖱️ Select Term type:*", options=["📘 Literal", "🌐 IRI"], horizontal=True,
-                        key="om_term_type_constant")
+                    om_term_type = st.radio(label="🖱️ Select Term type:*", options=["📘 Literal", "🌐 IRI"], horizontal=True,
+                        key="om_term_type")
 
-                if om_constant and om_term_type_constant == "🌐 IRI":
+                if om_constant and om_term_type == "🌐 IRI":
                     mapping_ns_dict = utils.get_mapping_ns_dict()
                     list_to_choose = list(mapping_ns_dict.keys())
                     list_to_choose.insert(0, "Select a namespace")
@@ -2172,7 +2163,7 @@ with tab3:
                                     the <b>Global Configuration</b> page.
                                 </div>""", unsafe_allow_html=True)
 
-                if om_constant and om_term_type_constant == "📘 Literal":
+                if om_constant and om_term_type == "📘 Literal":
                     rdf_datatypes = list(utils.get_datatypes_dict().keys())
 
 
@@ -2215,7 +2206,7 @@ with tab3:
 
 
                 with col3:
-                    col3a, col3b = st.columns(2)
+                    col3a, col3b = st.columns([1,1.2])
                 with col3a:
                     list_to_choose = column_list.copy()
                     list_to_choose.insert(0, "Select a column")
@@ -2237,7 +2228,7 @@ with tab3:
                 else:
 
                     with col3b:
-                        om_term_type = st.radio(label="🖱️ Select Term type:*", options=["📘 Literal", "🌐 IRI"],
+                        om_term_type = st.radio(label="🖱️ Select Term type:*", options=["📘 Literal", "🌐 IRI", "BNode 👻"],
                             horizontal=True, key="om_term_type")
 
                     if om_column_name != "Select a column" and om_term_type == "📘 Literal":
@@ -2259,9 +2250,10 @@ with tab3:
                     elif om_column_name != "Select a column" and om_term_type == "🌐 IRI":
                         with col3b:
                             st.markdown(f"""<div class="custom-warning-small">
-                                    ⚠️ Make sure that the valued in the referenced column
-                                    are <b>valid IRIs</b>.
+                                    ⚠️ Term type is <b>🌐 IRI</b>: Make sure that the values in the referenced column
+                                    are valid IRIs.
                                 </div>""", unsafe_allow_html=True)
+                            st.write("")
 
                     with col3:
                         col3a, col3b = st.columns([1.2,1])
@@ -2369,18 +2361,20 @@ with tab3:
 
                 inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
                         <tr><td><b>Generation rule*</b></td><td>{om_generation_rule}</td></tr>
-                        <tr><td><b>Template*</b></td><td>{om_template}</td></tr>"""
+                        <tr><td><b>Template*</b></td><td>{om_template}</td></tr>
+                        <tr><td><b>Term type*</b></td><td>{om_term_type}</td></tr>"""
 
-                if om_template:
-                    if st.session_state["template_om_is_iri_flag"]:    # term type IRI
-                        inner_html += f"""<tr><td><b>Term type*</b></td><td>🌐 IRI</td></tr>"""
-                    else:    #term type Literal
-                        om_datatype_display = om_datatype if om_datatype != "Select datatype" else ""
-                        inner_html += f"""<tr><td><b>Term type*</b></td><td>📘 Literal</td></tr>
-                                <tr><td><b>Datatype</b></td><td>{om_datatype_display}</td></tr>"""
-                        if not om_datatype != "Natural language text":
-                            om_language_tag_display = om_language_tag if om_language_tag != "Select language tag" else ""
-                            inner_html += f"""<tr><td><b>Language tag*</b></td><td>{om_language_tag_display}</td></tr>"""
+                if om_term_type == "🌐 IRI":
+                    om_template_ns_prefix_display = st.session_state["om_template_ns_prefix"] if st.session_state["om_template_ns_prefix"] != "Select a namespace" else ""
+                    inner_html += f"""<tr><td><b>Template namespace*</b></td><td>{om_template_ns_prefix_display}</td></tr>"""
+                    om_complete_flag = "✔️ Yes" if st.session_state["om_template_ns_prefix"] != "Select a namespace" else "❌ No"
+
+                if om_template and om_term_type == "📘 Literal":
+                    om_datatype_display = om_datatype if om_datatype != "Select datatype" else ""
+                    inner_html += f"""<tr><td><b>Datatype</b></td><td>{om_datatype_display}</td></tr>"""
+                    if not om_datatype != "Natural language text":
+                        om_language_tag_display = om_language_tag if om_language_tag != "Select language tag" else ""
+                        inner_html += f"""<tr><td><b>Language tag*</b></td><td>{om_language_tag_display}</td></tr>"""
 
                 inner_html += f"""<tr><td><b>Object Map label</b></td><td> {om_label} </td></tr>
                     <tr><td><b>Required fields complete</b></td><td> {om_complete_flag} </td></tr>"""
@@ -2403,12 +2397,12 @@ with tab3:
                     inner_html += f"""<tr><td><b>Term type*</b></td><td></td></tr>"""
 
 
-                elif om_term_type_constant == "📘 Literal":
+                elif om_term_type == "📘 Literal":
                     om_complete_flag = "✔️ Yes" if om_constant else "❌ No"
                     inner_html += f"""<tr><td><b>Term type*</b></td><td>{"📘 Literal"}</td></tr>"""
 
 
-                elif om_term_type_constant == "🌐 IRI":
+                elif om_term_type == "🌐 IRI":
                     om_complete_flag = "✔️ Yes" if (om_constant_ns_prefix != "Select a namespace" and om_constant) else "❌ No"
                     om_constant_ns_prefix_display = om_constant_ns_prefix if om_constant_ns_prefix != "Select a namespace" else ""
                     inner_html += f"""<tr><td><b>Term type*</b></td><td>{"🌐 IRI"}</td></tr>

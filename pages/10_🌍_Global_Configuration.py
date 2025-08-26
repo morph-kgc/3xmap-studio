@@ -828,13 +828,10 @@ with tab2:
     with col2b:
         st.write("")
         st.write("")
-        st.markdown("""
-        <div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+        st.markdown("""<div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
             <span style="font-size:0.95rem;">
         🐢 Certain options in this panel can be a bit slow, some patience may be required.
-        </span>
-        </div>
-        """, unsafe_allow_html=True)
+            </span></div>""", unsafe_allow_html=True)
 
 
     #LOAD ONTOLOGY FROM URL___________________________________
