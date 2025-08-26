@@ -1871,16 +1871,22 @@ with tab3:
                         st.markdown(f"""<div class="custom-error-small">
                             ❌ The names of the uploaded file <b>({ds_file_for_pom.name})</b> and the
                             data source <b>({ds_filename_for_pom})</b> do not match.
+                            Please upload the correct file for the data source.
                         </div>""", unsafe_allow_html=True)
-                        st.write("")
-
                     elif ds_file_for_pom:
-                        st.markdown(f"""<div class="custom-success-small">
-                            ✔️ The data source <b>{ds_filename_for_pom}</b> is loaded correctly.
-                        </div>""", unsafe_allow_html=True)
-                        st.write("")
-                        columns_df = pd.read_csv(ds_file_for_pom)
-                        column_list = columns_df.columns.tolist()
+                        try:
+                            columns_df = pd.read_csv(ds_file_for_pom)
+                            column_list = columns_df.columns.tolist()
+                            st.markdown(f"""<div class="custom-success-small">
+                                ✔️ The data source is loaded correctly from file <b>{ds_filename_for_pom}</b>.
+                            </div>""", unsafe_allow_html=True)
+                        except:   # empty file
+                            st.markdown(f"""<div class="custom-error-small">
+                                ❌ <b>{ds_file_for_pom.name}</b> is empty.
+                                Please upload the correct file for the data source.
+                            </div>""", unsafe_allow_html=True)
+                            column_list = []
+                    st.write("")
 
             # HERE CREATE THE PREDICATE MAP
 
@@ -2011,14 +2017,12 @@ with tab3:
                         if not column_list:   #data source is not available (load)
                             if not ds_file_for_pom:
                                 st.markdown(f"""<div class="custom-error-small">
-                                        ❌ You must load the
-                                        <b>data source file</b> to add a variable part.
+                                        ❌ To add a variable part, you must first load the
+                                        <b>data source file</b>.
                                     </div>""", unsafe_allow_html=True)
                             else:
                                 st.markdown(f"""<div class="custom-error-small">
-                                    ❌ The names of the uploaded file <b>({ds_file_for_pom.name})</b> and the
-                                    data source <b>({ds_filename_for_pom})</b> do not match. You must add the
-                                    correct file to add a variable part.
+                                    ❌ To add a variable part, please upload the correct <b>data source file</b>.
                                     </div>""", unsafe_allow_html=True)
                         else:  # data source is available
                             list_to_choose = column_list.copy()
@@ -2219,10 +2223,9 @@ with tab3:
                                 </div>""", unsafe_allow_html=True)
                         else:
                             st.markdown(f"""<div class="custom-error-small">
-                                ❌ The names of the uploaded file <b>({ds_file_for_pom.name})</b> and the
-                                data source <b>({ds_filename_for_pom})</b> do not match. You must add the
-                                correct file to continue.
+                                ❌ Please upload the correct <b>data source file</b> to continue.
                                 </div>""", unsafe_allow_html=True)
+
 
                 else:
 
