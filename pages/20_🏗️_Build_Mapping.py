@@ -637,6 +637,7 @@ with tab1:
                 if ds_file and not logical_source_label in labelled_ls_list:
                     try:
                         columns_df = pd.read_csv(ds_file)
+                        ds_file.seek(0)    # reset index
                         column_list = columns_df.columns.tolist()
                         with col1a:
                             st.button("Save", key="key_save_tm_w_new_ls", on_click=save_tm_w_new_ls)
