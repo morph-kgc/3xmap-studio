@@ -105,12 +105,14 @@ if "labelled_sm_deleted_ok_flag" not in st.session_state:
     st.session_state["labelled_sm_deleted_ok_flag"] = False
 if "sm_unassigned_ok_flag" not in st.session_state:
     st.session_state["sm_unassigned_ok_flag"] = False
+if "sm_template_prefix" not in st.session_state:
+    st.session_state["sm_template_prefix"] = ""
 
 #TAB3
 if "key_ds_uploader_for_pom" not in st.session_state:
     st.session_state["key_ds_uploader_for_pom"] = str(uuid.uuid4())
 if "om_template_ns_prefix" not in st.session_state:
-    st.session_state["om_template_ns_prefix"] = False
+    st.session_state["om_template_ns_prefix"] = ""
 if "pom_saved_ok_flag" not in st.session_state:
     st.session_state["pom_saved_ok_flag"] = False
 if "om_template_list" not in st.session_state:
@@ -230,11 +232,12 @@ def save_sm_existing():
 
 def add_ns_to_sm_template():
     # update template and store information_________
-    if st.session_state["sm_template_ns_prefix"] != "Select a namespace":    # no ns added yet
+    if not st.session_state["sm_template_prefix"]:    # no ns added yet
         st.session_state["sm_template_list"].insert(0, sm_template_ns)
     else:   # a ns was added (replace)
         st.session_state["sm_template_list"][0] = sm_template_ns
     # reset fields_____________
+    st.session_state["sm_template_prefix"] = sm_template_ns_prefix
     st.session_state["key_sm_template_ns_prefix"] = "Select a namespace"
     st.session_state["key_build_template_action_sm"] = "📈 Add variable part"
 
@@ -254,7 +257,7 @@ def reset_sm_template():
     # reset template
     st.session_state["sm_template_list"] = []
     # store information____________________
-    st.session_state["sm_template_ns_prefix"] = "Select a namespace"
+    st.session_state["sm_template_prefix"] = ""
     st.session_state["template_sm_is_iri_flag"] = False
     # reset fields_____________
     st.session_state["key_build_template_action_sm"] = "🔒 Add fixed part"
@@ -277,6 +280,7 @@ def save_sm_template():   #function to save subject map (template option)
     st.session_state["last_added_sm_list"].insert(0, st.session_state["sm_label"])
     st.session_state["sm_saved_ok_new_flag"] = True
     # reset fields____________________
+    st.session_state["sm_template_list"] = []
     st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
     # cache data source if given_________________
     if not ds_filename_for_sm in st.session_state["ds_cache_dict"] and column_list:
@@ -387,11 +391,12 @@ def unassign_sm():
 # TAB3
 def add_ns_to_om_template():
     # update template and store information_________
-    if st.session_state["om_template_ns_prefix"] != "Select a namespace":    # no ns added yet
+    if not st.session_state["om_template_ns_prefix"]:    # no ns added yet
         st.session_state["om_template_list"].insert(0, om_template_ns)
     else:   # a ns was added (replace)
         st.session_state["om_template_list"][0] = om_template_ns
     # reset fields_____________
+    st.session_state["om_template_ns_prefix"] = om_template_ns_prefix
     st.session_state["key_om_template_ns_prefix"] = "Select a namespace"
     st.session_state["key_build_template_action_om"] = "📈 Add variable part"
 
@@ -411,7 +416,7 @@ def reset_om_template():
     # reset template
     st.session_state["om_template_list"] = []
     # store information____________________
-    st.session_state["om_template_ns_prefix"] = "Select a namespace"
+    st.session_state["om_template_ns_prefix"] = ""
     st.session_state["template_om_is_iri_flag"] = False
     # reset fields_____________
     st.session_state["key_build_template_action_om"] = "🔒 Add fixed part"
@@ -883,7 +888,7 @@ with tab2:
         #Option to show all TriplesMaps
         sm_df = pd.DataFrame([
             {"Subject Map": v[0], "Assigned to": utils.format_list_for_markdown(v[4]),
-                "Rule": v[1], "ID/Constant": v[3]} for k, v in sm_dict.items()])
+                "Rule": v[1], "ID/Constant": v[3]} for k, v in reversed(sm_dict.items())])
 
         with st.expander("🔎 Show all Subject Maps"):
             st.write("")
@@ -954,12 +959,15 @@ with tab2:
         #IF THERE ARE TRIPLESMAPS AVAILABLE___________________________
 
         #first create dictionary of all the existing Subject Maps
+
         existing_sm_dict = {}
         for sm in st.session_state["g_mapping"].objects(predicate=RR.subjectMap):
             if isinstance(sm, URIRef):
                 existing_sm_dict[split_uri(sm)[1]] = sm
         existing_sm_list = list(existing_sm_dict.keys())
 
+        with col1:
+            col1a, col1b = st.columns(2)
         if st.session_state["last_added_tm_list"] and st.session_state["last_added_tm_list"][0] in tm_wo_sm_list:
             with col1a:
                 tm_label_for_sm = st.selectbox("🖱️ Select a TriplesMap:*", reversed(tm_wo_sm_list), key="key_tm_label_input_for_sm",
@@ -971,9 +979,9 @@ with tab2:
 
         if tm_label_for_sm != "Select a TriplesMap":
             if existing_sm_list:  # if there exist labelled subject maps
-                with col1a:
+                with col1b:
                     sm_options_list = ["📑 Select existing Subject Map", "🆕 Create new Subject Map"]
-                    sm_option = st.radio("", sm_options_list, label_visibility="collapsed")
+                    sm_option = st.radio("", sm_options_list)
                     st.write("")
 
             else:
@@ -1005,412 +1013,380 @@ with tab2:
                     else:
                         column_list = []
 
-                    with col1b:
-                        sm_label = st.text_input("⌨️ Enter Subject Map label:", key="key_sm_label_input")
-                        st.markdown("""<div style="text-align:right; font-size:0.8em; margin-top:-1em;">
-                                (optional)
-                            </div>""", unsafe_allow_html=True)
+                    with col1a:
+                        ds_allowed_formats = utils.get_ds_allowed_formats()
+                        ds_file_for_sm = st.file_uploader(f"""🖱️ Upload data source file {ds_filename_for_sm} (optional):""",
+                            type=ds_allowed_formats, key=st.session_state["key_ds_uploader_for_sm"])
 
-                    if sm_label and sm_label in existing_sm_dict:
-                        with col1b:
-                            st.markdown(f"""<div class="custom-error-small">
-                                    ❌ The Subject Map label <b>{sm_label}</b>
-                                    is <b>already in use</b>. Please, pick a different label or leave blank.
+                    with col1b:
+                        if not ds_file_for_sm:
+                            st.markdown(f"""<div class="info-message-small">
+                                    🛢️ The data source <b>{ds_filename_for_sm}</b> is not cached.
+                                    Load it here <b>if needed</b>.
                                 </div>""", unsafe_allow_html=True)
 
-                    else:
-                        with col1:
-                            col1a, col1b = st.columns([2,1])
 
-                        with col1a:
-                            ds_allowed_formats = utils.get_ds_allowed_formats()
-                            ds_file_for_sm = st.file_uploader(f"""🖱️ Upload data source file {ds_filename_for_sm} (optional):""",
-                                type=ds_allowed_formats, key=st.session_state["key_ds_uploader_for_sm"])
-
-                        with col1b:
-                            st.write("")
-                            st.write("")
-                            if not ds_file_for_sm:
-                                st.markdown(f"""<div class="info-message-small">
-                                        🛢️ The data source <b>{ds_filename_for_sm}</b> is not cached.
-                                        Load it here <b>if needed</b>.
-                                    </div>""", unsafe_allow_html=True)
-
-
-                            if ds_file_for_sm and ds_filename_for_sm != Literal(ds_file_for_sm.name):
+                        if ds_file_for_sm and ds_filename_for_sm != Literal(ds_file_for_sm.name):
+                            st.markdown(f"""<div class="custom-error-small">
+                                ❌ The names of the uploaded file <b>({ds_file_for_sm.name})</b> and the
+                                data source <b>({ds_filename_for_sm})</b> do not match.
+                                Please upload the correct file for the data source.
+                            </div>""", unsafe_allow_html=True)
+                        elif ds_file_for_sm:
+                            try:
+                                columns_df = pd.read_csv(ds_file_for_sm)
+                                column_list = columns_df.columns.tolist()
+                                st.markdown(f"""<div class="custom-success-small">
+                                    ✔️ The data source is loaded correctly from file <b>{ds_filename_for_sm}</b>.
+                                </div>""", unsafe_allow_html=True)
+                            except:   # empty file
                                 st.markdown(f"""<div class="custom-error-small">
-                                    ❌ The names of the uploaded file <b>({ds_file_for_sm.name})</b> and the
-                                    data source <b>({ds_filename_for_sm})</b> do not match.
+                                    ❌ The file <b>{ds_file_for_sm.name}</b> is empty.
                                     Please upload the correct file for the data source.
                                 </div>""", unsafe_allow_html=True)
-                            elif ds_file_for_sm:
-                                try:
-                                    columns_df = pd.read_csv(ds_file_for_sm)
-                                    column_list = columns_df.columns.tolist()
-                                    st.markdown(f"""<div class="custom-success-small">
-                                        ✔️ The data source is loaded correctly from file <b>{ds_filename_for_sm}</b>.
-                                    </div>""", unsafe_allow_html=True)
-                                except:   # empty file
+                                column_list = []
+                        st.write("")
+
+                    with col1:
+                        col1a, col1b = st.columns(2)
+                    with col1a:
+                        sm_label = st.text_input("⌨️ Enter Subject Map label (optional):", key= "key_sm_label")
+                    sm_iri = BNode() if not sm_label else MAP[sm_label]
+                    if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):
+                        with col1a:
+                            st.markdown(f"""<div class="custom-error-small">
+                                ❌ That <b>Object Map label</b> is already in use. Please pick another label or leave blank.
+                            </div>""", unsafe_allow_html=True)
+
+                    with col1:
+                        sm_generation_rule_list = ["Template 📐", "Constant 🔒", "Reference 📊"]
+                        sm_generation_rule = st.radio("🖱️ Define the Subject Map generation rule:*",
+                            sm_generation_rule_list, horizontal=True, key="key_sm_generation_rule_radio")
+
+
+                    #_______________________________________________
+                    # SUBJECT MAP - TEMPLATE-VALUED
+                    if sm_generation_rule == "Template 📐":
+
+                        with col1:
+                            col1a, col1b = st.columns([1,1.5])
+                        with col1a:
+                            build_template_action_sm = st.selectbox(
+                                label="🖱️ Add template part:", options=["🏷️ Add Namespace*", "🔒 Add fixed part", "📈 Add variable part", "🗑️ Reset template"],
+                                key="key_build_template_action_sm")
+
+
+                        if build_template_action_sm == "🔒 Add fixed part":
+                            with col1b:
+                                sm_template_fixed_part = st.text_input("⌨️ Enter fixed part:", key="key_sm_fixed_part")
+                                if re.search(r"[ \t\n\r<>\"{}|\\^`]", sm_template_fixed_part):
+                                    st.markdown(f"""<div class="custom-warning-small">
+                                            ⚠️ You included a space or an unescaped character, which is discouraged.
+                                        </div>""", unsafe_allow_html=True)
+                                    st.write("")
+                                if sm_template_fixed_part:
+                                    st.button("Add", key="key_save_sm_template_fixed_part_button", on_click=save_sm_template_fixed_part)
+
+                        elif build_template_action_sm == "📈 Add variable part":
+                            with col1b:
+                                if not column_list:   #data source is not available (load)
+                                    if not ds_file_for_sm:
+                                        st.write("")
+                                        st.markdown(f"""<div class="custom-error-small">
+                                                ❌ To add a variable part, you must first load the
+                                                <b>data source file</b>.
+                                            </div>""", unsafe_allow_html=True)
+                                    else:
+                                        st.write("")
+                                        st.markdown(f"""<div class="custom-error-small">
+                                            ❌ To add a variable part, please upload the correct <b>data source file</b>.
+                                            </div>""", unsafe_allow_html=True)
+                                else:  # data source is available
+                                    list_to_choose = column_list.copy()
+                                    list_to_choose.insert(0, "Select a column")
+                                    sm_template_variable_part_temp = st.selectbox("🖱️ Select the column of the data source:", list_to_choose, key="key_sm_template_variable_part_temp")
+                                    st.markdown(f"""<div style="font-size:12px; margin-top:-1em; text-align: right;">
+                                            🛢️ The data source is <b style="color:#F63366;">{ds_filename_for_sm}</b>.
+                                        </div>""", unsafe_allow_html=True)
+                                    sm_template_variable_part = sm_template_variable_part_temp if sm_template_variable_part_temp != "Select a column" else ""
+                                    if st.session_state["sm_template_list"] and st.session_state["sm_template_list"][-1].endswith("}"):
+                                        st.markdown(f"""<div class="custom-warning-small">
+                                                ⚠️ Including two adjacent variable parts is strongly discouraged.
+                                                <b>Best practice:</b> Add a separator between variables to improve clarity.</div>
+                                            """, unsafe_allow_html=True)
+                                    if sm_template_variable_part:
+                                        st.button("Add", key="save_sm_template_variable_part_button", on_click=save_sm_template_variable_part)
+
+
+                        elif build_template_action_sm == "🏷️ Add Namespace*":
+                            with col1b:
+                                mapping_ns_dict = utils.get_mapping_ns_dict()
+                                list_to_choose = list(mapping_ns_dict.keys())
+                                list_to_choose.insert(0, "Select a namespace")
+                                sm_template_ns_prefix = st.selectbox("🖱️ Select a namespace for the template:", list_to_choose, key="key_sm_template_ns_prefix")
+                                if not mapping_ns_dict:
                                     st.markdown(f"""<div class="custom-error-small">
-                                        ❌ The file <b>{ds_file_for_sm.name}</b> is empty.
-                                        Please upload the correct file for the data source.
+                                            ❌ No namespaces available. You can add namespaces in the
+                                             <b>Global Configuration</b> page.
+                                        </div>""", unsafe_allow_html=True)
+
+
+                                if sm_template_ns_prefix != "Select a namespace":
+                                    sm_template_ns = mapping_ns_dict[sm_template_ns_prefix]
+                                    st.button("Add", key="key_add_ns_to_sm_template_button", on_click=add_ns_to_sm_template)
+
+
+                        elif build_template_action_sm == "🗑️ Reset template":
+                            with col1b:
+                                st.write("")
+                                st.write("")
+                                st.markdown(f"""<div class="custom-warning-small">
+                                        ⚠️ The current template will be deleted.
                                     </div>""", unsafe_allow_html=True)
-                                    column_list = []
+                                st.write("")
+                                st.button("Reset", on_click=reset_sm_template)
+
+                        with col1:
+                            col1a, col1b = st.columns([3,1])
+                        with col1a:
+                            sm_template = "".join(st.session_state["sm_template_list"])
+                            if sm_template:
+                                st.write("")
+                                st.markdown(f"""
+                                    <div class="gray-preview-message" style="word-wrap:break-word; overflow-wrap:anywhere;">
+                                        📐 <b>Your <b style="color:#F63366;">template</b> so far:</b><br>
+                                    <div style="margin-top:0.2em; font-size:15px; color:#333;">
+                                            {sm_template}
+                                    </div></div>""", unsafe_allow_html=True)
+                                st.write("")
+                            else:
+                                st.write("")
+                                st.markdown(f"""<div class="gray-preview-message">
+                                        📐 <b> Build your <b style="color:#F63366;">template</b> and preview it here.</b> <br>
+                                    <div style="font-size:13px; color:#666666; margin-top:0.2em;">
+                                        🛈 You can add as many parts as you need.
+                                        For <b style="color:#F63366;">🌐 IRI term type</b>, make sure to add a namespace.
+                                    </div></div>""", unsafe_allow_html=True)
+                                st.write("")
+
+
+
+                        with col1b:
+                            st.write("")
+                            sm_term_type_template = st.radio(label="🖱️ Select Term type:*", options=["🌐 IRI", "👻 BNode"],
+                                key="sm_term_type_template")
+
+                        if sm_term_type_template == "🌐 IRI" and not st.session_state["sm_template_prefix"] and sm_template:
+                            with col1a:
+
+                                st.markdown(f"""<div class="custom-error-small">
+                                    ❌ Term type is <b>🌐 IRI</b>: You must <b>add a namespace</b>.
+                                </div>""", unsafe_allow_html=True)
+                                st.write("")
+
+
+                    #_______________________________________________
+                    # SUBJECT MAP - CONSTANT-VALUED
+                    if sm_generation_rule == "Constant 🔒":
+
+                        with col1:
+                            col1a, col1b = st.columns(2)
+                        with col1a:
+                            sm_constant = st.text_input("⌨️ Enter constant:*", key="key_sm_constant")
+
+                        with col1b:
+                            sm_term_type_constant = st.radio(label="🖱️ Select Term type:*", options=["🌐 IRI"], horizontal=True,
+                                key="sm_term_type_constant")
+
+                        mapping_ns_dict = utils.get_mapping_ns_dict()
+                        list_to_choose = list(mapping_ns_dict.keys())
+                        list_to_choose.insert(0, "Select a namespace")
+                        with col1a:
+                            sm_constant_ns_prefix = st.selectbox("🖱️ Select a namespace for the constant:*", list_to_choose,
+                                key="key_sm_constant_ns")
+
+                            if not mapping_ns_dict:
+                                with col1b:
+                                    st.markdown(f"""<div class="custom-error-small">
+                                            ❌ You must add namespaces in
+                                            the <b>Global Configuration</b> page.
+                                        </div>""", unsafe_allow_html=True)
+
+                        with col1a:
                             st.write("")
 
 
+                    #_______________________________________________
+                    #SUBJECT MAP - REFERENCED-VALUED
+                    if sm_generation_rule ==  "Reference 📊":
+                        sm_datatype = ""
+                        sm_language_tag = ""
+                        sm_ready_flag_reference = False
 
+
+                        with col1:
+                            col1a, col1b = st.columns([1,1.2])
                         with col1a:
-                            sm_generation_rule_list = ["Template 📐", "Constant 🔒", "Reference 📊"]
-                            sm_generation_rule = st.radio("🖱️ Define the Subject Map generation rule:*",
-                                sm_generation_rule_list, horizontal=True, key="key_sm_generation_rule_radio")
+                            list_to_choose = column_list.copy()
+                            list_to_choose.insert(0, "Select a column")
+                            sm_column_name = st.selectbox(f"""🖱️ Select the column of the data source:*""", list_to_choose,
+                                key="key_sm_column_name")
+                            st.markdown(f"""<div style="font-size:12px; margin-top:-1em; text-align: right;">
+                                    🛢️ The data source is <b style="color:#F63366;">{ds_filename_for_sm}</b>.
+                                </div>""", unsafe_allow_html=True)
 
+                            with col1b:
+                                sm_term_type_reference = st.radio(label="🖱️ Select Term type:*", options=["🌐 IRI", "👻 BNode"],
+                                    horizontal=True, key="sm_term_type_reference")
 
-                        #_______________________________________________
-                        # SUBJECT MAP - TEMPLATE-VALUED
-                        if sm_generation_rule == "Template 📐":
-
-                            with col1:
-                                col1a, col1b = st.columns([1,1.5])
+                        if not column_list:   #data source is not available (load)
                             with col1a:
-                                build_template_action_sm = st.radio(
-                                    label="", options=["🏷️ Add Namespace*", "🔒 Add fixed part", "📈 Add variable part", "🗑️ Reset template"],
-                                    label_visibility="collapsed", key="key_build_template_action_sm")
-
-
-                            if build_template_action_sm == "🔒 Add fixed part":
-                                with col1b:
-                                    sm_template_fixed_part = st.text_input("⌨️ Enter fixed part:", key="key_sm_fixed_part")
-                                    if re.search(r"[ \t\n\r<>\"{}|\\^`]", sm_template_fixed_part):
-                                        st.markdown(f"""
-                                            <div style="background-color:#fff3cd; padding:1em;
-                                            border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                                                ⚠️ You included a space or an unescaped character, which is discouraged.</div>
-                                        """, unsafe_allow_html=True)
-                                        st.write("")
-                                    if sm_template_fixed_part:
-                                        st.button("Add", key="key_save_sm_template_fixed_part_button", on_click=save_sm_template_fixed_part)
-
-                            elif build_template_action_sm == "📈 Add variable part":
-                                with col1b:
-                                    if not column_list:   #data source is not available (load)
-                                        if not ds_file_for_sm:
-                                            st.markdown(f"""<div class="custom-error-small">
-                                                    ❌ To add a variable part, you must first load the
-                                                    <b>data source file</b>.
-                                                </div>""", unsafe_allow_html=True)
-                                        else:
-                                            st.markdown(f"""<div class="custom-error-small">
-                                                ❌ To add a variable part, please upload the correct <b>data source file</b>.
-                                                </div>""", unsafe_allow_html=True)
-                                    else:  # data source is available
-                                        list_to_choose = column_list.copy()
-                                        list_to_choose.insert(0, "Select a column")
-                                        sm_template_variable_part_temp = st.selectbox("🖱️ Select the column of the data source:", list_to_choose, key="key_sm_template_variable_part_temp")
-                                        st.markdown(f"""<div style="font-size:12px; margin-top:-1em; text-align: right;">
-                                                🛢️ The data source is <b style="color:#F63366;">{ds_filename_for_sm}</b>.
-                                            </div>""", unsafe_allow_html=True)
-                                        sm_template_variable_part = sm_template_variable_part_temp if sm_template_variable_part_temp != "Select a column" else ""
-                                        if st.session_state["sm_template_list"] and st.session_state["sm_template_list"][-1].endswith("}"):
-                                            st.markdown(f"""<div class="custom-warning-small">
-                                                    ⚠️ Including two adjacent variable parts is strongly discouraged.
-                                                    <b>Best practice:</b> Add a separator between variables to improve clarity.</div>
-                                                """, unsafe_allow_html=True)
-                                        if sm_template_variable_part:
-                                            st.button("Add", key="save_sm_template_variable_part_button", on_click=save_sm_template_variable_part)
-
-
-                            elif build_template_action_sm == "🏷️ Add Namespace*":
-                                with col1b:
-                                    mapping_ns_dict = utils.get_mapping_ns_dict()
-                                    list_to_choose = list(mapping_ns_dict.keys())
-                                    list_to_choose.insert(0, "Select a namespace")
-                                    sm_template_ns_prefix = st.selectbox("🖱️ Select a namespace for the template:", list_to_choose, key="key_sm_template_ns_prefix")
-                                    st.session_state["sm_template_ns_prefix"] = sm_template_ns_prefix
-                                    if not mapping_ns_dict:
-                                        st.markdown(f"""<div class="custom-error-small">
-                                                ❌ No namespaces available. You can add namespaces in the
-                                                 <b>Global Configuration</b> page.
-                                            </div>""", unsafe_allow_html=True)
-
-
-                                    if sm_template_ns_prefix != "Select a namespace":
-                                        sm_template_ns = mapping_ns_dict[sm_template_ns_prefix]
-                                        st.button("Add", key="key_add_ns_to_sm_template_button", on_click=add_ns_to_sm_template)
-
-
-                            elif build_template_action_sm == "🗑️ Reset template":
-                                with col1b:
-                                    st.markdown(f"""<div class="custom-warning-small">
-                                            ⚠️ The current template will be deleted.
+                                if not ds_file_for_sm:
+                                    st.markdown(f"""<div class="custom-error-small">
+                                            ❌ You must load the
+                                            <b>data source file</b> to continue.
                                         </div>""", unsafe_allow_html=True)
                                     st.write("")
-                                    st.button("Reset", on_click=reset_sm_template)
-
-                            with col1:
-                                col1a, col1b = st.columns([3,1])
-                            with col1a:
-                                sm_template = "".join(st.session_state["sm_template_list"])
-                                if sm_template:
-                                    st.write("")
-                                    st.markdown(f"""
-                                        <div class="gray-preview-message" style="word-wrap:break-word; overflow-wrap:anywhere;">
-                                            📐 <b>Your <b style="color:#F63366;">template</b> so far:</b><br>
-                                        <div style="margin-top:0.2em; font-size:15px; color:#333;">
-                                                {sm_template}
-                                        </div></div>""", unsafe_allow_html=True)
-                                    st.write("")
                                 else:
+                                    st.markdown(f"""<div class="custom-error-small">
+                                        ❌ Please upload the correct <b>data source file</b> to continue.
+                                        </div>""", unsafe_allow_html=True)
                                     st.write("")
-                                    st.markdown(f"""<div class="gray-preview-message">
-                                            📐 <b> Build your <b style="color:#F63366;">template</b> and preview it here.</b> <br>
-                                        <div style="font-size:13px; color:#666666; margin-top:0.2em;">
-                                            🛈 You can add as many parts as you need.
-                                            For <b style="color:#F63366;">🌐 IRI term type</b>, make sure to add a namespace.
-                                        </div></div>""", unsafe_allow_html=True)
-                                    st.write("")
-
-
-
-                            with col1b:
-                                st.write("")
-                                sm_term_type_template = st.radio(label="🖱️ Select Term type:*", options=["🌐 IRI", "👻 BNode"],
-                                    key="sm_term_type_template")
-
-                            if sm_term_type_template == "🌐 IRI" and st.session_state["sm_template_ns_prefix"] == "Select a namespace" and sm_template:
-                                with col1a:
-
-                                    st.markdown(f"""<div class="custom-error-small">
-                                        ❌ Term type is <b>🌐 IRI</b>: You must <b>add a namespace</b>.
-                                    </div>""", unsafe_allow_html=True)
-                                    st.write("")
-
-                            with col1:
-                                col1a, col1b = st.columns(2)
-                            with col1a:
-                                sm_label = st.text_input("⌨️ Enter Object Map label (optional):", key= "key_sm_label")
-                            sm_iri = BNode() if not sm_label else MAP[sm_label]
-                            if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):
-                                with col1a:
-                                    st.markdown(f"""<div class="custom-error-small">
-                                        ❌ That <b>Object Map label</b> is already in use. Please pick another label or leave blank.
-                                    </div>""", unsafe_allow_html=True)
-
-                        #_______________________________________________
-                        # SUBJECT MAP - CONSTANT-VALUED
-                        if sm_generation_rule == "Constant 🔒":
-
-                            with col1:
-                                col1a, col1b = st.columns(2)
-                            with col1a:
-                                sm_constant = st.text_input("⌨️ Enter constant:*", key="key_sm_constant")
-
-                            with col1b:
-                                sm_term_type_constant = st.radio(label="🖱️ Select Term type:*", options=["🌐 IRI"], horizontal=True,
-                                    key="sm_term_type_constant")
-
-                            mapping_ns_dict = utils.get_mapping_ns_dict()
-                            list_to_choose = list(mapping_ns_dict.keys())
-                            list_to_choose.insert(0, "Select a namespace")
-                            with col1a:
-                                sm_constant_ns_prefix = st.selectbox("🖱️ Select a namespace for the constant:*", list_to_choose,
-                                    key="key_sm_constant_ns")
-
-                                if not mapping_ns_dict:
-                                    with col1b:
-                                        st.markdown(f"""<div class="custom-error-small">
-                                                ❌ You must add namespaces in
-                                                the <b>Global Configuration</b> page.
-                                            </div>""", unsafe_allow_html=True)
-
-                            with col1:
-                                col1a, col1b = st.columns(2)
-                            with col1a:
-                                sm_label = st.text_input("⌨️ Enter Object Map label (optional):", key= "key_sm_label")
-                            sm_iri = BNode() if not sm_label else MAP[sm_label]
-                            if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):
-                                with col1a:
-                                    st.markdown(f"""<div class="custom-error-small">
-                                        ❌ That <b>Object Map label</b> is already in use. Please pick another label or leave blank.
-                                    </div>""", unsafe_allow_html=True)
-
-                        #_______________________________________________
-                        #SUBJECT MAP - REFERENCED-VALUED
-                        if sm_generation_rule ==  "Reference 📊":
-                            sm_datatype = ""
-                            sm_language_tag = ""
-                            sm_ready_flag_reference = False
-
-
-                            with col1:
-                                col1a, col1b = st.columns([1,1.2])
-                            with col1a:
-                                list_to_choose = column_list.copy()
-                                list_to_choose.insert(0, "Select a column")
-                                sm_column_name = st.selectbox(f"""🖱️ Select the column of the data source:*""", list_to_choose,
-                                    key="key_sm_column_name")
-                                st.markdown(f"""<div style="font-size:12px; margin-top:-1em; text-align: right;">
-                                        🛢️ The data source is <b style="color:#F63366;">{ds_filename_for_sm}</b>.
-                                    </div>""", unsafe_allow_html=True)
-
-                                with col1b:
-                                    sm_term_type_reference = st.radio(label="🖱️ Select Term type:*", options=["🌐 IRI", "👻 BNode"],
-                                        horizontal=True, key="sm_term_type_reference")
-
-                            if not column_list:   #data source is not available (load)
-                                with col1a:
-                                    if not ds_file_for_sm:
-                                        st.markdown(f"""<div class="custom-error-small">
-                                                ❌ You must load the
-                                                <b>data source file</b> to continue.
-                                            </div>""", unsafe_allow_html=True)
-                                        st.write("")
-                                    else:
-                                        st.markdown(f"""<div class="custom-error-small">
-                                            ❌ Please upload the correct <b>data source file</b> to continue.
-                                            </div>""", unsafe_allow_html=True)
-                                        st.write("")
-
-
-                            else:
-
-                                if sm_column_name != "Select a column" and sm_term_type_reference == "🌐 IRI":
-                                    with col1b:
-                                        st.markdown(f"""<div class="custom-warning-small">
-                                                ⚠️ Term type is <b>🌐 IRI</b>: Make sure that the values in the referenced column
-                                                are valid IRIs.
-                                            </div>""", unsafe_allow_html=True)
-                                        st.write("")
-
-                            with col1:
-                                col1a, col1b = st.columns(2)
-                            with col1a:
-                                sm_label = st.text_input("⌨️ Enter Object Map label (optional):", key= "key_sm_label")
-                            sm_iri = BNode() if not sm_label else MAP[sm_label]
-                            if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):
-                                with col1a:
-                                    st.markdown(f"""<div class="custom-error-small">
-                                        ❌ That <b>Object Map label</b> is already in use. Please pick another label or leave blank.
-                                    </div>""", unsafe_allow_html=True)
-
-
-                        # DISPLAY INFO AND SAVE________________________________
-                        if sm_generation_rule == "Template 📐":
-                            with col1:
-                                col1a, col1b = st.columns([2,1])
-                            sm_complete_flag = "✔️ Yes" if sm_template else "❌ No"
-
-                            inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Subject Map</td></tr>
-                                    <tr><td><b>Generation rule*</b></td><td>{sm_generation_rule}</td></tr>
-                                    <tr><td><b>Template*</b></td><td>{sm_template}</td></tr>
-                                    <tr><td><b>Term type*</b></td><td>{sm_term_type_template}</td></tr>"""
-
-                            if sm_template and sm_term_type_template == "🌐 IRI":
-                                sm_template_ns_prefix_display = st.session_state["sm_template_ns_prefix"] if st.session_state["sm_template_ns_prefix"] != "Select a namespace" else ""
-                                inner_html += f"""<tr><td><b>Template namespace*</b></td><td>{sm_template_ns_prefix_display}</td></tr>"""
-                                sm_complete_flag = "✔️ Yes" if st.session_state["sm_template_ns_prefix"] != "Select a namespace" else "❌ No"
-
-                            if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):
-                                sm_complete_flag = "❌ No"
-                                inner_html += f"""<tr><td><b>Object Map label</b></td>
-                                <td>{sm_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
-                            else:
-                                inner_html += f"""<tr><td><b>Object Map label</b></td><td>{sm_label}</td></tr>"""
-
-                            inner_html += f"""<tr><td><b>Required fields complete</b></td><td> {sm_complete_flag} </td></tr>"""
-
-                            full_html = f"""<table class="info-table-gray">
-                                    {inner_html}</table>"""
-                            # render
-                            with col1:
-                                col1a, col1b, col1c = st.columns([1.5,0.2,0.7])
-                            with col1a:
-                                st.markdown(full_html, unsafe_allow_html=True)
-
-
-                        if sm_generation_rule == "Constant 🔒":
-                            inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Subject Map</td></tr>
-                                <tr><td><b>Generation rule*</b></td><td>{sm_generation_rule}</td></tr>
-                                <tr><td><b>Constant*</b></td><td>{sm_constant}</td></tr>
-                                <tr><td><b>Term type*</b></td><td>{sm_term_type_constant}</td></tr>"""
-
-                            sm_complete_flag = "✔️ Yes" if (sm_constant_ns_prefix != "Select a namespace" and sm_constant) else "❌ No"
-                            sm_constant_ns_prefix_display = sm_constant_ns_prefix if sm_constant_ns_prefix != "Select a namespace" else ""
-                            inner_html += f"""<tr><td><b>Constant namespace*</b></td><td>{sm_constant_ns_prefix_display}</td></tr>"""
-
-                            if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):
-                                sm_complete_flag = "❌ No"
-                                inner_html += f"""<tr><td><b>Object Map label</b></td>
-                                <td>{sm_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
-                            else:
-                                inner_html += f"""<tr><td><b>Object Map label</b></td><td>{sm_label}</td></tr>"""
-
-                            inner_html += f"""<tr><td><b>Required fields complete</b></td><td> {sm_complete_flag} </td></tr>"""
-
-                            full_html = f"""<table class="info-table-gray">
-                                    {inner_html}</table>"""
-                            # render
-                            with col1:
-                                col1a, col1b, col1c = st.columns([1.5,0.2,0.7])
-                            with col1a:
-                                st.markdown(full_html, unsafe_allow_html=True)
-
-
-                        if sm_generation_rule == "Reference 📊":
-                            sm_complete_flag = "✔️ Yes" if sm_column_name != "Select a column" else "❌ No"
-                            sm_column_name_display = sm_column_name if sm_column_name != "Select a column" else ""
-
-                            inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Subject Map</td></tr>
-                                <tr><td><b>Generation rule*</b></td><td>{sm_generation_rule}</td></tr>
-                                <tr><td><b>Data source column*</b></td><td>{sm_column_name_display}</td></tr>
-                                <tr><td><b>Term type*</b></td><td>{sm_term_type_reference}</td></tr>"""
-
-
-                            if sm_column_name != "Select a column" and sm_term_type_reference == "📘 Literal":
-                                inner_html += f"""<tr><td><b>Datatype</b></td><td>{sm_datatype}</td></tr>"""
-                                if sm_datatype == "Natural language text":
-                                    sm_complete_flag == "✔️ Yes" if sm_language_tag else "❌ No"
-                                    inner_html += f"""<tr><td><b>Language tag*</b></td><td>{language_tag}</td></tr>"""
-
-                            if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):
-                                sm_complete_flag = "❌ No"
-                                inner_html += f"""<tr><td><b>Object Map label</b></td>
-                                <td>{sm_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
-                            else:
-                                inner_html += f"""<tr><td><b>Object Map label</b></td><td>{sm_label}</td></tr>"""
-
-                            inner_html += f"""<tr><td><b>Required fields complete</b></td><td> {sm_complete_flag} </td></tr>"""
-
-                            full_html = f"""<table class="info-table-gray">
-                                    {inner_html}</table>"""
-                            # render
-                            with col1:
-                                col1a, col1b, col1c = st.columns([1.5,0.2,0.7])
-                            with col1a:
-                                st.markdown(full_html, unsafe_allow_html=True)
-
-
-                        # INFO AND SAVE BUTTON____________________________________
-                        if sm_complete_flag == "✔️ Yes":
-                            with col1c:
-                                st.markdown(f"""<div class="custom-success-small">
-                                    ✅ All required fields are complete.<br>
-                                    🧐 Double-check the information before saving. </div>
-                                """, unsafe_allow_html=True)
-                                st.write("")
-                                if sm_generation_rule == "Template 📐":
-                                    save_sm_template_button = st.button("Save", on_click=save_sm_template, key="key_save_sm_template_button")
-                                elif sm_generation_rule == "Constant 🔒":
-                                    save_sm_constant_button = st.button("Save", on_click=save_sm_constant, key="key_save_sm_constant_button")
-                                if sm_generation_rule == "Reference 📊":
-                                    save_sm_reference_button = st.button("Save", on_click=save_sm_reference, key="key_save_sm_reference_button")
 
                         else:
-                            with col1c:
-                                st.markdown(f"""<div class="custom-warning">
-                                        ⚠️ All <b>required fields (*)</b> must be filled in order to save the Subject Map.
-                                    </div>""", unsafe_allow_html=True)
-                                st.write("")
+
+                            if sm_column_name != "Select a column" and sm_term_type_reference == "🌐 IRI":
+                                with col1b:
+                                    st.markdown(f"""<div class="custom-warning-small">
+                                            ⚠️ Term type is <b>🌐 IRI</b>: Make sure that the values in the referenced column
+                                            are valid IRIs.
+                                        </div>""", unsafe_allow_html=True)
+                                    st.write("")
+
+                        with col1a:
+                            st.write("")
+
+
+                    # DISPLAY INFO AND SAVE________________________________
+                    if sm_generation_rule == "Template 📐":
+                        with col1:
+                            col1a, col1b = st.columns([2,1])
+                        sm_complete_flag = "✔️ Yes" if sm_template else "❌ No"
+
+                        inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Subject Map</td></tr>"""
+
+                        if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):
+                            sm_complete_flag = "❌ No"
+                            inner_html += f"""<tr><td><b>Object Map label</b></td>
+                            <td>{sm_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
+                        else:
+                            inner_html += f"""<tr><td><b>Object Map label</b></td><td>{sm_label}</td></tr>"""
+
+                        inner_html += f"""<tr><td><b>Generation rule*</b></td><td>{sm_generation_rule}</td></tr>
+                        <tr><td><b>Template*</b></td><td>{sm_template}</td></tr>
+                        <tr><td><b>Term type*</b></td><td>{sm_term_type_template}</td></tr>"""
+
+                        if sm_template and sm_term_type_template == "🌐 IRI":
+                            sm_template_ns_prefix_display = st.session_state["sm_template_prefix"] if st.session_state["sm_template_prefix"] else ""
+                            inner_html += f"""<tr><td><b>Template namespace*</b></td><td>{sm_template_ns_prefix_display}</td></tr>"""
+                            sm_complete_flag = "✔️ Yes" if st.session_state["sm_template_prefix"] else "❌ No"
+
+                        inner_html += f"""<tr><td><b>Required fields complete</b></td><td> {sm_complete_flag} </td></tr>"""
+
+                        full_html = f"""<table class="info-table-gray">
+                                {inner_html}</table>"""
+                        # render
+                        with col1:
+                            col1a, col1b, col1c = st.columns([1.5,0.2,0.7])
+                        with col1a:
+                            st.markdown(full_html, unsafe_allow_html=True)
+
+
+                    if sm_generation_rule == "Constant 🔒":
+                        inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Subject Map</td></tr>"""
+
+                        if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):
+                            sm_complete_flag = "❌ No"
+                            inner_html += f"""<tr><td><b>Object Map label</b></td>
+                            <td>{sm_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
+                        else:
+                            inner_html += f"""<tr><td><b>Object Map label</b></td><td>{sm_label}</td></tr>"""
+
+                        inner_html += f"""<tr><td><b>Generation rule*</b></td><td>{sm_generation_rule}</td></tr>
+                        <tr><td><b>Constant*</b></td><td>{sm_constant}</td></tr>
+                        <tr><td><b>Term type*</b></td><td>{sm_term_type_constant}</td></tr>"""
+
+                        sm_complete_flag = "✔️ Yes" if (sm_constant_ns_prefix != "Select a namespace" and sm_constant) else "❌ No"
+                        sm_constant_ns_prefix_display = sm_constant_ns_prefix if sm_constant_ns_prefix != "Select a namespace" else ""
+                        inner_html += f"""<tr><td><b>Constant namespace*</b></td><td>{sm_constant_ns_prefix_display}</td></tr>"""
+
+                        inner_html += f"""<tr><td><b>Required fields complete</b></td><td> {sm_complete_flag} </td></tr>"""
+
+                        full_html = f"""<table class="info-table-gray">
+                                {inner_html}</table>"""
+                        # render
+                        with col1:
+                            col1a, col1b, col1c = st.columns([1.5,0.2,0.7])
+                        with col1a:
+                            st.markdown(full_html, unsafe_allow_html=True)
+
+
+                    if sm_generation_rule == "Reference 📊":
+                        sm_complete_flag = "✔️ Yes" if sm_column_name != "Select a column" else "❌ No"
+                        sm_column_name_display = sm_column_name if sm_column_name != "Select a column" else ""
+
+                        inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Subject Map</td></tr>"""
+
+                        if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):
+                            sm_complete_flag = "❌ No"
+                            inner_html += f"""<tr><td><b>Object Map label</b></td>
+                            <td>{sm_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
+                        else:
+                            inner_html += f"""<tr><td><b>Object Map label</b></td><td>{sm_label}</td></tr>"""
+
+                        inner_html += f"""<tr><td><b>Generation rule*</b></td><td>{sm_generation_rule}</td></tr>
+                        <tr><td><b>Data source column*</b></td><td>{sm_column_name_display}</td></tr>
+                        <tr><td><b>Term type*</b></td><td>{sm_term_type_reference}</td></tr>"""
+
+
+                        if sm_column_name != "Select a column" and sm_term_type_reference == "📘 Literal":
+                            inner_html += f"""<tr><td><b>Datatype</b></td><td>{sm_datatype}</td></tr>"""
+                            if sm_datatype == "Natural language text":
+                                sm_complete_flag == "✔️ Yes" if sm_language_tag else "❌ No"
+                                inner_html += f"""<tr><td><b>Language tag*</b></td><td>{language_tag}</td></tr>"""
+
+                        inner_html += f"""<tr><td><b>Required fields complete</b></td><td> {sm_complete_flag} </td></tr>"""
+
+                        full_html = f"""<table class="info-table-gray">
+                                {inner_html}</table>"""
+                        # render
+                        with col1:
+                            col1a, col1b, col1c = st.columns([1.5,0.2,0.7])
+                        with col1a:
+                            st.markdown(full_html, unsafe_allow_html=True)
+
+
+                    # INFO AND SAVE BUTTON____________________________________
+                    if sm_complete_flag == "✔️ Yes":
+                        with col1c:
+                            st.markdown(f"""<div class="custom-success-small">
+                                ✅ All required fields are complete.<br>
+                                🧐 Double-check the information before saving. </div>
+                            """, unsafe_allow_html=True)
+                            st.write("")
+                            if sm_generation_rule == "Template 📐":
+                                save_sm_template_button = st.button("Save", on_click=save_sm_template, key="key_save_sm_template_button")
+                            elif sm_generation_rule == "Constant 🔒":
+                                save_sm_constant_button = st.button("Save", on_click=save_sm_constant, key="key_save_sm_constant_button")
+                            if sm_generation_rule == "Reference 📊":
+                                save_sm_reference_button = st.button("Save", on_click=save_sm_reference, key="key_save_sm_reference_button")
+
+                    else:
+                        with col1c:
+                            st.markdown(f"""<div class="custom-warning">
+                                    ⚠️ All <b>required fields (*)</b> must be filled in order to save the Subject Map.
+                                </div>""", unsafe_allow_html=True)
+                            st.write("")
 
 
 
@@ -2302,10 +2278,19 @@ with tab3:
                     """,unsafe_allow_html=True)
 
 
-            om_generation_rule_list = ["Template 📐", "Constant 🔒", "Reference 📊"]
-
             with col3:
-                col3a, col3b = st.columns([2.3,1])
+                col3a, col3b = st.columns([2,1])
+            with col3a:
+                st.write("")
+                om_label = st.text_input("⌨️ Enter Object Map label (optional):", key= "key_om_label")
+            om_iri = BNode() if not om_label else MAP[om_label]
+            if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
+                with col3a:
+                    st.markdown(f"""<div class="custom-error-small">
+                        ❌ That <b>Object Map label</b> is already in use. Please pick another label or leave blank.
+                    </div>""", unsafe_allow_html=True)
+
+            om_generation_rule_list = ["Template 📐", "Constant 🔒", "Reference 📊"]
 
             with col3:
                 om_generation_rule = st.radio("🖱️ Define the Object Map generation rule:*",
@@ -2318,9 +2303,8 @@ with tab3:
                 with col3:
                     col3a, col3b = st.columns([1,1.5])
                 with col3a:
-                    build_template_action_om = st.radio(
-                        label="", options=["🏷️ Add Namespace", "🔒 Add fixed part", "📈 Add variable part", "🗑️ Reset template"],
-                        label_visibility="collapsed",
+                    build_template_action_om = st.selectbox("🖱️ Add template part:",
+                        ["🏷️ Add Namespace", "🔒 Add fixed part", "📈 Add variable part", "🗑️ Reset template"],
                         key="key_build_template_action_om")
 
 
@@ -2328,11 +2312,9 @@ with tab3:
                     with col3b:
                         om_template_fixed_part = st.text_input("⌨️ Enter fixed part:", key="key_om_fixed_part")
                         if re.search(r"[ \t\n\r<>\"{}|\\^`]", om_template_fixed_part):
-                            st.markdown(f"""
-                                <div style="background-color:#fff3cd; padding:1em;
-                                border-radius:5px; color:#856404; border:1px solid #ffeeba;">
-                                    ⚠️ You included a space or an unescaped character, which is discouraged.</div>
-                            """, unsafe_allow_html=True)
+                            st.markdown(f"""<div class="custom-warning-small">
+                                    ⚠️ You included a space or an unescaped character, which is discouraged.
+                                </div>""", unsafe_allow_html=True)
                             st.write("")
                         if om_template_fixed_part:
                             st.button("Add", key="key_save_om_template_fixed_part_button", on_click=save_om_template_fixed_part)
@@ -2356,13 +2338,12 @@ with tab3:
                             st.markdown(f"""<div style="font-size:12px; margin-top:-1em; text-align: right;">
                                     🛢️ The data source is <b style="color:#F63366;">{ds_filename_for_pom}</b>.
                                 </div>""", unsafe_allow_html=True)
-                            st.write("")
                             om_template_variable_part = om_template_variable_part_temp if om_template_variable_part_temp != "Select a column" else ""
                             if st.session_state["om_template_list"] and st.session_state["om_template_list"][-1].endswith("}"):
                                 st.markdown(f"""<div class="custom-warning-small">
                                         ⚠️ Including two adjacent variable parts is strongly discouraged.
-                                        <b>Best practice:</b> Add a separator between variables to improve clarity.</div>
-                                    """, unsafe_allow_html=True)
+                                        <b>Best practice:</b> Add a separator between variables to improve clarity.
+                                    </div>""", unsafe_allow_html=True)
                             if om_template_variable_part:
                                 save_om_template_variable_part_button = st.button("Add", key="save_om_template_variable_part_button", on_click=save_om_template_variable_part)
 
@@ -2373,7 +2354,6 @@ with tab3:
                         list_to_choose = list(mapping_ns_dict.keys())
                         list_to_choose.insert(0, "Select a namespace")
                         om_template_ns_prefix = st.selectbox("🖱️ Select a namespace for the template:", list_to_choose, key="key_om_template_ns_prefix")
-                        st.session_state["om_template_ns_prefix"] = om_template_ns_prefix
                         if not mapping_ns_dict:
                             st.markdown(f"""<div class="custom-error-small">
                                     ❌ No namespaces available. You can add namespaces in the
@@ -2388,10 +2368,10 @@ with tab3:
 
                 elif build_template_action_om == "🗑️ Reset template":
                     with col3b:
+                        st.write("")
                         st.markdown(f"""<div class="custom-warning-small">
                                 ⚠️ The current template will be deleted.
                             </div>""", unsafe_allow_html=True)
-                        st.write("")
                         st.button("Reset", on_click=reset_om_template)
 
                 with col3:
@@ -2423,7 +2403,7 @@ with tab3:
                     om_term_type_template = st.radio(label="🖱️ Select Term type:*", options=["🌐 IRI", "📘 Literal", "👻 BNode"],
                         key="om_term_type_template")
 
-                if om_term_type_template == "🌐 IRI" and st.session_state["om_template_ns_prefix"] == "Select a namespace" and om_template:
+                if om_term_type_template == "🌐 IRI" and not st.session_state["om_template_ns_prefix"] and om_template:
                     with col3a:
 
                         st.markdown(f"""<div class="custom-error-small">
@@ -2448,16 +2428,6 @@ with tab3:
                             om_language_tag = st.selectbox("🖱️ Select language tag:*", language_tags,
                                 key="key_om_language_tag")
 
-                with col3:
-                    col3a, col3b = st.columns(2)
-                with col3a:
-                    om_label = st.text_input("⌨️ Enter Object Map label (optional):", key= "key_om_label")
-                om_iri = BNode() if not om_label else MAP[om_label]
-                if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
-                    with col3a:
-                        st.markdown(f"""<div class="custom-error-small">
-                            ❌ That <b>Object Map label</b> is already in use. Please pick another label or leave blank.
-                        </div>""", unsafe_allow_html=True)
 
 
             #_______________________________________________
@@ -2504,19 +2474,6 @@ with tab3:
                         with col3b:
                             om_language_tag = st.selectbox("🖱️ Select language tag:*", language_tags,
                                 key="key_om_language_tag")
-
-                with col3:
-                    col3a, col3b = st.columns(2)
-                with col3a:
-                    om_label = st.text_input("⌨️ Enter Object Map label (optional):", key= "key_om_label")
-                om_iri = BNode() if not om_label else MAP[om_label]
-                if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
-                    with col3a:
-                        st.markdown(f"""<div class="custom-error-small">
-                            ❌ That <b>Object Map label</b> is already in use. Please pick another label or leave blank.
-                        </div>""", unsafe_allow_html=True)
-
-
 
             #_______________________________________________
             #OBJECT MAP - REFERENCED-VALUED
@@ -2581,17 +2538,6 @@ with tab3:
                                     are valid IRIs.
                                 </div>""", unsafe_allow_html=True)
                             st.write("")
-
-                    with col3:
-                        col3a, col3b = st.columns([1.2,1])
-                    with col3a:
-                        om_label = st.text_input("⌨️ Enter Object Map label (optional):", key= "key_om_label")
-                    om_iri = BNode() if not om_label else MAP[om_label]
-                    if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
-                        with col3a:
-                            st.markdown(f"""<div class="custom-error-small">
-                                ❌ That <b>Object Map label</b> is already in use. Please pick another label or leave blank.
-                            </div>""", unsafe_allow_html=True)
 
 
         if tm_label_for_pom != "Select a TriplesMap":
@@ -2663,13 +2609,22 @@ with tab3:
 
                 om_complete_flag = "✔️ Yes" if om_template else "❌ No"
 
-                inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
-                        <tr><td><b>Generation rule*</b></td><td>{om_generation_rule}</td></tr>
-                        <tr><td><b>Template*</b></td><td>{om_template}</td></tr>
-                        <tr><td><b>Term type*</b></td><td>{om_term_type_template}</td></tr>"""
+                inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>"""
+
+                if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
+                    om_complete_flag = "❌ No"
+                    inner_html += f"""<tr><td><b>Object Map label</b></td>
+                    <td>{om_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
+                else:
+                    inner_html += f"""<tr><td><b>Object Map label</b></td><td>{om_label}</td></tr>"""
+
+
+                inner_html += f"""<tr><td><b>Generation rule*</b></td><td>{om_generation_rule}</td></tr>
+                <tr><td><b>Template*</b></td><td>{om_template}</td></tr>
+                <tr><td><b>Term type*</b></td><td>{om_term_type_template}</td></tr>"""
 
                 if om_term_type_template == "🌐 IRI":
-                    om_template_ns_prefix_display = st.session_state["om_template_ns_prefix"] if st.session_state["om_template_ns_prefix"] != "Select a namespace" else ""
+                    om_template_ns_prefix_display = st.session_state["om_template_ns_prefix"] if st.session_state["om_template_ns_prefix"] else ""
                     inner_html += f"""<tr><td><b>Template namespace*</b></td><td>{om_template_ns_prefix_display}</td></tr>"""
                     om_complete_flag = "✔️ Yes" if st.session_state["om_template_ns_prefix"] != "Select a namespace" else "❌ No"
 
@@ -2679,13 +2634,6 @@ with tab3:
                     if not om_datatype != "Natural language text":
                         om_language_tag_display = om_language_tag if om_language_tag != "Select language tag" else ""
                         inner_html += f"""<tr><td><b>Language tag*</b></td><td>{om_language_tag_display}</td></tr>"""
-
-                if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
-                    om_complete_flag = "❌ No"
-                    inner_html += f"""<tr><td><b>Object Map label</b></td>
-                    <td>{om_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
-                else:
-                    inner_html += f"""<tr><td><b>Object Map label</b></td><td>{om_label}</td></tr>"""
 
                 inner_html += f"""<tr><td><b>Required fields complete</b></td><td> {om_complete_flag} </td></tr>"""
 
@@ -2699,8 +2647,16 @@ with tab3:
             # OBJECT MAP - CONSTANT____________________________________________
             if om_generation_rule == "Constant 🔒":   #HEREIGO
 
-                inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
-                    <tr><td><b>Generation rule*</b></td><td>{om_generation_rule}</td></tr>
+                inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>"""
+
+                if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
+                    om_complete_flag = "❌ No"
+                    inner_html += f"""<tr><td><b>Object Map label</b></td>
+                    <td>{om_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
+                else:
+                    inner_html += f"""<tr><td><b>Object Map label</b></td><td>{om_label}</td></tr>"""
+
+                    inner_html += f"""<tr><td><b>Generation rule*</b></td><td>{om_generation_rule}</td></tr>
                     <tr><td><b>Constant*</b></td><td>{om_constant}</td></tr>
                     <tr><td><b>Term type*</b></td><td>{om_term_type_constant}</td></tr>"""
 
@@ -2711,13 +2667,6 @@ with tab3:
                     om_complete_flag = "✔️ Yes" if (om_constant_ns_prefix != "Select a namespace" and om_constant) else "❌ No"
                     om_constant_ns_prefix_display = om_constant_ns_prefix if om_constant_ns_prefix != "Select a namespace" else ""
                     inner_html += f"""<tr><td><b>Constant namespace*</b></td><td>{om_constant_ns_prefix_display}</td></tr>"""
-
-                if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
-                    om_complete_flag = "❌ No"
-                    inner_html += f"""<tr><td><b>Object Map label</b></td>
-                    <td>{om_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
-                else:
-                    inner_html += f"""<tr><td><b>Object Map label</b></td><td>{om_label}</td></tr>"""
 
                 inner_html += f"""<tr><td><b>Required fields complete</b></td><td> {om_complete_flag} </td></tr>"""
 
@@ -2734,17 +2683,7 @@ with tab3:
                 om_complete_flag = "✔️ Yes" if om_column_name != "Select a column" else "❌ No"
                 om_column_name_display = om_column_name if om_column_name != "Select a column" else ""
 
-                inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>
-                    <tr><td><b>Generation rule*</b></td><td>{om_generation_rule}</td></tr>
-                    <tr><td><b>Data source column*</b></td><td>{om_column_name_display}</td></tr>
-                    <tr><td><b>Term type*</b></td><td>{om_term_type_reference}</td></tr>"""
-
-
-                if om_column_name != "Select a column" and om_term_type_reference == "📘 Literal":
-                    inner_html += f"""<tr><td><b>Datatype</b></td><td>{om_datatype}</td></tr>"""
-                    if om_datatype == "Natural language text":
-                        om_complete_flag == "✔️ Yes" if om_language_tag else "❌ No"
-                        inner_html += f"""<tr><td><b>Language tag*</b></td><td>{language_tag}</td></tr>"""
+                inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>"""
 
                 if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
                     om_complete_flag = "❌ No"
@@ -2752,6 +2691,17 @@ with tab3:
                     <td>{om_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
                 else:
                     inner_html += f"""<tr><td><b>Object Map label</b></td><td>{om_label}</td></tr>"""
+
+                inner_html += f"""<tr><td><b>Generation rule*</b></td><td>{om_generation_rule}</td></tr>
+                <tr><td><b>Data source column*</b></td><td>{om_column_name_display}</td></tr>
+                <tr><td><b>Term type*</b></td><td>{om_term_type_reference}</td></tr>"""
+
+
+                if om_column_name != "Select a column" and om_term_type_reference == "📘 Literal":
+                    inner_html += f"""<tr><td><b>Datatype</b></td><td>{om_datatype}</td></tr>"""
+                    if om_datatype == "Natural language text":
+                        om_complete_flag == "✔️ Yes" if om_language_tag else "❌ No"
+                        inner_html += f"""<tr><td><b>Language tag*</b></td><td>{language_tag}</td></tr>"""
 
                 inner_html += f"""<tr><td><b>Required fields complete</b></td><td> {om_complete_flag} </td></tr>"""
 
