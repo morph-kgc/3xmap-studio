@@ -1815,13 +1815,6 @@ with tab2:
 
         if remove_sm_selected_option == "🔖 Delete labelled Subject Map":
 
-            with col1b:
-                st.markdown(f"""<div class="info-message-small-gray">
-                        ℹ️ The selected <b>Subject Maps</b> will be deleted, and
-                        therefore unassigned from their <b>TriplesMaps</b>.
-                    </div>""", unsafe_allow_html=True)
-                st.write("")
-
             sm_to_choose_list = list(reversed(labelled_sm_dict.keys()))
             if len(sm_to_choose_list) > 1:
                 sm_to_choose_list.insert(0, "Select all")
@@ -1831,6 +1824,14 @@ with tab2:
 
             if "Select all" in sm_to_remove_label_list:
                 sm_to_remove_iri_list = labelled_sm_list
+
+            if not sm_to_remove_label_list:
+                with col1b:
+                    st.markdown(f"""<div class="info-message-small-gray">
+                            ℹ️ The selected <b>Subject Maps</b> will be deleted, and
+                            therefore unassigned from their <b>TriplesMaps</b>.
+                        </div>""", unsafe_allow_html=True)
+                    st.write("")
 
             # create a single info message
             max_length = 8
@@ -1919,12 +1920,7 @@ with tab2:
                             st.button("Delete", on_click=delete_labelled_sm, key="key_delete_labelled_sm_button")
 
         if remove_sm_selected_option == "🎯 Unassign Subject Map of a TriplesMap":
-            with col1b:
-                st.markdown(f"""<div class="info-message-small-gray">
-                        ℹ️ The selected <b>Subject Maps</b> will be detached from their
-                        <b>TriplesMaps</b>, and permanently removed if they are not assigned to any other.
-                    </div>""", unsafe_allow_html=True)
-                st.write("")
+
 
             tm_w_sm_list = []
             for tm_label, tm_iri in tm_dict.items():
@@ -1943,8 +1939,16 @@ with tab2:
                 else:
                     tm_to_unassign_sm_list = tm_to_unassign_sm_list_input
 
+            if not tm_to_unassign_sm_list_input:
+                with col1b:
+                    st.markdown(f"""<div class="info-message-small-gray">
+                            ℹ️ The selected <b>Subject Maps</b> will be detached from their
+                            <b>TriplesMaps</b>, and permanently removed if they are not assigned to any other.
+                        </div>""", unsafe_allow_html=True)
+                    st.write("")
+
             # create a single info message
-            max_length = 4
+            max_length = 5
             inner_html = f"""<div style="margin-bottom:6px;">
                     <b>TriplesMap</b> → <b>Subject Map</b> →
                     <b>Linked TriplesMaps (if any)</b>
@@ -1992,13 +1996,15 @@ with tab2:
                 inner_html += f"""<div style="margin-bottom:6px;">
                     🔖 ...
                 </div>"""
-                # wrap it all in a single info box
-                full_html = f"""<div class="info-message-small">
-                    {inner_html}</div>"""
+
             # render
+            with col1:
+                col1a, col1b = st.columns([2,1])
             if len(tm_to_unassign_sm_list) > 0:
-                with col1b:
-                    st.markdown(full_html, unsafe_allow_html=True)
+                with col1a:
+                    st.markdown(f"""<div class="info-message-small-gray">
+                            {inner_html}
+                        </div>""", unsafe_allow_html=True)
             with col1a:
                 st.write("")
 
@@ -2018,33 +2024,38 @@ with tab2:
                     sm_to_just_unassign_list.append(sm_label)
 
             # warning messages
-            inner_html = "⚠️"
+            inner_html = "ℹ️ "
             formatted_tm_to_unassign_sm = utils.format_list_for_markdown(tm_to_unassign_sm_list)
             formatted_sm_to_completely_remove = utils.format_list_for_markdown(sm_to_completely_remove_list)
             formatted_sm_to_just_unassign = utils.format_list_for_markdown(sm_to_just_unassign_list)
 
-
+            max_length = 2
             if len(sm_to_just_unassign_list) == 1:
                 inner_html += f"""The Subject Map <b>{formatted_sm_to_just_unassign}</b> will be unassigned from
                 its TriplesMap.<br>"""
-            elif len(sm_to_just_unassign_list) > 1:
+            elif sm_to_just_unassign_list and len(sm_to_just_unassign_list) < max_length:
                 inner_html += f"""The Subject Maps <b>{formatted_sm_to_just_unassign}</b> will be unassigned from
                 their TriplesMaps</b>.<br>"""
+            elif sm_to_just_unassign_list:
+                inner_html += f"""<b>{len(sm_to_just_unassign_list)} Subject Maps</b> will be unassigned from
+                their TriplesMaps.<br>"""
             if len(sm_to_completely_remove_list) == 1:
                 inner_html += f"""The Subject Map <b>{formatted_sm_to_completely_remove}</b> will be completely removed."""
-            elif len(sm_to_completely_remove_list) > 1:
+            elif sm_to_completely_remove_list and len(sm_to_completely_remove_list) < max_length:
                 inner_html += f"""The Subject Maps <b>{formatted_sm_to_completely_remove}</b> will be completely removed."""
+            elif sm_to_completely_remove_list:
+                inner_html += f"""<b>{len(sm_to_completely_remove_list)} Subject Maps</b> will be completely removed."""
 
             if tm_to_unassign_sm_list:
-                with col1a:
-                    st.markdown(f"""<div class="custom-warning-small">
+                with col1b:
+                    st.markdown(f"""<div class="info-message-small">
                             {inner_html}
                         <div>""", unsafe_allow_html=True)
                     st.write("")
 
 
             if "Select all" in tm_to_unassign_sm_list_input:
-                with col1a:
+                with col1b:
                     st.markdown(f"""<div class="custom-warning-small">
                             ⚠️ You are deleting <b>all Subject Maps</b>.
                             Make sure you want to go ahead.
