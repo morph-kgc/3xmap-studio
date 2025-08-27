@@ -568,7 +568,7 @@ with tab1:
                 🧱 Add New TriplesMap
             </div>""", unsafe_allow_html=True)
         st.write("")
-
+        st.write("HERE", st.session_state["ds_cache_dict"])
 
     if st.session_state["tm_saved_ok_flag"]:
         with col1:
@@ -776,29 +776,29 @@ with tab1:
                         st.button("Delete", on_click=delete_all_triplesmaps)
 
 
-        with col1a:
-            if st.session_state["deleted_triples"] and st.toggle("🔎 Display last removed triples") and not st.session_state["tm_deleted_ok"]:
-                st.markdown(
-                    """
-                    <div style='background-color:#f0f0f0; padding:8px; border-radius:4px;'>
-                        <b> Last deleted triples:</b>
-                    </div>""", unsafe_allow_html=True)
-                for s, p, o in st.session_state["deleted_triples"]:
-                    if isinstance(s, URIRef):
-                        s = split_uri(s)[1]
-                    elif isinstance(s, BNode):
-                        s = ("BNode: " + str(s)[:5] + "...")
-                    if isinstance(p, URIRef):
-                        p = split_uri(p)[1]
-                    if isinstance(o, URIRef):
-                        o = split_uri(o)[1]
-                    elif isinstance(o, BNode):
-                        o = ("BNode: " + str(o)[:5] + "...")
-                    st.markdown(
-                        f"""
-                        <div style='background-color:#f0f0f0; padding:6px 10px; border-radius:5px;'>
-                            <small>🔹 {s} → {p} → {o}</small>
-                        </div>""", unsafe_allow_html=True)
+        # with col1a:
+        #     if st.session_state["deleted_triples"] and st.toggle("🔎 Display last removed triples") and not st.session_state["tm_deleted_ok"]:
+        #         st.markdown(
+        #             """
+        #             <div style='background-color:#f0f0f0; padding:8px; border-radius:4px;'>
+        #                 <b> Last deleted triples:</b>
+        #             </div>""", unsafe_allow_html=True)
+        #         for s, p, o in st.session_state["deleted_triples"]:
+        #             if isinstance(s, URIRef):
+        #                 s = split_uri(s)[1]
+        #             elif isinstance(s, BNode):
+        #                 s = ("BNode: " + str(s)[:5] + "...")
+        #             if isinstance(p, URIRef):
+        #                 p = split_uri(p)[1]
+        #             if isinstance(o, URIRef):
+        #                 o = split_uri(o)[1]
+        #             elif isinstance(o, BNode):
+        #                 o = ("BNode: " + str(o)[:5] + "...")
+        #             st.markdown(
+        #                 f"""
+        #                 <div style='background-color:#f0f0f0; padding:6px 10px; border-radius:5px;'>
+        #                     <small>🔹 {s} → {p} → {o}</small>
+        #                 </div>""", unsafe_allow_html=True)
 
 
 #________________________________________________
@@ -944,7 +944,7 @@ with tab2:
             if existing_sm_list:  # if there exist labelled subject maps
                 with col1b:
                     sm_options_list = ["📑 Select existing Subject Map", "🆕 Create new Subject Map"]
-                    sm_option = st.radio("", sm_options_list)
+                    sm_option = st.radio("🖱️ Select an option:*", sm_options_list)
                     st.write("")
 
             else:
@@ -966,6 +966,8 @@ with tab2:
 
             elif sm_option == "🆕 Create new Subject Map":
 
+                with col1:
+                    col1a, col1b = st.columns([2.5,1])
                 if tm_label_for_sm != "Select a TriplesMap":   #TriplesMap selected
                     tm_iri_for_sm = tm_dict[tm_label_for_sm]
                     ls_iri_for_sm = next(st.session_state["g_mapping"].objects(tm_iri_for_sm, RML.logicalSource), None)
@@ -973,42 +975,50 @@ with tab2:
 
                     if ds_filename_for_sm in st.session_state["ds_cache_dict"]:
                         column_list = st.session_state["ds_cache_dict"][ds_filename_for_sm]
+                        with col1a:
+                            st.markdown(f"""<div class="info-message-small">
+                                    🛢️ The data source is <b>{ds_filename_for_sm}</b>.
+                                </div>""", unsafe_allow_html=True)
+                            st.write("")
                     else:
+                        with col1b:
+                            st.write("")
+                            st.write("")
                         column_list = []
 
-                    with col1a:
-                        ds_allowed_formats = utils.get_ds_allowed_formats()
-                        ds_file_for_sm = st.file_uploader(f"""🖱️ Upload data source file {ds_filename_for_sm} (optional):""",
-                            type=ds_allowed_formats, key=st.session_state["key_ds_uploader_for_sm"])
+                        with col1a:
+                            ds_allowed_formats = utils.get_ds_allowed_formats()
+                            ds_file_for_sm = st.file_uploader(f"""🖱️ Upload data source file {ds_filename_for_sm} (optional):""",
+                                type=ds_allowed_formats, key=st.session_state["key_ds_uploader_for_sm"])
 
-                    with col1b:
-                        if not ds_file_for_sm:
-                            st.markdown(f"""<div class="info-message-small">
-                                    🛢️ The data source <b>{ds_filename_for_sm}</b> is not cached.
-                                    Load it here <b>if needed</b>.
-                                </div>""", unsafe_allow_html=True)
+                        with col1b:
+                            if not ds_file_for_sm:
+                                st.markdown(f"""<div class="info-message-small">
+                                        🛢️ The data source <b>{ds_filename_for_sm}</b> is not cached.
+                                        Load it here <b>if needed</b>.
+                                    </div>""", unsafe_allow_html=True)
 
 
-                        if ds_file_for_sm and ds_filename_for_sm != Literal(ds_file_for_sm.name):
-                            st.markdown(f"""<div class="custom-error-small">
-                                ❌ The names of the uploaded file <b>({ds_file_for_sm.name})</b> and the
-                                data source <b>({ds_filename_for_sm})</b> do not match.
-                                Please upload the correct file for the data source.
-                            </div>""", unsafe_allow_html=True)
-                        elif ds_file_for_sm:
-                            try:
-                                columns_df = pd.read_csv(ds_file_for_sm)
-                                column_list = columns_df.columns.tolist()
-                                st.markdown(f"""<div class="custom-success-small">
-                                    ✔️ The data source is loaded correctly from file <b>{ds_filename_for_sm}</b>.
-                                </div>""", unsafe_allow_html=True)
-                            except:   # empty file
+                            if ds_file_for_sm and ds_filename_for_sm != Literal(ds_file_for_sm.name):
                                 st.markdown(f"""<div class="custom-error-small">
-                                    ❌ The file <b>{ds_file_for_sm.name}</b> is empty.
+                                    ❌ The names of the uploaded file <b>({ds_file_for_sm.name})</b> and the
+                                    data source <b>({ds_filename_for_sm})</b> do not match.
                                     Please upload the correct file for the data source.
                                 </div>""", unsafe_allow_html=True)
-                                column_list = []
-                        st.write("")
+                            elif ds_file_for_sm:
+                                try:
+                                    columns_df = pd.read_csv(ds_file_for_sm)
+                                    column_list = columns_df.columns.tolist()
+                                    st.markdown(f"""<div class="custom-success-small">
+                                        ✔️ The data source is loaded correctly from file <b>{ds_filename_for_sm}</b>.
+                                    </div>""", unsafe_allow_html=True)
+                                except:   # empty file
+                                    st.markdown(f"""<div class="custom-error-small">
+                                        ❌ The file <b>{ds_file_for_sm.name}</b> is empty.
+                                        Please upload the correct file for the data source.
+                                    </div>""", unsafe_allow_html=True)
+                                    column_list = []
+                                    st.write("")
 
                     with col1:
                         col1a, col1b = st.columns(2)
