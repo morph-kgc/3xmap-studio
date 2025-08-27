@@ -110,13 +110,13 @@ def import_st_aesthetics():
 
     /* SUCCESS MESSAGE */
         .custom-success {background-color: #d4edda; padding: 1em;
-            border-radius: 5px; color: #155724; border: 1px solid #c3e6cb;}
+            border-radius: 5px; color: #155724;}
 
         .custom-success b {color: #0f5132;}
 
     /* SUCCESS MESSAGE SMALL*/
         .custom-success-small {background-color: #d4edda; padding: 0.5em;
-            border-radius: 5px; color: #155724; border: 1px solid #c3e6cb;
+            border-radius: 5px; color: #155724;
             font-size: 0.92em; justify-content: center;
             align-items: center;}
 
@@ -124,28 +124,35 @@ def import_st_aesthetics():
 
     /* WARNING MESSAGE */
         .custom-warning {background-color: #fff7db; padding: 1em;
-            border-radius: 5px; color: #856404; border: 1px solid #ffeeba;
+            border-radius: 5px; color: #856404;
             font-size: 0.92em;}
 
         .custom-warning b {color: #cc9a06;}
 
     /* WARNING MESSAGE SMALL*/
         .custom-warning-small {background-color: #fff7db; padding: 0.5em;
-            border-radius: 5px; color: #856404; border: 1px solid #ffeeba;
+            border-radius: 5px; color: #856404;
             font-size: 0.92em; justify-content: center;
             align-items: center;}
 
         .custom-warning-small b {color: #cc9a06;}
 
+    /* WARNING MESSAGE SMALL ORANGE */
+    .custom-warning-small-orange {background-color: #ffe3c0; padding: 0.5em;
+        border-radius: 5px; color: #8a3c00; font-size: 0.92em;
+        justify-content: center; align-items: center;}
+
+    .custom-warning-small-orange b {color: #d66a00;}
+
      /* ERROR MESSAGE */
         .custom-error {background-color: #f9dbdd; padding: 1em;
-            border-radius: 5px; color: #721c24; border: 1px solid #f5c6cb;}
+            border-radius: 5px; color: #721c24;}
 
         .custom-error b {color: #a94442;}
 
      /* ERROR MESSAGE SMALL*/
         .custom-error-small {background-color: #f9dbdd; padding: 0.5em;
-            border-radius: 5px; color: #721c24; border: 1px solid #f5c6cb;
+            border-radius: 5px; color: #721c24;
             font-size: 0.92em; justify-content: center;
             align-items: center;}
 

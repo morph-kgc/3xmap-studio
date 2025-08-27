@@ -199,7 +199,7 @@ def add_ns_to_sm_template():
     else:   # a ns was added (replace)
         st.session_state["sm_template_list"][0] = sm_template_ns
     # reset fields_____________
-    st.session_state["sm_template_prefix"] = sm_template_ns_prefix
+    st.session_state["sm_template_prefix"] = sm_template_ns_prefix if sm_template_ns_prefix else utils.get_mapping_ns_dict()[sm_template_ns_prefix]
     st.session_state["key_sm_template_ns_prefix"] = "Select a namespace"
     st.session_state["key_build_template_action_sm"] = "📈 Add variable part"
 
@@ -1063,31 +1063,37 @@ with tab2:
                         elif build_template_action_sm == "📈 Add variable part":
                             with col1b:
                                 if not column_list:   #data source is not available (load)
+                                    sm_template_variable_part = st.text_input("⌨️ Manually enter column of the data source:*")
                                     if not ds_file_for_sm:
-                                        st.write("")
-                                        st.markdown(f"""<div class="custom-error-small">
-                                                ❌ To add a variable part, you must first load the
-                                                <b>data source file</b>.
+                                        # st.markdown(f"""<div class="custom-error-small">
+                                        #         ❌ To add a variable part, you must first load the
+                                        #         <b>data source file</b>.
+                                        #     </div>""", unsafe_allow_html=True)
+                                        st.markdown(f"""<div class="custom-warning-small-orange">
+                                                🚧 <b>Manual input is strongly discouraged!</b> We recommend loading the
+                                                <b>data source file</b> above to add a variable part.
                                             </div>""", unsafe_allow_html=True)
                                     else:
-                                        st.write("")
-                                        st.markdown(f"""<div class="custom-error-small">
-                                            ❌ To add a variable part, please upload the correct <b>data source file</b>.
+                                        # st.markdown(f"""<div class="custom-error-small">
+                                        #     ❌ To add a variable part, please upload the correct <b>data source file</b>.
+                                        #     </div>""", unsafe_allow_html=True)
+                                        st.markdown(f"""<div class="custom-warning-small-orange">
+                                                🚧 <b>Manual input is strongly discouraged!</b> We recommend loading the
+                                                <b>correct data source file</b> above to add a variable part.
                                             </div>""", unsafe_allow_html=True)
                                 else:  # data source is available
                                     list_to_choose = column_list.copy()
                                     list_to_choose.insert(0, "Select a column")
-                                    sm_template_variable_part_temp = st.selectbox("🖱️ Select the column of the data source:", list_to_choose, key="key_sm_template_variable_part_temp")
+                                    sm_template_variable_part = st.selectbox("🖱️ Select the column of the data source:", list_to_choose, key="key_sm_template_variable_part")
                                     st.markdown(f"""<div style="font-size:12px; margin-top:-1em; text-align: right;">
                                             🛢️ The data source is <b style="color:#F63366;">{ds_filename_for_sm}</b>.
                                         </div>""", unsafe_allow_html=True)
-                                    sm_template_variable_part = sm_template_variable_part_temp if sm_template_variable_part_temp != "Select a column" else ""
                                     if st.session_state["sm_template_list"] and st.session_state["sm_template_list"][-1].endswith("}"):
                                         st.markdown(f"""<div class="custom-warning-small">
                                                 ⚠️ Including two adjacent variable parts is strongly discouraged.
                                                 <b>Best practice:</b> Add a separator between variables to improve clarity.</div>
                                             """, unsafe_allow_html=True)
-                                    if sm_template_variable_part:
+                                    if sm_template_variable_part != "Select a column":
                                         st.button("Add", key="save_sm_template_variable_part_button", on_click=save_sm_template_variable_part)
 
 
@@ -1202,31 +1208,43 @@ with tab2:
                         with col1a:
                             list_to_choose = column_list.copy()
                             list_to_choose.insert(0, "Select a column")
-                            sm_column_name = st.selectbox(f"""🖱️ Select the column of the data source:*""", list_to_choose,
-                                key="key_sm_column_name")
-                            st.markdown(f"""<div style="font-size:12px; margin-top:-1em; text-align: right;">
-                                    🛢️ The data source is <b style="color:#F63366;">{ds_filename_for_sm}</b>.
-                                </div>""", unsafe_allow_html=True)
 
-                            with col1b:
-                                sm_term_type_reference = st.radio(label="🖱️ Select Term type:*", options=["🌐 IRI", "👻 BNode"],
-                                    horizontal=True, key="sm_term_type_reference")
+                        with col1b:
+                            sm_term_type_reference = st.radio(label="🖱️ Select Term type:*", options=["🌐 IRI", "👻 BNode"],
+                                horizontal=True, key="sm_term_type_reference")
 
                         if not column_list:   #data source is not available (load)
                             with col1a:
-                                if not ds_file_for_sm:
-                                    st.markdown(f"""<div class="custom-error-small">
-                                            ❌ You must load the
-                                            <b>data source file</b> to continue.
+                                sm_column_name = st.text_input("⌨️ Manually enter column of the data source:*")
+                            if not ds_file_for_sm:
+                                with col1a:
+                                    st.markdown(f"""<div class="custom-warning-small-orange">
+                                            🚧 <b>Manual input is strongly discouraged!</b> We recommend loading the
+                                            <b>data source file</b> above to continue.
                                         </div>""", unsafe_allow_html=True)
-                                    st.write("")
-                                else:
-                                    st.markdown(f"""<div class="custom-error-small">
-                                        ❌ Please upload the correct <b>data source file</b> to continue.
+                            else:
+
+                                with col1a:
+                                    st.markdown(f"""<div class="custom-warning-small-orange">
+                                            🚧 <b>Manual input is strongly discouraged!</b> We recommend loading the
+                                            <b>correct data source file</b> above to continue.
+                                        </div>""", unsafe_allow_html=True)
+
+                            if sm_column_name and sm_term_type_reference == "🌐 IRI":
+                                with col1b:
+                                    st.markdown(f"""<div class="custom-warning-small">
+                                            ⚠️ Term type is <b>🌐 IRI</b>: Make sure that the values in the referenced column
+                                            are valid IRIs.
                                         </div>""", unsafe_allow_html=True)
                                     st.write("")
 
                         else:
+                            with col1a:
+                                sm_column_name = st.selectbox(f"""🖱️ Select the column of the data source:*""", list_to_choose,
+                                    key="key_sm_column_name")
+                            st.markdown(f"""<div style="font-size:12px; margin-top:-1em; text-align: right;">
+                                    🛢️ The data source is <b style="color:#F63366;">{ds_filename_for_sm}</b>.
+                                </div>""", unsafe_allow_html=True)
 
                             if sm_column_name != "Select a column" and sm_term_type_reference == "🌐 IRI":
                                 with col1b:
@@ -1304,7 +1322,10 @@ with tab2:
 
 
                     if sm_generation_rule == "Reference 📊":
-                        sm_complete_flag = "✔️ Yes" if sm_column_name != "Select a column" else "❌ No"
+                        if column_list:
+                            sm_complete_flag = "✔️ Yes" if sm_column_name != "Select a column" else "❌ No"
+                        else:
+                            sm_complete_flag = "✔️ Yes" if sm_column_name else "❌ No"
                         sm_column_name_display = sm_column_name if sm_column_name != "Select a column" else ""
 
                         inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Subject Map</td></tr>"""
@@ -2173,19 +2194,19 @@ with tab3:
                 st.write("")
 
 
+            with col1:
+                col1a, col1b = st.columns([2.5,1])
+            with col1a:
+                pom_label = st.text_input("⌨️ Enter Predicate-Object Map label (optional):", key= "key_pom_label")
+                pom_iri = BNode() if not pom_label else MAP[pom_label]
+            if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectMap, pom_iri)), None):
+                with col1a:
+                    st.markdown(f"""<div class="custom-error-small">
+                        ❌ That <b>Predicate-Object Map label</b> is already in use. Please pick another label or leave blank.
+                    </div>""", unsafe_allow_html=True)
+
             if st.session_state["g_ontology_components_dict"]:
                 ontology_p_list = utils.get_ontology_defined_p()
-
-                with col1:
-                    col1a, col1b = st.columns([2.5,1])
-                with col1a:
-                    pom_label = st.text_input("⌨️ Enter Predicate-Object Map label (optional):", key= "key_pom_label")
-                    pom_iri = BNode() if not pom_label else MAP[pom_label]
-                if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectMap, pom_iri)), None):
-                    with col1a:
-                        st.markdown(f"""<div class="custom-error-small">
-                            ❌ That <b>Predicate-Object Map label</b> is already in use. Please pick another label or leave blank.
-                        </div>""", unsafe_allow_html=True)
 
                 if ontology_p_list:   # if the ontology includes at least one predicate
                     p_type_option_list = ["🧩 Ontology predicate", "🚫 Predicate outside ontology"]
@@ -2294,29 +2315,33 @@ with tab3:
                 elif build_template_action_om == "📈 Add variable part":
                     with col3b:
                         if not column_list:   #data source is not available (load)
+                            om_template_variable_part = st.text_input("⌨️ Manually enter column of the data source:*", key="key_om_template_variable_part")
                             if not ds_file_for_pom:
-                                st.markdown(f"""<div class="custom-error-small">
-                                        ❌ To add a variable part, you must first load the
-                                        <b>data source file</b>.
-                                    </div>""", unsafe_allow_html=True)
+                                    st.markdown(f"""<div class="custom-warning-small-orange">
+                                            🚧 <b>Manual input is strongly discouraged!</b> We recommend loading the
+                                            <b>data source file</b> above to add a variable part.
+                                        </div>""", unsafe_allow_html=True)
                             else:
-                                st.markdown(f"""<div class="custom-error-small">
-                                    ❌ To add a variable part, please upload the correct <b>data source file</b>.
-                                    </div>""", unsafe_allow_html=True)
+                                    st.markdown(f"""<div class="custom-warning-small-orange">
+                                            🚧 <b>Manual input is strongly discouraged!</b> We recommend loading the
+                                            <b>correct data source file</b> above to add a variable part.
+                                        </div>""", unsafe_allow_html=True)
+                            if om_template_variable_part:
+                                save_om_template_variable_part_button = st.button("Add", key="save_om_template_variable_part_button", on_click=save_om_template_variable_part)
+
                         else:  # data source is available
                             list_to_choose = column_list.copy()
                             list_to_choose.insert(0, "Select a column")
-                            om_template_variable_part_temp = st.selectbox("🖱️ Select the column of the data source:", list_to_choose, key="key_om_template_variable_part_temp")
+                            om_template_variable_part = st.selectbox("🖱️ Select the column of the data source:", list_to_choose, key="key_om_template_variable_part")
                             st.markdown(f"""<div style="font-size:12px; margin-top:-1em; text-align: right;">
                                     🛢️ The data source is <b style="color:#F63366;">{ds_filename_for_pom}</b>.
                                 </div>""", unsafe_allow_html=True)
-                            om_template_variable_part = om_template_variable_part_temp if om_template_variable_part_temp != "Select a column" else ""
                             if st.session_state["om_template_list"] and st.session_state["om_template_list"][-1].endswith("}"):
                                 st.markdown(f"""<div class="custom-warning-small">
                                         ⚠️ Including two adjacent variable parts is strongly discouraged.
                                         <b>Best practice:</b> Add a separator between variables to improve clarity.
                                     </div>""", unsafe_allow_html=True)
-                            if om_template_variable_part:
+                            if om_template_variable_part != "Select a column":
                                 save_om_template_variable_part_button = st.button("Add", key="save_om_template_variable_part_button", on_click=save_om_template_variable_part)
 
 
@@ -2457,59 +2482,76 @@ with tab3:
 
                 with col3:
                     col3a, col3b = st.columns([1,1.2])
-                with col3a:
-                    list_to_choose = column_list.copy()
-                    list_to_choose.insert(0, "Select a column")
-                    om_column_name = st.selectbox(f"""🖱️ Select the column of the data source:*""", list_to_choose,
-                        key="key_om_column_name")
-                    st.markdown(f"""<div style="font-size:12px; margin-top:-1em; text-align: right;">
-                            🛢️ The data source is <b style="color:#F63366;">{ds_filename_for_pom}</b>.
-                        </div>""", unsafe_allow_html=True)
-                    st.write("")
 
                 if not column_list:   #data source is not available (load)
-                    with col3b:
-                        st.write("")
+                    with col3a:
+                        om_column_name = st.text_input("⌨️ Manually enter column of the data source:*", key="key_om_column_name")
                         if not ds_file_for_pom:
-                            st.markdown(f"""<div class="custom-error-small">
-                                    ❌ You must load the
-                                    <b>data source file</b> to continue.
-                                </div>""", unsafe_allow_html=True)
+                                st.markdown(f"""<div class="custom-warning-small-orange">
+                                        🚧 <b>Manual input is strongly discouraged!</b> We recommend loading the
+                                        <b>data source file</b> above to continue.
+                                    </div>""", unsafe_allow_html=True)
+                                st.write("")
                         else:
-                            st.markdown(f"""<div class="custom-error-small">
-                                ❌ Please upload the correct <b>data source file</b> to continue.
-                                </div>""", unsafe_allow_html=True)
-
-
+                                st.markdown(f"""<div class="custom-warning-small-orange">
+                                        🚧 <b>Manual input is strongly discouraged!</b> We recommend loading the
+                                        <b>correct data source file</b> above to continue.
+                                    </div>""", unsafe_allow_html=True)
+                                st.write("")
                 else:
+                    with col3a:
+                        list_to_choose = column_list.copy()
+                        list_to_choose.insert(0, "Select a column")
+                        om_column_name = st.selectbox(f"""🖱️ Select the column of the data source:*""", list_to_choose,
+                            key="key_om_column_name")
+                        st.markdown(f"""<div style="font-size:12px; margin-top:-1em; text-align: right;">
+                                🛢️ The data source is <b style="color:#F63366;">{ds_filename_for_pom}</b>.
+                            </div>""", unsafe_allow_html=True)
+                        st.write("")
 
-                    with col3b:
-                        om_term_type_reference = st.radio(label="🖱️ Select Term type:*", options=["📘 Literal", "🌐 IRI", "👻 BNode"],
-                            horizontal=True, key="om_term_type_reference")
+                # if not column_list:   #data source is not available (load)
+                #     with col3b:
+                #         st.write("")
+                #         if not ds_file_for_pom:
+                #             st.markdown(f"""<div class="custom-error-small">
+                #                     ❌ You must load the
+                #                     <b>data source file</b> to continue.
+                #                 </div>""", unsafe_allow_html=True)
+                #         else:
+                #             st.markdown(f"""<div class="custom-error-small">
+                #                 ❌ Please upload the correct <b>data source file</b> to continue.
+                #                 </div>""", unsafe_allow_html=True)
+                #
+                #
+                # else:
 
-                    if om_term_type_reference == "📘 Literal":
-                        rdf_datatypes = list(utils.get_datatypes_dict().keys())
+                with col3b:
+                    om_term_type_reference = st.radio(label="🖱️ Select Term type:*", options=["📘 Literal", "🌐 IRI", "👻 BNode"],
+                        horizontal=True, key="om_term_type_reference")
 
-                        with col3:
-                            col3a, col3b = st.columns(2)
-                        with col3a:
-                            om_datatype_reference = st.selectbox("🖱️ Select datatype (optional):", rdf_datatypes,
-                            key="key_om_datatype_reference")
+                if om_term_type_reference == "📘 Literal":
+                    rdf_datatypes = list(utils.get_datatypes_dict().keys())
 
-                        if om_datatype_reference == "Natural language text":
-                            language_tags = utils.get_language_tags_list()
+                    with col3:
+                        col3a, col3b = st.columns(2)
+                    with col3a:
+                        om_datatype_reference = st.selectbox("🖱️ Select datatype (optional):", rdf_datatypes,
+                        key="key_om_datatype_reference")
 
-                            with col3b:
-                                om_language_tag_reference = st.selectbox("🖱️ Select language tag*", language_tags,
-                                    key="key_om_language_tag_reference")
+                    if om_datatype_reference == "Natural language text":
+                        language_tags = utils.get_language_tags_list()
 
-                    elif om_column_name != "Select a column" and om_term_type_reference == "🌐 IRI":
                         with col3b:
-                            st.markdown(f"""<div class="custom-warning-small">
-                                    ⚠️ Term type is <b>🌐 IRI</b>: Make sure that the values in the referenced column
-                                    are valid IRIs.
-                                </div>""", unsafe_allow_html=True)
-                            st.write("")
+                            om_language_tag_reference = st.selectbox("🖱️ Select language tag*", language_tags,
+                                key="key_om_language_tag_reference")
+
+                elif om_column_name != "Select a column" and om_term_type_reference == "🌐 IRI":
+                    with col3b:
+                        st.markdown(f"""<div class="custom-warning-small">
+                                ⚠️ Term type is <b>🌐 IRI</b>: Make sure that the values in the referenced column
+                                are valid IRIs.
+                            </div>""", unsafe_allow_html=True)
+                        st.write("")
 
 
         if tm_label_for_pom != "Select a TriplesMap":
@@ -2598,14 +2640,15 @@ with tab3:
                 if om_term_type_template == "🌐 IRI":
                     om_template_ns_prefix_display = st.session_state["om_template_ns_prefix"] if st.session_state["om_template_ns_prefix"] else ""
                     inner_html += f"""<tr><td><b>Template namespace*</b></td><td>{om_template_ns_prefix_display}</td></tr>"""
-                    om_complete_flag = "✔️ Yes" if st.session_state["om_template_ns_prefix"] != "Select a namespace" else "❌ No"
+                    om_complete_flag = "❌ No" if not st.session_state["om_template_ns_prefix"] else om_complete_flag
 
                 if om_template and om_term_type_template == "📘 Literal":
                     om_datatype_display = om_datatype if om_datatype != "Select datatype" else ""
                     inner_html += f"""<tr><td><b>Datatype</b></td><td>{om_datatype_display}</td></tr>"""
-                    if not om_datatype != "Natural language text":
+                    if om_datatype == "Natural language text":
                         om_language_tag_display = om_language_tag if om_language_tag != "Select language tag" else ""
                         inner_html += f"""<tr><td><b>Language tag*</b></td><td>{om_language_tag_display}</td></tr>"""
+                        om_complete_flag = "❌ No" if om_language_tag == "Select language tag" else om_complete_flag
 
                 inner_html += f"""<tr><td><b>Required fields complete</b></td><td> {om_complete_flag} </td></tr>"""
 
@@ -2618,6 +2661,8 @@ with tab3:
 
             # OBJECT MAP - CONSTANT____________________________________________
             if om_generation_rule == "Constant 🔒":   #HEREIGO
+
+                om_complete_flag = "✔️ Yes" if om_constant else "❌ No"
 
                 inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>"""
 
@@ -2633,7 +2678,12 @@ with tab3:
                     <tr><td><b>Term type*</b></td><td>{om_term_type_constant}</td></tr>"""
 
                 if om_term_type_constant == "📘 Literal":
-                    om_complete_flag = "✔️ Yes" if om_constant else "❌ No"
+                    om_datatype_display = om_datatype if om_datatype != "Select datatype" else ""
+                    inner_html += f"""<tr><td><b>Datatype</b></td><td>{om_datatype_display}</td></tr>"""
+                    if om_datatype == "Natural language text":
+                        om_language_tag_display = om_language_tag if om_language_tag != "Select language tag" else ""
+                        inner_html += f"""<tr><td><b>Language tag*</b></td><td>{om_language_tag_display}</td></tr>"""
+                        om_complete_flag = "❌ No" if om_language_tag == "Select language tag" else om_complete_flag
 
                 elif om_term_type_constant == "🌐 IRI":
                     om_complete_flag = "✔️ Yes" if (om_constant_ns_prefix != "Select a namespace" and om_constant) else "❌ No"
@@ -2652,7 +2702,10 @@ with tab3:
             # OBJECT MAP - REFERENCE___________________________
             if om_generation_rule == "Reference 📊":
 
-                om_complete_flag = "✔️ Yes" if om_column_name != "Select a column" else "❌ No"
+                if column_list:
+                    om_complete_flag = "✔️ Yes" if om_column_name != "Select a column" else "❌ No"
+                else:
+                    om_complete_flag = "✔️ Yes" if om_column_name else "❌ No"
                 om_column_name_display = om_column_name if om_column_name != "Select a column" else ""
 
                 inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>"""
@@ -2669,11 +2722,13 @@ with tab3:
                 <tr><td><b>Term type*</b></td><td>{om_term_type_reference}</td></tr>"""
 
 
-                if om_column_name != "Select a column" and om_term_type_reference == "📘 Literal":
-                    inner_html += f"""<tr><td><b>Datatype</b></td><td>{om_datatype}</td></tr>"""
-                    if om_datatype == "Natural language text":
-                        om_complete_flag == "✔️ Yes" if om_language_tag else "❌ No"
-                        inner_html += f"""<tr><td><b>Language tag*</b></td><td>{language_tag}</td></tr>"""
+                if om_term_type_reference == "📘 Literal":
+                    om_datatype_reference_display = om_datatype_reference if om_datatype_reference != "Select datatype" else ""
+                    inner_html += f"""<tr><td><b>Datatype</b></td><td>{om_datatype_reference_display}</td></tr>"""
+                    if om_datatype_reference == "Natural language text":
+                        om_language_tag_reference_display = om_language_tag_reference if om_language_tag_reference != "Select language tag" else ""
+                        om_complete_flag = "❌ No" if om_language_tag_reference == "Select language tag" else om_complete_flag
+                        inner_html += f"""<tr><td><b>Language tag*</b></td><td>{om_language_tag_reference_display}</td></tr>"""
 
                 inner_html += f"""<tr><td><b>Required fields complete</b></td><td> {om_complete_flag} </td></tr>"""
 
