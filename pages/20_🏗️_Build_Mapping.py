@@ -748,6 +748,104 @@ with tab1:
         with col1a:
             tm_to_remove_list = st.multiselect("🖱️ Select TriplesMap/s:*", reversed(tm_list), key="key_tm_to_remove_list")
 
+        #HEREHEREHERE
+
+        if "Select all" not in tm_to_remove_list:
+            sm_dict = utils.get_sm_dict()
+            inner_html = ""
+            max_length = 8
+            if len(tm_to_remove_list) < max_length:
+                for tm in tm_to_remove_list:
+                    inner_html += f"""<b>🔖 {tm}</b> ("""
+                    tm_iri = tm_dict[tm]
+                    sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RR.subjectMap)), None)
+                    if sm_to_remove_tm:
+                        inner_html += f"""<span style="font-size:0.85em;">Subject Map: {sm_dict[sm_to_remove_tm][0]} | </span>"""
+                    else:
+                        inner_html += f"""<span style="font-size:0.85em;">No Subject Map | </span>"""
+                    pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RR.predicateObjectMap))
+                    if len(pom_to_remove_tm_list) == 1:
+                        inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Map)<br></span>"""
+                    elif pom_to_remove_tm_list:
+                        inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Maps)<br></span>"""
+                    else:
+                        inner_html += f"""<span style="font-size:0.85em;">No Predicate-Object Maps)<br></span>"""
+            else:
+                for tm in tm_to_remove_list[:max_length]:
+                    inner_html += f"""🔖 <b>{tm}</b> ("""
+                    tm_iri = tm_dict[tm]
+                    sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RR.subjectMap)), None)
+                    if sm_to_remove_tm:
+                        inner_html += f"""<span style="font-size:0.85em;">Subject Map: {sm_dict[sm_to_remove_tm][0]} | </span>"""
+                    else:
+                        inner_html += f"""<span style="font-size:0.85em;">No Subject Map | </span>"""
+                    pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RR.predicateObjectMap))
+                    if len(pom_to_remove_tm_list) == 1:
+                        inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Map)<br></span>"""
+                    elif pom_to_remove_tm_list:
+                        inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Maps)<br></span>"""
+                    else:
+                        inner_html += f"""<span style="font-size:0.85em;">No Predicate-Object Maps)<br></span>"""
+                inner_html += f"""🔖 ..."""
+
+            if inner_html:
+                with col1:
+                    col1a, col1b = st.columns([2,1])
+                with col1a:
+                    st.markdown(f"""<div class="info-message-small-gray">
+                            {inner_html}
+                        <div>""", unsafe_allow_html=True)
+                    st.write("")
+
+        else:   #Select all option
+            sm_dict = utils.get_sm_dict()
+            inner_html = ""
+            max_length = 8
+            if len(tm_dict) < max_length:
+                for tm in tm_dict:
+                    inner_html += f"""<b>🔖 {tm}</b> ("""
+                    tm_iri = tm_dict[tm]
+                    sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RR.subjectMap)), None)
+                    if sm_to_remove_tm:
+                        inner_html += f"""<span style="font-size:0.85em;">Subject Map: {sm_dict[sm_to_remove_tm][0]} | </span>"""
+                    else:
+                        inner_html += f"""<span style="font-size:0.85em;">No Subject Map | </span>"""
+                    pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RR.predicateObjectMap))
+                    if len(pom_to_remove_tm_list) == 1:
+                        inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Map)<br></span>"""
+                    elif pom_to_remove_tm_list:
+                        inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Maps)<br></span>"""
+                    else:
+                        inner_html += f"""<span style="font-size:0.85em;">No Predicate-Object Maps)<br></span>"""
+            else:
+                for tm in list(tm_dict)[:max_length]:
+                    inner_html += f"""🔖 <b>{tm}</b> ("""
+                    tm_iri = tm_dict[tm]
+                    sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RR.subjectMap)), None)
+                    if sm_to_remove_tm:
+                        inner_html += f"""<span style="font-size:0.85em;">Subject Map: {sm_dict[sm_to_remove_tm][0]} | </span>"""
+                    else:
+                        inner_html += f"""<span style="font-size:0.85em;">No Subject Map | </span>"""
+                    pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RR.predicateObjectMap))
+                    if len(pom_to_remove_tm_list) == 1:
+                        inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Map)<br></span>"""
+                    elif pom_to_remove_tm_list:
+                        inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Maps)<br></span>"""
+                    else:
+                        inner_html += f"""<span style="font-size:0.85em;">No Predicate-Object Maps)<br></span>"""
+                inner_html += f"""🔖 ..."""
+
+            if inner_html:
+                with col1:
+                    col1a, col1b = st.columns([2,1])
+                with col1a:
+                    st.markdown(f"""<div class="info-message-small-gray">
+                            {inner_html}
+                        <div>""", unsafe_allow_html=True)
+                    st.write("")
+
+
+
         if tm_to_remove_list:
             if "Select all" not in tm_to_remove_list:
                 with col1a:
@@ -760,12 +858,13 @@ with tab1:
                     with col1a:
                         st.button("Delete", on_click=delete_triplesmap)
             else:   #if "Select all" selected
-                with col1a:
+                with col1b:
                     st.markdown(f"""<div class="custom-warning-small">
                             ⚠️ If you continue, <b>all TriplesMaps will be deleted</b>.
                             Make sure you want to go ahead.
                         </div>""", unsafe_allow_html=True)
                     st.write("")
+                with col1a:
                     delete_triplesmap_checkbox = st.checkbox(
                     ":gray-badge[⚠️ I am sure I want to delete all TriplesMaps]",
                     key="delete_triplesmap_checkbox")
@@ -774,31 +873,6 @@ with tab1:
                         col1a, col1b = st.columns([1,2])
                     with col1a:
                         st.button("Delete", on_click=delete_all_triplesmaps)
-
-
-        # with col1a:
-        #     if st.session_state["deleted_triples"] and st.toggle("🔎 Display last removed triples") and not st.session_state["tm_deleted_ok"]:
-        #         st.markdown(
-        #             """
-        #             <div style='background-color:#f0f0f0; padding:8px; border-radius:4px;'>
-        #                 <b> Last deleted triples:</b>
-        #             </div>""", unsafe_allow_html=True)
-        #         for s, p, o in st.session_state["deleted_triples"]:
-        #             if isinstance(s, URIRef):
-        #                 s = split_uri(s)[1]
-        #             elif isinstance(s, BNode):
-        #                 s = ("BNode: " + str(s)[:5] + "...")
-        #             if isinstance(p, URIRef):
-        #                 p = split_uri(p)[1]
-        #             if isinstance(o, URIRef):
-        #                 o = split_uri(o)[1]
-        #             elif isinstance(o, BNode):
-        #                 o = ("BNode: " + str(o)[:5] + "...")
-        #             st.markdown(
-        #                 f"""
-        #                 <div style='background-color:#f0f0f0; padding:6px 10px; border-radius:5px;'>
-        #                     <small>🔹 {s} → {p} → {o}</small>
-        #                 </div>""", unsafe_allow_html=True)
 
 
 #________________________________________________
@@ -1887,10 +1961,11 @@ with tab2:
             with col1:
                 col1a, col1b = st.columns([2,1])
             with col1a:
-                st.markdown(f"""<div class="info-message-small-gray">
-                        {inner_html}
-                    </div>""", unsafe_allow_html=True)
-                st.write("")
+                if sm_to_remove_label_list:
+                    st.markdown(f"""<div class="info-message-small-gray">
+                            {inner_html}
+                        </div>""", unsafe_allow_html=True)
+                    st.write("")
 
             # render
             if sm_to_remove_iri_list:
