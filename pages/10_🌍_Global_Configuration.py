@@ -1470,7 +1470,6 @@ with tab3:
 
             there_are_ontology_ns_unbound_flag = False
             ontology_ns_dict = utils.get_ontology_ns_dict()
-            st.write("HEREHERE", ontology_ns_dict)
             for prefix in ontology_ns_dict:
                 if not prefix in mapping_ns_dict:
                     there_are_ontology_ns_unbound_flag = True

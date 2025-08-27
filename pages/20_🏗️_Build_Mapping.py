@@ -97,8 +97,8 @@ if "tm_label_for_sm" not in st.session_state:
     st.session_state["tm_label_for_sm"] = False
 if "sm_template_list" not in st.session_state:
     st.session_state["sm_template_list"] = []
-if "sm_saved_ok_new_flag" not in st.session_state:
-    st.session_state["sm_saved_ok_new_flag"] = False
+if "sm_saved_ok_flag" not in st.session_state:
+    st.session_state["sm_saved_ok_flag"] = False
 if "sm_iri" not in st.session_state:
     st.session_state["sm_iri"] = None
 if "labelled_sm_deleted_ok_flag" not in st.session_state:
@@ -118,45 +118,6 @@ if "pom_saved_ok_flag" not in st.session_state:
 if "om_template_list" not in st.session_state:
     st.session_state["om_template_list"] = []
 
-
-
-
-if "confirm_button" not in st.session_state:
-    st.session_state["confirm_button"] = False
-if "custom_ns_dict" not in st.session_state:
-    st.session_state["custom_ns_dict"] = {}
-
-if "tm_label" not in st.session_state:
-    st.session_state["tm_label"] = ""
-if "ds" not in st.session_state:
-    st.session_state["ds"] = None
-if "subject_saved_ok_new" not in st.session_state:
-    st.session_state["subject_saved_ok_new"] = False
-if "subject_saved_ok_existing" not in st.session_state:
-    st.session_state["subject_saved_ok_existing"] = False
-if "tm_ordered_list" not in st.session_state:
-    st.session_state["tm_ordered_list"] = []
-if "smap_ordered_list" not in st.session_state:
-    st.session_state["smap_ordered_list"] = []
-if "deleted_triples" not in st.session_state:
-    st.session_state["deleted_triples"] = []
-if "tm_deleted_ok" not in st.session_state:
-    st.session_state["tm_deleted_ok"] = False
-if "smap_deleted_ok" not in st.session_state:
-    st.session_state["smap_deleted_ok"] = False
-if "smap_unassigned_ok" not in st.session_state:
-    st.session_state["smap_unassigned_ok"] = False
-if "cache_tm" not in st.session_state:
-    st.session_state["cache_tm"] = ""
-if "pom_saved_ok" not in st.session_state:
-    st.session_state["pom_saved_ok"] = False
-
-
-
-
-select_cache_tm_toggle = False
-select_cache_tm_toggle_pom = False
-pom_ready_flag = False
 
 #define on_click functions
 # TAB1
@@ -193,6 +154,7 @@ def save_tm_w_new_ls():   #function to save TriplesMap upon click
     st.session_state["last_added_tm_list"].insert(0, st.session_state["tm_label"])    # to display last added tm
     if file_extension.lower() == "csv":
         columns_df = pd.read_csv(ds_file)
+        ds_file.seek(0)
         st.session_state["ds_cache_dict"][Literal(ds_file.name)] = columns_df.columns.tolist()
     # reset fields_______________________
     st.session_state["key_tm_label_input"] = ""
@@ -228,7 +190,7 @@ def save_sm_existing():
     st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, st.session_state["sm_iri"]))
     # store information__________________
     st.session_state["last_added_sm_list"].insert(0, sm_label)
-    st.session_state["sm_saved_ok_new_flag"] = True
+    st.session_state["sm_saved_ok_flag"] = True
 
 def add_ns_to_sm_template():
     # update template and store information_________
@@ -278,7 +240,7 @@ def save_sm_template():   #function to save subject map (template option)
         st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.BlankNode))
     # store information__________________
     st.session_state["last_added_sm_list"].insert(0, st.session_state["sm_label"])
-    st.session_state["sm_saved_ok_new_flag"] = True
+    st.session_state["sm_saved_ok_flag"] = True
     # reset fields____________________
     st.session_state["sm_template_list"] = []
     st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
@@ -302,7 +264,7 @@ def save_sm_constant():   #function to save subject map (constant option)
     st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.IRI))
     # store information____________________
     st.session_state["last_added_sm_list"].insert(0, st.session_state["sm_label"])
-    st.session_state["sm_saved_ok_new_flag"] = True
+    st.session_state["sm_saved_ok_flag"] = True
     # reset fields_________________________
     st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
     # cache data source if given_________________
@@ -325,7 +287,7 @@ def save_sm_reference():   #function to save subject map (reference option)
         st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.BlankNode))
     # store information__________________
     st.session_state["last_added_sm_list"].insert(0, st.session_state["sm_label"])
-    st.session_state["sm_saved_ok_new_flag"] = True
+    st.session_state["sm_saved_ok_flag"] = True
     # reset fields____________________
     st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
     # cache data source if given_________________
@@ -606,6 +568,7 @@ with tab1:
                 🧱 Add New TriplesMap
             </div>""", unsafe_allow_html=True)
         st.write("")
+
 
     if st.session_state["tm_saved_ok_flag"]:
         with col1:
@@ -903,20 +866,17 @@ with tab2:
             </div>""", unsafe_allow_html=True)
         st.write("")
 
-    if st.session_state["sm_saved_ok_new_flag"]:
+    if st.session_state["sm_saved_ok_flag"]:
         with col1:
             col1a, col1b = st.columns([2,1])
         with col1a:
             st.write("")
             st.markdown(f"""<div class="custom-success">
-                ✅ The subject map <b style="color:#F63366;">{st.session_state["sm_label"]}</b>
-                has been assigned to TriplesMap
-                <b style="color:#F63366;">{st.session_state["tm_label_for_sm"]}<b/>!
+                ✅ The <b>Subject Map</b> has been created!
             </div>""", unsafe_allow_html=True)
-        st.session_state["sm_saved_ok_new_flag"] = False
+        st.session_state["sm_saved_ok_flag"] = False
         time.sleep(st.session_state["success_display_time"])
         st.rerun()
-
 
 
     with col1:
@@ -970,12 +930,15 @@ with tab2:
             col1a, col1b = st.columns(2)
         if st.session_state["last_added_tm_list"] and st.session_state["last_added_tm_list"][0] in tm_wo_sm_list:
             with col1a:
-                tm_label_for_sm = st.selectbox("🖱️ Select a TriplesMap:*", reversed(tm_wo_sm_list), key="key_tm_label_input_for_sm",
-                    index=list(reversed(tm_wo_sm_list)).index(st.session_state["last_added_tm_list"][0]))
+                list_to_choose = list(reversed(tm_wo_sm_list))
+                list_to_choose.insert(0, "Select a TriplesMap")
+                tm_label_for_sm = st.selectbox("🖱️ Select a TriplesMap:*", list_to_choose, key="key_tm_label_input_for_sm",
+                    index=list_to_choose.index(st.session_state["last_added_tm_list"][0]))
         else:
             with col1a:
-                tm_wo_sm_list.append("Select a TriplesMap")   # if there is no cached tm add placeholder
-                tm_label_for_sm = st.selectbox("🖱️ Select a TriplesMap:*", reversed(tm_wo_sm_list), key="key_tm_label_input_for_sm")
+                list_to_choose = list(reversed(tm_wo_sm_list))
+                list_to_choose.insert(0, "Select a TriplesMap")
+                tm_label_for_sm = st.selectbox("🖱️ Select a TriplesMap:*", list_to_choose, key="key_tm_label_input_for_sm")
 
         if tm_label_for_sm != "Select a TriplesMap":
             if existing_sm_list:  # if there exist labelled subject maps
@@ -1265,7 +1228,6 @@ with tab2:
 
                         with col1a:
                             st.write("")
-
 
                     # DISPLAY INFO AND SAVE________________________________
                     if sm_generation_rule == "Template 📐":
@@ -2204,6 +2166,17 @@ with tab3:
             if st.session_state["g_ontology_components_dict"]:
                 ontology_p_list = utils.get_ontology_defined_p()
 
+                with col1:
+                    col1a, col1b = st.columns([2.5,1])
+                with col1a:
+                    pom_label = st.text_input("⌨️ Enter Predicate-Object Map label (optional):", key= "key_pom_label")
+                    pom_iri = BNode() if not pom_label else MAP[pom_label]
+                if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectMap, pom_iri)), None):
+                    with col1a:
+                        st.markdown(f"""<div class="custom-error-small">
+                            ❌ That <b>Predicate-Object Map label</b> is already in use. Please pick another label or leave blank.
+                        </div>""", unsafe_allow_html=True)
+
                 if ontology_p_list:   # if the ontology includes at least one predicate
                     p_type_option_list = ["🧩 Ontology predicate", "🚫 Predicate outside ontology"]
                     with col1:
@@ -2257,17 +2230,6 @@ with tab3:
                     NS = Namespace(mapping_ns_dict[manual_p_ns_prefix])
                     selected_p_iri = NS[manual_p_label]
 
-
-            with col1:
-                col1a, col1b = st.columns([2,1])
-            with col1a:
-                pom_label = st.text_input("⌨️ Enter Predicate-Object Map label (optional)", key= "key_pom_label")
-                pom_iri = BNode() if not pom_label else MAP[pom_label]
-            if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectMap, pom_iri)), None):
-                with col1a:
-                    st.markdown(f"""<div class="custom-error-small">
-                        ❌ That <b>Predicate-Object Map label</b> is already in use. Please pick another label or leave blank.
-                    </div>""", unsafe_allow_html=True)
 
 
             # BUILD OBJECT MAP_______________________________________________
@@ -2565,6 +2527,13 @@ with tab3:
                 <tr><td><b>TriplesMap*:</b></td><td>{tm_label_for_pom}</td></tr>
                 <tr><td><b>Subject Map*</b></td><td>{sm_label_for_pom}</td></tr>"""
 
+            if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectMap, pom_iri)), None):
+                pom_complete_flag = "❌ No"
+                inner_html += f"""<tr><td><b>Predicate-Object Map label</b></td>
+                <td>{pom_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
+            else:
+                inner_html += f"""<tr><td><b>Predicate-Object Map label</b></td><td>{pom_label}</td></tr>"""
+
             if p_type == "🧩 Ontology predicate":
 
                 pom_complete_flag = "✔️ Yes" if selected_p_label != "Select a predicate" else "❌ No"
@@ -2581,13 +2550,6 @@ with tab3:
 
                 inner_html += f"""<tr><td><b>Predicate Namespace*</b></td><td>{manual_p_ns_prefix_display}</td></tr>
                     <tr><td><b>Predicate*</b></td><td>{manual_p_label}</td></tr>"""
-
-            if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectMap, pom_iri)), None):
-                pom_complete_flag = "❌ No"
-                inner_html += f"""<tr><td><b>Predicate-Object Map label</b></td>
-                <td>{pom_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
-            else:
-                inner_html += f"""<tr><td><b>Predicate-Object Map label</b></td><td>{pom_label}</td></tr>"""
 
             inner_html += f"""<tr><td><b>Required fields complete</b></td><td>{pom_complete_flag}</td></tr>"""
 
