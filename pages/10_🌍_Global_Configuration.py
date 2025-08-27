@@ -1762,7 +1762,7 @@ with tab3:
 
 
 #________________________________________________
-#SAVE PROGRESS OPTION
+# SAVE MAPPING OPTION
 with tab4:
     st.write("")
     st.write("")
@@ -1881,11 +1881,60 @@ with tab4:
             if st.session_state["mapping_downloaded_ok_flag"]:
                 st.rerun()
 
+    # tm with sm
+    tm_dict = utils.get_tm_dict()
+    tm_wo_sm_list = []   # list of all tm with assigned sm
+    tm_wo_pom_list = []
+    for tm_label, tm_iri in tm_dict.items():
+        if not any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectMap, None))):
+            tm_wo_sm_list.append(tm_label)
+    for tm_label, tm_iri in tm_dict.items():
+        if not any(st.session_state["g_mapping"].triples((tm_iri, RR.predicateObjectMap, None))):
+            tm_wo_pom_list.append(tm_label)
+
+
+    tm_wo_pom_list_display = utils.format_list_for_markdown(tm_wo_pom_list)
+
+    if tm_wo_sm_list or tm_wo_pom_list:
+        max_length = 20
+
+        inner_html = f"""<div style="font-size:1.1em; font-weight:bold;">
+            🚧 The mapping <b>{st.session_state["g_label"]}</b> is incomplete!</div><br>"""
+
+        if tm_wo_sm_list:
+            if len(tm_wo_sm_list) < max_length:
+                tm_wo_sm_list_display = utils.format_list_for_markdown(tm_wo_sm_list)
+                inner_html += f"""The TriplesMaps <b>{tm_wo_sm_list_display}</b> have not been assigned
+                a Subject Map.<br>"""
+            else:
+                inner_html += f"""<b>{len(tm_wo_sm_list)} TriplesMaps</b> have not been assigned
+                a Subject Map.<br>"""
+
+        if tm_wo_pom_list:
+            if len(tm_wo_pom_list) < max_length:
+                tm_wo_pom_list_display = utils.format_list_for_markdown(tm_wo_pom_list)
+                inner_html += f"""The TriplesMaps <b>{tm_wo_pom_list_display}</b> have not been assigned
+                a Predicate-Object Map.<br>"""
+            else:
+                inner_html += f"""<b>{len(tm_wo_pom_list)} TriplesMaps</b> have not been assigned
+                a Predicate-Object Map.<br>"""
+
+
+
+        full_html = f"""<div class="custom-warning-small-orange">
+                {inner_html}
+            </div>"""
+
+        with col1:
+            st.markdown(full_html, unsafe_allow_html=True)
+
+
+
 
 #_____________________________________________
 
 #________________________________________________
-#EXPORT OPTION
+# SET STYLE OPTION
 with tab5:
 
     col1, col2 = st.columns([2,1])

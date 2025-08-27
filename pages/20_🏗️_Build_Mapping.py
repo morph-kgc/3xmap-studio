@@ -243,6 +243,7 @@ def save_sm_template():   #function to save subject map (template option)
     st.session_state["sm_saved_ok_flag"] = True
     # reset fields____________________
     st.session_state["sm_template_list"] = []
+    st.session_state["sm_template_prefix"] = ""
     st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
     # cache data source if given_________________
     if not ds_filename_for_sm in st.session_state["ds_cache_dict"] and column_list:
@@ -953,7 +954,7 @@ with tab2:
 
                 with col1a:
                     existing_sm_list.append("Select a Subject Map")
-                    sm_label = st.selectbox("🖱️ Select an existing Subject Map:*", reversed(existing_sm_list), key="key_sm_label")
+                    sm_label = st.selectbox("🖱️ Select an existing Subject Map:*", reversed(existing_sm_list), key="key_sm_label_existing")
                     if sm_label != "Select a Subject Map":
                         sm_iri = existing_sm_dict[sm_label]
                         tm_iri_for_sm = tm_dict[tm_label_for_sm]
@@ -1022,13 +1023,14 @@ with tab2:
                     with col1:
                         col1a, col1b = st.columns(2)
                     with col1a:
-                        sm_label = st.text_input("⌨️ Enter Subject Map label (optional):", key= "key_sm_label")
+                        sm_label = st.text_input("⌨️ Enter Subject Map label (optional):", key="key_sm_label_new")
                     sm_iri = BNode() if not sm_label else MAP[sm_label]
                     if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):
                         with col1a:
                             st.markdown(f"""<div class="custom-error-small">
-                                ❌ That <b>Object Map label</b> is already in use. Please pick another label or leave blank.
+                                ❌ That <b>Subject Map label</b> is already in use. Please pick another label or leave blank.
                             </div>""", unsafe_allow_html=True)
+                            st.write("")
 
                     with col1:
                         sm_generation_rule_list = ["Template 📐", "Constant 🔒", "Reference 📊"]
@@ -1883,19 +1885,18 @@ with tab2:
 
             # render
             if len(sm_to_remove_iri_list) > 0:
-                with col1b:
-                    st.markdown(full_html, unsafe_allow_html=True)
 
+                inner_html = f"""⚠️"""
                 sm_to_remove_label_list_mod = [sm for sm in sm_to_remove_label_list if sm != "Select all"]
                 formatted_sm_to_remove = utils.format_list_for_markdown(sm_to_remove_label_list_mod)
                 if len(sm_to_remove_iri_list) == 1:
-                    warning_message = f"""⚠️ The Subject Map <b>{formatted_sm_to_remove}</b> will be completely removed."""
+                    inner_html += f"""The Subject Map <b>{formatted_sm_to_remove}</b> will be completely removed."""
                 elif len(sm_to_remove_iri_list) > 1:
-                    warning_message = f"""⚠️ The Subject Maps <b>{formatted_sm_to_remove}</b> will be completely removed."""
+                    inner_html += f"""The Subject Maps <b>{formatted_sm_to_remove}</b> will be completely removed."""
                 if sm_to_remove_iri_list:
                     with col1a:
                         st.markdown(f"""<div class="custom-warning-small">
-                                {warning_message}
+                                {inner_html}
                             <div>""", unsafe_allow_html=True)
                         st.write("")
 
@@ -2002,32 +2003,42 @@ with tab2:
                 st.write("")
 
 
+
             sm_to_completely_remove_list = []
+            sm_to_just_unassign_list = []
             for tm in tm_to_unassign_sm_list:
                 tm_iri = tm_dict[tm]
                 sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RR.subjectMap)
                 sm_label = sm_dict[sm_iri][0]
                 other_tm_with_sm = [split_uri(s)[1] for s, p, o in st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)) if s != tm_iri]
-                if all(tm in tm_to_unassign_sm_list for tm in other_tm_with_sm) and sm_label not in sm_to_completely_remove_list:   # if upon deletion sm is no longer assigned to any tm
-                    sm_to_completely_remove_list.append(sm_label)
+                if all(tm in tm_to_unassign_sm_list for tm in other_tm_with_sm):   # if upon deletion sm is no longer assigned to any tm
+                    if sm_label not in sm_to_completely_remove_list:
+                        sm_to_completely_remove_list.append(sm_label)
+                else:
+                    sm_to_just_unassign_list.append(sm_label)
 
             # warning messages
-            warning_message = ""
+            inner_html = "⚠️"
             formatted_tm_to_unassign_sm = utils.format_list_for_markdown(tm_to_unassign_sm_list)
             formatted_sm_to_completely_remove = utils.format_list_for_markdown(sm_to_completely_remove_list)
-            if len(tm_to_unassign_sm_list) == 1:
-                warning_message += f"""⚠️ The Subject Map of the TriplesMap <b>{formatted_tm_to_unassign_sm}</b> will be unassigned.<br>"""
-            if len(tm_to_unassign_sm_list) > 1:
-                warning_message += f"""⚠️ The Subject Maps of the TriplesMaps <b>{formatted_tm_to_unassign_sm}</b> will be unassigned.<br>"""
+            formatted_sm_to_just_unassign = utils.format_list_for_markdown(sm_to_just_unassign_list)
+
+
+            if len(sm_to_just_unassign_list) == 1:
+                inner_html += f"""The Subject Map <b>{formatted_sm_to_just_unassign}</b> will be unassigned from
+                its TriplesMap.<br>"""
+            elif len(sm_to_just_unassign_list) > 1:
+                inner_html += f"""The Subject Maps <b>{formatted_sm_to_just_unassign}</b> will be unassigned from
+                their TriplesMaps</b>.<br>"""
             if len(sm_to_completely_remove_list) == 1:
-                warning_message += f"""⚠️ The Subject Map <b>{formatted_sm_to_completely_remove}</b> will be completely removed."""
-            if len(sm_to_completely_remove_list) > 1:
-                warning_message += f"""⚠️ The Subject Maps <b>{formatted_sm_to_completely_remove}</b> will be completely removed."""
+                inner_html += f"""The Subject Map <b>{formatted_sm_to_completely_remove}</b> will be completely removed."""
+            elif len(sm_to_completely_remove_list) > 1:
+                inner_html += f"""The Subject Maps <b>{formatted_sm_to_completely_remove}</b> will be completely removed."""
 
             if tm_to_unassign_sm_list:
                 with col1a:
                     st.markdown(f"""<div class="custom-warning-small">
-                            {warning_message}
+                            {inner_html}
                         <div>""", unsafe_allow_html=True)
                     st.write("")
 
