@@ -1834,7 +1834,7 @@ with tab2:
                     st.write("")
 
             # create a single info message
-            max_length = 8
+            max_length = 5
             inner_html = f"""<div style="margin-bottom:6px;">
                     <b>Subject Map</b> →
                     <b>TriplesMaps</b>
@@ -1846,11 +1846,11 @@ with tab2:
                     if len(corresponding_tm_list) > 1:
                         formatted_corresponding_tm = ", ".join(corresponding_tm_list[:-1]) + " and " + corresponding_tm_list[-1]
                         inner_html += f"""<div style="margin-bottom:6px;">
-                            🔖 {sm_label} → {formatted_corresponding_tm}
+                            🔖 <b>{sm_label}</b> → {formatted_corresponding_tm}
                         </div>"""
                     elif len(corresponding_tm_list) == 1:
                         inner_html += f"""<div style="margin-bottom:6px;">
-                            🔖 {sm_label} → {corresponding_tm_list[0]}
+                            🔖 <b>{sm_label}</b> → {corresponding_tm_list[0]}
                         </div>"""
                     else:
                         inner_html += f"""<div style="margin-bottom:6px;">
@@ -1867,11 +1867,11 @@ with tab2:
                     if len(corresponding_tm_list) > 1:
                         formatted_corresponding_tm = ", ".join(corresponding_tm_list[:-1]) + " and " + corresponding_tm_list[-1]
                         inner_html += f"""<div style="margin-bottom:6px;">
-                            🔖 {sm_label} → {formatted_corresponding_tm}
+                            🔖 <b>{sm_label}</b> → {formatted_corresponding_tm}
                         </div>"""
                     elif len(corresponding_tm_list) == 1:
                         inner_html += f"""<div style="margin-bottom:6px;">
-                            🔖 {sm_label} → {corresponding_tm_list[0]}
+                            🔖 <b>{sm_label}</b> → {corresponding_tm_list[0]}
                         </div>"""
                     else:
                         inner_html += f"""<div style="margin-bottom:6px;">
@@ -1884,10 +1884,18 @@ with tab2:
                 full_html = f"""<div class="info-message-small">
                     {inner_html}</div>"""
 
-            # render
-            if len(sm_to_remove_iri_list) > 0:
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                st.markdown(f"""<div class="info-message-small-gray">
+                        {inner_html}
+                    </div>""", unsafe_allow_html=True)
+                st.write("")
 
-                inner_html = f"""⚠️"""
+            # render
+            if sm_to_remove_iri_list:
+
+                inner_html = f"""ℹ️ """
                 sm_to_remove_label_list_mod = [sm for sm in sm_to_remove_label_list if sm != "Select all"]
                 formatted_sm_to_remove = utils.format_list_for_markdown(sm_to_remove_label_list_mod)
                 if len(sm_to_remove_iri_list) == 1:
@@ -1895,15 +1903,15 @@ with tab2:
                 elif len(sm_to_remove_iri_list) > 1:
                     inner_html += f"""The Subject Maps <b>{formatted_sm_to_remove}</b> will be completely removed."""
                 if sm_to_remove_iri_list:
-                    with col1a:
-                        st.markdown(f"""<div class="custom-warning-small">
+                    with col1b:
+                        st.markdown(f"""<div class="info-message-small">
                                 {inner_html}
                             <div>""", unsafe_allow_html=True)
                         st.write("")
 
 
                 if "Select all" in sm_to_remove_label_list:
-                    with col1a:
+                    with col1b:
                         st.markdown(f"""<div class="custom-warning-small">
                                 ⚠️ You are deleting <b>all labelled Subject Maps</b>.
                                 Make sure you want to go ahead.
@@ -1920,7 +1928,6 @@ with tab2:
                             st.button("Delete", on_click=delete_labelled_sm, key="key_delete_labelled_sm_button")
 
         if remove_sm_selected_option == "🎯 Unassign Subject Map of a TriplesMap":
-
 
             tm_w_sm_list = []
             for tm_label, tm_iri in tm_dict.items():
@@ -2000,7 +2007,7 @@ with tab2:
             # render
             with col1:
                 col1a, col1b = st.columns([2,1])
-            if len(tm_to_unassign_sm_list) > 0:
+            if tm_to_unassign_sm_list:
                 with col1a:
                     st.markdown(f"""<div class="info-message-small-gray">
                             {inner_html}
