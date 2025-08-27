@@ -568,7 +568,6 @@ with tab1:
                 🧱 Add New TriplesMap
             </div>""", unsafe_allow_html=True)
         st.write("")
-        st.write("HERE", st.session_state["ds_cache_dict"])
 
     if st.session_state["tm_saved_ok_flag"]:
         with col1:
@@ -2106,37 +2105,44 @@ with tab3:
                 </div>""", unsafe_allow_html=True)
             st.write("")
 
-    elif not tm_w_sm_list:
-        with col1a:
-            st.markdown(f"""<div class="custom-error-small">
-                    ❌ No Subject Maps have been defined in mapping <b>{st.session_state["g_label"]}</b>.
-                    You can assign Subject Maps in the <b>Add Subject Map</b> option.
-                </div>""", unsafe_allow_html=True)
-            st.write("")
-
     else:
-        with col1b:
-            st.markdown(f"""<div class = "info-message-small-gray">
-                    ℹ️ Only TriplesMaps with an assigned Subject Map can be selected.
-                </div>""", unsafe_allow_html=True)
-            st.write("")
 
         with col1a:
-            if st.session_state["last_added_tm_list"] and st.session_state["last_added_tm_list"][0] in tm_w_sm_list:
-                tm_label_for_pom = st.selectbox("🖱️ Select a TriplesMap:*", reversed(tm_w_sm_list), key="key_tm_label_for_pom",
-                    index=list(reversed(tm_w_sm_list)).index(st.session_state["last_added_tm_list"][0]))
+            if st.session_state["last_added_tm_list"]:
+                list_to_choose = list(reversed(tm_dict))
+                list_to_choose.insert(0, "Select a TriplesMap")
+                tm_label_for_pom = st.selectbox("🖱️ Select a TriplesMap:*", list_to_choose, key="key_tm_label_for_pom",
+                    index=list_to_choose.index(st.session_state["last_added_tm_list"][0]))
             else:
-                list_to_choose = list(reversed(tm_w_sm_list))
+                list_to_choose = list(reversed(tm_dict))
                 list_to_choose.insert(0, "Select a TriplesMap")
                 tm_label_for_pom = st.selectbox("🖱️ Select a TriplesMap:*", list_to_choose, key="key_tm_label_for_pom")
-
 
         if tm_label_for_pom != "Select a TriplesMap":
             sm_dict = utils.get_sm_dict()
 
+
+
             tm_iri_for_pom = tm_dict[tm_label_for_pom]
-            sm_iri_for_pom = st.session_state["g_mapping"].value(subject=tm_iri_for_pom, predicate=RR.subjectMap)
-            sm_label_for_pom = sm_dict[sm_iri_for_pom][0]
+
+            if tm_label_for_pom in tm_w_sm_list:
+                sm_iri_for_pom = st.session_state["g_mapping"].value(subject=tm_iri_for_pom, predicate=RR.subjectMap)
+                sm_label_for_pom = sm_dict[sm_iri_for_pom][0]
+                with col1b:
+                    st.markdown(f"""<div class = "info-message-small">
+                            ℹ️ The Subject Map is <b>{sm_label_for_pom}</b>.
+                        </div>""", unsafe_allow_html=True)
+                    st.write("")
+            else:
+                sm_label_for_pom = ""
+                with col1b:
+                    st.markdown(f"""<div class="custom-warning-small-orange">
+                            🚧 The TriplesMap <b>{tm_label_for_pom}</b> has not been assigned
+                            a Subject Map yet. <b>The TriplesMap will be invalid if no Subject Map is added</b>.
+                        </div>""", unsafe_allow_html=True)
+                    st.write("")
+
+
             ls_iri_for_pom = next(st.session_state["g_mapping"].objects(tm_iri_for_pom, RML.logicalSource), None)
             ds_filename_for_pom = next(st.session_state["g_mapping"].objects(ls_iri_for_pom, RML.source), None)
 
@@ -2147,14 +2153,17 @@ with tab3:
                 column_list = st.session_state["ds_cache_dict"][ds_filename_for_pom]
 
             else:  # if data source is not cached - ASK FOR DATA SOURCE FILE
+                with col1:
+                    col1a, col1b = st.columns([2,1])
                 with col1a:
                     ds_allowed_formats = utils.get_ds_allowed_formats()
                     ds_file_for_pom = st.file_uploader(f"""🖱️ Upload data source file {ds_filename_for_pom} (optional):""",
                         type=ds_allowed_formats, key=st.session_state["key_ds_uploader_for_pom"])
 
                 with col1b:
+                    st.write("")
+                    st.write("")
                     if not ds_file_for_pom:
-                        st.write("")
                         st.markdown(f"""<div class="info-message-small">
                                 🛢️ The data source <b>{ds_filename_for_pom}</b> is not cached.
                                 Load it here <b>if needed</b>.
@@ -2577,7 +2586,7 @@ with tab3:
             # POM MAP ______________________________________
             inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Predicate-Object Map</td></tr>
                 <tr><td><b>TriplesMap*:</b></td><td>{tm_label_for_pom}</td></tr>
-                <tr><td><b>Subject Map*</b></td><td>{sm_label_for_pom}</td></tr>"""
+                <tr><td><b>Subject Map</b></td><td>{sm_label_for_pom}</td></tr>"""
 
             if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectMap, pom_iri)), None):
                 pom_complete_flag = "❌ No"
@@ -2761,6 +2770,23 @@ with tab3:
                             ⚠️ All <b>required fields (*)</b> must be filled in order to save a Predicate-Object Map.
                         </div>""", unsafe_allow_html=True)
                     st.write("")
+
+    # PURPLE HEADING - REMOVE EXISTING PREDICATE-OBJECT MAP
+
+    with col1:
+        st.write("________")
+        st.markdown("""<div class="purple-heading">
+                🗑️ Remove Existing Predicate-Object Map
+            </div>""", unsafe_allow_html=True)
+        st.write("") #HERE ONLY IF THERE EXISTS ONE
+
+        st.markdown(f"""<div class="custom-error-small">
+            ❌ Option not available yet.
+        </div>""", unsafe_allow_html=True)
+        st.write("")
+
+
+
 
 
 #________________________________________________
