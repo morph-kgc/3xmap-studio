@@ -113,6 +113,8 @@ if "key_ds_uploader_for_pom" not in st.session_state:
     st.session_state["key_ds_uploader_for_pom"] = str(uuid.uuid4())
 if "om_template_ns_prefix" not in st.session_state:
     st.session_state["om_template_ns_prefix"] = ""
+if "template_om_is_iri_flag" not in st.session_state:
+    st.session_state["template_om_is_iri_flag"] = False
 if "pom_saved_ok_flag" not in st.session_state:
     st.session_state["pom_saved_ok_flag"] = False
 if "om_template_list" not in st.session_state:
@@ -358,12 +360,13 @@ def unassign_sm():
 # TAB3
 def add_ns_to_om_template():
     # update template and store information_________
-    if not st.session_state["om_template_ns_prefix"]:    # no ns added yet
+    if not st.session_state["template_om_is_iri_flag"]:    # no ns added yet
         st.session_state["om_template_list"].insert(0, om_template_ns)
     else:   # a ns was added (replace)
         st.session_state["om_template_list"][0] = om_template_ns
     # reset fields_____________
     st.session_state["om_template_ns_prefix"] = om_template_ns_prefix
+    st.session_state["template_om_is_iri_flag"] = True
     st.session_state["key_om_template_ns_prefix"] = "Select a namespace"
     st.session_state["key_build_template_action_om"] = "📈 Add variable part"
 
@@ -390,7 +393,7 @@ def reset_om_template():
 
 def save_pom_template():
     # add triples pom________________________
-    st.session_state["g_mapping"].add((tm_iri_for_pom, RR.predicateObjectMap, st.session_state["pom_iri_to_create"]))
+    st.session_state["g_mapping"].add((st.session_state["tm_iri_for_pom"], RR.predicateObjectMap, st.session_state["pom_iri_to_create"]))
     st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RR.predicate, selected_p_iri))
     st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RR.objectMap, om_iri))
     # add triples om________________________
@@ -411,6 +414,7 @@ def save_pom_template():
     st.session_state["pom_saved_ok_flag"] = True
     st.session_state["last_added_pom_list"].insert(0, st.session_state["pom_iri_to_create"])
     # reset fields_____________________________
+    st.session_state["template_om_is_iri_flag"] = False
     st.session_state["key_selected_p_label"] = "Select a predicate"
     st.session_state["key_manual_p_ns_prefix"] = "Select a namespace"
     st.session_state["key_manual_p_label"] = ""
@@ -426,7 +430,7 @@ def save_pom_template():
 
 def save_pom_constant():
     # add triples pom________________________
-    st.session_state["g_mapping"].add((tm_iri_for_pom, RR.predicateObjectMap, st.session_state["pom_iri_to_create"]))
+    st.session_state["g_mapping"].add((st.session_state["tm_iri_for_pom"], RR.predicateObjectMap, st.session_state["pom_iri_to_create"]))
     st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RR.predicate, selected_p_iri))
     st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RR.objectMap, om_iri))
     # add triples om________________________
@@ -462,7 +466,7 @@ def save_pom_constant():
 
 def save_pom_reference():
     # add triples pom________________________
-    st.session_state["g_mapping"].add((tm_iri_for_pom, RR.predicateObjectMap, st.session_state["pom_iri_to_create"]))
+    st.session_state["g_mapping"].add((st.session_state["tm_iri_for_pom"], RR.predicateObjectMap, st.session_state["pom_iri_to_create"]))
     st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RR.predicate, selected_p_iri))
     st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RR.objectMap, om_iri))
     # add triples om________________________
@@ -495,16 +499,19 @@ def save_pom_reference():
         st.session_state["ds_cache_dict"][ds_filename_for_pom] = column_list
 
 def delete_pom():           #function to delete a Predicate-Object Map
-    om_to_delete = st.session_state["g_mapping"].value(subject=pom_to_delete, predicate=RR.objectMap)
+    om_to_delete = st.session_state["g_mapping"].value(subject=st.session_state["pom_to_delete"], predicate=RR.objectMap)
     # remove triples______________________
-    st.session_state["g_mapping"].remove((pom_to_delete, None, None))
-    st.session_state["g_mapping"].remove((None, None, pom_to_delete))
+    st.session_state["g_mapping"].remove((st.session_state["pom_to_delete"], None, None))
+    st.session_state["g_mapping"].remove((None, None, st.session_state["pom_to_delete"]))
     st.session_state["g_mapping"].remove((om_to_delete, None, None))
     # store information__________________
     st.session_state["pom_deleted_ok_flag"] = True
     # reset fields__________________
+    st.session_state["last_added_pom_list"].remove(pom_iri)
     if len(pom_of_selected_tm_df) > 2:    # at least one pom associated to the same tm are left
         st.session_state["key_pom_to_delete"] = "Select a P-O Map"
+    if pom_iri in st.session_state["last_added_pom_list"]:
+        st.session_state["last_added_pom_list"].remove(pom_iri)       # if it is in last added list, remove
     else:
         st.session_state["key_tm_to_delete_pom"] = "Select a TriplesMap"
 
@@ -2546,7 +2553,7 @@ with tab3:
                     om_term_type_template = st.radio(label="🖱️ Select Term type:*", options=["🌐 IRI", "📘 Literal", "👻 BNode"],
                         key="om_term_type_template")
 
-                if om_term_type_template == "🌐 IRI" and not st.session_state["om_template_ns_prefix"] and om_template:
+                if om_term_type_template == "🌐 IRI" and not st.session_state["template_om_is_iri_flag"] and om_template:
                     with col3a:
 
                         st.markdown(f"""<div class="custom-error-small">
@@ -2784,9 +2791,9 @@ with tab3:
                 <tr><td><b>Term type*</b></td><td>{om_term_type_template}</td></tr>"""
 
                 if om_term_type_template == "🌐 IRI":
-                    om_template_ns_prefix_display = st.session_state["om_template_ns_prefix"] if st.session_state["om_template_ns_prefix"] else ""
+                    om_template_ns_prefix_display = st.session_state["om_template_ns_prefix"] if st.session_state["template_om_is_iri_flag"] else ""
                     inner_html += f"""<tr><td><b>Template namespace*</b></td><td>{om_template_ns_prefix_display}</td></tr>"""
-                    om_complete_flag = "❌ No" if not st.session_state["om_template_ns_prefix"] else om_complete_flag
+                    om_complete_flag = "❌ No" if not st.session_state["template_om_is_iri_flag"] else om_complete_flag
 
                 if om_template and om_term_type_template == "📘 Literal":
                     om_datatype_display = om_datatype if om_datatype != "Select datatype" else ""
@@ -2903,6 +2910,7 @@ with tab3:
                     """, unsafe_allow_html=True)
                     st.write("")
                     st.session_state["pom_iri_to_create"] = pom_iri    # otherwise it will change value in the on_click function
+                    st.session_state["tm_iri_for_pom"] = tm_iri_for_pom
                     if om_generation_rule == "Template 📐":
                         save_pom_template_button = st.button("Save", on_click=save_pom_template, key="key_save_pom_template_button")
                     elif om_generation_rule == "Constant 🔒":
@@ -2932,18 +2940,16 @@ with tab3:
             </div>""", unsafe_allow_html=True)
         st.write("") #HERE ONLY IF THERE EXISTS ONE
 
+        st.markdown(f"""<div class="custom-error-small">
+            ❌ <b> Not working</b>. Don't use.
+        </div>""", unsafe_allow_html=True)
+        st.write("")
+
         tm_dict = utils.get_tm_dict()
         pom_dict = utils.get_pom_dict()
 
         with col1:
             col1a, col1b = st.columns(2)
-        # if st.session_state["last_added_tm_list"] and st.session_state["last_added_tm_list"][0] in tm_wo_sm_list:
-        #     with col1a:
-        #         list_to_choose = list(reversed(tm_wo_sm_list))
-        #         list_to_choose.insert(0, "Select a TriplesMap")
-        #         tm_label_for_sm = st.selectbox("🖱️ Select a TriplesMap:*", list_to_choose, key="key_tm_label_input_for_sm",
-        #             index=list_to_choose.index(st.session_state["last_added_tm_list"][0]))
-
 
         tm_w_pom_list = []
         for tm_iri in tm_dict:
@@ -2982,11 +2988,17 @@ with tab3:
                     st.write("")
 
                 with col1b:
-                    list_to_choose = list(reversed([pom_dict[pom_iri][2] for pom_iri in pom_dict]))
+                    list_to_choose = []
+                    for pom_iri in pom_dict:
+                        if pom_dict[pom_iri][0] == tm_to_delete_pom_iri:
+                            list_to_choose.append(pom_dict[pom_iri][2])
+                    list_to_choose = list(reversed(list_to_choose))
                     list_to_choose.insert(0, "Select a P-O Map")
                     pom_to_delete = st.selectbox("🖱️ Select a Predicate-Object Map:*", list_to_choose, key="key_pom_to_delete")
 
                 if pom_to_delete != "Select a P-O Map":
+                    st.session_state["pom_to_delete"] = pom_to_delete
+                    st.session_state["tm_to_delete_pom_label"] = tm_to_delete_pom_label
                     with col1a:
                         st.button("Delete", on_click=delete_pom, key="key_delete_pom_button")
 
