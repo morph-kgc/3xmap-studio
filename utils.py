@@ -874,13 +874,15 @@ def get_pom_dict():
 
     pom_dict = {}
 
-    tm_list = list(st.session_state["g_mapping"].subjects(RML.logicalSource, None))
-    for tm in tm_list:
-        tm_label = split_uri(tm)[1]
-        pom_iri = st.session_state["g_mapping"].value(tm, RR.predicateObjectMap)
+
+    pom_list = list(st.session_state["g_mapping"].objects(None, RR.predicateObjectMap))
+
+    for pom_iri in pom_list:
+
+        tm_iri = next(st.session_state["g_mapping"].subjects(RR.predicateObjectMap, pom_iri), None)
+        tm_label = split_uri(tm_iri)[1]
         predicate = st.session_state["g_mapping"].value(pom_iri, RR.predicate)
         om_iri = st.session_state["g_mapping"].value(pom_iri, RR.objectMap)
-
 
         template = st.session_state["g_mapping"].value(om_iri, RR.template)
         constant = st.session_state["g_mapping"].value(om_iri, RR.constant)
@@ -890,50 +892,48 @@ def get_pom_dict():
         pom_type = None
         pom_id_label = None
 
-        if pom_iri:
+        if isinstance(pom_iri, URIRef):
+            pom_label = split_uri(pom_iri)[1]
+        elif isinstance(pom_iri, BNode):
+            pom_label = "_:" + str(pom_iri)[:7] + "..."
+        else:
+            pom_label = "Unlabelled"
 
-            if isinstance(pom_iri, URIRef):
-                pom_label = split_uri(pom_iri)[1]
-            elif isinstance(pom_iri, BNode):
-                pom_label = "_:" + str(pom_iri)[:7] + "..."
+        if isinstance(om_iri, URIRef):
+            om_label = split_uri(om_iri)[1]
+        elif isinstance(om_iri, BNode):
+            om_label = "_:" + str(om_iri)[:7] + "..."
+        else:
+            om_label = "Unlabelled"
+
+        try:
+            predicate_label = split_uri(predicate)[1]
+        except:
+            predicate_label = ""
+
+        if template:
+            om_type = "template"
+            om_id_iri = str(template)
+            matches = re.findall(r"{([^}]+)}", template)   #splitting template is not so easy but we try
+            if matches:
+                om_id_label = str(matches[-1])
             else:
-                pom_label = "Unlabelled"
+                om_id_label = str(template)
 
-            if isinstance(om_iri, URIRef):
-                om_label = split_uri(om_iri)[1]
-            elif isinstance(om_iri, BNode):
-                om_label = "_:" + str(om_iri)[:7] + "..."
+        elif constant:
+            om_type = "constant"
+            om_id_iri = str(constant)
+            if isinstance(constant, URIRef):
+                om_id_label = str(split_uri(constant)[1])
             else:
-                om_label = "Unlabelled"
+                om_id_label = constant
 
-            try:
-                predicate_label = split_uri(predicate)[1]
-            except:
-                predicate_label = ""
+        elif reference:
+            om_type = "reference"
+            om_id_iri = str(reference)
+            om_id_label = str(reference)
 
-            if template:
-                om_type = "template"
-                om_id_iri = str(template)
-                matches = re.findall(r"{([^}]+)}", template)   #splitting template is not so easy but we try
-                if matches:
-                    om_id_label = str(matches[-1])
-                else:
-                    om_id_label = str(template)
-
-            elif constant:
-                om_type = "constant"
-                om_id_iri = str(constant)
-                if isinstance(constant, URIRef):
-                    om_id_label = str(split_uri(constant)[1])
-                else:
-                    om_id_label = constant
-
-            elif reference:
-                om_type = "reference"
-                om_id_iri = str(reference)
-                om_id_label = str(reference)
-
-            pom_dict[pom_iri] = [tm, tm_label, pom_label, predicate, predicate_label, om_label, om_type, om_id_iri, om_id_label]
+        pom_dict[pom_iri] = [tm_iri, tm_label, pom_label, predicate, predicate_label, om_label, om_type, om_id_iri, om_id_label]
 
     return pom_dict
 #___________________________________________

@@ -499,10 +499,10 @@ def save_pom_reference():
         st.session_state["ds_cache_dict"][ds_filename_for_pom] = column_list
 
 def delete_pom():           #function to delete a Predicate-Object Map
-    om_to_delete = st.session_state["g_mapping"].value(subject=st.session_state["pom_to_delete"], predicate=RR.objectMap)
+    om_to_delete = st.session_state["g_mapping"].value(subject=st.session_state["pom_to_delete_iri"], predicate=RR.objectMap)
     # remove triples______________________
-    st.session_state["g_mapping"].remove((st.session_state["pom_to_delete"], None, None))
-    st.session_state["g_mapping"].remove((None, None, st.session_state["pom_to_delete"]))
+    st.session_state["g_mapping"].remove((st.session_state["pom_to_delete_iri"], None, None))
+    st.session_state["g_mapping"].remove((None, None, st.session_state["pom_to_delete_iri"]))
     st.session_state["g_mapping"].remove((om_to_delete, None, None))
     # store information__________________
     st.session_state["pom_deleted_ok_flag"] = True
@@ -2940,11 +2940,6 @@ with tab3:
             </div>""", unsafe_allow_html=True)
         st.write("") #HERE ONLY IF THERE EXISTS ONE
 
-        st.markdown(f"""<div class="custom-error-small">
-            ❌ <b> Not working</b>. Don't use.
-        </div>""", unsafe_allow_html=True)
-        st.write("")
-
         tm_dict = utils.get_tm_dict()
         pom_dict = utils.get_pom_dict()
 
@@ -2954,7 +2949,7 @@ with tab3:
         tm_w_pom_list = []
         for tm_iri in tm_dict:
             for pom_iri in pom_dict:
-                if tm_iri in pom_dict[pom_iri]:
+                if tm_iri in pom_dict[pom_iri] and tm_iri not in tm_w_pom_list:
                     tm_w_pom_list.append(tm_iri)
                     continue
 
@@ -2994,12 +2989,17 @@ with tab3:
                             list_to_choose.append(pom_dict[pom_iri][2])
                     list_to_choose = list(reversed(list_to_choose))
                     list_to_choose.insert(0, "Select a P-O Map")
-                    pom_to_delete = st.selectbox("🖱️ Select a Predicate-Object Map:*", list_to_choose, key="key_pom_to_delete")
+                    pom_to_delete_label = st.selectbox("🖱️ Select a Predicate-Object Map:*", list_to_choose, key="key_pom_to_delete")
+                    for pom_iri in pom_dict:
+                        if pom_to_delete_label == pom_dict[pom_iri][2]:
+                            pom_to_delete_iri = pom_iri
+                            break
 
-                if pom_to_delete != "Select a P-O Map":
-                    st.session_state["pom_to_delete"] = pom_to_delete
+                if pom_to_delete_label != "Select a P-O Map":
+                    st.session_state["pom_to_delete_iri"] = pom_to_delete_iri
                     st.session_state["tm_to_delete_pom_label"] = tm_to_delete_pom_label
                     with col1a:
+                        om_to_delete = st.session_state["g_mapping"].value(subject=st.session_state["pom_to_delete_iri"], predicate=RR.objectMap)
                         st.button("Delete", on_click=delete_pom, key="key_delete_pom_button")
 
 
