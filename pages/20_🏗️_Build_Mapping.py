@@ -508,12 +508,9 @@ def delete_pom():           #function to delete a Predicate-Object Map
     st.session_state["pom_deleted_ok_flag"] = True
     # reset fields__________________
     st.session_state["last_added_pom_list"].remove(pom_iri)
-    if len(pom_of_selected_tm_df) > 2:    # at least one pom associated to the same tm are left
-        st.session_state["key_pom_to_delete"] = "Select a P-O Map"
     if pom_iri in st.session_state["last_added_pom_list"]:
         st.session_state["last_added_pom_list"].remove(pom_iri)       # if it is in last added list, remove
-    else:
-        st.session_state["key_tm_to_delete_pom"] = "Select a TriplesMap"
+    st.session_state["key_tm_to_delete_pom"] = "Select a TriplesMap"
 
 
 # START PAGE_____________________________________________________________________
@@ -2932,16 +2929,31 @@ with tab3:
 
 
 
-    # PURPLE HEADING - REMOVE EXISTING PREDICATE-OBJECT MAP
-    with col1:
-        st.write("________")
-        st.markdown("""<div class="purple-heading">
-                🗑️ Remove Existing Predicate-Object Map
+    if st.session_state["pom_deleted_ok_flag"]:
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.write("")
+            st.markdown(f"""<div class="custom-success">
+                ✅ The Predicate-Object Map/s have been deleted!
             </div>""", unsafe_allow_html=True)
-        st.write("") #HERE ONLY IF THERE EXISTS ONE
+            st.write("")
+        st.session_state["pom_deleted_ok_flag"] = False
+        time.sleep(st.session_state["success_display_time"])
+        st.rerun()
 
-        tm_dict = utils.get_tm_dict()
-        pom_dict = utils.get_pom_dict()
+
+    # PURPLE HEADING - REMOVE EXISTING PREDICATE-OBJECT MAP
+    tm_dict = utils.get_tm_dict()
+    pom_dict = utils.get_pom_dict()
+
+    if pom_dict:
+        with col1:
+            st.write("________")
+            st.markdown("""<div class="purple-heading">
+                    🗑️ Remove Existing Predicate-Object Map
+                </div>""", unsafe_allow_html=True)
+            st.write("") #HERE ONLY IF THERE EXISTS ONE
 
         with col1:
             col1a, col1b = st.columns(2)
@@ -2988,7 +3000,8 @@ with tab3:
                         if pom_dict[pom_iri][0] == tm_to_delete_pom_iri:
                             list_to_choose.append(pom_dict[pom_iri][2])
                     list_to_choose = list(reversed(list_to_choose))
-                    list_to_choose.insert(0, "Select a P-O Map")
+                    if len(list_to_choose) > 1:
+                        list_to_choose.insert(0, "Select a P-O Map")
                     pom_to_delete_label = st.selectbox("🖱️ Select a Predicate-Object Map:*", list_to_choose, key="key_pom_to_delete")
                     for pom_iri in pom_dict:
                         if pom_to_delete_label == pom_dict[pom_iri][2]:
