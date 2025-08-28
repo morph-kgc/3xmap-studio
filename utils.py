@@ -711,7 +711,7 @@ def remove_triplesmap(tm_label):
 # the keys are a list of:
 # 0. sm label     1. sm type (template, constant or reference)
 # 2. sm_id_iri      # 3. sm_id_label    (info on the id)
-# 4. List of all tm to shich sm is assigned
+# 4. List of all tm to which sm is assigned
 def get_sm_dict():
 
     sm_dict = {}
@@ -861,6 +861,84 @@ def get_language_tags_list():
 
     return language_tags_list
 #______________________________________________
+
+#________________________________________________________
+# Funtion to get the dictionary of the Predicate-Object Maps
+# {pom_iri: [LIST]}
+# the keys are a list of:
+# 0. tm    1. tm_label
+# 2. pom label     3. predicate iri     4. predicate label
+# 5. om label      6. om type (template, constant or reference)
+# 7. om_id_iri      # 8. om_id_label    (info on the id)
+def get_pom_dict():
+
+    pom_dict = {}
+
+    tm_list = list(st.session_state["g_mapping"].subjects(RML.logicalSource, None))
+    for tm in tm_list:
+        tm_label = split_uri(tm)[1]
+        pom_iri = st.session_state["g_mapping"].value(tm, RR.predicateObjectMap)
+        predicate = st.session_state["g_mapping"].value(pom_iri, RR.predicate)
+        om_iri = st.session_state["g_mapping"].value(pom_iri, RR.objectMap)
+
+
+        template = st.session_state["g_mapping"].value(om_iri, RR.template)
+        constant = st.session_state["g_mapping"].value(om_iri, RR.constant)
+        reference = st.session_state["g_mapping"].value(om_iri, RML.reference)
+
+        pom_id_iri = None
+        pom_type = None
+        pom_id_label = None
+
+        if pom_iri:
+
+            if isinstance(pom_iri, URIRef):
+                pom_label = split_uri(pom_iri)[1]
+            elif isinstance(pom_iri, BNode):
+                pom_label = "_:" + str(pom_iri)[:7] + "..."
+            else:
+                pom_label = "Unlabelled"
+
+            if isinstance(om_iri, URIRef):
+                om_label = split_uri(om_iri)[1]
+            elif isinstance(om_iri, BNode):
+                om_label = "_:" + str(om_iri)[:7] + "..."
+            else:
+                om_label = "Unlabelled"
+
+            try:
+                predicate_label = split_uri(predicate)[1]
+            except:
+                predicate_label = ""
+
+            if template:
+                om_type = "template"
+                om_id_iri = str(template)
+                matches = re.findall(r"{([^}]+)}", template)   #splitting template is not so easy but we try
+                if matches:
+                    om_id_label = str(matches[-1])
+                else:
+                    om_id_label = str(template)
+
+            elif constant:
+                om_type = "constant"
+                om_id_iri = str(constant)
+                if isinstance(constant, URIRef):
+                    om_id_label = str(split_uri(constant)[1])
+                else:
+                    om_id_label = constant
+
+            elif reference:
+                om_type = "reference"
+                om_id_iri = str(reference)
+                om_id_label = str(reference)
+
+            pom_dict[pom_iri] = [tm, tm_label, pom_label, predicate, predicate_label, om_label, om_type, om_id_iri, om_id_label]
+
+    return pom_dict
+#___________________________________________
+
+
 
 
 #HEREIGO

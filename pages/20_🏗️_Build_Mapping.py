@@ -117,6 +117,8 @@ if "pom_saved_ok_flag" not in st.session_state:
     st.session_state["pom_saved_ok_flag"] = False
 if "om_template_list" not in st.session_state:
     st.session_state["om_template_list"] = []
+if "last_added_pom_list" not in st.session_state:
+    st.session_state["last_added_pom_list"] = []
 
 
 #define on_click functions
@@ -189,7 +191,7 @@ def save_sm_existing():
     # add triples____________________
     st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, st.session_state["sm_iri"]))
     # store information__________________
-    st.session_state["last_added_sm_list"].insert(0, sm_label)
+    st.session_state["last_added_sm_list"].insert(0, sm_iri)
     st.session_state["sm_saved_ok_flag"] = True
 
 def add_ns_to_sm_template():
@@ -239,7 +241,7 @@ def save_sm_template():   #function to save subject map (template option)
     elif sm_term_type_template == "👻 BNode":
         st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.BlankNode))
     # store information__________________
-    st.session_state["last_added_sm_list"].insert(0, st.session_state["sm_label"])
+    st.session_state["last_added_sm_list"].insert(0, sm_iri)
     st.session_state["sm_saved_ok_flag"] = True
     # reset fields____________________
     st.session_state["sm_template_list"] = []
@@ -264,7 +266,7 @@ def save_sm_constant():   #function to save subject map (constant option)
     st.session_state["g_mapping"].add((sm_iri, RR.constant, sm_constant_iri))
     st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.IRI))
     # store information____________________
-    st.session_state["last_added_sm_list"].insert(0, st.session_state["sm_label"])
+    st.session_state["last_added_sm_list"].insert(0, sm_iri)
     st.session_state["sm_saved_ok_flag"] = True
     # reset fields_________________________
     st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
@@ -287,7 +289,7 @@ def save_sm_reference():   #function to save subject map (reference option)
     elif sm_term_type_reference == "👻 BNode":
         st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.BlankNode))
     # store information__________________
-    st.session_state["last_added_sm_list"].insert(0, st.session_state["sm_label"])
+    st.session_state["last_added_sm_list"].insert(0, sm_iri)
     st.session_state["sm_saved_ok_flag"] = True
     # reset fields____________________
     st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
@@ -405,6 +407,7 @@ def save_pom_template():
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.BlankNode))
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
+    st.session_state["last_added_pom_list"].insert(0, pom_iri)
     # reset fields_____________________________
     st.session_state["key_selected_p_label"] = "Select a predicate"
     st.session_state["key_manual_p_ns_prefix"] = "Select a namespace"
@@ -442,6 +445,7 @@ def save_pom_constant():
             st.session_state["g_mapping"].add((om_iri, RR.language, om_language_tag))
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
+    st.session_state["last_added_pom_list"].insert(0, pom_iri)
     # reset fields_____________________________
     st.session_state["key_selected_p_label"] = "Select a predicate"
     st.session_state["key_manual_p_ns_prefix"] = "Select a namespace"
@@ -475,6 +479,7 @@ def save_pom_reference():
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.BlankNode))
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
+    st.session_state["last_added_pom_list"].insert(0, pom_iri)
     # reset fields_____________________________
     st.session_state["key_selected_p_label"] = "Select a predicate"
     st.session_state["key_manual_p_ns_prefix"] = "Select a namespace"
@@ -907,13 +912,13 @@ with tab2:
         last_added_sm_df = pd.DataFrame([
             {"Subject Map": v[0], "Assigned to": utils.format_list_for_markdown(v[4]),
                 "Rule": v[1],"ID/Constant": v[3]}
-            for k, v in sm_dict.items() if v[0] in st.session_state["last_added_sm_list"]])
+            for k, v in sm_dict.items() if k in st.session_state["last_added_sm_list"]])
         last_last_added_sm_df = last_added_sm_df.head(10)
 
 
         if st.session_state["last_added_sm_list"]:
             st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
-                    🔎 last added TriplesMaps
+                    🔎 last added Subject Maps
                 </div>""", unsafe_allow_html=True)
             st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
                     (complete list below)
@@ -2171,14 +2176,30 @@ with tab3:
     with col2b:
         utils.get_corner_status_message()
         st.write("")
-        if not st.session_state["g_ontology_label"]:
-            st.markdown("""<div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                <span style="font-size:0.95rem;">
-                    🚧 Working without an ontology could result in structural inconsistencies.
-                <div style="font-size: 0.85em; margin-top: 4px;">
-                    This is especially discouraged when building Predicate-Object Maps.
-                    You can load an ontology in the <b>Global Configuration</b> page.
-                </span></div>""", unsafe_allow_html=True)
+
+    tm_dict = utils.get_tm_dict()
+    pom_dict = utils.get_pom_dict()
+
+    with col2b:
+        st.write("")
+        rows = [{"TriplesMap": pom_dict[pom_iri][1], "P-O Map": pom_dict[pom_iri][2],
+                "Predicate": pom_dict[pom_iri][4], "Object Map": pom_dict[pom_iri][5],
+                "Rule": pom_dict[pom_iri][6], "ID/Constant": pom_dict[pom_iri][8]}
+                for pom_iri in st.session_state["last_added_pom_list"]]
+        last_added_tm_df = pd.DataFrame(rows)
+        last_last_added_tm_df = last_added_tm_df.head(10)
+
+        if st.session_state["last_added_pom_list"]:
+            st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
+                    🔎 last added Predicate-Object Maps
+                </div>""", unsafe_allow_html=True)
+            st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                    (complete list in <b>Display Mapping</b> page)
+                </div>""", unsafe_allow_html=True)
+            st.dataframe(last_last_added_tm_df, hide_index=True)
+            st.write("")
+
+
 
 
     #PURPLE HEADING - ADD NEW TRIPLESMAP
@@ -2853,6 +2874,15 @@ with tab3:
 
 
             # INFO AND SAVE BUTTON____________________________________
+            if not st.session_state["g_ontology_label"]:
+                with col4:
+                    st.markdown("""<div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+                        <span style="font-size:0.95rem;">
+                            🚧 Working without an ontology could result in structural inconsistencies.
+                        <div style="font-size: 0.85em; margin-top: 4px;">
+                            This is especially discouraged when building Predicate-Object Maps.
+                        </span></div>""", unsafe_allow_html=True)
+
             if pom_complete_flag == "✔️ Yes" and om_complete_flag == "✔️ Yes":
                 with col4:
                     st.markdown(f"""<div class="custom-success">
@@ -2875,14 +2905,21 @@ with tab3:
                         </div>""", unsafe_allow_html=True)
                     st.write("")
 
-    # PURPLE HEADING - REMOVE EXISTING PREDICATE-OBJECT MAP
 
+
+            col1, col2 = st.columns([2,1.5])   # back to the normal structure of columns
+
+
+
+    # PURPLE HEADING - REMOVE EXISTING PREDICATE-OBJECT MAP
     with col1:
         st.write("________")
         st.markdown("""<div class="purple-heading">
                 🗑️ Remove Existing Predicate-Object Map
             </div>""", unsafe_allow_html=True)
         st.write("") #HERE ONLY IF THERE EXISTS ONE
+
+        st.write("HERE", utils.get_pom_dict())
 
         st.markdown(f"""<div class="custom-error-small">
             ❌ Option not available yet.
