@@ -580,15 +580,21 @@ with tab1:
         rows = [{"TriplesMap": tm, "LogicalSource": utils.get_ls(tm),
                 "DataSource": utils.get_ds(tm)} for tm in st.session_state["last_added_tm_list"]]
         last_added_tm_df = pd.DataFrame(rows)
-        last_last_added_tm_df = last_added_tm_df.head(10)
+        last_last_added_tm_df = last_added_tm_df.head(utils.get_max_length_for_display()[1])
 
+        max_length = utils.get_max_length_for_display()[0]   # max number of tm shown in dataframe
         if st.session_state["last_added_tm_list"]:
             st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
                     🔎 last added TriplesMaps
                 </div>""", unsafe_allow_html=True)
-            st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                    (complete list below)
-                </div>""", unsafe_allow_html=True)
+            if len(tm_dict) < max_length:
+                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                        (complete list below)
+                    </div>""", unsafe_allow_html=True)
+            else:
+                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                        (longer list below)
+                    </div>""", unsafe_allow_html=True)
             st.dataframe(last_last_added_tm_df, hide_index=True)
             st.write("")
 
@@ -597,11 +603,19 @@ with tab1:
         rows = [{"TriplesMap": tm, "LogicalSource": utils.get_ls(tm),
                 "DataSource": utils.get_ds(tm)} for tm in reversed(list(tm_dict.keys()))]
         tm_df = pd.DataFrame(rows)
+        tm_df_short = tm_df.head(max_length)
 
-        with st.expander("🔎 Show all TriplesMaps"):
-            st.write("")
-            st.dataframe(tm_df, hide_index=True)
-
+        if tm_dict and len(tm_dict) < max_length:
+            with st.expander("🔎 Show all TriplesMaps"):
+                st.write("")
+                st.dataframe(tm_df, hide_index=True)
+        elif tm_dict:
+            with st.expander("🔎 Show more TriplesMaps"):
+                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                        Go to the <b> Display Mapping</b> page for more information.
+                    </div>""", unsafe_allow_html=True)
+                st.write("")
+                st.dataframe(tm_df_short, hide_index=True)
 
 
     #PURPLE HEADING - ADD NEW TRIPLESMAP
@@ -949,16 +963,21 @@ with tab2:
             {"Subject Map": v[0], "Assigned to": utils.format_list_for_markdown(v[4]),
                 "Rule": v[1],"ID/Constant": v[3]}
             for k, v in sm_dict.items() if k in st.session_state["last_added_sm_list"]])
-        last_last_added_sm_df = last_added_sm_df.head(10)
+        last_last_added_sm_df = last_added_sm_df.head(utils.get_max_length_for_display()[1])
 
-
+        max_length = utils.get_max_length_for_display()[0]   # max number of tm shown in dataframe
         if st.session_state["last_added_sm_list"]:
             st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
                     🔎 last added Subject Maps
                 </div>""", unsafe_allow_html=True)
-            st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                    (complete list below)
-                </div>""", unsafe_allow_html=True)
+            if len(tm_dict) < max_length:
+                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                        (complete list below)
+                    </div>""", unsafe_allow_html=True)
+            else:
+                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                        (longer list below)
+                    </div>""", unsafe_allow_html=True)
             st.dataframe(last_last_added_sm_df, hide_index=True)
             st.write("")
 
@@ -967,14 +986,26 @@ with tab2:
         sm_df = pd.DataFrame([
             {"Subject Map": v[0], "Assigned to": utils.format_list_for_markdown(v[4]),
                 "Rule": v[1], "ID/Constant": v[3]} for k, v in reversed(sm_dict.items())])
+        sm_df_short = sm_df.head(max_length)
 
-        with st.expander("🔎 Show all Subject Maps"):
-            st.write("")
-            st.dataframe(sm_df, hide_index=True)
+        if sm_dict and len(tm_dict) < max_length:
+            with st.expander("🔎 Show all Subject Maps"):
+                st.write("")
+                st.dataframe(sm_df, hide_index=True)
+        elif sm_dict:
+            with st.expander("🔎 Show more Subject Maps"):
+                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                        Go to the <b>Display Mapping</b> page for more information.
+                    </div>""", unsafe_allow_html=True)
+                st.write("")
+                st.dataframe(sm_df_short, hide_index=True)
 
 
 
-    #PURPLE HEADING - ADD NEW TRIPLESMAP
+
+#____________________________________
+
+    #PURPLE HEADING - ADD NEW SUBJECT MAP
     with col1:
         st.markdown("""<div class="purple-heading">
                 🧱 Add New Subject Map
@@ -2223,7 +2254,7 @@ with tab3:
                 "Rule": pom_dict[pom_iri][6], "ID/Constant": pom_dict[pom_iri][8]}
                 for pom_iri in st.session_state["last_added_pom_list"]]
         last_added_tm_df = pd.DataFrame(rows)
-        last_last_added_tm_df = last_added_tm_df.head(10)
+        last_last_added_tm_df = last_added_tm_df.head(utils.get_max_length_for_display()[1])
 
         if st.session_state["last_added_pom_list"]:
             st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>

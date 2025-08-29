@@ -203,6 +203,8 @@ def get_missing_g_mapping_error_message():
     </div>
     """, unsafe_allow_html=True)
 #_______________________________________________________
+
+#_______________________________________________________
 # Function to get the corner status message in the different panels
 def get_corner_status_message():
     if st.session_state["g_ontology"]:
@@ -269,6 +271,13 @@ def format_list_for_markdown(xlist):
 
     return formatted_list
 
+#_______________________________________________________
+
+#_______________________________________________________
+# Function to get the max_length
+def get_max_length_for_display():
+
+    return [50, 10]    # complete df     last_added
 
 #_______________________________________________________
 
