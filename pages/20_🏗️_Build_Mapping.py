@@ -2996,21 +2996,8 @@ with tab3:
                     pom_of_selected_tm_list.append(pom_iri)
 
 
-            rows = [{"P-O Map": pom_dict[pom_iri][2],
-                    "Predicate": pom_dict[pom_iri][4], "Object Map": pom_dict[pom_iri][5],
-                    "Rule": pom_dict[pom_iri][6], "ID/Constant": pom_dict[pom_iri][8]}
-                    for pom_iri in pom_of_selected_tm_list]
-            pom_of_selected_tm_df = pd.DataFrame(rows)
 
-
-            st.write("")
             if pom_of_selected_tm_list:
-                with col1:
-                    st.markdown(f"""<div style='font-size: 14px; color: grey;'>
-                            🔎 Predicate-Object Maps of TriplesMap {tm_label}
-                        </div>""", unsafe_allow_html=True)
-                    st.dataframe(pom_of_selected_tm_df, hide_index=True)
-                    st.write("")
 
                 with col1b:
                     list_to_choose = []
@@ -3031,11 +3018,47 @@ with tab3:
 
                 if pom_to_delete_label_list and "Select all" not in pom_to_delete_label_list:
                     with col1a:
-                        st.button("Delete", on_click=delete_pom, key="key_delete_pom_button")
+                        delete_pom_checkbox = st.checkbox(
+                        f""":gray-badge[⚠️ I am  sure I want to permanently remove this/these Predicate-Object Maps]""",
+                        key="key_overwrite_g_mapping_checkbox_new")
+                        if delete_pom_checkbox:
+                            st.button("Delete", on_click=delete_pom, key="key_delete_pom_button")
 
                 elif pom_to_delete_label_list and "Select all" in pom_to_delete_label_list:
+                    with col1:
+                        col1a, col1b = st.columns([2,1])
                     with col1a:
-                        st.button("Delete", on_click=delete_pom, key="key_delete_all_pom_button")
+                        st.markdown(f"""<div class="custom-warning-small">
+                                ⚠️ You are deleting <b>all Predicate-Object Maps</b>
+                                of the TriplesMap {tm_to_delete_pom_label}.
+                                Make sure you want to go ahead.
+                            </div>""", unsafe_allow_html=True)
+                        st.write("")
+                    with col1a:
+                        delete_all_pom_checkbox = st.checkbox(
+                        f""":gray-badge[⚠️ I am  sure I want to permanently remove all Predicate-Object Maps]""",
+                        key="key_overwrite_g_mapping_checkbox_new")
+                        if delete_all_pom_checkbox:
+                            st.button("Delete", on_click=delete_pom, key="key_delete_all_pom_button")
 
+
+        if tm_to_delete_pom_label != "Select a TriplesMap":
+
+
+            rows = [{"P-O Map": pom_dict[pom_iri][2],
+                    "Predicate": pom_dict[pom_iri][4], "Object Map": pom_dict[pom_iri][5],
+                    "Rule": pom_dict[pom_iri][6], "ID/Constant": pom_dict[pom_iri][8]}
+                    for pom_iri in pom_of_selected_tm_list]
+            pom_of_selected_tm_df = pd.DataFrame(rows)
+
+
+            st.write("")
+            if pom_of_selected_tm_list:
+                with col1:
+                    st.markdown(f"""<div style='font-size: 14px; color: grey;'>
+                            🔎 Predicate-Object Maps of TriplesMap {tm_label}
+                        </div>""", unsafe_allow_html=True)
+                    st.dataframe(pom_of_selected_tm_df, hide_index=True)
+                    st.write("")
 
 #________________________________________________
