@@ -499,18 +499,36 @@ def save_pom_reference():
         st.session_state["ds_cache_dict"][ds_filename_for_pom] = column_list
 
 def delete_pom():           #function to delete a Predicate-Object Map
-    om_to_delete = st.session_state["g_mapping"].value(subject=st.session_state["pom_to_delete_iri"], predicate=RR.objectMap)
-    # remove triples______________________
-    st.session_state["g_mapping"].remove((st.session_state["pom_to_delete_iri"], None, None))
-    st.session_state["g_mapping"].remove((None, None, st.session_state["pom_to_delete_iri"]))
-    st.session_state["g_mapping"].remove((om_to_delete, None, None))
+    for pom_iri in pom_to_delete_iri_list:
+        om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RR.objectMap)
+        om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RR.objectMap)
+        # remove triples______________________
+        st.session_state["g_mapping"].remove((pom_iri, None, None))
+        st.session_state["g_mapping"].remove((None, None, pom_iri))
+        st.session_state["g_mapping"].remove((om_to_delete, None, None))
+        # reset fields__________________
+        if pom_iri in st.session_state["last_added_pom_list"]:
+            st.session_state["last_added_pom_list"].remove(pom_iri)       # if it is in last added list, remove
+    # reset fields
+    st.session_state["key_tm_to_delete_pom"] = "Select a TriplesMap"
     # store information__________________
     st.session_state["pom_deleted_ok_flag"] = True
-    # reset fields__________________
-    st.session_state["last_added_pom_list"].remove(pom_iri)
-    if pom_iri in st.session_state["last_added_pom_list"]:
-        st.session_state["last_added_pom_list"].remove(pom_iri)       # if it is in last added list, remove
+
+def delete_all_pom():           #function to delete a Predicate-Object Map
+    for pom_iri in pom_to_delete_all_iri_list:
+        om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RR.objectMap)
+        om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RR.objectMap)
+        # remove triples______________________
+        st.session_state["g_mapping"].remove((pom_iri, None, None))
+        st.session_state["g_mapping"].remove((None, None, pom_iri))
+        st.session_state["g_mapping"].remove((om_to_delete, None, None))
+        # reset fields__________________
+        if pom_iri in st.session_state["last_added_pom_list"]:
+            st.session_state["last_added_pom_list"].remove(pom_iri)       # if it is in last added list, remove
+    # reset fields
     st.session_state["key_tm_to_delete_pom"] = "Select a TriplesMap"
+    # store information__________________
+    st.session_state["pom_deleted_ok_flag"] = True
 
 
 # START PAGE_____________________________________________________________________
@@ -3001,20 +3019,23 @@ with tab3:
                             list_to_choose.append(pom_dict[pom_iri][2])
                     list_to_choose = list(reversed(list_to_choose))
                     if len(list_to_choose) > 1:
-                        list_to_choose.insert(0, "Select a P-O Map")
-                    pom_to_delete_label = st.selectbox("🖱️ Select a Predicate-Object Map:*", list_to_choose, key="key_pom_to_delete")
+                        list_to_choose.insert(0, "Select all")
+                    pom_to_delete_label_list = st.multiselect("🖱️ Select a Predicate-Object Map:*", list_to_choose, key="key_pom_to_delete")
+                    pom_to_delete_iri_list = []
+                    pom_to_delete_all_iri_list = []
                     for pom_iri in pom_dict:
-                        if pom_to_delete_label == pom_dict[pom_iri][2]:
-                            pom_to_delete_iri = pom_iri
-                            break
+                        if pom_dict[pom_iri][2] in pom_to_delete_label_list:
+                            pom_to_delete_iri_list.append(pom_iri)
+                        if pom_dict[pom_iri][2] in pom_dict[pom_iri][2]:
+                            pom_to_delete_iri_list.append(pom_iri)
 
-                if pom_to_delete_label != "Select a P-O Map":
-                    st.session_state["pom_to_delete_iri"] = pom_to_delete_iri
-                    st.session_state["tm_to_delete_pom_label"] = tm_to_delete_pom_label
+                if pom_to_delete_label_list and "Select all" not in pom_to_delete_label_list:
                     with col1a:
-                        om_to_delete = st.session_state["g_mapping"].value(subject=st.session_state["pom_to_delete_iri"], predicate=RR.objectMap)
                         st.button("Delete", on_click=delete_pom, key="key_delete_pom_button")
 
+                elif pom_to_delete_label_list and "Select all" in pom_to_delete_label_list:
+                    with col1a:
+                        st.button("Delete", on_click=delete_pom, key="key_delete_all_pom_button")
 
 
 #________________________________________________
