@@ -168,7 +168,7 @@ def save_tm_w_new_ls():   #function to save TriplesMap upon click
     st.session_state["key_tm_label_input"] = ""
     st.session_state["key_ds_uploader"] = str(uuid.uuid4())
 
-def delete_triplesmap():   #function to delete a TriplesMap
+def delete_tm():   #function to delete a TriplesMap
     # remove triples and store information___________
     st.session_state["removed_tm_list"] = []   # save the tm that have been deleted for display
     for tm in tm_to_remove_list:
@@ -176,18 +176,26 @@ def delete_triplesmap():   #function to delete a TriplesMap
         utils.remove_triplesmap(tm)      # remove the tm
         if tm in st.session_state["last_added_tm_list"]:
             st.session_state["last_added_tm_list"].remove(tm)       # if it is in last added list, remove
+    #store information
+    st.session_state["last_added_sm_list"] = [pair for pair in st.session_state["last_added_sm_list"]
+        if pair[1] in utils.get_tm_dict()]
+    st.session_state["last_added_pom_list"] = [pair for pair in st.session_state["last_added_pom_list"]
+        if pair[1] in utils.get_tm_dict()]
     st.session_state["tm_deleted_ok_flag"] = True
     #reset fields_________________________
     st.session_state["key_tm_to_remove_list"] = []
 
-def delete_all_triplesmaps():   #function to delete a TriplesMap
+def delete_all_tm():   #function to delete a TriplesMap
     # remove triples and store information___________
     st.session_state["removed_tm_list"] = []    # save the tm that have been deleted for display
     for tm in utils.get_tm_dict():
         st.session_state["removed_tm_list"].append(tm)
-        utils.remove_triplesmap(tm)      # remove the tm
-        if tm in st.session_state["last_added_tm_list"]:
-            st.session_state["last_added_tm_list"].remove(tm)       # if it is in last added list, remove
+    # remove all triples
+    st.session_state["g_mapping"] = Graph()
+    #store information
+    st.session_state["last_added_tm_list"] = []
+    st.session_state["last_added_sm_list"] = []
+    st.session_state["last_added_pom_list"] = []
     st.session_state["tm_deleted_ok_flag"] = True
     #reset fields_______________________
     st.session_state["key_tm_to_remove_list"] = []
@@ -418,7 +426,7 @@ def save_pom_template():
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.BlankNode))
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
-    st.session_state["last_added_pom_list"].insert(0, st.session_state["pom_iri_to_create"])
+    st.session_state["last_added_pom_list"].insert(0, [st.session_state["pom_iri_to_create"], st.session_state["tm_iri_for_pom"]])
     # reset fields_____________________________
     st.session_state["template_om_is_iri_flag"] = False
     st.session_state["key_selected_p_label"] = "Select a predicate"
@@ -457,7 +465,7 @@ def save_pom_constant():
             st.session_state["g_mapping"].add((om_iri, RR.language, om_language_tag))
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
-    st.session_state["last_added_pom_list"].insert(0, st.session_state["pom_iri_to_create"])
+    st.session_state["last_added_pom_list"].insert(0, [st.session_state["pom_iri_to_create"], st.session_state["tm_iri_for_pom"]])
     # reset fields_____________________________
     st.session_state["key_selected_p_label"] = "Select a predicate"
     st.session_state["key_manual_p_ns_prefix"] = "Select a namespace"
@@ -491,7 +499,7 @@ def save_pom_reference():
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.BlankNode))
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
-    st.session_state["last_added_pom_list"].insert(0, st.session_state["pom_iri_to_create"])
+    st.session_state["last_added_pom_list"].insert(0, [st.session_state["pom_iri_to_create"], st.session_state["tm_iri_for_pom"]])
     # reset fields_____________________________
     st.session_state["key_selected_p_label"] = "Select a predicate"
     st.session_state["key_manual_p_ns_prefix"] = "Select a namespace"
@@ -511,13 +519,13 @@ def delete_pom():           #function to delete a Predicate-Object Map
         st.session_state["g_mapping"].remove((pom_iri, None, None))
         st.session_state["g_mapping"].remove((None, None, pom_iri))
         st.session_state["g_mapping"].remove((om_to_delete, None, None))
-        # reset fields__________________
-        if pom_iri in st.session_state["last_added_pom_list"]:
-            st.session_state["last_added_pom_list"].remove(pom_iri)       # if it is in last added list, remove
-    # reset fields
-    st.session_state["key_tm_to_delete_pom"] = "Select a TriplesMap"
     # store information__________________
     st.session_state["pom_deleted_ok_flag"] = True
+    st.session_state["last_added_pom_list"] = [pair for pair in st.session_state["last_added_pom_list"]
+        if pair[0] not in pom_to_delete_iri_list]
+    # reset fields
+    st.session_state["key_tm_to_delete_pom"] = "Select a TriplesMap"
+
 
 def delete_all_pom():           #function to delete a Predicate-Object Map
     for pom_iri in pom_to_delete_all_iri_list:
@@ -526,13 +534,13 @@ def delete_all_pom():           #function to delete a Predicate-Object Map
         st.session_state["g_mapping"].remove((pom_iri, None, None))
         st.session_state["g_mapping"].remove((None, None, pom_iri))
         st.session_state["g_mapping"].remove((om_to_delete, None, None))
-        # reset fields__________________
-        if pom_iri in st.session_state["last_added_pom_list"]:
-            st.session_state["last_added_pom_list"].remove(pom_iri)       # if it is in last added list, remove
-    # reset fields
-    st.session_state["key_tm_to_delete_pom"] = "Select a TriplesMap"
     # store information__________________
     st.session_state["pom_deleted_ok_flag"] = True
+    st.session_state["last_added_pom_list"] = [pair for pair in st.session_state["last_added_pom_list"]
+        if pair[0] not in pom_to_delete_all_iri_list]
+    # reset fields
+    st.session_state["key_tm_to_delete_pom"] = "Select a TriplesMap"
+
 
 
 # START PAGE_____________________________________________________________________
@@ -726,7 +734,7 @@ with tab1:
         with col1:
             col1a, col1b = st.columns([2,1])
         with col1a:
-            formatted_deleted_tm = ", ".join(st.session_state["removed_tm_list"][:-1]) + " and " + st.session_state["removed_tm_list"][-1]
+            formatted_deleted_tm = utils.format_list_for_markdown(st.session_state["removed_tm_list"])
             if len(st.session_state["removed_tm_list"]) == 1:
                 st.markdown(f"""
                 <div style="background-color:#d4edda; padding:1em;
@@ -908,14 +916,14 @@ with tab1:
         if tm_to_remove_list:
             if "Select all" not in tm_to_remove_list:
                 with col1a:
-                    delete_triplesmap_checkbox = st.checkbox(
+                    delete_tm_checkbox = st.checkbox(
                     ":gray-badge[⚠️ I am sure I want to delete the TriplesMap/s]",
-                    key="delete_triplesmap_checkbox")
-                if delete_triplesmap_checkbox:
+                    key="delete_tm_checkbox")
+                if delete_tm_checkbox:
                     with col1:
                         col1a, col1b = st.columns([1,2])
                     with col1a:
-                        st.button("Delete", on_click=delete_triplesmap)
+                        st.button("Delete", on_click=delete_tm)
             else:   #if "Select all" selected
                 with col1b:
                     st.markdown(f"""<div class="custom-warning-small">
@@ -924,14 +932,14 @@ with tab1:
                         </div>""", unsafe_allow_html=True)
                     st.write("")
                 with col1a:
-                    delete_triplesmap_checkbox = st.checkbox(
+                    delete_tm_checkbox = st.checkbox(
                     ":gray-badge[⚠️ I am sure I want to delete all TriplesMaps]",
-                    key="delete_triplesmap_checkbox")
-                if delete_triplesmap_checkbox:
+                    key="delete_tm_checkbox")
+                if delete_tm_checkbox:
                     with col1:
                         col1a, col1b = st.columns([1,2])
                     with col1a:
-                        st.button("Delete", on_click=delete_all_triplesmaps)
+                        st.button("Delete", on_click=delete_all_tm)
 
 
 #________________________________________________
@@ -2259,7 +2267,7 @@ with tab3:
         rows = [{"TriplesMap": pom_dict[pom_iri][1], "P-O Map": pom_dict[pom_iri][2],
                 "Predicate": pom_dict[pom_iri][4], "Object Map": pom_dict[pom_iri][5],
                 "Rule": pom_dict[pom_iri][6], "ID/Constant": pom_dict[pom_iri][8]}
-                for pom_iri in st.session_state["last_added_pom_list"]]
+                for pom_iri, tm in st.session_state["last_added_pom_list"]]
         last_added_tm_df = pd.DataFrame(rows)
         last_last_added_tm_df = last_added_tm_df.head(utils.get_max_length_for_display()[1])
 

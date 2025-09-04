@@ -8,6 +8,7 @@ import pickle
 import json
 import csv
 import rdflib
+import time
 from rdflib import Graph, URIRef, Literal, Namespace, BNode
 from rdflib.namespace import split_uri
 from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL, XSD
@@ -700,20 +701,28 @@ def remove_triplesmap(tm_label):
     tm_iri = tm_dict[tm_label]   #get tm iri
     g = st.session_state["g_mapping"]  #for convenience
 
+    # remove ls if not reused
     logical_source = g.value(subject=tm_iri, predicate=RML.logicalSource)
-    subject_map = g.value(subject=tm_iri, predicate=RR.subjectMap)
-
-    g.remove((tm_iri, None, None))   # remove tm triple
-
     if logical_source:
         ls_reused = any(s != tm_iri for s, p, o in g.triples((None, RML.logicalSource, logical_source)))
         if not ls_reused:
-            g.remove((logical_source, None, None))   # remove ls if not reused
+            g.remove((logical_source, None, None))
 
+    # remove sm if not reused
+    subject_map = g.value(subject=tm_iri, predicate=RR.subjectMap)
     if subject_map:
         sm_reused = any(s != tm_iri for s, p, o in g.triples((None, RR.subjectMap, subject_map)))
         if not sm_reused:
-            g.remove((subject_map, None, None))   # remove sm if not reused
+            g.remove((subject_map, None, None))
+
+    # remove all associated pom (and om)
+    pom_iri_list = list(g.objects(subject=tm_iri, predicate=RR.predicateObjectMap))
+    for pom_iri in pom_iri_list:
+        om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RR.objectMap)
+        st.session_state["g_mapping"].remove((pom_iri, None, None))
+        st.session_state["g_mapping"].remove((om_to_delete, None, None))
+
+    g.remove((tm_iri, None, None))   # remove tm triple
 #______________________________________________________
 
 #________________________________________________________
