@@ -288,9 +288,10 @@ def get_max_length_for_display():
 def get_g_mapping_file_formats_dict():
     # allowed_format_dict = {"turtle": ".ttl", "rdf": ".rdf","xml": ".xml",
     #     "json": ".json", "json-ld": ".jsonld", "n-triples": ".nt",
-    #     "n3": ".n3","trig": ".trig","trix": ".trix", "pickle": ".pkl"}
+    #     "n3": ".n3","trig": ".trig","trix": ".trix"}
 
-    allowed_format_dict = {"turtle": ".ttl", "xml": ".xml", "pickle": ".pkl"}
+    allowed_format_dict = {"turtle": ".ttl","xml": ".xml",
+        "n-triples": ".nt", "n3": ".n3","trig": ".trig"}
 
     return allowed_format_dict
 #_______________________________________________________

@@ -484,7 +484,7 @@ with tab1:
                 if st.session_state["g_mapping_source_cache"][0] == "file":   # if current mapping was loaded from file
                     default_ext = os.path.splitext(st.session_state["g_mapping_source_cache"][1])[1]
                 else:
-                    default_ext = ".pkl"
+                    default_ext = ".ttl"
 
                 with col1b:
                     save_g_filename = st.text_input(
@@ -643,7 +643,7 @@ with tab1:
                 if st.session_state["g_mapping_source_cache"][0] == "file":   # if current mapping was loaded from file
                     default_ext = os.path.splitext(st.session_state["g_mapping_source_cache"][1])[1]
                 else:
-                    default_ext = ".pkl"
+                    default_ext = ".ttl"
 
                 with col1b:
                     save_g_filename = st.text_input(
@@ -1863,20 +1863,11 @@ with tab4:
                         to file <b style="color:#F63366;">{export_filename_complete}</b>.
                     </span></div>""", unsafe_allow_html=True)
 
-            if export_format == "pickle":
-                buffer = io.BytesIO()
-                pickle.dump(st.session_state["g_mapping"], buffer)
-                buffer.seek(0)  # Rewind to the beginning
-                with col1a:
-                    st.write("")
-                    st.session_state["mapping_downloaded_ok_flag"] = st.download_button(label="Export", data=buffer,
-                        file_name=export_filename_complete, mime="application/octet-stream")
-            else:    # all formats except for pickle
-                serialised_data = st.session_state["g_mapping"].serialize(format=export_format)
-                with col1a:
-                    st.write("")
-                    st.session_state["mapping_downloaded_ok_flag"] = st.download_button(label="Export", data=serialised_data,
-                        file_name=export_filename_complete, mime="text/plain")
+            serialised_data = st.session_state["g_mapping"].serialize(format=export_format)
+            with col1a:
+                st.write("")
+                st.session_state["mapping_downloaded_ok_flag"] = st.download_button(label="Export", data=serialised_data,
+                    file_name=export_filename_complete, mime="text/plain")
 
             if st.session_state["mapping_downloaded_ok_flag"]:
                 st.rerun()
