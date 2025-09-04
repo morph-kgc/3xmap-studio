@@ -507,7 +507,6 @@ def save_pom_reference():
 def delete_pom():           #function to delete a Predicate-Object Map
     for pom_iri in pom_to_delete_iri_list:
         om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RR.objectMap)
-        om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RR.objectMap)
         # remove triples______________________
         st.session_state["g_mapping"].remove((pom_iri, None, None))
         st.session_state["g_mapping"].remove((None, None, pom_iri))
@@ -522,7 +521,6 @@ def delete_pom():           #function to delete a Predicate-Object Map
 
 def delete_all_pom():           #function to delete a Predicate-Object Map
     for pom_iri in pom_to_delete_all_iri_list:
-        om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RR.objectMap)
         om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RR.objectMap)
         # remove triples______________________
         st.session_state["g_mapping"].remove((pom_iri, None, None))
@@ -2328,6 +2326,7 @@ with tab3:
                 sm_iri_for_pom = st.session_state["g_mapping"].value(subject=tm_iri_for_pom, predicate=RR.subjectMap)
                 sm_label_for_pom = sm_dict[sm_iri_for_pom][0]
                 with col1b:
+                    st.write("")
                     st.markdown(f"""<div class = "info-message-small">
                             ℹ️ The Subject Map is <b>{sm_label_for_pom}</b>.
                         </div>""", unsafe_allow_html=True)
@@ -3051,10 +3050,10 @@ with tab3:
                     pom_to_delete_iri_list = []
                     pom_to_delete_all_iri_list = []
                     for pom_iri in pom_dict:
-                        if pom_dict[pom_iri][2] in pom_to_delete_label_list:
+                        if "Select all" not in pom_to_delete_label_list and pom_dict[pom_iri][2] in pom_to_delete_label_list:
                             pom_to_delete_iri_list.append(pom_iri)
-                        if pom_dict[pom_iri][2] in pom_dict[pom_iri][2]:
-                            pom_to_delete_iri_list.append(pom_iri)
+                        if "Select all" in pom_to_delete_label_list and pom_dict[pom_iri][0] == tm_to_delete_pom_iri:
+                            pom_to_delete_all_iri_list.append(pom_iri)
 
                 if pom_to_delete_label_list and "Select all" not in pom_to_delete_label_list:
                     with col1a:
@@ -3079,7 +3078,7 @@ with tab3:
                         f""":gray-badge[⚠️ I am  sure I want to permanently remove all Predicate-Object Maps]""",
                         key="key_overwrite_g_mapping_checkbox_new")
                         if delete_all_pom_checkbox:
-                            st.button("Delete", on_click=delete_pom, key="key_delete_all_pom_button")
+                            st.button("Delete", on_click=delete_all_pom, key="key_delete_all_pom_button")
 
 
         if tm_to_delete_pom_label != "Select a TriplesMap":
@@ -3096,7 +3095,7 @@ with tab3:
             if pom_of_selected_tm_list:
                 with col1:
                     st.markdown(f"""<div style='font-size: 14px; color: grey;'>
-                            🔎 Predicate-Object Maps of TriplesMap {tm_label}
+                            🔎 Predicate-Object Maps of TriplesMap {tm_to_delete_pom_label}
                         </div>""", unsafe_allow_html=True)
                     st.dataframe(pom_of_selected_tm_df, hide_index=True)
                     st.write("")
