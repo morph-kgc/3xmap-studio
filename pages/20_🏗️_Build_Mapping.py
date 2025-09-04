@@ -966,7 +966,6 @@ with tab2:
         st.write("")
         st.write("")
 
-        st.write("HERE1", st.session_state["last_added_sm_list"])
         last_added_sm_df = pd.DataFrame([
             {"Subject Map": sm_dict[subject_map][0], "Assigned to": triples_map,  # Use directly or format if needed
             "Rule": sm_dict[subject_map][1], "ID/Constant": sm_dict[subject_map][3]}
