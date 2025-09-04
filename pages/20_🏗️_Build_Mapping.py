@@ -132,6 +132,7 @@ def save_tm_w_existing_ls():
     tm_iri = MAP[f"{st.session_state["tm_label"]}"]  # change so that is can be defined by user
     ls_iri =  LS[f"{existing_ls}"]   # idem ns
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    #bind to logical source
+    st.session_state["g_mapping"].add((tm_iri, RDF.type, RR.TriplesMap))
     # store information________________
     st.session_state["tm_saved_ok_flag"] = True  # for success message
     st.session_state["last_added_tm_list"].insert(0, st.session_state["tm_label"])    # to display last added tm
@@ -155,6 +156,7 @@ def save_tm_w_new_ls():   #function to save TriplesMap upon click
         st.session_state["g_mapping"].add((ls_iri, QL.referenceFormulation, QL.JSONPath))
     elif file_extension.lower() == "xml":
         st.session_state["g_mapping"].add((ls_iri, QL.referenceFormulation, QL.XPath))
+    st.session_state["g_mapping"].add((tm_iri, RDF.type, RR.TriplesMap))
     # store information____________________
     st.session_state["tm_saved_ok_flag"] = True  # for success message
     st.session_state["last_added_tm_list"].insert(0, st.session_state["tm_label"])    # to display last added tm
@@ -195,7 +197,7 @@ def save_sm_existing():
     # add triples____________________
     st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, st.session_state["sm_iri"]))
     # store information__________________
-    st.session_state["last_added_sm_list"].insert(0, sm_iri)
+    st.session_state["last_added_sm_list"].insert(0, [st.session_state["sm_iri"], tm_label_for_sm])
     st.session_state["sm_saved_ok_flag"] = True
 
 def add_ns_to_sm_template():
@@ -245,7 +247,7 @@ def save_sm_template():   #function to save subject map (template option)
     elif sm_term_type_template == "👻 BNode":
         st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.BlankNode))
     # store information__________________
-    st.session_state["last_added_sm_list"].insert(0, sm_iri)
+    st.session_state["last_added_sm_list"].insert(0, [sm_iri, tm_label_for_sm])
     st.session_state["sm_saved_ok_flag"] = True
     # reset fields____________________
     st.session_state["sm_template_list"] = []
@@ -270,7 +272,7 @@ def save_sm_constant():   #function to save subject map (constant option)
     st.session_state["g_mapping"].add((sm_iri, RR.constant, sm_constant_iri))
     st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.IRI))
     # store information____________________
-    st.session_state["last_added_sm_list"].insert(0, sm_iri)
+    st.session_state["last_added_sm_list"].insert(0, [sm_iri, tm_label_for_sm])
     st.session_state["sm_saved_ok_flag"] = True
     # reset fields_________________________
     st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
@@ -293,7 +295,7 @@ def save_sm_reference():   #function to save subject map (reference option)
     elif sm_term_type_reference == "👻 BNode":
         st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.BlankNode))
     # store information__________________
-    st.session_state["last_added_sm_list"].insert(0, sm_iri)
+    st.session_state["last_added_sm_list"].insert(0, [sm_iri, tm_label_for_sm])
     st.session_state["sm_saved_ok_flag"] = True
     # reset fields____________________
     st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
@@ -338,6 +340,8 @@ def delete_labelled_sm():   #function to delete a labelled Subject Map
         st.session_state["g_mapping"].remove((None, None, sm))
     # store information__________________
     st.session_state["labelled_sm_deleted_ok_flag"] = True
+    st.session_state["last_added_sm_list"] = [pair for pair in st.session_state["last_added_sm_list"]
+        if pair[0] not in sm_to_remove_iri_list]
     # reset fields__________________
     st.session_state["key_sm_to_remove_label"] = []
 
@@ -354,6 +358,8 @@ def unassign_sm():
             st.session_state["g_mapping"].remove((None, None, sm_iri))
     # store information__________________
     st.session_state["sm_unassigned_ok_flag"] = True
+    st.session_state["last_added_sm_list"] = [pair for pair in st.session_state["last_added_sm_list"]
+        if pair[1] not in tm_to_unassign_sm_list]
     # reset fields__________________
     st.session_state["key_tm_to_unassign_sm"] = []
 
@@ -959,10 +965,14 @@ with tab2:
 
         st.write("")
         st.write("")
+
+        st.write("HERE1", st.session_state["last_added_sm_list"])
         last_added_sm_df = pd.DataFrame([
-            {"Subject Map": v[0], "Assigned to": utils.format_list_for_markdown(v[4]),
-                "Rule": v[1],"ID/Constant": v[3]}
-            for k, v in sm_dict.items() if k in st.session_state["last_added_sm_list"]])
+            {"Subject Map": sm_dict[subject_map][0], "Assigned to": triples_map,  # Use directly or format if needed
+            "Rule": sm_dict[subject_map][1], "ID/Constant": sm_dict[subject_map][3]}
+            for subject_map, triples_map in st.session_state["last_added_sm_list"]
+            if subject_map in sm_dict])
+
         last_last_added_sm_df = last_added_sm_df.head(utils.get_max_length_for_display()[1])
 
         max_length = utils.get_max_length_for_display()[0]   # max number of tm shown in dataframe
@@ -970,7 +980,7 @@ with tab2:
             st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
                     🔎 last added Subject Maps
                 </div>""", unsafe_allow_html=True)
-            if len(tm_dict) < max_length:
+            if len(sm_dict) < max_length:
                 st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
                         (complete list below)
                     </div>""", unsafe_allow_html=True)
@@ -988,7 +998,7 @@ with tab2:
                 "Rule": v[1], "ID/Constant": v[3]} for k, v in reversed(sm_dict.items())])
         sm_df_short = sm_df.head(max_length)
 
-        if sm_dict and len(tm_dict) < max_length:
+        if sm_dict and len(sm_dict) < max_length:
             with st.expander("🔎 Show all Subject Maps"):
                 st.write("")
                 st.dataframe(sm_df, hide_index=True)
@@ -1078,7 +1088,7 @@ with tab2:
             with col1a:
                 list_to_choose = list(reversed(tm_wo_sm_list))
                 list_to_choose.insert(0, "Select a TriplesMap")
-                tm_label_for_sm = st.selectbox("🖱️ Select a TriplesMap:*", list_to_choose, key="key_tm_label_input_for_sm",
+                tm_label_for_sm = st.selectbox("🖱️ Select a TriplesMap:*", list_to_choose, key="key_tm_label_input_for_sm_default",
                     index=list_to_choose.index(st.session_state["last_added_tm_list"][0]))
         else:
             with col1a:

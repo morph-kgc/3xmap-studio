@@ -274,7 +274,7 @@ def format_list_for_markdown(xlist):
 #_______________________________________________________
 
 #_______________________________________________________
-# Function to get the max_length
+# Function to get the max_length for the display options
 def get_max_length_for_display():
 
     return [50, 10]    # complete df     last_added
@@ -299,6 +299,8 @@ def get_g_mapping_file_formats_dict():
 def empty_last_added_lists():
     st.session_state["last_added_ns_list"] = []
     st.session_state["last_added_tm_list"] = []
+    st.session_state["last_added_sm_list"] = []
+    st.session_state["last_added_pom_list"] = []
 
 #_______________________________________________________
 #Funcion to save mapping to file
