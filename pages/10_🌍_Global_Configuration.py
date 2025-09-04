@@ -196,9 +196,16 @@ def load_existing_g_mapping_and_save_current_one():
     st.session_state["key_g_label_temp_existing"] = ""
 
 def retrieve_cached_mapping():
+    # get information from pkl file
     st.session_state["g_label"] = cached_mapping_name    # g label
     with open(pkl_cache_file_path, "rb") as f:     # load mapping
-        st.session_state["g_mapping"] = utils.load_mapping_from_file(f)
+        project_state_list = pickle.load(f)
+    st.session_state["g_mapping"] = project_state_list[0][1]
+    st.session_state["g_ontology_components_dict"] = project_state_list[1]
+    # build the complete ontology from its components
+    st.session_state["g_ontology"] = Graph()
+    for g_ontology in st.session_state["g_ontology_components_dict"].values():
+        st.session_state["g_ontology"] += g_ontology
     #store information___________________________
     utils.empty_last_added_lists()
     # reset fields___________________________
@@ -372,12 +379,13 @@ def save_progress():
         if os.path.isfile(file):
             os.remove(file)
     #save progress___________________________
+    project_state_list = utils.save_project_state()
     with open(pkl_cache_filename, "wb") as f:
-        pickle.dump(st.session_state["g_mapping"], f)
+        pickle.dump(project_state_list, f)
     #store information___________________________
-    st.session_state["key_save_progress_checkbox"] = False
-    #reset fields__________________________________
     st.session_state["progress_saved_ok_flag"] = True
+    #reset fields__________________________________
+    st.session_state["key_save_progress_checkbox"] = False
 
 
 
@@ -753,7 +761,8 @@ with tab1:
                 if retrieve_cached_mapping_checkbox:
                     st.markdown(f"""<div class="info-message-small">
                             ℹ️ Mapping <b style="color:#F63366;">
-                            {cached_mapping_name}</b> will be loaded.
+                            {cached_mapping_name}</b> will be loaded, together
+                            with any loaded ontologies and data sources.
                         </span></div>""", unsafe_allow_html=True)
                     st.write("")
                     st.button("Load", key="key_retrieve_cached_mapping_button", on_click=retrieve_cached_mapping)
@@ -1787,14 +1796,17 @@ with tab4:
                 key="key_save_progress_checkbox")
             if save_progress_checkbox:
                 st.markdown(f"""<div class="info-message-small">
-                        ℹ️ Current state of mapping <b style="color:#F63366;">
-                        {st.session_state["g_label"]}</b> will be temporarily saved.
+                        ℹ️ Current project state will be temporarily saved (mapping <b style="color:#F63366;">
+                        {st.session_state["g_label"]}</b>,
+                        loaded ontologies and data sources).
                         To retrieve cached work go to the <b>Select Mapping</b> panel.
                     </span></div>""", unsafe_allow_html=True)
                 st.write("")
-                st.markdown(f"""<div class="custom-warning-small">
-                        ⚠️ Any previously cached mapping will be deleted.
-                    </div>""", unsafe_allow_html=True)
+                existing_pkl_file_list = [f for f in os.listdir() if f.endswith("_cache__.pkl")]
+                if existing_pkl_file_list:
+                    st.markdown(f"""<div class="custom-warning-small">
+                            ⚠️ Any previously cached mapping will be deleted.
+                        </div>""", unsafe_allow_html=True)
                 st.write("")
                 st.button("Save", key="key_save_progress_button", on_click=save_progress)
 

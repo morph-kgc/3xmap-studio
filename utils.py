@@ -621,6 +621,24 @@ def is_valid_iri(iri):
     return True
 #__________________________________________________
 
+#_________________________________________________
+#Funtion to create the list that stores the state of the project
+def save_project_state():
+
+    # list to save the mapping
+    mapping_list = []
+    mapping_list.append(st.session_state["g_label"])
+    mapping_list.append(st.session_state["g_mapping"])
+
+    project_state_list = []
+    project_state_list.append(mapping_list)
+    project_state_list.append(st.session_state["g_ontology_components_dict"])
+
+    return project_state_list
+
+#______________________________________________________
+
+
 #_________________________________________________________
 # Function to get the ontology base iri
 # Returns a list because the ontology can have several components
