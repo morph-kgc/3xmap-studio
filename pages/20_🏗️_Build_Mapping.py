@@ -1,37 +1,18 @@
 import streamlit as st
-import os #for file navigation
-from rdflib import Graph, URIRef, Literal, Namespace, BNode
+import os
 import utils
 import pandas as pd
 import pickle
+from rdflib import Graph, URIRef, Literal, Namespace, BNode
 from rdflib.namespace import split_uri
 from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL, XSD
-import time
+import time   # for success messages
 import re
-import uuid
+import uuid   # to handle uploader keys
+import io
+from io import IOBase
 
-
-
-#____________________________________________
-#PRELIMINARY
-#Aesthetics
-# st.markdown("""
-# <div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
-#             border-radius:8px; margin-bottom:16px;">
-#     <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-#          style="width:32px; margin-right:12px;">
-#     <div>
-#         <h3 style="margin:0; font-size:1.75rem;">
-#             <span style="color:#511D66; font-weight:bold; margin-right:12px;">-----</span>
-#             Build Mapping
-#             <span style="color:#511D66; font-weight:bold; margin-left:12px;">-----</span>
-#         </h3>
-#         <p style="margin:0; font-size:0.95rem; color:#555;">
-#             Build your mapping by adding <b>Triple Maps</b>, <b>Subject Maps</b>, and <b>Predicate-Object Maps</b>.
-#         </p>
-#     </div>
-# </div>
-# """, unsafe_allow_html=True)
+# Header
 st.markdown("""
 <div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
             border-radius:8px; margin-bottom:16px;">
@@ -49,27 +30,20 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+
+#____________________________________________
+#PRELIMINARY
+
+# Import style
 utils.import_st_aesthetics()
 st.write("")
 
 # Namespaces
-namespaces_predefined = utils.get_predefined_ns_dict()
-namespaces_default = utils.get_default_ns_dict()
-namespaces = namespaces_predefined | namespaces_default
-RML = namespaces["rml"]
-RR = namespaces["rr"]
-QL = namespaces["ql"]
-MAP = namespaces["map"]
-CLASS = namespaces["class"]
-LS = namespaces["logicalSource"]
-RDF = namespaces["rdf"]
-XSD = namespaces["xsd"]
-RDF = namespaces["rdf"]
-
-BASE = Namespace(utils.get_rdfolio_base_iri())
+RML, RR, QL = utils.get_required_ns().values()
+BASE = Namespace(utils.get_rdfolio_base_iri())   # HERE DELETE
 
 
-#initialise session state variables
+# Initialise session state variables
 #TAB1
 if "key_ds_uploader" not in st.session_state:
     st.session_state["key_ds_uploader"] = str(uuid.uuid4())
@@ -129,8 +103,10 @@ if "pom_deleted_ok_flag" not in st.session_state:
 # TAB1
 def save_tm_w_existing_ls():
     # add triples___________________
-    tm_iri = MAP[f"{st.session_state["tm_label"]}"]  # change so that is can be defined by user
-    ls_iri =  LS[f"{existing_ls}"]   # idem ns
+    NS = st.session_state["structural_ns_dict"]["TriplesMap"][1]
+    tm_iri = NS[f"{st.session_state["tm_label"]}"]  # change so that is can be defined by user
+    NS = st.session_state["structural_ns_dict"]["Logical Source"][1]
+    ls_iri =  NS[f"{existing_ls}"]   # idem ns
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    #bind to logical source
     st.session_state["g_mapping"].add((tm_iri, RDF.type, RR.TriplesMap))
     # store information________________
@@ -141,10 +117,12 @@ def save_tm_w_existing_ls():
 
 def save_tm_w_new_ls():   #function to save TriplesMap upon click
     # add triples__________________
-    tm_iri = MAP[f"{st.session_state["tm_label"]}"]
+    NS = st.session_state["structural_ns_dict"]["TriplesMap"][1]
+    tm_iri = NS[f"{st.session_state["tm_label"]}"]
     ds_filename = ds_file.name
     if logical_source_label:
-        ls_iri = LS[f"{logical_source_label}"]
+        NS = st.session_state["structural_ns_dict"]["Logical Source"][1]
+        ls_iri = NS[f"{logical_source_label}"]
     else:
         ls_iri = BNode()
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    #bind to logical source
@@ -246,7 +224,8 @@ def save_sm_template():   #function to save subject map (template option)
         sm_iri = BNode()
         st.session_state["sm_label"] = "_:" + str(sm_iri)[:7] + "..."   # to be displayed
     else:
-        sm_iri = MAP[sm_label]
+        NS = st.session_state["structural_ns_dict"]["Subject Map"][1]
+        sm_iri = NS[sm_label]
     st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, sm_iri))
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RR.SubjectMap))
     st.session_state["g_mapping"].add((sm_iri, RR.template, Literal(sm_template)))
@@ -271,7 +250,8 @@ def save_sm_constant():   #function to save subject map (constant option)
         sm_iri = BNode()
         st.session_state["sm_label"] = "_:" + str(sm_iri)[:7] + "..."   # to be displayed
     else:
-        sm_iri = MAP[sm_label]
+        NS = st.session_state["structural_ns_dict"]["Subject Map"][1]
+        sm_iri = NS[sm_label]
     st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, sm_iri))
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RR.SubjectMap))
     sm_constant_ns = mapping_ns_dict[sm_constant_ns_prefix]
@@ -294,7 +274,8 @@ def save_sm_reference():   #function to save subject map (reference option)
         sm_iri = BNode()
         st.session_state["sm_label"] = "_:" + str(sm_iri)[:7] + "..."   # to be displayed
     else:
-        sm_iri = MAP[sm_label]
+        NS = st.session_state["structural_ns_dict"]["Subject Map"][1]
+        sm_iri = NS[sm_label]
     st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, sm_iri))
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RR.SubjectMap))
     st.session_state["g_mapping"].add((sm_iri, RR.reference, Literal(sm_reference)))    #HERE change to RR.column in R2RML
@@ -1185,7 +1166,8 @@ with tab2:
                         col1a, col1b = st.columns(2)
                     with col1a:
                         sm_label = st.text_input("⌨️ Enter Subject Map label (optional):", key="key_sm_label_new")
-                    sm_iri = BNode() if not sm_label else MAP[sm_label]
+                    NS = st.session_state["structural_ns_dict"]["Subject Map"][1]
+                    sm_iri = BNode() if not sm_label else NS[sm_label]
                     if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):
                         with col1a:
                             st.markdown(f"""<div class="custom-error-small">
@@ -1599,7 +1581,8 @@ with tab2:
             with col1b:
                 sm_label_for_config = st.selectbox("🖱️ or select a labelled Subject Map:", reversed(labelled_sm_list))
             if sm_label_for_config != "Select a Subject Map":
-                sm_iri_for_config = MAP[sm_label_for_config]
+                NS = st.session_state["structural_ns_dict"]["Subject Map"][1]
+                sm_iri_for_config = NS[sm_label_for_config]
 
         if sm_iri_for_config:    # only if the sm has been selected (either way)
             with col1a:
@@ -1887,10 +1870,27 @@ with tab2:
                             </small></div>""", unsafe_allow_html=True)
                         st.write("")
 
-                        subject_graph_input = st.text_input("🖱️ Enter subject graph:*", key="key_subject_graph_input")
-                        subject_graph = BASE[subject_graph_input]
-                        if subject_graph_input:
-                            st.button("Save", on_click=save_subject_graph)
+                        mapping_ns_dict = utils.get_mapping_ns_dict()
+                        subject_graph_prefix_list = list(mapping_ns_dict.keys())
+                        subject_graph_prefix_list.insert(0,"Select a namespace")
+                        subject_graph_prefix = st.selectbox("🖱️ Select a namespace:*", subject_graph_prefix_list,
+                            key="key_subject_graph_prefix")
+
+                        if not mapping_ns_dict:
+                            st.write("")
+                            st.markdown(f"""<div class="custom-error-small">
+                                    ❌ No namespaces available. You can add namespaces in the
+                                     <b>Global Configuration</b> page.
+                                </div>""", unsafe_allow_html=True)
+                        else:
+                            subject_graph_input = st.text_input("🖱️ Enter subject graph:*", key="key_subject_graph_input")
+                            if subject_graph_prefix != "Select a namespace":
+                                NS = Namespace(mapping_ns_dict[subject_graph_prefix])
+
+                            if subject_graph_input and subject_graph_prefix != "Select a namespace":
+                                subject_graph = NS[subject_graph_input]
+                                with col1a:
+                                    st.button("Save", on_click=save_subject_graph, key="key_save_subject_graph_button")
 
 
 
@@ -2413,7 +2413,8 @@ with tab3:
                 col1a, col1b = st.columns([2.5,1])
             with col1a:
                 pom_label = st.text_input("⌨️ Enter Predicate-Object Map label (optional):", key= "key_pom_label")
-                pom_iri = BNode() if not pom_label else MAP[pom_label]
+                NS = st.session_state["structural_ns_dict"]["Predicate-Object Map"][1]
+                pom_iri = BNode() if not pom_label else NS[pom_label]
             if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectMap, pom_iri)), None):
                 with col1a:
                     st.markdown(f"""<div class="custom-error-small">
@@ -2491,7 +2492,8 @@ with tab3:
             with col3a:
                 st.write("")
                 om_label = st.text_input("⌨️ Enter Object Map label (optional):", key= "key_om_label")
-            om_iri = BNode() if not om_label else MAP[om_label]
+            NS = st.session_state["structural_ns_dict"]["Object Map"][1]
+            om_iri = BNode() if not om_label else NS[om_label]
             if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
                 with col3a:
                     st.markdown(f"""<div class="custom-error-small">

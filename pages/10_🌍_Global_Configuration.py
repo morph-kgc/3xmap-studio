@@ -1,35 +1,18 @@
 import streamlit as st
 import os
+import utils
 import pandas as pd
-import time
-import re
 import pickle
 from rdflib import Graph, URIRef, Literal, Namespace, BNode
 from rdflib.namespace import split_uri
-from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL
-import utils
-import uuid
+from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL, XSD
+import time   # for success messages
+import re
+import uuid   # to handle uploader keys
 import io
-
+from io import IOBase
 
 # Header-----------------------------------
-# st.markdown("""
-# <div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
-#             border-radius:8px; margin-bottom:16px;">
-#     <img src="https://www.pngmart.com/files/23/Gear-Icon-PNG-Isolated-Photo.png"
-#          style="width:32px; margin-right:12px;">
-#     <div>
-#         <h3 style="margin:0; font-size:1.75rem;">
-#             <span style="color:#511D66; font-weight:bold; margin-right:12px;">◽◽◽◽◽</span>
-#             Global Configuration
-#             <span style="color:#511D66; font-weight:bold; margin-left:12px;">◽◽◽◽◽</span>
-#         </h3>
-#         <p style="margin:0; font-size:0.95rem; color:#555;">
-#             System-wide settings: Load <b>mapping</b> and <b>ontology</b>, and <b>save work</b>.
-#         </p>
-#     </div>
-# </div>
-# """, unsafe_allow_html=True)
 st.markdown("""
 <div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
             border-radius:8px; margin-bottom:16px;">
@@ -52,18 +35,9 @@ st.markdown("""
 # Import style-----------------------------
 utils.import_st_aesthetics()
 
-# Namespaces-----------------------------------
-namespaces = utils.get_predefined_ns_dict()
-RML = namespaces["rml"]
-RR = namespaces["rr"]
-QL = namespaces["ql"]
-MAP = namespaces["map"]
-CLASS = namespaces["class"]
-LS = namespaces["logicalSource"]
-
 # Directories----------------------------------------
-save_mappings_folder = os.path.join(os.getcwd(), "saved_mappings")  #folder to save mappings (pkl)
-if not os.path.isdir(save_mappings_folder):   # create progress folder if it does not exist
+save_mappings_folder = os.path.join(os.getcwd(), "saved_mappings")  # folder to save mappings (before overwriting)
+if not os.path.isdir(save_mappings_folder):   # create if it does not exist
     os.makedirs(save_mappings_folder)
 
 # Initialise session state variables----------------------------------------
@@ -120,6 +94,8 @@ if "bound_ns_list" not in st.session_state:
     st.session_state["bound_ns_list"] = []
 if "ns_bound_ok_flag" not in st.session_state:
     st.session_state["ns_bound_ok_flag"] = False
+if "structural_ns_changed_ok_flag" not in st.session_state:
+    st.session_state["structural_ns_changed_ok_flag"] = False
 if "ns_unbound_ok_flag" not in st.session_state:
     st.session_state["ns_unbound_ok_flag"] = False
 if "last_added_ns_list" not in st.session_state:
@@ -130,6 +106,16 @@ if "progress_saved_ok_flag" not in st.session_state:
     st.session_state["progress_saved_ok_flag"] = False
 if "mapping_downloaded_ok_flag" not in st.session_state:
     st.session_state["mapping_downloaded_ok_flag"] = False
+
+# Namespaces-----------------------------------
+RML, RR, QL = utils.get_required_ns().values()
+
+if "structural_ns_dict" not in st.session_state:
+    st.session_state["structural_ns_dict"] = utils.get_default_structural_ns_session_state()
+
+if st.session_state["g_mapping"]:   # bind the default ns for the structural components
+    for component, [prefix,ns] in st.session_state["structural_ns_dict"].items():
+        st.session_state["g_mapping"].bind(prefix, ns)
 
 
 
@@ -202,6 +188,7 @@ def retrieve_cached_mapping():
         project_state_list = pickle.load(f)
     st.session_state["g_mapping"] = project_state_list[0][1]
     st.session_state["g_ontology_components_dict"] = project_state_list[1]
+    st.session_state["structural_ns_dict"] = project_state_list[2]
     # build the complete ontology from its components
     st.session_state["g_ontology"] = Graph()
     for g_ontology in st.session_state["g_ontology_components_dict"].values():
@@ -282,8 +269,6 @@ def discard_ontology():
     st.session_state["g_ontology_discarded_ok_flag"] = True
     st.session_state["g_ontology_components_dict"] = {}
 
-
-
 #TAB3
 def bind_custom_namespace():
     # bind and store information___________________________
@@ -343,6 +328,17 @@ def bind_all_ontology_namespaces():
     st.session_state["ns_bound_ok_flag"] = True   # for success message
     # reset fields_____________________________
     st.session_state["key_add_ns_radio"] = "✏️ Custom"
+
+def change_structural_ns():
+    #store information________________________
+    prefix = st.session_state["structural_ns_dict"][selected_structural_component][0]
+    st.session_state["g_mapping"].namespace_manager.bind(prefix, None, replace=True)
+    st.session_state["structural_ns_dict"][selected_structural_component] = [structural_ns_prefix_candidate, Namespace(structural_ns_iri_candidate)]
+    st.session_state["structural_ns_changed_ok_flag"] = True
+    # reset fields_____________________________
+    st.session_state["key_selected_structural_component"] = "Select a component"
+    st.session_state["key_structural_ns_prefix_candidate"] = ""
+    st.session_state["key_structural_ns_iri_candidate"] = ""
 
 def unbind_namespaces():
     # unbind and store information___________________________
@@ -420,7 +416,6 @@ with tab1:
             </div>""", unsafe_allow_html=True)
         st.session_state["new_g_mapping_created_ok_flag"] = False
         time.sleep(st.session_state["success_display_time"])
-        st.cache_data.clear()
         st.rerun()
 
     with col1a:
@@ -1257,6 +1252,7 @@ with tab3:
 
         predefined_ns_dict = utils.get_predefined_ns_dict()
         default_ns_dict = utils.get_default_ns_dict()
+        default_structural_ns_dict = utils.get_default_structural_ns_dict()
         ontology_ns_dict = utils.get_ontology_ns_dict()
         mapping_ns_dict = utils.get_mapping_ns_dict()
 
@@ -1297,6 +1293,13 @@ with tab3:
                             You must choose a different prefix.
                         </div>""", unsafe_allow_html=True)
                         st.write("")
+                elif prefix_input in default_structural_ns_dict:
+                    with col1a:
+                        st.markdown(f"""<div class="custom-error-small">
+                            ❌ <b> Prefix {prefix_input} is tied to a default structural namespace: </b> <br>
+                            You must choose a different prefix.
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
                 elif prefix_input in mapping_ns_dict:
                     with col1a:
                         st.markdown(f"""<div class="custom-error-small">
@@ -1327,6 +1330,13 @@ with tab3:
                     with col1a:
                         st.markdown(f"""<div class="custom-error-small">
                             ❌ <b> IRI matches a default namespace: </b> <br>
+                            You must choose a different IRI.
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
+                elif iri_input in default_structural_ns_dict.values():
+                    with col1a:
+                        st.markdown(f"""<div class="custom-error-small">
+                            ❌ <b> IRI matches a default structural namespace: </b> <br>
                             You must choose a different IRI.
                         </div>""", unsafe_allow_html=True)
                         st.write("")
@@ -1623,7 +1633,151 @@ with tab3:
             st.rerun()
 
 
-        if mapping_ns_dict:   #only if there are namespaces to unbind
+        if mapping_ns_dict:   #only if there are namespaces
+            with col1:
+                st.write("______")
+                st.markdown("""
+                <div style="background-color:#e6e6fa; border:1px solid #511D66;
+                            border-radius:5px; padding:10px; margin-bottom:8px;">
+                    <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
+                        🏛️ Define Structural Namespaces
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                st.markdown("")
+
+                with col1:
+                    col1a, col1b = st.columns([2,1])
+
+                if st.session_state["structural_ns_changed_ok_flag"] :
+                    with col1a:
+                        st.write("")
+                        st.markdown(f"""<div class="custom-success">
+                            ✅ The <b>structural namespace</b> has been changed!
+                        </div>""", unsafe_allow_html=True)
+                    st.session_state["structural_ns_changed_ok_flag"]  = False
+                    time.sleep(st.session_state["success_display_time"])
+                    st.rerun()
+
+                structural_components_list = ["Select a component", "TriplesMap", "Subject Map", "Predicate-Object Map",
+                    "Object Map", "Logical Source", "Logical Table"]
+                with col1a:
+                    selected_structural_component = st.selectbox("🖱️ Select a structural component:", structural_components_list,
+                        key="key_selected_structural_component")
+
+                if selected_structural_component != "Select a component":
+                    with col1a:
+                        st.markdown(f"""<div class="gray-preview-message">
+                                🔒 {selected_structural_component} base IRI:<br>
+                                <b style="color:#F63366;">
+                                {st.session_state["structural_ns_dict"][selected_structural_component][1]}</b>
+                                <b>({st.session_state["structural_ns_dict"][selected_structural_component][0]})</b><br>
+                                <small>To change it, enter another option below.</small>
+                            </div>""", unsafe_allow_html=True)
+                        st.write("")
+                    with col1:
+                        col1a, col1b = st.columns([1,2])
+                    with col1a:
+                        structural_ns_prefix_candidate = st.text_input("⌨️ Enter prefix:", key="key_structural_ns_prefix_candidate")
+                    with col1b:
+                        structural_ns_iri_candidate = st.text_input("⌨️ Enter base IRI:", key="key_structural_ns_iri_candidate")
+
+                    with col1:
+                        col1a, col1b = st.columns([2,1])
+                    with col1a:
+                        if structural_ns_prefix_candidate:
+                            valid_prefix_input = False
+                            if structural_ns_prefix_candidate in ontology_ns_dict:
+                                with col1a:
+                                    st.markdown(f"""<div class="custom-error-small">
+                                        ❌ <b> Prefix {structural_ns_prefix_candidate} is contained in the ontology: </b> <br>
+                                        You must choose a different prefix.
+                                    </div>""", unsafe_allow_html=True)
+                                    st.write("")
+                            elif structural_ns_prefix_candidate in predefined_ns_dict:
+                                with col1a:
+                                    st.markdown(f"""<div class="custom-error-small">
+                                        ❌ <b> Prefix {structural_ns_prefix_candidate} is tied to a predefined namespace: </b> <br>
+                                        You must choose a different prefix.
+                                    </div>""", unsafe_allow_html=True)
+                                    st.write("")
+                            elif structural_ns_prefix_candidate in default_ns_dict:
+                                with col1a:
+                                    st.markdown(f"""<div class="custom-error-small">
+                                        ❌ <b> Prefix {structural_ns_prefix_candidate} is tied to a default namespace: </b> <br>
+                                        You must choose a different prefix.
+                                    </div>""", unsafe_allow_html=True)
+                                    st.write("")
+                            elif structural_ns_prefix_candidate in mapping_ns_dict:
+                                with col1a:
+                                    st.markdown(f"""<div class="custom-error-small">
+                                        ❌ <b> Prefix {prefix_input} is already in use: </b> <br>
+                                        You can either choose a different prefix or unbind {structural_ns_prefix_candidate} to reassing it.
+                                    </div>""", unsafe_allow_html=True)
+                                    st.write("")
+                            else:
+                                valid_prefix_input = True
+
+                        if structural_ns_iri_candidate:
+                            valid_iri_input = False
+                            if structural_ns_iri_candidate in ontology_ns_dict.values():
+                                with col1a:
+                                    st.markdown(f"""<div class="custom-error-small">
+                                        ❌ <b> Namespace is contained in the ontology: </b> <br>
+                                        You must choose a different IRI.
+                                    </div>""", unsafe_allow_html=True)
+                                    st.write("")
+                            elif structural_ns_iri_candidate in predefined_ns_dict.values():
+                                with col1a:
+                                    st.markdown(f"""<div class="custom-error-small">
+                                        ❌ <b> IRI matches a predefined namespace: </b> <br>
+                                        You must choose a different IRI.
+                                    </div>""", unsafe_allow_html=True)
+                                    st.write("")
+                            elif structural_ns_iri_candidate in default_ns_dict.values():
+                                with col1a:
+                                    st.markdown(f"""<div class="custom-error-small">
+                                        ❌ <b> IRI matches a default namespace: </b> <br>
+                                        You must choose a different IRI.
+                                    </div>""", unsafe_allow_html=True)
+                                    st.write("")
+                            elif URIRef(iri_input) in mapping_ns_dict.values():
+                                with col1a:
+                                    st.markdown(f"""<div class="custom-error-small">
+                                        ❌ <b> Namespace is already in use: </b> <br>
+                                        You can either choose a different IRI or unbind {structural_ns_iri_candidate} to reassing it.
+                                    </div>""", unsafe_allow_html=True)
+                                    st.write("")
+                            elif not utils.is_valid_iri(structural_ns_iri_candidate):
+                                with col1a:
+                                    st.markdown(f"""<div class="custom-error-small">
+                                        ❌ <b> Invalid IRI: </b> <br>
+                                        Please make sure it statrs with a valid scheme (e.g., http, https), includes no illegal characters
+                                        and ends with a delimiter (/, # or :).
+                                    </div>""", unsafe_allow_html=True)
+                                    st.write("")
+                            else:
+                                valid_iri_input = True
+
+
+                    if structural_ns_iri_candidate and structural_ns_prefix_candidate:
+                        if valid_iri_input and valid_prefix_input:
+                            with col1a:
+                                st.write("")
+                                st.markdown(f"""<div class="info-message-small">
+                                        <b>🔗 {structural_ns_prefix_candidate}</b> → {structural_ns_iri_candidate}
+                                    </div>""", unsafe_allow_html=True)
+                                st.write("")
+                                st.button("Confirm", key="key_change_structural_ns_button", on_click=change_structural_ns)
+
+                    if not structural_ns_iri_candidate and not structural_ns_prefix_candidate:
+                        with col1a:
+                            default_structural_ns_session_state = utils.get_default_structural_ns_session_state()
+                            structural_ns_prefix_candidate = default_structural_ns_session_state[selected_structural_component][0]
+                            structural_ns_iri_candidate = default_structural_ns_session_state[selected_structural_component][1]
+                            st.button("Set to default", key="key_structural_ns_set_to_default_button", on_click=change_structural_ns)
+
+
 
             with col1:
                 st.write("______")
@@ -1631,7 +1785,7 @@ with tab3:
                 <div style="background-color:#e6e6fa; border:1px solid #511D66;
                             border-radius:5px; padding:10px; margin-bottom:8px;">
                     <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
-                        🗑️Unbind Existing Namespace
+                        🗑️ Unbind Existing Namespace
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -1881,8 +2035,13 @@ with tab4:
                 st.session_state["mapping_downloaded_ok_flag"] = st.download_button(label="Export", data=serialised_data,
                     file_name=export_filename_complete, mime="text/plain")
 
-            if st.session_state["mapping_downloaded_ok_flag"]:
-                st.rerun()
+            if st.session_state["mapping_downloaded_ok_flag"]:    # delete cache file if any and rerun
+                for file in os.listdir():
+                    if file.endswith("_cache__.pkl") and os.path.isfile(file):
+                        os.remove(file)
+                for key in list(st.session_state.keys()):   # clean session state
+                    del st.session_state[key]
+                st.rerun()   # to get to success message
 
     # tm with sm
     tm_dict = utils.get_tm_dict()

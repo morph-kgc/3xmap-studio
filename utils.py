@@ -1,19 +1,25 @@
 import streamlit as st
 import os
+import utils
 import pandas as pd
-import re
-from collections import Counter
-from urllib.parse import urlparse
 import pickle
-import json
-import csv
-import rdflib
-import time
 from rdflib import Graph, URIRef, Literal, Namespace, BNode
 from rdflib.namespace import split_uri
 from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL, XSD
+import time   # for success messages
+import re
+import uuid   # to handle uploader keys
+import io
 from io import IOBase
 
+import json
+import csv
+import rdflib
+from collections import Counter
+from urllib.parse import urlparse
+
+
+# AESTHETICS-------------------------------------------------------------------------------------
 
 #________________________________________________
 # Function to import style
@@ -282,6 +288,133 @@ def get_max_length_for_display():
 
 #_______________________________________________________
 
+
+# GLOBAL CONFIGURATION - CONFIGURE NAMESPACES ---------------------------------------------------
+# We define these first because they will be needed in this page
+#_________________________________________________________
+# Function to get a base iri for our application
+def get_rdfolio_base_iri():
+    return "http://rdfolio.org/mapping/"
+#________________________________________________________
+
+#_________________________________________________________
+# Function to get the default base iri for the structural components
+def get_default_structural_ns_dict():
+
+    base_iri = get_rdfolio_base_iri()
+
+    return {
+            "tmap": Namespace(base_iri + "triplesmap/"),
+            "smap": Namespace(base_iri + "subjectmap/"),
+            "pomap": Namespace(base_iri + "predicateobjectmap/"),
+            "omap": Namespace(base_iri + "objectmap/"),
+            "ls": Namespace(base_iri + "logicalsource/"),
+            "lt": Namespace(base_iri + "logicaltable/")}
+#________________________________________________________
+
+#_________________________________________________________
+# Function to get the default base iri for the structural components
+def get_default_structural_ns_session_state():
+
+    default_structural_ns_dict = utils.get_default_structural_ns_dict()
+
+    return {
+        "TriplesMap": ["tmap", default_structural_ns_dict["tmap"]],
+        "Subject Map": ["smap", default_structural_ns_dict["smap"]],
+        "Predicate-Object Map": ["pomap", default_structural_ns_dict["pomap"]],
+        "Object Map": ["omap", default_structural_ns_dict["omap"]],
+        "Logical Source": ["ls", default_structural_ns_dict["ls"]],
+        "Logical Table": ["lt", default_structural_ns_dict["lt"]]}
+#________________________________________________________
+
+#_________________________________________________________
+# Funtion to get dictionary with default namespaces
+# The default namespaces are automatically bound to g by rdflib (DO NOT MODIFY LIST)
+def get_default_ns_dict():
+    return {
+    "brick": Namespace("https://brickschema.org/schema/Brick#"),
+    "csvw": Namespace("http://www.w3.org/ns/csvw#"),
+    "dc": Namespace("http://purl.org/dc/elements/1.1/"),
+    "dcam": Namespace("http://purl.org/dc/dcam/"),
+    "dcat": Namespace("http://www.w3.org/ns/dcat#"),
+    "dcmitype": Namespace("http://purl.org/dc/dcmitype/"),
+    "dcterms": Namespace("http://purl.org/dc/terms/"),
+    "doap": Namespace("http://usefulinc.com/ns/doap#"),
+    "foaf": Namespace("http://xmlns.com/foaf/0.1/"),
+    "geo": Namespace("http://www.opengis.net/ont/geosparql#"),
+    "odrl": Namespace("http://www.w3.org/ns/odrl/2/"),
+    "org": Namespace("http://www.w3.org/ns/org#"),
+    "owl": Namespace("http://www.w3.org/2002/07/owl#"),
+    "prof": Namespace("http://www.w3.org/ns/dx/prof/"),
+    "prov": Namespace("http://www.w3.org/ns/prov#"),
+    "qb": Namespace("http://purl.org/linked-data/cube#"),
+    "rdf": Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
+    "rdfs": Namespace("http://www.w3.org/2000/01/rdf-schema#"),
+    "sdo": Namespace("https://schema.org/"),
+    "sh": Namespace("http://www.w3.org/ns/shacl#"),
+    "skos": Namespace("http://www.w3.org/2004/02/skos/core#"),
+    "sosa": Namespace("http://www.w3.org/ns/sosa/"),
+    "ssn": Namespace("http://www.w3.org/ns/ssn/"),
+    "time": Namespace("http://www.w3.org/2006/time#"),
+    "vann": Namespace("http://purl.org/vocab/vann/"),
+    "void": Namespace("http://rdfs.org/ns/void#"),
+    "xml": Namespace("http://www.w3.org/XML/1998/namespace"),
+    "xsd": Namespace("http://www.w3.org/2001/XMLSchema#"),
+    "schema": Namespace("https://schema.org/"),
+    "wgs": Namespace("https://www.w3.org/2003/01/geo/wgs84_pos#")
+    }
+#________________________________________________________
+
+#_________________________________________________________
+# Dictionary with predefined namespaces
+# These are predefined so that they can be easily bound
+# It will ignore the default namespaces
+# LIST CAN BE CHANGED but should keep the namespaces used in get_required_ns()
+def get_predefined_ns_dict():
+
+    all_predefined_ns_dict = {
+        "rml": Namespace("http://semweb.mmlab.be/ns/rml#"),
+        "ql": Namespace("http://semweb.mmlab.be/ns/ql#"),
+        "rr": Namespace("http://www.w3.org/ns/r2rml#"),
+        "xsd": Namespace("http://www.w3.org/2001/XMLSchema#"),
+        "rdf": Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
+        "rdfs": Namespace("http://www.w3.org/2000/01/rdf-schema#"),
+        "owl": Namespace("http://www.w3.org/2000/01/rdf-schema#"),
+        "skos": Namespace("	http://www.w3.org/2004/02/skos/core#"),
+        "sh": Namespace("http://www.w3.org/ns/shacl#"),
+        "prov": Namespace("http://www.w3.org/ns/prov#"),
+        "foaf": Namespace("http://xmlns.com/foaf/0.1/"),
+        "schema": Namespace("http://schema.org/"),
+        "dct": Namespace("http://purl.org/dc/terms/"),
+        "vann": Namespace("http://purl.org/vocab/vann/"),
+        "qb": Namespace("http://purl.org/linked-data/cube#"),
+        "void": Namespace("http://rdfs.org/ns/void#"),
+        "map": Namespace(get_rdfolio_base_iri() + "/mapping#"),
+        "class": Namespace(get_rdfolio_base_iri() + "/class#"),
+        "resource": Namespace(get_rdfolio_base_iri() + "/resource#"),
+        "logicalSource": Namespace(get_rdfolio_base_iri() + "/logicalSource#")}
+
+    default_ns_dict = get_default_ns_dict()
+    predefined_ns_dict = {k: Namespace(v) for k, v in all_predefined_ns_dict.items() if (k not in default_ns_dict)}
+
+    return predefined_ns_dict
+#________________________________________________________
+
+#________________________________________________________
+# Function to retrieve namespaces which are needed for our code
+def get_required_ns():
+    ns = get_predefined_ns_dict()
+    return {"RML": ns["rml"], "RR": ns["rr"], "QL": ns["ql"]}
+#_______________________________________________________
+
+#________________________________________________________
+# retrieving necessary namespaces for this page here
+RML, RR, QL = get_required_ns().values()
+#________________________________________________________
+
+
+
+# GLOBAL CONFIGURATION - SELECT MAPPING -------------------------------------------------------------
 #_______________________________________________________
 # List of allowed mapping file format
 # HERE expand options, now reduced version
@@ -377,6 +510,8 @@ def get_number_of_tm(g):
     return len(triplesmaps)
 #_________________________________________________________
 
+
+# GLOBAL CONFIGURATION - LOAD ONTOLOGY ----------------------------------------------------------
 #___________________________________________________________________________________
 #Function to parse an ontology to an initially empty graph
 @st.cache_resource
@@ -477,96 +612,6 @@ def check_ontology_overlap(g1, g2):
 #___________________________________________________________________________________
 
 #_________________________________________________________
-def get_rdfolio_base_iri():
-    return "http://rdfolio.org/"
-#________________________________________________________
-
-#_________________________________________________________
-#D Funtion to get dictionary with default namespaces
-# The default namespaces are automatically bound to g by rdflib (don't change)
-def get_default_ns_dict():
-    return {
-    "brick": Namespace("https://brickschema.org/schema/Brick#"),
-    "csvw": Namespace("http://www.w3.org/ns/csvw#"),
-    "dc": Namespace("http://purl.org/dc/elements/1.1/"),
-    "dcam": Namespace("http://purl.org/dc/dcam/"),
-    "dcat": Namespace("http://www.w3.org/ns/dcat#"),
-    "dcmitype": Namespace("http://purl.org/dc/dcmitype/"),
-    "dcterms": Namespace("http://purl.org/dc/terms/"),
-    "doap": Namespace("http://usefulinc.com/ns/doap#"),
-    "foaf": Namespace("http://xmlns.com/foaf/0.1/"),
-    "geo": Namespace("http://www.opengis.net/ont/geosparql#"),
-    "odrl": Namespace("http://www.w3.org/ns/odrl/2/"),
-    "org": Namespace("http://www.w3.org/ns/org#"),
-    "owl": Namespace("http://www.w3.org/2002/07/owl#"),
-    "prof": Namespace("http://www.w3.org/ns/dx/prof/"),
-    "prov": Namespace("http://www.w3.org/ns/prov#"),
-    "qb": Namespace("http://purl.org/linked-data/cube#"),
-    "rdf": Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
-    "rdfs": Namespace("http://www.w3.org/2000/01/rdf-schema#"),
-    "sdo": Namespace("https://schema.org/"),
-    "sh": Namespace("http://www.w3.org/ns/shacl#"),
-    "skos": Namespace("http://www.w3.org/2004/02/skos/core#"),
-    "sosa": Namespace("http://www.w3.org/ns/sosa/"),
-    "ssn": Namespace("http://www.w3.org/ns/ssn/"),
-    "time": Namespace("http://www.w3.org/2006/time#"),
-    "vann": Namespace("http://purl.org/vocab/vann/"),
-    "void": Namespace("http://rdfs.org/ns/void#"),
-    "xml": Namespace("http://www.w3.org/XML/1998/namespace"),
-    "xsd": Namespace("http://www.w3.org/2001/XMLSchema#"),
-    "schema": Namespace("https://schema.org/"),
-    "wgs": Namespace("https://www.w3.org/2003/01/geo/wgs84_pos#")
-    }
-#________________________________________________________
-
-#_________________________________________________________
-# Dictionary with predefined namespaces
-# These are predefined so taht they can be easily bound (can be changed)
-# It will ignore the default namespaces
-def get_predefined_ns_dict():
-
-    default_ns_dict = get_default_ns_dict()
-
-    all_predefined_ns_dict = {
-        "rml": Namespace("http://semweb.mmlab.be/ns/rml#"),
-        "rr": Namespace("http://www.w3.org/ns/r2rml#"),
-        "xsd": Namespace("http://www.w3.org/2001/XMLSchema#"),
-        "rdf": Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
-        "rdfs": Namespace("http://www.w3.org/2000/01/rdf-schema#"),
-        "ql": Namespace(get_rdfolio_base_iri() + "/ql#"),
-        "map": Namespace(get_rdfolio_base_iri() + "/mapping#"),
-        "class": Namespace(get_rdfolio_base_iri() + "/class#"),
-        "resource": Namespace(get_rdfolio_base_iri() + "/resource#"),
-        "logicalSource": Namespace(get_rdfolio_base_iri() + "/logicalSource#"),
-        "owl": Namespace("http://www.w3.org/2000/01/rdf-schema#"),
-        "dct": Namespace("http://purl.org/dc/terms/"),
-        "foaf": Namespace("http://xmlns.com/foaf/0.1/"),
-        "skos": Namespace("	http://www.w3.org/2004/02/skos/core#"),
-        "schema": Namespace("http://schema.org/"),
-        "sh": Namespace("http://www.w3.org/ns/shacl#"),
-        "prov": Namespace("http://www.w3.org/ns/prov#"),
-        "vann": Namespace("http://purl.org/vocab/vann/"),
-        "void": Namespace("http://rdfs.org/ns/void#"),
-        "qb": Namespace("http://purl.org/linked-data/cube#")}
-
-    predefined_ns_dict = {k: Namespace(v) for k, v in all_predefined_ns_dict.items() if (k not in default_ns_dict)}
-
-    return predefined_ns_dict
-#________________________________________________________
-
-#________________________________________________________
-# Binding some namespaces for future use in this page
-#HERE check if needed
-namespaces = get_predefined_ns_dict()
-RML = namespaces["rml"]
-RR = namespaces["rr"]
-QL = namespaces["ql"]
-MAP = namespaces["map"]
-CLASS = namespaces["class"]
-LS = namespaces["logicalSource"]
-#________________________________________________________
-
-#_________________________________________________________
 # Funtion to get dictionary {prefix: namespace} bound in the ontology
 # It will ignore the default namespaces
 def get_ontology_ns_dict():
@@ -623,6 +668,7 @@ def is_valid_iri(iri):
 
 #_________________________________________________
 #Funtion to create the list that stores the state of the project
+# project_state_list = [[g_label, g_mapping], g_ontology_components_dict, structural_ns_dict]
 def save_project_state():
 
     # list to save the mapping
@@ -633,6 +679,7 @@ def save_project_state():
     project_state_list = []
     project_state_list.append(mapping_list)
     project_state_list.append(st.session_state["g_ontology_components_dict"])
+    project_state_list.append(st.session_state["structural_ns_dict"])
 
     return project_state_list
 
@@ -1191,7 +1238,8 @@ def get_map_dict(map_label, map_dict):   #HERE FIX
 #It also builds a dictionary to save the new maps: {map name: map}
 def add_logical_source(g, tmap_label, source_file, logical_source_iri):
 
-    tmap_iri = MAP[f"{tmap_label}"]
+    NS = st.session_state["structural_ns_dict"]["TriplesMap"][1]
+    tmap_iri = NS[f"{tmap_label}"]
 
     g.add((tmap_iri, RML.logicalSource, logical_source_iri))    #bind to logical source
     g.add((logical_source_iri, RML.source, Literal(source_file)))    #bind to source file
@@ -1248,7 +1296,8 @@ def remove_map(g, map_label, map_dict):
 def add_subject_map_template(g, tmap_label, smap_label, s_generation_type, subject_id):   #HERE DELETE
 
     tmap_iri = st.session_state["tmap_dict"][tmap_label]
-    smap_iri = MAP[f"{smap_label}"]
+    NS = st.session_state["structural_ns_dict"]["Subject Map"][1]
+    smap_iri = NS[f"{smap_label}"]
 
     g.add((tmap_iri, RR.subjectMap, smap_iri))
     g.add((smap_iri, RR.template, Literal(f"http://example.org/resource/{subject_id}")))
