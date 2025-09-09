@@ -40,7 +40,6 @@ st.write("")
 
 # Namespaces
 RML, RR, QL = utils.get_required_ns().values()
-BASE = Namespace(utils.get_rdfolio_base_iri())   # HERE DELETE
 
 
 # Initialise session state variables
@@ -539,8 +538,6 @@ if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
         """, unsafe_allow_html=True)
         st.stop()
 
-#g = Graph() #create empty graph to store triples (this is the mapping we are building)
-ds_folder_path = utils.get_ds_folder_path()   #path to folder with data sources HERE DELETE
 
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
