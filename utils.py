@@ -31,18 +31,22 @@ def import_st_aesthetics():
     st.markdown("""<style>
 
     /* TABS */
-        div[data-testid="stTabs"] > div {
-        flex-wrap: wrap; justify-content: space-between;}
+        /* Style tab buttons inside stTabs */
+        div[data-testid="stTabs"] button[data-baseweb="tab"] {flex: 1 1 auto;
+            background-color: #555555; color: white; font-size: 25px;
+            padding: 1.2em; border-radius: 5px; border: none;
+            margin: 6px;}
 
-        div[data-testid="stTabs"] button {flex: 1 1 auto;
-        background-color: #555555; color: white; font-size: 25px;
-        padding: 1.2em; border-radius: 5px; border: none;margin: 6px;}
+        /* Hover effect for tab buttons */
+        div[data-testid="stTabs"] button[data-baseweb="tab"]:hover {
+            background-color: #7a4c8f;}
 
-        div[data-testid="stTabs"] button div span {font-size: 36px !important;}
+        /* Style tab label text */
+        div[data-testid="stTabs"] button[data-baseweb="tab"] > div > span {
+            font-size: 36px !important;}
 
-        div[data-testid="stTabs"] button:hover {background-color: #7a4c8f;}
-
-        div[data-testid="stTabs"] button[aria-selected="true"] {
+        /* Style selected tab */
+        div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] {
             background-color: #9871b5; color: white; font-weight: bold;
             box-shadow: 0 0 10px #9871b5;}
 
