@@ -7,6 +7,8 @@ with Streamlit for transforming structured data into RDF triples, using mainly t
 
 To run it:
 
+`pip install -r requirements.txt`
+
 `python -m streamlit run RDFolio.py`
 
 - You can start a new mapping from scratch.

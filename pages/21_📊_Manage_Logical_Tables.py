@@ -4,8 +4,9 @@ from rdflib import Graph, URIRef, Literal, Namespace
 import utils
 import time
 import pandas as pd
-
 import psycopg
+import pymysql    # another option mysql-connector-python
+import oracledb
 
 # Header
 st.markdown("""
@@ -53,8 +54,8 @@ if "sql_query_saved_ok_flag" not in st.session_state:
 def save_postgress_connection():
     # store information________________
     st.session_state["db_connection_saved_ok_flag"] = True  # for success message
-    st.session_state["db_connections_dict"][label] = ["postgres",
-        postgres_host, postgres_port, postgres_database, postgres_user, postgres_password]    # to store connections
+    st.session_state["db_connections_dict"][label] = [db_connection_type,
+        host, port, database, user, password]    # to store connections
     # reset fields_____________________
     st.session_state["key_db_connection_type"] = "Select an engine"
     st.session_state["key_connection_label"] = ""
@@ -106,25 +107,6 @@ with tab1:
 
     col1, col2 = st.columns([2,1.5])
 
-    #PURPLE HEADING - ADD NEW CONECTION
-    with col1:
-        st.markdown("""<div class="purple-heading">
-                🔌 Add New Connection
-            </div>""", unsafe_allow_html=True)
-        st.write("")
-
-    if st.session_state["db_connection_saved_ok_flag"]:
-        with col1:
-            col1a, col1b = st.columns([2,1])
-        with col1a:
-            st.write("")
-            st.markdown(f"""<div class="custom-success">
-                ✅ The <b>connection to the database</b> has been saved!
-            </div>""", unsafe_allow_html=True)
-        st.session_state["db_connection_saved_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
-        st.rerun()
-
     with col1:
         col1a, col1b = st.columns([2,1])
 
@@ -142,11 +124,13 @@ with tab1:
         for connection_label in st.session_state["db_connections_dict"]:
             try:
                 conn = utils.make_connection_to_db(connection_label)
-                conn.close() # optional: close immediately or keep open for queries
+                if conn:
+                    conn.close() # optional: close immediately or keep open for queries
                 check_connection_dict[connection_label] = "✔️"
 
-            except:
+            except Exception as e:
                 check_connection_dict[connection_label] = "❌"
+                st.write("HERE", e)
 
         rows = [{"Label": label, "Engine": st.session_state["db_connections_dict"][label][0],
                 "Database": st.session_state["db_connections_dict"][label][3],
@@ -179,8 +163,28 @@ with tab1:
                 st.write("")
                 st.dataframe(db_connections_df, hide_index=True)
 
+    #PURPLE HEADING - ADD NEW CONECTION
+    with col1:
+        st.markdown("""<div class="purple-heading">
+                🔌 Add New Connection
+            </div>""", unsafe_allow_html=True)
+        st.write("")
 
-    db_connection_type_list = ["Select an engine", "PostgreSQL"]
+    if st.session_state["db_connection_saved_ok_flag"]:
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.write("")
+            st.markdown(f"""<div class="custom-success">
+                ✅ The <b>connection to the database</b> has been saved!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["db_connection_saved_ok_flag"] = False
+        time.sleep(st.session_state["success_display_time"])
+        st.rerun()
+
+    with col1:
+        col1a, col1b = st.columns([2,1])
+    db_connection_type_list = ["Select an engine", "PostgreSQL", "MySQL", "MariaDB", "Oracle"]
     with col1a:
         db_connection_type = st.selectbox("🖱️ Select a database engine:*", db_connection_type_list, key="key_db_connection_type")
     with col1b:
@@ -193,46 +197,34 @@ with tab1:
                         </div>""", unsafe_allow_html=True)
                 st.write("")
 
-    if db_connection_type == "PostgreSQL":
+    if db_connection_type in ("PostgreSQL", "MySQL", "MariaDB", "Oracle"):
+        default_ports_dict = utils.get_default_ports()
+        default_port = default_ports_dict[db_connection_type] if db_connection_type in default_ports_dict else ""
+        default_users_dict = utils.get_default_users()
+        default_user = default_users_dict[db_connection_type] if db_connection_type in default_users_dict else ""
         with col1:
             col1a, col1b, col1c = st.columns(3)
         with col1a:
-            postgres_host = st.text_input("⌨️ Enter host:*", value="localhost")
+            host = st.text_input("⌨️ Enter host:*", value="localhost")
+            user = st.text_input("⌨️ Enter user:*", value=default_user)
         with col1b:
-            postgres_port = st.text_input("⌨️ Enter port:*", value="5432")
+            port = st.text_input("⌨️ Enter port:*", value=default_port)
+            password = st.text_input("⌨️ Enter password:*", type="password")
         with col1c:
-            postgres_database = st.text_input("⌨️ Enter database name:*")
-        with col1a:
-            postgres_user = st.text_input("⌨️ Enter user:*", value="postgres")
-        with col1b:
-            postgres_password = st.text_input("⌨️ Enter password:*", type="password")
+            if not db_connection_type == "Oracle":
+                database = st.text_input("⌨️ Enter database name:*")
+            else:
+                database = st.text_input("⌨️ Enter service name:*")
 
         with col1:
             col1a, col1b = st.columns([2,1])
 
-        if (label and postgres_host and postgres_port and postgres_database
-            and postgres_user and postgres_password and label not in st.session_state["db_connections_dict"]):
+        if (label and host and port and database
+            and user and password and label not in st.session_state["db_connections_dict"]):
             with col1a:
-                try:
-                    conn = psycopg.connect(host=postgres_host, port=postgres_port,
-                        dbname=postgres_database, user=postgres_user,
-                        password=postgres_password)
+                connection_ok_flag = utils.try_connection(db_connection_type, host, port, database, user, password)
+                if connection_ok_flag:
                     st.button("Save", key="key_save_postgress_connection_button", on_click=save_postgress_connection)
-                    conn.close() # optional: close immediately or keep open for queries
-
-                except psycopg.OperationalError as e:
-                    st.markdown(f"""<div class="custom-error-small">
-                        ❌ <b>Connection failed.</b><br>
-                        <small><b>Full error</b>: {e.args[0]} </small>
-                    </div>""", unsafe_allow_html=True)
-                    st.write("")
-
-                except Exception as e:
-                    st.markdown(f"""<div class="custom-error-small">
-                        ❌ <b>Unexpected error.</b><br>
-                        <small><b>Full error</b>: {str(e)} </small>
-                    </div>""", unsafe_allow_html=True)
-                    st.write("")
 
     if not st.session_state["db_connections_dict"] and st.session_state["db_connection_removed_ok_flag"]:
         with col1:
@@ -369,6 +361,13 @@ with tab2:
         connection_for_table_display = st.selectbox("🖱️ Select a connection:*", list_to_choose,
             key="key_connection_for_table_display")
 
+        # this avoids persistence in the choose a table selectbox when changing the connection
+        if "last_connection_for_table_display" not in st.session_state:
+            st.session_state["last_connection_for_table_display"] = None
+        if connection_for_table_display != st.session_state["last_connection_for_table_display"]:
+            st.session_state["key_selected_db_table"] = "Select a table"
+            st.session_state["last_connection_for_table_display"] = connection_for_table_display
+
     if connection_for_table_display != "Select a connection":
 
         try:
@@ -387,10 +386,36 @@ with tab2:
         if connection_ok_flag:
 
             cur = conn.cursor()   # create a cursor
+            engine = st.session_state["db_connections_dict"][connection_for_table_display][0]
+            database = st.session_state["db_connections_dict"][connection_for_table_display][3]
 
-            cur.execute("""SELECT table_name FROM information_schema.tables
-                WHERE table_schema = 'public' AND table_type = 'BASE TABLE';""")
+            if engine == "PostgreSQL":
+                cur.execute("""
+                    SELECT table_name FROM information_schema.tables
+                    WHERE table_schema = 'public' AND table_type = 'BASE TABLE';
+                """)
+            elif engine in ("MySQL", "MariaDB"):
+                cur.execute(f"""
+                    SELECT table_name FROM information_schema.tables
+                    WHERE table_schema = '{database}' AND table_type = 'BASE TABLE';
+                """)
+            elif engine == "Oracle":
+                cur.execute("""
+                    SELECT table_name
+                    FROM user_tables
+                    WHERE table_name NOT LIKE 'BIN$%'    -- exclude recycle bin
+                      AND table_name NOT LIKE 'APEX$%'   -- exclude APEX system tables
+                      AND table_name NOT LIKE 'FLOWS_%'  -- exclude Oracle Application Express
+                      AND table_name NOT LIKE 'WWV_%'    -- exclude web toolkit tables
+                      AND table_name NOT LIKE 'DR$%'     -- exclude Oracle Text
+                      AND table_name NOT LIKE 'MDS_%'    -- exclude metadata services
+                      AND table_name NOT LIKE 'WRI$%'    -- exclude stats history
+                      AND table_name NOT LIKE 'XDB$%'    -- exclude XML DB
+                      AND table_name NOT LIKE 'C##%'     -- exclude common users""")
+                pass
+
             db_tables = [row[0] for row in cur.fetchall()]
+
 
             with col1b:
                 list_to_choose = db_tables
@@ -400,7 +425,10 @@ with tab2:
 
             if selected_db_table != "Select a table":
 
-                cur.execute(f"SELECT * FROM {selected_db_table};")
+                if engine == "Oracle":
+                    cur.execute(f"SELECT * FROM {selected_db_table}")
+                else:
+                    cur.execute(f"SELECT * FROM {selected_db_table};")
                 rows = cur.fetchall()
                 columns = [desc[0] for desc in cur.description]
 
@@ -511,7 +539,7 @@ with tab2:
                     sql_query_ok_flag = True
 
                 except Exception as e:
-                    with col1b:
+                    with col1:
                         st.markdown(f"""<div class="custom-error-small">
                             ❌ <b>Invalid SQL syntax</b>. Please check your query.<br>
                             <small><b> Full error:</b> {e}</small>

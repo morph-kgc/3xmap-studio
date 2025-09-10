@@ -11,8 +11,9 @@ import re
 import uuid   # to handle uploader keys
 import io
 from io import IOBase
-
 import psycopg
+import pymysql    # another option mysql-connector-python
+import oracledb
 
 import json
 import csv
@@ -1035,19 +1036,127 @@ def get_pom_dict():
 #________________________________________________________
 # Funtion to make a connection to a database
 def make_connection_to_db(connection_label):
+    engine = st.session_state["db_connections_dict"][connection_label][0]
     host = st.session_state["db_connections_dict"][connection_label][1]
     port= st.session_state["db_connections_dict"][connection_label][2]
     database = st.session_state["db_connections_dict"][connection_label][3]
     user = st.session_state["db_connections_dict"][connection_label][4]
     password = st.session_state["db_connections_dict"][connection_label][5]
 
-    conn = psycopg.connect(host=host, port=port,
-        dbname=database, user=user,
-        password=password)
+    if engine == "PostgreSQL":
+        conn = psycopg.connect(host=host, port=port,
+            dbname=database, user=user, password=password)
+
+    elif engine in ("MySQL", "MariaDB"):
+        conn = pymysql.connect(host=host, port=int(port), user=user,
+            password=password, database=database)
+
+    elif engine == "Oracle":
+        conn = oracledb.connect(user=user, password=password,
+            dsn=f"{host}:{port}/{database}")
+
+    else:
+        conn = None
 
     return conn
 
 #___________________________________________
+
+#________________________________________________________
+# Funtion to make a connection to a database
+def get_default_ports():
+
+    default_ports_dict = {"PostgreSQL": 5432, "MySQL": 3306,
+    "MariaDB": 3306, "SQL Server": 1433, "Oracle": 1521}
+
+    return default_ports_dict
+#___________________________________________
+
+#________________________________________________________
+# Funtion to make a connection to a database
+def get_default_users():
+
+    default_users_dict = {"PostgreSQL": "postgres", "MySQL": "root",
+    "MariaDB": "root", "SQL Server": "sa", "Oracle": "system"}
+
+    return default_users_dict
+#___________________________________________
+
+#________________________________________________________
+# Funtion to check connection to a database
+def try_connection(db_connection_type, host, port, database, user, password):
+
+    if db_connection_type == "PostgreSQL":
+        try:
+            conn = psycopg.connect(host=host, port=port,
+                dbname=database, user=user, password=password)
+            conn.close() # optional: close immediately or keep open for queries
+            return True
+
+        except psycopg.OperationalError as e:
+            st.markdown(f"""<div class="custom-error-small">
+                ❌ <b>Connection failed.</b><br>
+                <small><b>Full error</b>: {e.args[0]} </small>
+            </div>""", unsafe_allow_html=True)
+            st.write("")
+            return False
+
+        except Exception as e:
+            st.markdown(f"""<div class="custom-error-small">
+                ❌ <b>Unexpected error.</b><br>
+                <small><b>Full error</b>: {str(e)} </small>
+            </div>""", unsafe_allow_html=True)
+            st.write("")
+            return False
+
+    if db_connection_type in ("MySQL", "MariaDB"):
+        try:
+            conn = pymysql.connect(host=host, port=int(port), user=user,
+                password=password, database=database)
+            conn.close() # optional: close immediately or keep open for queries
+            return True
+
+        except pymysql.MySQLError as e:
+            st.markdown(f"""<div class="custom-error-small">
+                ❌ <b>Connection failed.</b><br>
+                <small><b>Full error</b>: {e.args[0]} </small>
+            </div>""", unsafe_allow_html=True)
+            st.write("")
+            return False
+
+        except Exception as e:
+            st.markdown(f"""<div class="custom-error-small">
+                ❌ <b>Unexpected error.</b><br>
+                <small><b>Full error</b>: {str(e)} </small>
+            </div>""", unsafe_allow_html=True)
+            st.write("")
+            return False
+
+    if db_connection_type == "Oracle":
+        try:
+            conn = oracledb.connect(user=user, password=password,
+                dsn=f"{host}:{port}/{database}")
+            conn.close()  # optional: close immediately or keep open for queries
+            return True
+
+        except oracledb.OperationalError as e:
+            st.markdown(f"""<div class="custom-error-small">
+                ❌ <b>Connection failed.</b><br>
+                <small><b>Full error</b>: {e.args[0]} </small>
+            </div>""", unsafe_allow_html=True)
+            st.write("")
+            return False
+
+        except Exception as e:
+            st.markdown(f"""<div class="custom-error-small">
+                ❌ <b>Unexpected error.</b><br>
+                <small><b>Full error</b>: {str(e)} </small>
+            </div>""", unsafe_allow_html=True)
+            st.write("")
+            return False
+#___________________________________________
+
+
 
 #HEREIGO
 

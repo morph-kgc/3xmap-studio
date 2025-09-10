@@ -1,0 +1,7 @@
+streamlit
+rdflib
+pandas
+psycopg[binary]
+PyMySQL
+cryptography
+oracledb
