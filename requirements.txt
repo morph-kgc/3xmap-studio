@@ -5,3 +5,4 @@ psycopg[binary]
 PyMySQL
 cryptography
 oracledb
+pyodbc

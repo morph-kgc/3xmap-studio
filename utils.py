@@ -14,6 +14,7 @@ from io import IOBase
 import psycopg
 import pymysql    # another option mysql-connector-python
 import oracledb
+import pyodbc
 
 import json
 import csv
@@ -1055,6 +1056,14 @@ def make_connection_to_db(connection_label):
         conn = oracledb.connect(user=user, password=password,
             dsn=f"{host}:{port}/{database}")
 
+    elif engine == "SQL Server":
+        conn = pyodbc.connect(
+            f"DRIVER={{SQL Server}};"
+            f"SERVER={host},{port};"
+            f"DATABASE={database};"
+            f"UID={user};"
+            f"PWD={password}")
+
     else:
         conn = None
 
@@ -1140,6 +1149,33 @@ def try_connection(db_connection_type, host, port, database, user, password):
             return True
 
         except oracledb.OperationalError as e:
+            st.markdown(f"""<div class="custom-error-small">
+                ❌ <b>Connection failed.</b><br>
+                <small><b>Full error</b>: {e.args[0]} </small>
+            </div>""", unsafe_allow_html=True)
+            st.write("")
+            return False
+
+        except Exception as e:
+            st.markdown(f"""<div class="custom-error-small">
+                ❌ <b>Unexpected error.</b><br>
+                <small><b>Full error</b>: {str(e)} </small>
+            </div>""", unsafe_allow_html=True)
+            st.write("")
+            return False
+
+    if db_connection_type == "SQL Server":
+        try:
+            conn = pyodbc.connect(
+                f"DRIVER={{SQL Server}};"
+                f"SERVER={host},{port};"
+                f"DATABASE={database};"
+                f"UID={user};"
+                f"PWD={password}")
+            conn.close()
+            return True
+
+        except pyodbc.OperationalError as e:
             st.markdown(f"""<div class="custom-error-small">
                 ❌ <b>Connection failed.</b><br>
                 <small><b>Full error</b>: {e.args[0]} </small>

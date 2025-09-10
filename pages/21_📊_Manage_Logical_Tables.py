@@ -7,6 +7,7 @@ import pandas as pd
 import psycopg
 import pymysql    # another option mysql-connector-python
 import oracledb
+import pyodbc
 
 # Header
 st.markdown("""
@@ -130,7 +131,6 @@ with tab1:
 
             except Exception as e:
                 check_connection_dict[connection_label] = "❌"
-                st.write("HERE", e)
 
         rows = [{"Label": label, "Engine": st.session_state["db_connections_dict"][label][0],
                 "Database": st.session_state["db_connections_dict"][label][3],
@@ -184,7 +184,7 @@ with tab1:
 
     with col1:
         col1a, col1b = st.columns([2,1])
-    db_connection_type_list = ["Select an engine", "PostgreSQL", "MySQL", "MariaDB", "Oracle"]
+    db_connection_type_list = ["Select an engine", "PostgreSQL", "MySQL", "SQL Server", "MariaDB", "Oracle"]
     with col1a:
         db_connection_type = st.selectbox("🖱️ Select a database engine:*", db_connection_type_list, key="key_db_connection_type")
     with col1b:
@@ -197,7 +197,7 @@ with tab1:
                         </div>""", unsafe_allow_html=True)
                 st.write("")
 
-    if db_connection_type in ("PostgreSQL", "MySQL", "MariaDB", "Oracle"):
+    if db_connection_type != "Select an engine":
         default_ports_dict = utils.get_default_ports()
         default_port = default_ports_dict[db_connection_type] if db_connection_type in default_ports_dict else ""
         default_users_dict = utils.get_default_users()
@@ -412,6 +412,14 @@ with tab2:
                       AND table_name NOT LIKE 'WRI$%'    -- exclude stats history
                       AND table_name NOT LIKE 'XDB$%'    -- exclude XML DB
                       AND table_name NOT LIKE 'C##%'     -- exclude common users""")
+            elif engine == "SQL Server":
+                cur.execute("""
+                    SELECT TABLE_NAME
+                    FROM INFORMATION_SCHEMA.TABLES
+                    WHERE TABLE_TYPE = 'BASE TABLE'
+                      AND TABLE_CATALOG = ?
+                """, (database,))
+            else:
                 pass
 
             db_tables = [row[0] for row in cur.fetchall()]
@@ -425,11 +433,10 @@ with tab2:
 
             if selected_db_table != "Select a table":
 
-                if engine == "Oracle":
-                    cur.execute(f"SELECT * FROM {selected_db_table}")
-                else:
-                    cur.execute(f"SELECT * FROM {selected_db_table};")
+                cur.execute(f"SELECT * FROM {selected_db_table}")
                 rows = cur.fetchall()
+                if engine == "SQL Server":
+                    rows = [tuple(row) for row in rows]   # rows are of type <class 'pyodbc.Row'> -> convert to tuple
                 columns = [desc[0] for desc in cur.description]
 
                 df = pd.DataFrame(rows, columns=columns)
@@ -555,6 +562,9 @@ with tab2:
                             on_click=save_sql_query)
 
                 rows = cur.fetchall()
+                engine = st.session_state["db_connections_dict"][connection_for_query][0]
+                if engine == "SQL Server":
+                    rows = [tuple(row) for row in rows]   # rows are of type <class 'pyodbc.Row'> -> convert to tuple
                 columns = [desc[0] for desc in cur.description]
                 df = pd.DataFrame(rows, columns=columns)
 
