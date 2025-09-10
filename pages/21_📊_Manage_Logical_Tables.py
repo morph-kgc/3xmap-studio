@@ -41,6 +41,13 @@ if "db_connection_saved_ok_flag" not in st.session_state:
 if "db_connection_removed_ok_flag" not in st.session_state:
     st.session_state["db_connection_removed_ok_flag"] = False
 
+#TAB2
+if "sql_queries_dict" not in st.session_state:
+    st.session_state["sql_queries_dict"] = {}
+if "sql_query_saved_ok_flag" not in st.session_state:
+    st.session_state["sql_query_saved_ok_flag"] = False
+
+
 #define on_click functions
 # TAB1
 def save_postgress_connection():
@@ -60,6 +67,15 @@ def remove_connection():
     st.session_state["db_connection_removed_ok_flag"] = True  # for success message
     # reset fields_____________________
     st.session_state["key_connection_labels_to_remove_list"] = []
+
+# TAB2
+def save_sql_query():
+    # store information________________
+    st.session_state["sql_query_saved_ok_flag"] = True  # for success message
+    st.session_state["sql_queries_dict"][sql_query_label] = [connection_for_query, sql_query]
+    # reset fields_____________________
+    st.session_state["key_sql_query"] = ""
+    st.session_state["key_sql_query_label"] = ""
 
 
 # START PAGE_____________________________________________________________________
@@ -90,7 +106,7 @@ with tab1:
 
     col1, col2 = st.columns([2,1.5])
 
-    #PURPLE HEADING - ADD NEW TRIPLESMAP
+    #PURPLE HEADING - ADD NEW CONECTION
     with col1:
         st.markdown("""<div class="purple-heading">
                 🔌 Add New Connection
@@ -124,16 +140,8 @@ with tab1:
 
         check_connection_dict = {}
         for connection_label in st.session_state["db_connections_dict"]:
-            host = st.session_state["db_connections_dict"][connection_label][1]
-            port= st.session_state["db_connections_dict"][connection_label][2]
-            database = st.session_state["db_connections_dict"][connection_label][3]
-            user = st.session_state["db_connections_dict"][connection_label][4]
-            password = st.session_state["db_connections_dict"][connection_label][5]
-
             try:
-                conn = psycopg.connect(host=host, port=port,
-                    dbname=database, user=user,
-                    password=password)
+                conn = utils.make_connection_to_db(connection_label)
                 conn.close() # optional: close immediately or keep open for queries
                 check_connection_dict[connection_label] = "✔️"
 
@@ -239,7 +247,7 @@ with tab1:
         st.rerun()
 
 
-    #PURPLE HEADING - ADD NEW TRIPLESMAP
+    #PURPLE HEADING - REMOVE CONNECTION
     if st.session_state["db_connections_dict"]:
         with col1:
             st.write("_______")
@@ -283,6 +291,68 @@ with tab2:
 
     col1, col2 = st.columns([2,1.5])
 
+    with col2:
+        col2a, col2b = st.columns([0.5, 2])
+
+    with col2b:
+        st.write("")
+        st.write("")
+
+        check_sql_query_dict = {}
+        for sql_query_label in st.session_state["sql_queries_dict"]:
+            sql_query = st.session_state["sql_queries_dict"][sql_query_label][1]
+            connection_label = st.session_state["sql_queries_dict"][sql_query_label][0]
+
+            try:
+                conn = utils.make_connection_to_db(connection_label)
+                cur = conn.cursor()
+                cur.execute(sql_query)
+                conn.close() # optional: close immediately or keep open for queries
+                check_sql_query_dict[sql_query_label] = "✔️"
+
+            except:
+                check_sql_query_dict[sql_query_label] = "❌"
+
+        rows = []
+        for label in reversed(list(st.session_state["sql_queries_dict"].keys())):
+            connection = st.session_state["sql_queries_dict"][label][0]
+            database =  st.session_state["db_connections_dict"][connection][3]
+            sql_query_ok_flag = check_sql_query_dict[sql_query_label]
+            if len(st.session_state["sql_queries_dict"][label][1]) > 20:
+                sql_query = st.session_state["sql_queries_dict"][label][1][:20] + "..."
+            else:
+                sql_query = st.session_state["sql_queries_dict"][label][1]
+            rows.append({"Label": label, "Connection": connection,
+                    "Database": database, "Query": sql_query,
+                    "Query OK": sql_query_ok_flag})
+
+        sql_queries_df = pd.DataFrame(rows)
+        last_sql_queries_df = sql_queries_df.head(utils.get_max_length_for_display()[1])
+
+        max_length = utils.get_max_length_for_display()[1]   # max number of connections to show directly
+        if st.session_state["sql_queries_dict"]:
+            if len(st.session_state["sql_queries_dict"]) < max_length:
+                st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
+                        🔎 saved SQL queries
+                    </div>""", unsafe_allow_html=True)
+                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                    </div>""", unsafe_allow_html=True)
+            else:
+                st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
+                        🔎 last saved SQL queries
+                    </div>""", unsafe_allow_html=True)
+                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                        (complete list below)
+                    </div>""", unsafe_allow_html=True)
+            st.dataframe(last_sql_queries_df, hide_index=True)
+            st.write("")
+
+        #Option to show all connections (if too many)
+        if st.session_state["sql_queries_dict"] and len(st.session_state["sql_queries_dict"]) > max_length:
+            with st.expander("🔎 Show all saved SQL queries"):
+                st.write("")
+                st.dataframe(sql_queries_df, hide_index=True)
+
     #PURPLE HEADING - ADD NEW TRIPLESMAP
     with col1:
         st.markdown("""<div class="purple-heading">
@@ -301,16 +371,8 @@ with tab2:
 
     if connection_for_table_display != "Select a connection":
 
-        host = st.session_state["db_connections_dict"][connection_for_table_display][1]
-        port= st.session_state["db_connections_dict"][connection_for_table_display][2]
-        database = st.session_state["db_connections_dict"][connection_for_table_display][3]
-        user = st.session_state["db_connections_dict"][connection_for_table_display][4]
-        password = st.session_state["db_connections_dict"][connection_for_table_display][5]
-
         try:
-            conn = psycopg.connect(host=host, port=port,
-                dbname=database, user=user,
-                password=password)
+            conn = utils.make_connection_to_db(connection_for_table_display)
             connection_ok_flag = True
 
         except:
@@ -343,14 +405,37 @@ with tab2:
                 columns = [desc[0] for desc in cur.description]
 
                 df = pd.DataFrame(rows, columns=columns)
-                st.dataframe(df, hide_index=True)
+
+                with col1:
+                    max_rows = utils.get_max_length_for_display()[2]
+                    max_cols = utils.get_max_length_for_display()[3]
+
+                    limited_df = df.iloc[:, :max_cols]   # limit number of columns
+
+                    # Slice rows if needed
+                    if len(df) > max_rows and df.shape[1] > max_cols:
+                        st.markdown(f"""<div class="custom-warning-small">
+                            ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
+                            and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
+                    elif len(df) > max_rows:
+                        st.markdown(f"""<div class="custom-warning-small">
+                            ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
+                    elif df.shape[1] > max_cols:
+                        st.markdown(f"""<div class="custom-warning-small">
+                            ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
+                    st.dataframe(limited_df.head(max_rows), hide_index=True)
 
                 cur.close()
                 conn.close()
 
 
-    #PURPLE HEADING - ADD NEW TRIPLESMAP
-    col1, col2 = st.columns([2,1.5])
+    #PURPLE HEADING - QUERY DATA
     with col1:
         st.write("________")
         st.markdown("""<div class="purple-heading">
@@ -358,8 +443,21 @@ with tab2:
             </div>""", unsafe_allow_html=True)
         st.write("")
 
+    if st.session_state["sql_query_saved_ok_flag"]:
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.write("")
+            st.markdown(f"""<div class="custom-success">
+                ✅ The <b>SQL query</b> has been saved!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["sql_query_saved_ok_flag"] = False
+        time.sleep(st.session_state["success_display_time"])
+        st.rerun()
+
     with col1:
         col1a, col1b = st.columns(2)
+
 
     with col1a:
         list_to_choose = list(reversed(list(st.session_state["db_connections_dict"].keys())))
@@ -372,17 +470,21 @@ with tab2:
         with col1b:
             sql_query_label = st.text_input("⌨️ Enter query label (to save):",
                 key="key_sql_query_label")
-
-        host = st.session_state["db_connections_dict"][connection_for_query][1]
-        port= st.session_state["db_connections_dict"][connection_for_query][2]
-        database = st.session_state["db_connections_dict"][connection_for_query][3]
-        user = st.session_state["db_connections_dict"][connection_for_query][4]
-        password = st.session_state["db_connections_dict"][connection_for_query][5]
+            if sql_query_label and sql_query_label not in st.session_state["sql_queries_dict"]:
+                sql_query_label_ok_flag = True
+            elif sql_query_label:
+                sql_query_label_ok_flag = False
+                with col1b:
+                    st.markdown(f"""<div class="custom-error-small">
+                        ❌ The label <b>{sql_query_label}</b> is already in use.
+                        You must pick a different label.
+                    </div>""", unsafe_allow_html=True)
+                st.write("")
+            else:
+                sql_query_label_ok_flag = False
 
         try:
-            conn = psycopg.connect(host=host, port=port,
-                dbname=database, user=user,
-                password=password)
+            conn = utils.make_connection_to_db(connection_for_query)
             connection_ok_flag = True
 
         except:
@@ -419,14 +521,40 @@ with tab2:
 
             if sql_query and sql_query_ok_flag:
 
-                if sql_query_label:
+                if sql_query_label_ok_flag:
                     with col1:
-                        st.button("Save")
+                        st.button("Save", key="key_save_sql_query_button",
+                            on_click=save_sql_query)
 
                 rows = cur.fetchall()
                 columns = [desc[0] for desc in cur.description]
                 df = pd.DataFrame(rows, columns=columns)
-                st.dataframe(df, hide_index=True)
+
+
+                with col1:
+                    max_rows = utils.get_max_length_for_display()[2]
+                    max_cols = utils.get_max_length_for_display()[3]
+
+                    limited_df = df.iloc[:, :max_cols]   # limit number of columns
+
+                    # Slice rows if needed
+                    if len(df) > max_rows and df.shape[1] > max_cols:
+                        st.markdown(f"""<div class="custom-warning-small">
+                            ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
+                            and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
+                    elif len(df) > max_rows:
+                        st.markdown(f"""<div class="custom-warning-small">
+                            ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
+                    elif df.shape[1] > max_cols:
+                        st.markdown(f"""<div class="custom-warning-small">
+                            ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
+                    st.dataframe(limited_df.head(max_rows), hide_index=True)
 
 
 

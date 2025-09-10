@@ -12,6 +12,8 @@ import uuid   # to handle uploader keys
 import io
 from io import IOBase
 
+import psycopg
+
 import json
 import csv
 import rdflib
@@ -286,9 +288,11 @@ def format_list_for_markdown(xlist):
 
 #_______________________________________________________
 # Function to get the max_length for the display options
+# 0. complete dataframes      1. last added dataframes
+# 2. Queries display (rows)    3. Queries display (columns)
 def get_max_length_for_display():
 
-    return [50, 10]    # complete df     last_added
+    return [50, 10, 100, 20]
 
 #_______________________________________________________
 
@@ -1028,8 +1032,22 @@ def get_pom_dict():
     return pom_dict
 #___________________________________________
 
+#________________________________________________________
+# Funtion to make a connection to a database
+def make_connection_to_db(connection_label):
+    host = st.session_state["db_connections_dict"][connection_label][1]
+    port= st.session_state["db_connections_dict"][connection_label][2]
+    database = st.session_state["db_connections_dict"][connection_label][3]
+    user = st.session_state["db_connections_dict"][connection_label][4]
+    password = st.session_state["db_connections_dict"][connection_label][5]
 
+    conn = psycopg.connect(host=host, port=port,
+        dbname=database, user=user,
+        password=password)
 
+    return conn
+
+#___________________________________________
 
 #HEREIGO
 
