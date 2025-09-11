@@ -64,6 +64,8 @@ if "original_g_size_cache" not in st.session_state:
     st.session_state["original_g_size_cache"] = 0
 if "cached_mapping_retrieved_ok_flag" not in st.session_state:
     st.session_state["cached_mapping_retrieved_ok_flag"] = False
+if "g_label_changed_ok_flag" not in st.session_state:
+    st.session_state["g_label_changed_ok_flag"] = False
 
 #TAB2
 if "g_ontology" not in st.session_state:
@@ -178,7 +180,7 @@ def retrieve_session():
     st.session_state["key_selected_pkl_file_wo_extension"] = "Select a session"
 
 def retrieve_cached_mapping():
-    # get information from pkl file
+    # get information from pkl file_______________________
     st.session_state["g_label"] = cached_mapping_name    # g label
     with open(pkl_cache_file_path, "rb") as f:     # load mapping
         project_state_list = pickle.load(f)
@@ -187,15 +189,24 @@ def retrieve_cached_mapping():
     st.session_state["structural_ns_dict"] = project_state_list[2]
     st.session_state["db_connections_dict"] = project_state_list[3]
     st.session_state["sql_queries_dict"] = project_state_list[4]
-    # build the complete ontology from its components
+    # build the complete ontology from its components___________
     st.session_state["g_ontology"] = Graph()
     for g_ontology in st.session_state["g_ontology_components_dict"].values():
         st.session_state["g_ontology"] += g_ontology
     #store information___________________________
     utils.empty_last_added_lists()
-    # reset fields___________________________
     st.session_state["cached_mapping_retrieved_ok_flag"] = True
+    # reset fields___________________________
     st.session_state["key_retrieve_cached_mapping_checkbox"] = False
+
+def change_g_label():
+    # change g label_____________________________________
+    st.session_state["g_label"] = g_label_candidate
+    #store information___________________________
+    st.session_state["g_label_changed_ok_flag"] = True
+    # reset fields___________________________
+    st.session_state["key_change_mapping_label_checkbox"] = False
+
 
 #TAB2
 def load_ontology_from_link():
@@ -615,6 +626,16 @@ with tab1:
         time.sleep(st.session_state["success_display_time"])
         st.rerun()
 
+    if st.session_state["g_label_changed_ok_flag"]:
+        with col3:
+            st.write("")
+            st.markdown(f"""<div class="custom-success">
+                ✅ Mapping was renamed to <b style="color:#F63366;">{st.session_state["g_label"]}</b>!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["g_label_changed_ok_flag"] = False
+        time.sleep(st.session_state["success_display_time"])
+        st.rerun()
+
     # g mapping INFORMATION BOX--------------------------------------------
     with col3:
         if st.session_state["g_label"]:
@@ -672,6 +693,25 @@ with tab1:
                         </span></div>""", unsafe_allow_html=True)
                     st.write("")
                     st.button("Load", key="key_retrieve_cached_mapping_button", on_click=retrieve_cached_mapping)
+
+    # option to change the mapping label-----------------------------------
+    if st.session_state["g_label"]:
+
+        with col3:
+            st.write("")
+            change_g_label_checkbox = st.checkbox(
+                "🏷️ Rename mapping",
+                key="key_change_mapping_label_checkbox")
+            if change_g_label_checkbox:
+                g_label_candidate = st.text_input("⌨️ Enter new mapping label*:")
+
+                if g_label_candidate:
+                    st.markdown(f"""<div class="info-message-small">
+                            ℹ️ Mapping label will be changed to <b style="color:#F63366;">
+                            {g_label_candidate}</b> (currently <b>{st.session_state["g_label"]}</b>).
+                        </span></div>""", unsafe_allow_html=True)
+                    st.write("")
+                    st.button("Change", key="key_change_g_label_button", on_click=change_g_label)
 
 
 #_______________________________________________________
