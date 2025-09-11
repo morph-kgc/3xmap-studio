@@ -114,7 +114,7 @@ def save_tm_w_existing_ls():
     # reset fields_____________________
     st.session_state["key_tm_label_input"] = ""
 
-def save_tm_w_new_ls():   #function to save TriplesMap upon click
+def save_tm_w_non_relational_ls():
     # add triples__________________
     NS = st.session_state["structural_ns_dict"]["TriplesMap"][1]
     tm_iri = NS[f"{st.session_state["tm_label"]}"]
@@ -144,6 +144,71 @@ def save_tm_w_new_ls():   #function to save TriplesMap upon click
     # reset fields_______________________
     st.session_state["key_tm_label_input"] = ""
     st.session_state["key_ds_uploader"] = str(uuid.uuid4())
+
+def save_tm_w_query():
+    [engine, host, port, database, user, password] = st.session_state["db_connections_dict"][db_connection_for_ls]
+    if engine == "Oracle":
+        jdbc_str = f"jdbc:oracle:thin:@{host}:{port}:{database}"
+    elif engine == "SQL Server":
+        jdbc_str = f"jdbc:sqlserver://{host}:{port};databaseName={database}"
+    elif engine == "PostgreSQL":
+        jdbc_str = f"jdbc:postgresql://{host}:{port}/{database}"
+    elif engine == "MySQL":
+        jdbc_str = f"jdbc:mysql://{host}:{port}/{database}"
+    elif engine =="MariaDB":
+        jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
+    # add triples__________________
+    NS = st.session_state["structural_ns_dict"]["TriplesMap"][1]
+    tm_iri = NS[f"{st.session_state["tm_label"]}"]
+    if logical_source_label:
+        NS = st.session_state["structural_ns_dict"]["Logical Source"][1]
+        ls_iri = NS[f"{logical_source_label}"]
+    else:
+        ls_iri = BNode()
+    st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    #bind to logical source
+    st.session_state["g_mapping"].add((ls_iri, RML.source, Literal(jdbc_str)))    #bind ls to source file
+    st.session_state["g_mapping"].add((ls_iri, RML.referenceFormulation, QL.SQL))
+    st.session_state["g_mapping"].add((ls_iri, RML.query, Literal(sql_query)))
+    st.session_state["g_mapping"].add((tm_iri, RDF.type, RR.TriplesMap))
+    # store information____________________
+    st.session_state["tm_saved_ok_flag"] = True  # for success message
+    st.session_state["last_added_tm_list"].insert(0, st.session_state["tm_label"])    # to display last added tm
+    # reset fields_______________________
+    st.session_state["key_tm_label_input"] = ""
+
+def save_tm_w_table_name():
+    [engine, host, port, database, user, password] = st.session_state["db_connections_dict"][db_connection_for_ls]
+    if engine == "Oracle":
+        jdbc_str = f"jdbc:oracle:thin:@{host}:{port}:{database}"
+    elif engine == "SQL Server":
+        jdbc_str = f"jdbc:sqlserver://{host}:{port};databaseName={database}"
+    elif engine == "PostgreSQL":
+        jdbc_str = f"jdbc:postgresql://{host}:{port}/{database}"
+    elif engine == "MySQL":
+        jdbc_str = f"jdbc:mysql://{host}:{port}/{database}"
+    elif engine =="MariaDB":
+        jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
+    # add triples__________________
+    NS = st.session_state["structural_ns_dict"]["TriplesMap"][1]
+    tm_iri = NS[f"{st.session_state["tm_label"]}"]
+    if logical_source_label:
+        NS = st.session_state["structural_ns_dict"]["Logical Source"][1]
+        ls_iri = NS[f"{logical_source_label}"]
+    else:
+        ls_iri = BNode()
+    st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    #bind to logical source
+    st.session_state["g_mapping"].add((ls_iri, RML.source, Literal(jdbc_str)))    #bind ls to source file
+    st.session_state["g_mapping"].add((ls_iri, RML.referenceFormulation, QL.SQL))
+    st.session_state["g_mapping"].add((ls_iri, RR.tableName, Literal(selected_table_for_ls)))
+    st.session_state["g_mapping"].add((tm_iri, RDF.type, RR.TriplesMap))
+    # store information____________________
+    st.session_state["tm_saved_ok_flag"] = True  # for success message
+    st.session_state["last_added_tm_list"].insert(0, st.session_state["tm_label"])    # to display last added tm
+    # reset fields_______________________
+    st.session_state["key_tm_label_input"] = ""
+
+
+
 
 def delete_tm():   #function to delete a TriplesMap
     # remove triples and store information___________
@@ -567,8 +632,8 @@ with tab1:
     with col2b:
         st.write("")
         st.write("")
-        rows = [{"TriplesMap": tm, "LogicalSource": utils.get_ls(tm),
-                "DataSource": utils.get_ds(tm)} for tm in st.session_state["last_added_tm_list"]]
+        rows = [{"TriplesMap": tm, "Data Source label": utils.get_ls(tm),
+                "Data Source": utils.get_ds(tm)} for tm in st.session_state["last_added_tm_list"]]
         last_added_tm_df = pd.DataFrame(rows)
         last_last_added_tm_df = last_added_tm_df.head(utils.get_max_length_for_display()[1])
 
@@ -628,7 +693,7 @@ with tab1:
         st.rerun()
 
     with col1:
-        col1a, col1b = st.columns([2,1])
+        col1a, col1b = st.columns([1.5,1])
     with col1a:
         tm_label = st.text_input("⌨️ Enter label for the new TriplesMap:*", key="key_tm_label_input")    #user-friendly name for the TriplesMap
         st.session_state["tm_label"] = tm_label
@@ -646,7 +711,7 @@ with tab1:
                 st.markdown(f"""
                 <div style="background-color:#f8d7da; padding:1em;
                             border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-                    ❌ TriplesMap label <b style="color:#a94442;">{tm_label}</b> already in use: <br>
+                    ❌ TriplesMap label <b style="color:#a94442;">{tm_label}</b> already in use.
                     Please pick a different label.
                 </div>
                 """, unsafe_allow_html=True)
@@ -654,16 +719,16 @@ with tab1:
 
         else:    #if label is valid
 
-            if labelled_ls_list:  # if there exist labelled logical sources
-                with col1a:
-                    ls_options_list = ["📑 Assign existing Logical Source", "🆕 Assign new Logical Source"]
-                    ls_option = st.radio("", ls_options_list, label_visibility="collapsed")
-                    st.write("")
 
-            else:
-                    ls_option = "🆕 Assign new Logical Source"
+            with col1b:
+                if labelled_ls_list:    # if there exist labelled logical sources
+                    ls_options_list = ["📑 Existing Logical Source", "📊 Relational Database", "🛢️ Non-relational data"]
+                else:
+                    ls_options_list = ["📊 Relational Database", "🛢️ Non-relational data"]
+                ls_option = st.radio("🖱️ Choose the logical source option:*", ls_options_list, horizontal=False)
+                st.write("")
 
-            if ls_option == "📑 Assign existing Logical Source":
+            if ls_option == "📑 Existing Logical Source":
 
 
                 labelled_ls_list.insert(0, "Select a Logical Source")
@@ -675,15 +740,8 @@ with tab1:
                         save_tm_button_existing_ls = st.button("Save", key="key_save_tm_w_existing_ls", on_click=save_tm_w_existing_ls)
 
 
-            if ls_option == "🆕 Assign new Logical Source":
-
-                ds_allowed_formats = utils.get_ds_allowed_formats()            #data source for the TriplesMap
-                with col1:
-                    col1a, col1b = st.columns([2,1])
+            if ls_option == "📊 Relational Database":
                 with col1a:
-                    ds_file = st.file_uploader(f"""🖱️ Upload data source file*""",
-                        type=ds_allowed_formats, key=st.session_state["key_ds_uploader"])
-                with col1b:
                     logical_source_label = st.text_input("⌨️ Enter label for the logical source (optional):")
                     if logical_source_label in labelled_ls_list:
                         with col1b:
@@ -693,19 +751,141 @@ with tab1:
                                 </div>""", unsafe_allow_html=True)
                             st.write("")
 
+                with col1:
+                    col1a, col1b = st.columns(2)
+                with col1a:
+                    if not st.session_state["db_connections_dict"]:
+                        st.markdown(f"""<div class="custom-error-small">
+                            ❌ No connections to database are available. Please go to the <b>
+                            Manage Logical Sources</b> page.
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
+                    else:
+                        list_to_choose = list(reversed(st.session_state["db_connections_dict"].keys()))
+                        list_to_choose.insert(0, "Select a connection")
+                        with col1a:
+                            db_connection_for_ls = st.selectbox("🖱️ Select connection to database:*", list_to_choose,
+                                key="key_db_connection_for_ls")
+
+                        if db_connection_for_ls != "Select a connection":
+                            try:
+                                conn = utils.make_connection_to_db(db_connection_for_ls)
+
+                            except Exception as e:
+                                conn = ""
+                                st.markdown(f"""<div class="custom-error-small">
+                                    ❌ Connection <b>{db_connection_for_ls}</b> is not working. Please go to the <b>
+                                    Manage Logical Sources</b> page to manage the connections to Databases.
+                                </div>""", unsafe_allow_html=True)
+
+                        with col1b:
+                            query_option = st.radio("🖱️ Select option:*", ["❔ Query", "🔖 Table name"],
+                                horizontal=True)
+
+                        if query_option == "❔ Query" and db_connection_for_ls != "Select a connection" and conn:
+
+                            with col1a:
+                                list_to_choose = []
+                                for query_label, [connection_label, query] in st.session_state["sql_queries_dict"].items():
+                                    if connection_label == db_connection_for_ls:
+                                        list_to_choose.insert(0, query_label)   # only include queries of the selected connection
+                                if list_to_choose:
+                                    list_to_choose.insert(0, "Enter new query")
+                                    list_to_choose.insert(0, "Select a query")
+                                    selected_query_for_ls = st.selectbox("🖱️ Choose a query:*", list_to_choose,
+                                        key="key_selected_query_for_ls")
+                                else:
+                                    selected_query_for_ls = "Enter new query"
+
+                            if selected_query_for_ls == "Enter new query":
+                                with col1:
+                                    sql_query = st.text_area("⌨️ Enter SQL query:*",
+                                        height=150, key="key_sql_query")
+                                    cur = conn.cursor()   # create a cursor
+                                    if sql_query:
+                                        try:
+                                            cur.execute(sql_query)
+                                            sql_query_ok_flag = True
+                                        except e:
+                                            with col1:
+                                                st.markdown(f"""<div class="custom-error-small">
+                                                    ❌ <b>Invalid SQL syntax</b>. Please check your query.<br>
+                                                </div>""", unsafe_allow_html=True)
+                                                st.write("")
+                                            sql_query_ok_flag = False
+
+                                        if sql_query_ok_flag:
+                                            with col1:
+                                                col1a, col1b = st.columns(2)
+                                            with col1a:
+                                                st.button("Save", key="key_save_tm_w_new_query", on_click=save_tm_w_query)
+
+                            elif selected_query_for_ls != "Select a query":
+                                sql_query = st.session_state["sql_queries_dict"][selected_query_for_ls][1]
+                                try:
+                                    cur = conn.cursor()
+                                    cur.execute(sql_query)
+                                    sql_query_ok_flag = True
+                                except:
+                                    with col1a:
+                                        st.markdown(f"""<div class="custom-error-small">
+                                            ❌ <b>Invalid SQL syntax</b>. Please check your query.<br>
+                                        </div>""", unsafe_allow_html=True)
+                                        st.write("")
+                                    sql_query_ok_flag = False
+
+                                if sql_query_ok_flag:
+                                    with col1a:
+                                        st.button("Save", key="key_save_tm_w_saved_query", on_click=save_tm_w_query)
+
+                        if query_option == "🔖 Table name" and db_connection_for_ls != "Select a connection" and conn:
+                            cur = conn.cursor()   # create a cursor
+                            engine = st.session_state["db_connections_dict"][db_connection_for_ls][0]
+                            database = st.session_state["db_connections_dict"][db_connection_for_ls][3]
+                            utils.get_tables_from_db(engine, cur, database)
+                            db_tables = [row[0] for row in cur.fetchall()]
+
+                            with col1a:
+                                list_to_choose = db_tables
+                                list_to_choose.insert(0, "Select a table")
+                                selected_table_for_ls = st.selectbox("🖱️ Choose a table:*", list_to_choose,
+                                    key="key_selected_table_for_ls")
+
+                                if selected_table_for_ls != "Select a table":
+                                    st.button("Save", key="key_save_tm_w_table_name", on_click=save_tm_w_table_name)
+
+            if ls_option == "🛢️ Non-relational data":
+                with col1a:
+                    logical_source_label = st.text_input("⌨️ Enter label for the logical source (optional):")
+                    if logical_source_label in labelled_ls_list:
+                        with col1b:
+                            st.markdown(f"""<div class="custom-warning-small">
+                                    ⚠️ The logical source label <b>{logical_source_label}</b>
+                                    is already in use. Please, pick a different label or leave blank.
+                                </div>""", unsafe_allow_html=True)
+                            st.write("")
+
+                ds_allowed_formats = utils.get_ds_allowed_formats()            #data source for the TriplesMap
+                with col1:
+                    col1a, col1b = st.columns([2,1])
+                with col1a:
+                    ds_file = st.file_uploader(f"""🖱️ Upload data source file*""",
+                        type=ds_allowed_formats, key=st.session_state["key_ds_uploader"])
+
                 if ds_file and not logical_source_label in labelled_ls_list:
                     try:
                         columns_df = pd.read_csv(ds_file)
                         ds_file.seek(0)    # reset index
                         column_list = columns_df.columns.tolist()
                         with col1a:
-                            st.button("Save", key="key_save_tm_w_new_ls", on_click=save_tm_w_new_ls)
+                            st.button("Save", key="key_save_tm_w_non_relational_ls", on_click=save_tm_w_non_relational_ls)
                     except:    # empty file
                         with col1a:
                             st.markdown(f"""<div class="custom-error-small">
                                 ❌ The file <b>{ds_file.name}</b> is empty. Please load a valid file.
                             </div>""", unsafe_allow_html=True)
                             st.write("")
+
 
     # remove tm success message - show here if "Remove" purple heading is not going to be shown
     if not utils.get_tm_dict() and st.session_state["tm_deleted_ok_flag"]:  # show message here if "Remove" purple heading is going to be shown

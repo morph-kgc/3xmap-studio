@@ -55,10 +55,10 @@ if "sql_query_saved_ok_flag" not in st.session_state:
 def save_postgress_connection():
     # store information________________
     st.session_state["db_connection_saved_ok_flag"] = True  # for success message
-    st.session_state["db_connections_dict"][label] = [db_connection_type,
+    st.session_state["db_connections_dict"][label] = [db_engine,
         host, port, database, user, password]    # to store connections
     # reset fields_____________________
-    st.session_state["key_db_connection_type"] = "Select an engine"
+    st.session_state["key_db_engine"] = "Select an engine"
     st.session_state["key_connection_label"] = ""
 
 def remove_connection():
@@ -184,9 +184,9 @@ with tab1:
 
     with col1:
         col1a, col1b = st.columns([2,1])
-    db_connection_type_list = ["Select an engine", "PostgreSQL", "MySQL", "SQL Server", "MariaDB", "Oracle"]
+    db_engine_list = ["Select an engine", "PostgreSQL", "MySQL", "SQL Server", "MariaDB", "Oracle"]
     with col1a:
-        db_connection_type = st.selectbox("🖱️ Select a database engine:*", db_connection_type_list, key="key_db_connection_type")
+        db_engine = st.selectbox("🖱️ Select a database engine:*", db_engine_list, key="key_db_engine")
     with col1b:
         label = st.text_input("⌨️ Enter label:*", key="key_connection_label")
         if label in st.session_state["db_connections_dict"]:
@@ -197,11 +197,11 @@ with tab1:
                         </div>""", unsafe_allow_html=True)
                 st.write("")
 
-    if db_connection_type != "Select an engine":
+    if db_engine != "Select an engine":
         default_ports_dict = utils.get_default_ports()
-        default_port = default_ports_dict[db_connection_type] if db_connection_type in default_ports_dict else ""
+        default_port = default_ports_dict[db_engine] if db_engine in default_ports_dict else ""
         default_users_dict = utils.get_default_users()
-        default_user = default_users_dict[db_connection_type] if db_connection_type in default_users_dict else ""
+        default_user = default_users_dict[db_engine] if db_engine in default_users_dict else ""
         with col1:
             col1a, col1b, col1c = st.columns(3)
         with col1a:
@@ -211,7 +211,7 @@ with tab1:
             port = st.text_input("⌨️ Enter port:*", value=default_port)
             password = st.text_input("⌨️ Enter password:*", type="password")
         with col1c:
-            if not db_connection_type == "Oracle":
+            if not db_engine == "Oracle":
                 database = st.text_input("⌨️ Enter database name:*")
             else:
                 database = st.text_input("⌨️ Enter service name:*")
@@ -222,7 +222,7 @@ with tab1:
         if (label and host and port and database
             and user and password and label not in st.session_state["db_connections_dict"]):
             with col1a:
-                connection_ok_flag = utils.try_connection(db_connection_type, host, port, database, user, password)
+                connection_ok_flag = utils.try_connection(db_engine, host, port, database, user, password)
                 if connection_ok_flag:
                     st.button("Save", key="key_save_postgress_connection_button", on_click=save_postgress_connection)
 
@@ -389,39 +389,7 @@ with tab2:
             engine = st.session_state["db_connections_dict"][connection_for_table_display][0]
             database = st.session_state["db_connections_dict"][connection_for_table_display][3]
 
-            if engine == "PostgreSQL":
-
-                cur.execute("""
-                    SELECT table_name FROM information_schema.tables
-                    WHERE table_schema = 'public' AND table_type = 'BASE TABLE';
-                """)
-            elif engine in ("MySQL", "MariaDB"):
-
-                cur.execute(f"""
-                    SELECT table_name FROM information_schema.tables
-                    WHERE table_schema = '{database}' AND table_type = 'BASE TABLE';
-                """)
-
-            elif engine == "Oracle":
-                cur.execute("""
-                    SELECT table_name
-                    FROM all_tables
-                    WHERE owner NOT IN (
-                        'SYS', 'SYSTEM', 'XDB', 'CTXSYS', 'MDSYS', 'ORDDATA', 'ORDSYS',
-                        'OUTLN', 'DBSNMP', 'APPQOSSYS', 'WMSYS', 'OLAPSYS', 'EXFSYS',
-                        'DVSYS', 'GGSYS', 'OJVMSYS', 'LBACSYS', 'AUDSYS',
-                        'REMOTE_SCHEDULER_AGENT')""")  # filter out system tables
-
-            elif engine == "SQL Server":
-                cur.execute("""
-                    SELECT TABLE_NAME
-                    FROM INFORMATION_SCHEMA.TABLES
-                    WHERE TABLE_TYPE = 'BASE TABLE'
-                      AND TABLE_CATALOG = ?
-                """, (database,))
-
-            else:
-                pass
+            utils.get_tables_from_db(engine, cur, database)
 
             db_tables = [row[0] for row in cur.fetchall()]
 

@@ -1196,7 +1196,43 @@ def try_connection(db_connection_type, host, port, database, user, password):
             return False
 #___________________________________________
 
+#________________________________________________________
+# Funtion to get all tables in a database
+def get_tables_from_db(engine, cur, database):
 
+    if engine == "PostgreSQL":
+        cur.execute("""
+            SELECT table_name FROM information_schema.tables
+            WHERE table_schema = 'public' AND table_type = 'BASE TABLE';
+        """)
+
+    elif engine in ("MySQL", "MariaDB"):
+        cur.execute(f"""
+            SELECT table_name FROM information_schema.tables
+            WHERE table_schema = '{database}' AND table_type = 'BASE TABLE';
+        """)
+
+    elif engine == "Oracle":
+        cur.execute("""
+            SELECT table_name
+            FROM all_tables
+            WHERE owner NOT IN (
+                'SYS', 'SYSTEM', 'XDB', 'CTXSYS', 'MDSYS', 'ORDDATA', 'ORDSYS',
+                'OUTLN', 'DBSNMP', 'APPQOSSYS', 'WMSYS', 'OLAPSYS', 'EXFSYS',
+                'DVSYS', 'GGSYS', 'OJVMSYS', 'LBACSYS', 'AUDSYS',
+                'REMOTE_SCHEDULER_AGENT')""")  # filter out system tables
+
+    elif engine == "SQL Server":
+        cur.execute("""
+            SELECT TABLE_NAME
+            FROM INFORMATION_SCHEMA.TABLES
+            WHERE TABLE_TYPE = 'BASE TABLE'
+              AND TABLE_CATALOG = ?
+        """, (database,))
+
+    else:
+        pass
+#___________________________________________
 
 #HEREIGO
 
