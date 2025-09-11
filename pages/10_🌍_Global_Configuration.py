@@ -56,6 +56,8 @@ if "g_label_temp_existing" not in st.session_state:
     st.session_state["g_label_temp_existing"] = ""
 if "existing_g_mapping_loaded_ok_flag" not in st.session_state:
     st.session_state["existing_g_mapping_loaded_ok_flag"] = False
+if "session_retrieved_ok_flag" not in st.session_state:
+    st.session_state["session_retrieved_ok_flag"] = False
 if "g_mapping_source_cache" not in st.session_state:
     st.session_state["g_mapping_source_cache"] = ["",""]
 if "original_g_size_cache" not in st.session_state:
@@ -106,6 +108,8 @@ if "progress_saved_ok_flag" not in st.session_state:
     st.session_state["progress_saved_ok_flag"] = False
 if "mapping_downloaded_ok_flag" not in st.session_state:
     st.session_state["mapping_downloaded_ok_flag"] = False
+if "session_saved_ok_flag" not in st.session_state:
+    st.session_state["session_saved_ok_flag"] = False
 
 # OTHER PAGES
 if "db_connections_dict" not in st.session_state:
@@ -139,23 +143,6 @@ def create_new_g_mapping():
     # reset fields__________________
     st.session_state["key_g_label_temp_new"] = ""
 
-def cancel_create_new_g_mapping():
-    # reset fields_____________
-    st.session_state["key_g_label_temp_new"] = ""
-
-def create_new_g_mapping_and_save_current_one():
-    # save current mapping to file__________
-    utils.save_mapping_to_file(save_g_filename)
-    # create new mapping___________________
-    st.session_state["g_label"] = st.session_state["g_label_temp_new"]
-    st.session_state["g_mapping"] = Graph()
-    # store information___________________
-    st.session_state["g_mapping_source_cache"] = ["scratch", ""]
-    st.session_state["new_g_mapping_created_ok_flag"] = True
-    utils.empty_last_added_lists()
-    # reset fields____________________________
-    st.session_state["key_g_label_temp_new"] = ""
-
 def load_existing_g_mapping():
     st.session_state["g_label"] = st.session_state["g_label_temp_existing"]   # consolidate g_label
     st.session_state["original_g_size_cache"] = utils.get_number_of_tm(st.session_state["candidate_g_mapping"])
@@ -168,25 +155,27 @@ def load_existing_g_mapping():
     st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
     st.session_state["key_g_label_temp_existing"] = ""
 
-def cancel_load_existing_g_mapping():
-    # reset fields___________________________
-    st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
-    st.session_state["key_g_label_temp_existing"] = ""
-
-def load_existing_g_mapping_and_save_current_one():
-    # save current mapping to file___________________________
-    utils.save_mapping_to_file(save_g_filename)
-    # create new mapping___________________________
-    st.session_state["original_g_size_cache"] = utils.get_number_of_tm(st.session_state["candidate_g_mapping"])
-    st.session_state["g_label"] = st.session_state["g_label_temp_existing"]   #we consolidate g_label
-    st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]   #we consolidate the loaded mapping
+def retrieve_session():
+    # get information from pkl file
+    full_path = os.path.join(folder_name, selected_pkl_file_w_extension)
+    # retrieve session___________________________
+    with open(full_path, "rb") as f:     # load mapping
+        project_state_list = pickle.load(f)
+    st.session_state["g_mapping"] = project_state_list[0][1]
+    st.session_state["g_ontology_components_dict"] = project_state_list[1]
+    st.session_state["structural_ns_dict"] = project_state_list[2]
+    st.session_state["db_connections_dict"] = project_state_list[3]
+    st.session_state["sql_queries_dict"] = project_state_list[4]
+    # build the complete ontology from its components
+    st.session_state["g_ontology"] = Graph()
+    for g_ontology in st.session_state["g_ontology_components_dict"].values():
+        st.session_state["g_ontology"] += g_ontology
     #store information___________________________
-    st.session_state["g_mapping_source_cache"] = ["file", selected_load_file.name]
-    st.session_state["existing_g_mapping_loaded_ok_flag"] = True
     utils.empty_last_added_lists()
+    st.session_state["selected_pkl_file_wo_extension"] = selected_pkl_file_wo_extension
     # reset fields___________________________
-    st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
-    st.session_state["key_g_label_temp_existing"] = ""
+    st.session_state["session_retrieved_ok_flag"] = True
+    st.session_state["key_selected_pkl_file_wo_extension"] = "Select a session"
 
 def retrieve_cached_mapping():
     # get information from pkl file
@@ -393,6 +382,19 @@ def save_progress():
     #reset fields__________________________________
     st.session_state["key_save_progress_checkbox"] = False
 
+def save_session():
+    # create folder if needed
+    os.makedirs(folder_name, exist_ok=True)
+    full_path = os.path.join(folder_name, pkl_filename_w_extension)
+    # save session___________________________
+    project_state_list = utils.save_project_state()
+    with open(full_path, "wb") as f:
+        pickle.dump(project_state_list, f)
+    # store information___________________________
+    st.session_state["session_saved_ok_flag"] = True
+    st.session_state["pkl_filename"] = pkl_filename + '.pkl'
+    # reset fields_____________________
+    st.session_state["key_pkl_filename"] = ""
 
 
 
@@ -437,7 +439,7 @@ with tab1:
 
         if st.session_state["g_label_temp_new"]:  #after a new label has been given
             with col1a:
-                st.button("Create", on_click=create_new_g_mapping)
+                st.button("Create", on_click=create_new_g_mapping, key="key_create_new_g_mapping_button_1")
 
 
     # A mapping is currently loaded__________
@@ -447,103 +449,33 @@ with tab1:
         if st.session_state["g_label_temp_new"]:   #after a label and file have been given
             with col1a:
                 st.write("")
-                st.markdown(f"""<span style="font-size:1.1em; font-weight:bold;">
-                ⚠️ The mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b>
-                is already loaded!</span><br>""",
-                    unsafe_allow_html=True)
+                st.markdown(f"""<div class="custom-warning-orange">
+                        🚧 The mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b>
+                        is already loaded and will be overwritten if you continue. You can export
+                        the current mapping or save the session in
+                        the <b>Save Mapping </b>
+                        pannel.
+                    </div>""", unsafe_allow_html=True)
                 st.write("")
 
-            with col1:
-                col1a, col1b = st.columns([1,2])
-            with col1a:
-                overwrite_g_selection = st.radio("What would you like to do?:*",
-                    ["✏️ Overwrite", "💾 Save", "🛑 Cancel"],
-                    key="key_overwrite_selection_radio_new")
+            with col1b:
+                st.write("")
+                st.markdown(f"""
+                    <div style="background-color:#F5F5F5; border:1px dashed #511D66;
+                    padding:10px; border-radius:5px; margin-bottom:8px;">
+                    <span style="font-size:0.95rem;">
+                        🗑️ Mapping <b>{st.session_state["g_label"]}</b> will be overwritten.<br>
+                        🆕 Mapping <b>{st.session_state["g_label_temp_new"]}</b> will be created.
+                    </span></div>""", unsafe_allow_html=True)
 
-            if overwrite_g_selection == "✏️ Overwrite":
-                with col1b:
-                    st.write("")
-                    st.markdown(f"""
-                        <div style="background-color:#F5F5F5; border:1px dashed #511D66;
-                        padding:10px; border-radius:5px; margin-bottom:8px;">
-                        <span style="font-size:0.95rem;">
-                            🗑️ Mapping <b>{st.session_state["g_label"]}</b> will be overwritten.<br>
-                            🆕 Mapping <b>{st.session_state["g_label_temp_new"]}</b> will be created.
-                        </span></div>""", unsafe_allow_html=True)
-                with col1b:
-                    overwrite_g_mapping_checkbox = st.checkbox(
-                    f""":gray-badge[⚠️ I am completely sure I want to overwrite mapping {st.session_state["g_label"]}]""",
-                    key="key_overwrite_g_mapping_checkbox_new")
+            with col1a:
+                overwrite_g_mapping_checkbox = st.checkbox(
+                f""":gray-badge[⚠️ I am completely sure I want to overwrite mapping {st.session_state["g_label"]}]""",
+                key="key_overwrite_g_mapping_checkbox_new")
 
                 if overwrite_g_mapping_checkbox:
-                    with col1b:
-                        st.button(f"""Overwrite and create""", on_click=create_new_g_mapping, key="key_overwrite_new_button")
-
-            elif overwrite_g_selection == "🛑 Cancel":
-                with col1b:
-                    st.write("")
-                    st.markdown(f"""<div style="background-color:#F5F5F5; border:1px dashed #511D66;
-                        padding:10px; border-radius:5px; margin-bottom:8px;">
-                        <span style="font-size:0.95rem;">
-                            🛑 Mapping <b>{st.session_state["g_label_temp_new"]}</b> will not be created.<br>
-                            🔄 You will keep working with mapping <b>{st.session_state["g_label"]}</b>.
-                        </span></div>""", unsafe_allow_html=True)
-                with col1b:
-                    st.button(f"""Cancel""",  on_click=cancel_create_new_g_mapping, key="key_cancel_new_button")
-
-
-            elif overwrite_g_selection == "💾 Save": #for the save case we need to ask for the filename before confirming
-
-                if st.session_state["g_mapping_source_cache"][0] == "file":   # if current mapping was loaded from file
-                    default_ext = os.path.splitext(st.session_state["g_mapping_source_cache"][1])[1]
-                else:
-                    default_ext = ".ttl"
-
-                with col1b:
-                    save_g_filename = st.text_input(
-                    f"⌨️ Enter filename:",
-                    value = st.session_state["g_label"])
-
-                with col1b:
-                    ext_options = list(utils.get_g_mapping_file_formats_dict().values())
-                    default_index = ext_options.index(default_ext)
-                    ext = st.selectbox("🖱️ Select file extension", ext_options,
-                        index=default_index)
-                save_g_filename += ext
-
-                if not save_g_filename.startswith("."):
-                    with col1b:
-                        st.write("")
-                        st.markdown(f"""
-                            <div style="background-color:#F5F5F5; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                                <span style="font-size:0.95rem;">
-                                    💾️ Current mapping will be saved to to file <b>{save_g_filename}</b>.<br>
-                                    🆕 Mapping <b>{st.session_state["g_label_temp_new"]}</b> will be created</b>.
-                            </span></div>""", unsafe_allow_html=True)
-
-                existing_files_list = [f for f in os.listdir(save_mappings_folder)]
-
-                if save_g_filename in existing_files_list:
-                    with col1b:
-                        st.markdown(f"""<div style="background-color:#fff3cd; padding:0.8em;
-                            border-radius:5px; color:#856404; border:1px solid #ffeeba; font-size:0.92rem;">
-                                ⚠️ A file named <b>{save_g_filename}</b> already exists
-                                in folder. Please confirm below you want to overwrite it, or enter a different filename.
-                            </div>""", unsafe_allow_html=True)
-                        st.write("")
-
-                        overwrite_pkl_file_checkbox = st.checkbox(
-                            f""":gray-badge[I am completely sure I want to overwrite the file {save_g_filename}]""",
-                            key="key_overwrite_pkl_file_checkbox_existing")
-
-                        if overwrite_pkl_file_checkbox:
-                            st.button(f"""Save and create""",
-                             on_click=create_new_g_mapping_and_save_current_one,  key="key_save_new_button_1")
-                else:
-                    if save_g_filename:
-                        with col1b:
-                            st.button(f"""Save and create""",
-                             on_click=create_new_g_mapping_and_save_current_one,  key="key_save_new_button_2")
+                    with col1a:
+                        st.button(f"""Overwrite and create""", on_click=create_new_g_mapping, key="key_create_new_g_mapping_button_2")
 
     with col1:
         st.write("______")
@@ -558,7 +490,6 @@ with tab1:
 
 
     mapping_format_list = list(utils.get_g_mapping_file_formats_dict().values())
-
 
     with col1:
         col1a, col1b = st.columns([2,1])
@@ -596,7 +527,7 @@ with tab1:
             with col1:
                 col1a, col1b = st.columns([1,2])
             with col1a:
-                st.button("Load", on_click=load_existing_g_mapping, key="key_save_existing_button_1")
+                st.button("Load", on_click=load_existing_g_mapping, key="key_load_existing_g_mapping_button_2")
 
 
     # A mapping is currently loaded__________
@@ -606,102 +537,72 @@ with tab1:
         if st.session_state["g_label_temp_existing"] and selected_load_file:   #after a label and file have been given
             with col1a:
                 st.write("")
-                st.markdown(f"""<span style="font-size:1.1em; font-weight:bold;">
-                ⚠️ The mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b>
-                is already loaded!</span><br>""",
-                    unsafe_allow_html=True)
+                st.markdown(f"""<div class="custom-warning-orange">
+                        🚧 The mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b>
+                        is already loaded and will be overwritten if you continue. You can export
+                        the current mapping or save the session in
+                        the <b>Save Mapping </b>
+                        pannel.
+                    </div>""", unsafe_allow_html=True)
                 st.write("")
 
 
-            with col1:
-                col1a, col1b = st.columns([1,2])
+            with col1b:
+                st.write("")
+                st.markdown(f"""
+                    <div style="background-color:#F5F5F5; border:1px dashed #511D66;
+                    padding:10px; border-radius:5px; margin-bottom:8px;">
+                    <span style="font-size:0.95rem;">
+                        🗑️ Mapping <b>{st.session_state["g_label"]}</b> will be overwritten.<br>
+                        🆕 Mapping <b>{st.session_state["g_label_temp_existing"]}</b> will be created.
+                    </span></div>""", unsafe_allow_html=True)
             with col1a:
-                overwrite_g_selection = st.radio("What would you like to do?:*",
-                    ["✏️ Overwrite", "💾 Save", "🛑 Cancel"],
-                    key="key_overwrite_selection_radio_existing")
-
-            if overwrite_g_selection == "✏️ Overwrite":
-                with col1b:
-                    st.write("")
-                    st.markdown(f"""
-                        <div style="background-color:#F5F5F5; border:1px dashed #511D66;
-                        padding:10px; border-radius:5px; margin-bottom:8px;">
-                        <span style="font-size:0.95rem;">
-                            🗑️ Mapping <b>{st.session_state["g_label"]}</b> will be overwritten.<br>
-                            🆕 Mapping <b>{st.session_state["g_label_temp_existing"]}</b> will be created.
-                        </span></div>""", unsafe_allow_html=True)
-                with col1b:
-                    overwrite_g_mapping_checkbox = st.checkbox(
-                    f""":gray-badge[⚠️ I am completely sure I want to overwrite mapping {st.session_state["g_label"]}]""",
-                    key="key_overwrite_g_mapping_checkbox_existing")
+                overwrite_g_mapping_checkbox = st.checkbox(
+                f""":gray-badge[⚠️ I am completely sure I want to overwrite mapping {st.session_state["g_label"]}]""",
+                key="key_overwrite_g_mapping_checkbox_existing")
 
                 if overwrite_g_mapping_checkbox:
-                    with col1b:
-                        st.button(f"""Overwrite and create""", on_click=load_existing_g_mapping, key="key_overwrite_existing_button")
+                    st.button(f"""Overwrite and create""", on_click=load_existing_g_mapping, key="key_load_existing_g_mapping_button_2")
 
-            elif overwrite_g_selection == "🛑 Cancel":
-                with col1b:
-                    st.write("")
-                    st.markdown(f"""<div style="background-color:#F5F5F5; border:1px dashed #511D66;
-                        padding:10px; border-radius:5px; margin-bottom:8px;">
-                        <span style="font-size:0.95rem;">
-                            🛑 Mapping <b>{st.session_state["g_label_temp_existing"]}</b> will not be created.<br>
-                            🔄 You will keep working with mapping <b>{st.session_state["g_label"]}</b>.
-                        </span></div>""", unsafe_allow_html=True)
-                with col1b:
-                    st.button(f"""Cancel""", on_click=cancel_load_existing_g_mapping, key="key_cancel_existing_button")
+    # OPTION: Retrieve session--------------------------------------
+    folder_name = "saved_sessions"
+    folder_path = os.path.join(os.getcwd(), folder_name)
+    pkl_files_list = [f for f in os.listdir(folder_path) if f.endswith(".pkl")]
 
-            elif overwrite_g_selection == "💾 Save": #for the save case we need to ask for the filename before confirming
+    if pkl_files_list:
+        with col1:
+            st.write("___________________________")
+            st.markdown("""<div class="purple-heading">
+                    🗃️ Retrieve Saved Session
+                </div>""", unsafe_allow_html=True)
+            st.write("")
 
-                if st.session_state["g_mapping_source_cache"][0] == "file":   # if current mapping was loaded from file
-                    default_ext = os.path.splitext(st.session_state["g_mapping_source_cache"][1])[1]
-                else:
-                    default_ext = ".ttl"
+        if st.session_state["session_retrieved_ok_flag"]:
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                st.write("")
+                st.markdown(f"""<div class="custom-success">
+                    ✅ The session <b>{st.session_state["selected_pkl_file_wo_extension"]}</b> has been retrieved!
+                </div>""", unsafe_allow_html=True)
+            st.session_state["session_retrieved_ok_flag"] = False
+            time.sleep(st.session_state["success_display_time"])
+            st.rerun()
 
-                with col1b:
-                    save_g_filename = st.text_input(
-                    f"⌨️ Enter filename:",
-                    value = st.session_state["g_label"])
+        with col1:
+            col1a, col1b =st.columns([2,1])
+        with col1a:
+            pkl_files_dict = {f.removesuffix(".pkl"): f for f in pkl_files_list}
+            list_to_choose = list(pkl_files_dict.keys())
+            list_to_choose.insert(0, "Select a session")
+            selected_pkl_file_wo_extension = st.selectbox("🖱️ Select a session:*", list_to_choose,
+                key="key_selected_pkl_file_wo_extension")
+            selected_pkl_file_w_extension = pkl_files_dict[selected_pkl_file_wo_extension] if selected_pkl_file_wo_extension != "Select a session" else ""
 
-                with col1b:
-                    ext_options = list(utils.get_g_mapping_file_formats_dict().values())
-                    default_index = ext_options.index(default_ext)
-                    ext = st.selectbox("🖱️ Select file extension", ext_options,
-                        index=default_index)
-                save_g_filename += ext
+        if selected_pkl_file_w_extension:
+            st.button("Retrieve", key="key_retrieve_session_button", on_click=retrieve_session)
 
-                if not save_g_filename.startswith("."):
-                    with col1b:
-                        st.write("")
-                        st.markdown(f"""
-                            <div style="background-color:#F5F5F5; border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                                <span style="font-size:0.95rem;">
-                                    💾️ Current mapping will be saved to to file <b>{save_g_filename}</b>.<br>
-                                    🆕 Mapping <b>{st.session_state["g_label_temp_existing"]}</b> will be created</b>.
-                            </span></div>""", unsafe_allow_html=True)
 
-                existing_files_list = [f for f in os.listdir(save_mappings_folder)]
-
-                if save_g_filename in existing_files_list:
-                    with col1b:
-                        st.markdown(f"""<div class="custom-warning-small">
-                                ⚠️ A file named <b>{save_g_filename}</b> already exists
-                                in folder. Please confirm below you want to overwrite it, or enter a different filename.
-                            </div>""", unsafe_allow_html=True)
-                        st.write("")
-
-                        overwrite_pkl_file_checkbox = st.checkbox(
-                            f""":gray-badge[I am completely sure I want to overwrite the file {save_g_filename}]""",
-                            key="key_overwrite_pkl_file_checkbox_existing")
-
-                        if overwrite_pkl_file_checkbox:
-                            st.button(f"""Save and create""",
-                             on_click=load_existing_g_mapping_and_save_current_one,  key="key_save_existing_button_2")
-                else:
-                    if save_g_filename:
-                        with col1b:
-                            st.button(f"""Save and create""",
-                             on_click=load_existing_g_mapping_and_save_current_one,  key="key_save_existing_button_3")
 
 
     if st.session_state["cached_mapping_retrieved_ok_flag"]:
@@ -2027,7 +1928,7 @@ with tab4:
                     </div>""", unsafe_allow_html=True)
 
         with col1:
-            col1a, col1b = st.columns([2,1])
+            col1a, col1b = st.columns([1.5,1])
 
         export_filename_complete = export_filename + export_extension if export_filename else ""
 
@@ -2053,54 +1954,103 @@ with tab4:
                     del st.session_state[key]
                 st.rerun()   # to get to success message
 
-    # tm with sm
-    tm_dict = utils.get_tm_dict()
-    tm_wo_sm_list = []   # list of all tm with assigned sm
-    tm_wo_pom_list = []
-    for tm_label, tm_iri in tm_dict.items():
-        if not any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectMap, None))):
-            tm_wo_sm_list.append(tm_label)
-    for tm_label, tm_iri in tm_dict.items():
-        if not any(st.session_state["g_mapping"].triples((tm_iri, RR.predicateObjectMap, None))):
-            tm_wo_pom_list.append(tm_label)
+        # tm with sm
+        tm_dict = utils.get_tm_dict()
+        tm_wo_sm_list = []   # list of all tm with assigned sm
+        tm_wo_pom_list = []
+        for tm_label, tm_iri in tm_dict.items():
+            if not any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectMap, None))):
+                tm_wo_sm_list.append(tm_label)
+        for tm_label, tm_iri in tm_dict.items():
+            if not any(st.session_state["g_mapping"].triples((tm_iri, RR.predicateObjectMap, None))):
+                tm_wo_pom_list.append(tm_label)
 
 
-    tm_wo_pom_list_display = utils.format_list_for_markdown(tm_wo_pom_list)
+        tm_wo_pom_list_display = utils.format_list_for_markdown(tm_wo_pom_list)
 
-    if tm_wo_sm_list or tm_wo_pom_list:
-        max_length = 20
+        if st.session_state["g_label"] and export_filename:
+            if tm_wo_sm_list or tm_wo_pom_list:
+                max_length = 20
 
-        inner_html = f"""<div style="font-size:1.1em; font-weight:bold;">
-            🚧 The mapping <b>{st.session_state["g_label"]}</b> is incomplete!</div><br>"""
+                inner_html = f"""<div style="font-size:1.1em; font-weight:bold;">
+                    🚧 The mapping <b>{st.session_state["g_label"]}</b> is incomplete!</div><br>"""
 
-        if tm_wo_sm_list:
-            if len(tm_wo_sm_list) < max_length:
-                tm_wo_sm_list_display = utils.format_list_for_markdown(tm_wo_sm_list)
-                inner_html += f"""The TriplesMaps <b>{tm_wo_sm_list_display}</b> have not been assigned
-                a Subject Map.<br>"""
-            else:
-                inner_html += f"""<b>{len(tm_wo_sm_list)} TriplesMaps</b> have not been assigned
-                a Subject Map.<br>"""
+                if tm_wo_sm_list:
+                    if len(tm_wo_sm_list) < max_length:
+                        tm_wo_sm_list_display = utils.format_list_for_markdown(tm_wo_sm_list)
+                        inner_html += f"""The TriplesMaps <b>{tm_wo_sm_list_display}</b> have not been assigned
+                        a Subject Map.<br>"""
+                    else:
+                        inner_html += f"""<b>{len(tm_wo_sm_list)} TriplesMaps</b> have not been assigned
+                        a Subject Map.<br>"""
 
-        if tm_wo_pom_list:
-            if len(tm_wo_pom_list) < max_length:
-                tm_wo_pom_list_display = utils.format_list_for_markdown(tm_wo_pom_list)
-                inner_html += f"""The TriplesMaps <b>{tm_wo_pom_list_display}</b> have not been assigned
-                a Predicate-Object Map.<br>"""
-            else:
-                inner_html += f"""<b>{len(tm_wo_pom_list)} TriplesMaps</b> have not been assigned
-                a Predicate-Object Map.<br>"""
+                if tm_wo_pom_list:
+                    if len(tm_wo_pom_list) < max_length:
+                        tm_wo_pom_list_display = utils.format_list_for_markdown(tm_wo_pom_list)
+                        inner_html += f"""The TriplesMaps <b>{tm_wo_pom_list_display}</b> have not been assigned
+                        a Predicate-Object Map.<br>"""
+                    else:
+                        inner_html += f"""<b>{len(tm_wo_pom_list)} TriplesMaps</b> have not been assigned
+                        a Predicate-Object Map.<br>"""
 
+                full_html = f"""<div class="custom-warning-small-orange">
+                        {inner_html}
+                    </div>"""
 
+                with col1b:
+                    st.markdown(full_html, unsafe_allow_html=True)
 
-        full_html = f"""<div class="custom-warning-small-orange">
-                {inner_html}
-            </div>"""
 
         with col1:
-            st.markdown(full_html, unsafe_allow_html=True)
+            st.markdown("""<div class="purple-heading">
+                    💾 Save session
+                </div>""", unsafe_allow_html=True)
+            st.write("")
 
+        if st.session_state["session_saved_ok_flag"]:
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                st.markdown(f"""<div class="custom-success">
+                    ✅ The session has been saved to file <b style="color:#F63366;">{st.session_state["pkl_filename"]}</b>!
+                </div>""", unsafe_allow_html=True)
+            st.session_state["session_saved_ok_flag"] = False
+            time.sleep(st.session_state["success_display_time"])
+            st.rerun()
 
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            pkl_filename = st.text_input("⌨️ Enter filename (without extension):*", key="key_pkl_filename")
+
+        if pkl_filename:
+            if "." in pkl_filename:
+                with col1b:
+                    st.markdown(f"""<div class="custom-warning-small">
+                            ⚠️ The filename <b style="color:#cc9a06;">{pkl_filename}</b>
+                            seems to include an extension.
+                        </div>""", unsafe_allow_html=True)
+
+        folder_name = "saved_sessions"
+        pkl_filename_w_extension = pkl_filename + '.pkl'
+        folder_path = os.path.join(os.getcwd(), folder_name)
+        file_path = os.path.join(folder_path, pkl_filename_w_extension)
+
+        if pkl_filename and os.path.isfile(file_path):
+            with col1a:
+                st.markdown(f"""<div class="custom-warning-small">
+                        ⚠️ <b>A session was already saved with this filename</b>. Please, pick
+                        a different filename unless you want to overwrite it.
+                    </div>""", unsafe_allow_html=True)
+                st.write("")
+                overwrite_pkl_checkbox = st.checkbox(
+                ":gray-badge[⚠️ I am sure I want to overwrite]",
+                key="key_overwrite_pkl_checkbox")
+            if overwrite_pkl_checkbox:
+                with col1a:
+                    st.button("Save", key="key_save_session_button", on_click=save_session)
+        elif pkl_filename:
+            st.button("Save", key="key_save_session_button", on_click=save_session)
 
 
 #_____________________________________________

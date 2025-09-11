@@ -144,6 +144,12 @@ def import_st_aesthetics():
 
         .custom-warning b {color: #cc9a06;}
 
+    /* WARNING MESSAGE ORANGE */
+    .custom-warning-orange {background-color: #ffe3c0; padding: 1em;
+        border-radius: 5px; color: #8a3c00; font-size: 1em;}
+
+    .custom-warning-small-orange b {color: #d66a00;}
+
     /* WARNING MESSAGE SMALL*/
         .custom-warning-small {background-color: #fff7db; padding: 0.5em;
             border-radius: 5px; color: #856404;
