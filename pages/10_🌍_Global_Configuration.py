@@ -107,6 +107,10 @@ if "progress_saved_ok_flag" not in st.session_state:
 if "mapping_downloaded_ok_flag" not in st.session_state:
     st.session_state["mapping_downloaded_ok_flag"] = False
 
+# OTHER PAGES
+if "db_connections_dict" not in st.session_state:
+    st.session_state["db_connections_dict"] = {}
+
 # Namespaces-----------------------------------
 RML, RR, QL = utils.get_required_ns().values()
 
@@ -189,6 +193,7 @@ def retrieve_cached_mapping():
     st.session_state["g_mapping"] = project_state_list[0][1]
     st.session_state["g_ontology_components_dict"] = project_state_list[1]
     st.session_state["structural_ns_dict"] = project_state_list[2]
+    st.session_state["db_connections_dict"] = project_state_list[3]
     # build the complete ontology from its components
     st.session_state["g_ontology"] = Graph()
     for g_ontology in st.session_state["g_ontology_components_dict"].values():
@@ -367,9 +372,10 @@ def unbind_all_namespaces():
 
 #TAB4
 def save_progress():
+    # name of temporary file_____________
     pkl_cache_filename = "__" + st.session_state["g_label"] + "_cache__.pkl"
-    existing_pkl_file_list = [f for f in os.listdir() if f.endswith("_cache__.pkl")]
     # remove all cache pkl files in cwd_____________
+    existing_pkl_file_list = [f for f in os.listdir() if f.endswith("_cache__.pkl")]
     for file in existing_pkl_file_list:
         filepath = os.path.join(os.getcwd(), file)
         if os.path.isfile(file):

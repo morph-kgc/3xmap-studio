@@ -390,28 +390,28 @@ with tab2:
             database = st.session_state["db_connections_dict"][connection_for_table_display][3]
 
             if engine == "PostgreSQL":
+
                 cur.execute("""
                     SELECT table_name FROM information_schema.tables
                     WHERE table_schema = 'public' AND table_type = 'BASE TABLE';
                 """)
             elif engine in ("MySQL", "MariaDB"):
+
                 cur.execute(f"""
                     SELECT table_name FROM information_schema.tables
                     WHERE table_schema = '{database}' AND table_type = 'BASE TABLE';
                 """)
+
             elif engine == "Oracle":
                 cur.execute("""
                     SELECT table_name
-                    FROM user_tables
-                    WHERE table_name NOT LIKE 'BIN$%'    -- exclude recycle bin
-                      AND table_name NOT LIKE 'APEX$%'   -- exclude APEX system tables
-                      AND table_name NOT LIKE 'FLOWS_%'  -- exclude Oracle Application Express
-                      AND table_name NOT LIKE 'WWV_%'    -- exclude web toolkit tables
-                      AND table_name NOT LIKE 'DR$%'     -- exclude Oracle Text
-                      AND table_name NOT LIKE 'MDS_%'    -- exclude metadata services
-                      AND table_name NOT LIKE 'WRI$%'    -- exclude stats history
-                      AND table_name NOT LIKE 'XDB$%'    -- exclude XML DB
-                      AND table_name NOT LIKE 'C##%'     -- exclude common users""")
+                    FROM all_tables
+                    WHERE owner NOT IN (
+                        'SYS', 'SYSTEM', 'XDB', 'CTXSYS', 'MDSYS', 'ORDDATA', 'ORDSYS',
+                        'OUTLN', 'DBSNMP', 'APPQOSSYS', 'WMSYS', 'OLAPSYS', 'EXFSYS',
+                        'DVSYS', 'GGSYS', 'OJVMSYS', 'LBACSYS', 'AUDSYS',
+                        'REMOTE_SCHEDULER_AGENT')""")  # filter out system tables
+
             elif engine == "SQL Server":
                 cur.execute("""
                     SELECT TABLE_NAME
@@ -419,6 +419,7 @@ with tab2:
                     WHERE TABLE_TYPE = 'BASE TABLE'
                       AND TABLE_CATALOG = ?
                 """, (database,))
+
             else:
                 pass
 
