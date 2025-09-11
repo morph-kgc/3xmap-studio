@@ -110,6 +110,9 @@ if "mapping_downloaded_ok_flag" not in st.session_state:
 # OTHER PAGES
 if "db_connections_dict" not in st.session_state:
     st.session_state["db_connections_dict"] = {}
+if "sql_queries_dict" not in st.session_state:
+    st.session_state["sql_queries_dict"] = {}
+
 
 # Namespaces-----------------------------------
 RML, RR, QL = utils.get_required_ns().values()
@@ -194,6 +197,7 @@ def retrieve_cached_mapping():
     st.session_state["g_ontology_components_dict"] = project_state_list[1]
     st.session_state["structural_ns_dict"] = project_state_list[2]
     st.session_state["db_connections_dict"] = project_state_list[3]
+    st.session_state["sql_queries_dict"] = project_state_list[4]
     # build the complete ontology from its components
     st.session_state["g_ontology"] = Graph()
     for g_ontology in st.session_state["g_ontology_components_dict"].values():

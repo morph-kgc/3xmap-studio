@@ -680,7 +680,7 @@ def is_valid_iri(iri):
 #Funtion to create the list that stores the state of the project
 # project_state_list
 # 0. [g_label, g_mapping]     1. g_ontology_components_dict      2. structural_ns_dict
-# 3.
+# 3. db_connections_dict       4. sql_queries_dict
 def save_project_state():
 
     # list to save the mapping
@@ -693,6 +693,7 @@ def save_project_state():
     project_state_list.append(st.session_state["g_ontology_components_dict"])
     project_state_list.append(st.session_state["structural_ns_dict"])
     project_state_list.append(st.session_state["db_connections_dict"])
+    project_state_list.append(st.session_state["sql_queries_dict"])
 
     return project_state_list
 
