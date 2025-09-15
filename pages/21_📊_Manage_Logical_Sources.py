@@ -21,7 +21,8 @@ st.markdown("""
             <span style="color:#511D66; font-weight:bold; margin-left:12px;">◽◽◽◽◽</span>
         </h3>
         <p style="margin:0; font-size:0.95rem; color:#555;">
-            Manage your logical tables: <b>PostgreSQL, xxx, xxx, etc.</b>
+            Manage the connections to <b>relational data sources</b>, load files from <b>non-relational sources</b>
+            and <b>query data</b>.
         </p>
     </div>
 </div>
@@ -38,6 +39,8 @@ st.write("")
 #TAB1
 if "db_connections_dict" not in st.session_state:
     st.session_state["db_connections_dict"] = {}
+if "db_connection_status_dict" not in st.session_state:
+    st.session_state["db_connection_status_dict"] = {}
 if "db_connection_saved_ok_flag" not in st.session_state:
     st.session_state["db_connection_saved_ok_flag"] = False
 if "db_connection_removed_ok_flag" not in st.session_state:
@@ -52,19 +55,38 @@ if "sql_query_saved_ok_flag" not in st.session_state:
 
 #define on_click functions
 # TAB1
-def save_postgress_connection():
+def update_db_connections():
+    for connection_label in st.session_state["db_connections_dict"]:
+        try:
+            conn = utils.make_connection_to_db(connection_label)
+            if conn:
+                conn.close() # optional: close immediately or keep open for queries
+            st.session_state["db_connection_status_dict"][connection_label] = ["✔️", ""]
+
+        except Exception as e:
+            st.session_state["db_connection_status_dict"][connection_label] = ["❌", e]
+
+def save_connection():
     # store information________________
     st.session_state["db_connection_saved_ok_flag"] = True  # for success message
-    st.session_state["db_connections_dict"][label] = [db_engine,
+    st.session_state["db_connections_dict"][conn_label] = [db_engine,
         host, port, database, user, password]    # to store connections
+    st.session_state["db_connection_status_dict"][conn_label] = ["✔️", ""]
     # reset fields_____________________
     st.session_state["key_db_engine"] = "Select an engine"
-    st.session_state["key_connection_label"] = ""
+    st.session_state["key_conn_label"] = ""
 
 def remove_connection():
     # delete connections________________
     for connection_label in connection_labels_to_remove_list:
         del st.session_state["db_connections_dict"][connection_label]
+    # delete queries________________
+    queries_to_delete_list = []
+    for query in st.session_state["sql_queries_dict"]:
+        if st.session_state["sql_queries_dict"][query][0] in connection_labels_to_remove_list:
+            queries_to_delete_list.append(query)
+    for query in queries_to_delete_list:
+        del st.session_state["sql_queries_dict"][query]
     # store information________________
     st.session_state["db_connection_removed_ok_flag"] = True  # for success message
     # reset fields_____________________
@@ -99,7 +121,7 @@ if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
 
-tab1, tab2, tab3 = st.tabs(["Manage Connections", "Query Data", "Save Logical Table"])
+tab1, tab2, tab3 = st.tabs(["SQL Data Sources", "Non-SQL Data Sources", "Query Data"])
 
 
 #________________________________________________
@@ -111,9 +133,6 @@ with tab1:
     with col1:
         col1a, col1b = st.columns([2,1])
 
-    # Display last added namespaces in dataframe (also option to show all ns)
-    tm_dict = utils.get_tm_dict()
-
     with col2:
         col2a, col2b = st.columns([0.5, 2])
 
@@ -121,20 +140,9 @@ with tab1:
         st.write("")
         st.write("")
 
-        check_connection_dict = {}
-        for connection_label in st.session_state["db_connections_dict"]:
-            try:
-                conn = utils.make_connection_to_db(connection_label)
-                if conn:
-                    conn.close() # optional: close immediately or keep open for queries
-                check_connection_dict[connection_label] = "✔️"
-
-            except Exception as e:
-                check_connection_dict[connection_label] = "❌"
-
         rows = [{"Label": label, "Engine": st.session_state["db_connections_dict"][label][0],
                 "Database": st.session_state["db_connections_dict"][label][3],
-                "Connection OK": check_connection_dict[label]}
+                "Status": st.session_state["db_connection_status_dict"][label][0]}
                 for label in reversed(list(st.session_state["db_connections_dict"].keys()))]
         db_connections_df = pd.DataFrame(rows)
         last_added_db_connections_df = db_connections_df.head(utils.get_max_length_for_display()[1])
@@ -155,7 +163,8 @@ with tab1:
                         (complete list below)
                     </div>""", unsafe_allow_html=True)
             st.dataframe(last_added_db_connections_df, hide_index=True)
-            st.write("")
+
+            st.button("Update", key="key_update_db_connections_button", on_click=update_db_connections)
 
         #Option to show all connections (if too many)
         if st.session_state["db_connections_dict"] and len(st.session_state["db_connections_dict"]) > max_length:
@@ -163,12 +172,13 @@ with tab1:
                 st.write("")
                 st.dataframe(db_connections_df, hide_index=True)
 
-    #PURPLE HEADING - ADD NEW CONECTION
+    # PURPLE HEADING - ADD NEW CONNECTION
     with col1:
         st.markdown("""<div class="purple-heading">
-                🔌 Add New Connection
+                🔌 Add Connection to Data Source
             </div>""", unsafe_allow_html=True)
         st.write("")
+
 
     if st.session_state["db_connection_saved_ok_flag"]:
         with col1:
@@ -188,11 +198,11 @@ with tab1:
     with col1a:
         db_engine = st.selectbox("🖱️ Select a database engine:*", db_engine_list, key="key_db_engine")
     with col1b:
-        label = st.text_input("⌨️ Enter label:*", key="key_connection_label")
-        if label in st.session_state["db_connections_dict"]:
+        conn_label = st.text_input("⌨️ Enter label:*", key="key_conn_label")
+        if conn_label in st.session_state["db_connections_dict"]:
             with col1a:
                 st.markdown(f"""<div class="custom-error-small">
-                    ❌ Label <b>{label}</b> is already in use.<br>
+                    ❌ Label <b>{conn_label}</b> is already in use.<br>
                     You must choose a different label for this connection.
                         </div>""", unsafe_allow_html=True)
                 st.write("")
@@ -219,12 +229,12 @@ with tab1:
         with col1:
             col1a, col1b = st.columns([2,1])
 
-        if (label and host and port and database
-            and user and password and label not in st.session_state["db_connections_dict"]):
+        if (conn_label and host and port and database
+            and user and password and conn_label not in st.session_state["db_connections_dict"]):
             with col1a:
                 connection_ok_flag = utils.try_connection(db_engine, host, port, database, user, password)
                 if connection_ok_flag:
-                    st.button("Save", key="key_save_postgress_connection_button", on_click=save_postgress_connection)
+                    st.button("Save", key="key_save_connection_button", on_click=save_connection)
 
     if not st.session_state["db_connections_dict"] and st.session_state["db_connection_removed_ok_flag"]:
         with col1:
@@ -239,7 +249,53 @@ with tab1:
         st.rerun()
 
 
-    #PURPLE HEADING - REMOVE CONNECTION
+    # PURPLE HEADING - CONSULT CONNECTION
+    if st.session_state["db_connections_dict"]:
+        with col1:
+            st.write("______")
+            st.markdown("""<div class="purple-heading">
+                    ℹ️ Connection Information
+                </div>""", unsafe_allow_html=True)
+            st.write("")
+
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+
+            list_to_choose = list(reversed(list(st.session_state["db_connections_dict"].keys())))
+            list_to_choose.insert(0, "Select connection")
+            connection_label_to_check = st.selectbox("🖱️ Select connection:*", list_to_choose,
+                key="key_connection_label_to_check")
+
+            if connection_label_to_check != "Select connection":
+
+                utils.update_db_connection_status_dict(connection_label_to_check)
+
+                engine = st.session_state["db_connections_dict"][connection_label_to_check][0]
+                host = st.session_state["db_connections_dict"][connection_label_to_check][1]
+                port= st.session_state["db_connections_dict"][connection_label_to_check][2]
+                database = st.session_state["db_connections_dict"][connection_label_to_check][3]
+                user = st.session_state["db_connections_dict"][connection_label_to_check][4]
+                password = st.session_state["db_connections_dict"][connection_label_to_check][5]
+
+                status = st.session_state["db_connection_status_dict"][connection_label_to_check][0]
+
+                df = pd.DataFrame([{"Label": connection_label_to_check, "Engine": engine,
+                    "Host": host, "Port": port, "Database": database,
+                    "User": user, "Status": status}])
+
+                with col1:
+                    st.dataframe(df, use_container_width=True, hide_index=True)
+
+                if status == "❌":
+                    with col1:
+                        st.markdown(f"""<div class="custom-error-small">
+                            ❌ <b>Connection error:</b>
+                            {str(st.session_state["db_connection_status_dict"][connection_label_to_check][1])}
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
+
+    # PURPLE HEADING - REMOVE CONNECTION
     if st.session_state["db_connections_dict"]:
         with col1:
             st.write("_______")
@@ -266,308 +322,112 @@ with tab1:
             list_to_choose = list(reversed(list(st.session_state["db_connections_dict"].keys())))
             if len(list_to_choose) > 1:
                 list_to_choose.insert(0, "Select all")
+            list_to_choose.insert(1, "Select all ❌")
             connection_labels_to_remove_list = st.multiselect("🖱️ Select connections:*", list_to_choose,
                 key="key_connection_labels_to_remove_list")
 
         if "Select all" in connection_labels_to_remove_list:
             connection_labels_to_remove_list = list(st.session_state["db_connections_dict"].keys())
-
-        if connection_labels_to_remove_list != "Select a connection":
             with col1a:
+                if len(connection_labels_to_remove_list) == 1:
+                    st.markdown(f"""<div class="custom-warning">
+                            ⚠️ If you continue, connection<b style="color:#F63366;">
+                            {utils.format_list_for_markdown(connection_labels_to_remove_list)}</b>
+                            and its queries will be removed.
+                        </div>""", unsafe_allow_html=True)
+                elif len(connection_labels_to_remove_list) < 6:
+                    st.markdown(f"""<div class="custom-warning">
+                            ⚠️ If you continue, connections<b style="color:#F63366;">
+                            {utils.format_list_for_markdown(connection_labels_to_remove_list)}</b>
+                            and their queries will be removed.
+                        </div>""", unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""<div class="custom-warning">
+                            ⚠️ If you continue, <b style="color:#F63366;">all connections</b>
+                            and their queries will be removed.
+                        </div>""", unsafe_allow_html=True)
+                st.write("")
+
+
+                delete_all_connections_checkbox= st.checkbox(
+                ":gray-badge[⚠️ I am sure I want to delete all connections]",
+                key="key_delete_sm_class_checkbox")
+                if delete_all_connections_checkbox:
+                    st.button("Remove", key="key_remove_connection_button", on_click=remove_connection)
+
+
+        elif "Select all ❌" in connection_labels_to_remove_list:
+            not_working_connections_list = []
+
+            for connection_label in st.session_state["db_connections_dict"]:
+                utils.update_db_connection_status_dict(connection_label)
+                if st.session_state["db_connection_status_dict"][connection_label][0] == "❌":
+                    not_working_connections_list.append(connection_label)
+
+
+            connection_labels_to_remove_list.remove("Select all ❌")
+            connection_labels_to_remove_list = list(set(connection_labels_to_remove_list + not_working_connections_list))
+
+            with col1a:
+                if not connection_labels_to_remove_list:
+                    st.markdown(f"""<div class="custom-success-small">
+                        ✔️ All <b>connections</b> are working (no ❌ connections to remove).
+                    </div>""", unsafe_allow_html=True)
+                elif not not_working_connections_list and len(connection_labels_to_remove_list) == 1:
+                    st.markdown(f"""<div class="custom-warning">
+                            ⚠️ If you continue, connection <b style="color:#F63366;">
+                            {utils.format_list_for_markdown(connection_labels_to_remove_list)}</b>
+                            and its queries will be removed.<br>
+                            <small>All <b>connections</b> are working (no ❌ connections).</small>
+                        </div>""", unsafe_allow_html=True)
+                elif not not_working_connections_list and len(connection_labels_to_remove_list) > 1:
+                    st.markdown(f"""<div class="custom-warning">
+                            ⚠️ If you continue, connections <b style="color:#F63366;">
+                            {utils.format_list_for_markdown(connection_labels_to_remove_list)}</b>
+                            and their queries will be removed.<br>
+                            <small>All <b>connections</b> are working (no ❌ connections to remove).</small>
+                        </div>""", unsafe_allow_html=True)
+                elif not_working_connections_list and len(connection_labels_to_remove_list) == 1:
+                    st.markdown(f"""<div class="custom-warning">
+                            ⚠️ If you continue, connection <b style="color:#F63366;">
+                            {utils.format_list_for_markdown(connection_labels_to_remove_list)}</b>
+                            and its queries will be removed.
+                        </div>""", unsafe_allow_html=True)
+                elif not_working_connections_list and len(connection_labels_to_remove_list) > 1:
+                    st.markdown(f"""<div class="custom-warning">
+                            ⚠️ If you continue, connections <b style="color:#F63366;">
+                            {utils.format_list_for_markdown(connection_labels_to_remove_list)}</b>
+                            and their queries will be removed.
+                        </div>""", unsafe_allow_html=True)
+                st.write("")
+                if connection_labels_to_remove_list:
+                    st.button("Remove", key="key_remove_connection_button", on_click=remove_connection)
+
+        elif connection_labels_to_remove_list:
+            with col1a:
+                if len(connection_labels_to_remove_list) == 1:
+                    st.markdown(f"""<div class="custom-warning">
+                            ⚠️ If you continue, connection<b style="color:#F63366;">
+                            {utils.format_list_for_markdown(connection_labels_to_remove_list)}</b>
+                            and its queries will be removed.
+                        </div>""", unsafe_allow_html=True)
+                elif len(connection_labels_to_remove_list) < 6:
+                    st.markdown(f"""<div class="custom-warning">
+                            ⚠️ If you continue, connections<b style="color:#F63366;">
+                            {utils.format_list_for_markdown(connection_labels_to_remove_list)}</b>
+                            and their queries will be removed.
+                        </div>""", unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""<div class="custom-warning">
+                            ⚠️ If you continue, the <b style="color:#F63366;">selected connections</b>
+                            and their queries will be removed.
+                        </div>""", unsafe_allow_html=True)
+                st.write("")
                 st.button("Remove", key="key_remove_connection_button", on_click=remove_connection)
 
-
 #________________________________________________
-# QUERY DATA
+# NON-SQL DATA SOURCES
 with tab2:
-
-    col1, col2 = st.columns([2,1.5])
-
-    with col2:
-        col2a, col2b = st.columns([0.5, 2])
-
-    with col2b:
-        st.write("")
-        st.write("")
-
-        check_sql_query_dict = {}
-        for sql_query_label in st.session_state["sql_queries_dict"]:
-            sql_query = st.session_state["sql_queries_dict"][sql_query_label][1]
-            connection_label = st.session_state["sql_queries_dict"][sql_query_label][0]
-
-            try:
-                conn = utils.make_connection_to_db(connection_label)
-                cur = conn.cursor()
-                cur.execute(sql_query)
-                conn.close() # optional: close immediately or keep open for queries
-                check_sql_query_dict[sql_query_label] = "✔️"
-
-            except:
-                check_sql_query_dict[sql_query_label] = "❌"
-
-        rows = []
-        for label in reversed(list(st.session_state["sql_queries_dict"].keys())):
-            connection = st.session_state["sql_queries_dict"][label][0]
-            database =  st.session_state["db_connections_dict"][connection][3]
-            sql_query_ok_flag = check_sql_query_dict[sql_query_label]
-            if len(st.session_state["sql_queries_dict"][label][1]) > 20:
-                sql_query = st.session_state["sql_queries_dict"][label][1][:20] + "..."
-            else:
-                sql_query = st.session_state["sql_queries_dict"][label][1]
-            rows.append({"Label": label, "Connection": connection,
-                    "Database": database, "Query": sql_query,
-                    "Query OK": sql_query_ok_flag})
-
-        sql_queries_df = pd.DataFrame(rows)
-        last_sql_queries_df = sql_queries_df.head(utils.get_max_length_for_display()[1])
-
-        max_length = utils.get_max_length_for_display()[1]   # max number of connections to show directly
-        if st.session_state["sql_queries_dict"]:
-            if len(st.session_state["sql_queries_dict"]) < max_length:
-                st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
-                        🔎 saved SQL queries
-                    </div>""", unsafe_allow_html=True)
-                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                    </div>""", unsafe_allow_html=True)
-            else:
-                st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
-                        🔎 last saved SQL queries
-                    </div>""", unsafe_allow_html=True)
-                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                        (complete list below)
-                    </div>""", unsafe_allow_html=True)
-            st.dataframe(last_sql_queries_df, hide_index=True)
-            st.write("")
-
-        #Option to show all connections (if too many)
-        if st.session_state["sql_queries_dict"] and len(st.session_state["sql_queries_dict"]) > max_length:
-            with st.expander("🔎 Show all saved SQL queries"):
-                st.write("")
-                st.dataframe(sql_queries_df, hide_index=True)
-
-    #PURPLE HEADING - ADD NEW TRIPLESMAP
-    with col1:
-        st.markdown("""<div class="purple-heading">
-                🔎 View Table
-            </div>""", unsafe_allow_html=True)
-        st.write("")
-
-    with col1:
-        col1a, col1b = st.columns(2)
-
-    with col1a:
-        list_to_choose = list(reversed(list(st.session_state["db_connections_dict"].keys())))
-        list_to_choose.insert(0, "Select a connection")
-        connection_for_table_display = st.selectbox("🖱️ Select a connection:*", list_to_choose,
-            key="key_connection_for_table_display")
-
-        # this avoids persistence in the choose a table selectbox when changing the connection
-        if "last_connection_for_table_display" not in st.session_state:
-            st.session_state["last_connection_for_table_display"] = None
-        if connection_for_table_display != st.session_state["last_connection_for_table_display"]:
-            st.session_state["key_selected_db_table"] = "Select a table"
-            st.session_state["last_connection_for_table_display"] = connection_for_table_display
-
-    if connection_for_table_display != "Select a connection":
-
-        try:
-            conn = utils.make_connection_to_db(connection_for_table_display)
-            connection_ok_flag = True
-
-        except:
-            with col1a:
-                st.markdown(f"""<div class="custom-error-small">
-                    ❌ The connection <b>{connection_label}</b> is not working.
-                    Please remove it and save it again in the <b>Manage Connections</b> pannel.
-                </div>""", unsafe_allow_html=True)
-                st.write("")
-            connection_ok_flag = False
-
-        if connection_ok_flag:
-
-            cur = conn.cursor()   # create a cursor
-            engine = st.session_state["db_connections_dict"][connection_for_table_display][0]
-            database = st.session_state["db_connections_dict"][connection_for_table_display][3]
-
-            utils.get_tables_from_db(engine, cur, database)
-
-            db_tables = [row[0] for row in cur.fetchall()]
-
-
-            with col1b:
-                list_to_choose = db_tables
-                list_to_choose.insert(0, "Select a table")
-                selected_db_table = st.selectbox("🖱️ Choose a table:*", list_to_choose,
-                    key="key_selected_db_table")
-
-            if selected_db_table != "Select a table":
-
-                cur.execute(f"SELECT * FROM {selected_db_table}")
-                rows = cur.fetchall()
-                if engine == "SQL Server":
-                    rows = [tuple(row) for row in rows]   # rows are of type <class 'pyodbc.Row'> -> convert to tuple
-                columns = [desc[0] for desc in cur.description]
-
-                df = pd.DataFrame(rows, columns=columns)
-
-                with col1:
-                    max_rows = utils.get_max_length_for_display()[2]
-                    max_cols = utils.get_max_length_for_display()[3]
-
-                    limited_df = df.iloc[:, :max_cols]   # limit number of columns
-
-                    # Slice rows if needed
-                    if len(df) > max_rows and df.shape[1] > max_cols:
-                        st.markdown(f"""<div class="custom-warning-small">
-                            ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
-                            and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
-                        </div>""", unsafe_allow_html=True)
-                        st.write("")
-                    elif len(df) > max_rows:
-                        st.markdown(f"""<div class="custom-warning-small">
-                            ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
-                        </div>""", unsafe_allow_html=True)
-                        st.write("")
-                    elif df.shape[1] > max_cols:
-                        st.markdown(f"""<div class="custom-warning-small">
-                            ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
-                        </div>""", unsafe_allow_html=True)
-                        st.write("")
-                    st.dataframe(limited_df.head(max_rows), hide_index=True)
-
-                cur.close()
-                conn.close()
-
-
-    #PURPLE HEADING - QUERY DATA
-    with col1:
-        st.write("________")
-        st.markdown("""<div class="purple-heading">
-                ❔ Query Data
-            </div>""", unsafe_allow_html=True)
-        st.write("")
-
-    if st.session_state["sql_query_saved_ok_flag"]:
-        with col1:
-            col1a, col1b = st.columns([2,1])
-        with col1a:
-            st.write("")
-            st.markdown(f"""<div class="custom-success">
-                ✅ The <b>SQL query</b> has been saved!
-            </div>""", unsafe_allow_html=True)
-        st.session_state["sql_query_saved_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
-        st.rerun()
-
-    with col1:
-        col1a, col1b = st.columns(2)
-
-
-    with col1a:
-        list_to_choose = list(reversed(list(st.session_state["db_connections_dict"].keys())))
-        list_to_choose.insert(0, "Select a connection")
-        connection_for_query = st.selectbox("🖱️ Select a connection:*", list_to_choose,
-            key="key_connection_for_query")
-
-    if connection_for_query != "Select a connection":
-
-        with col1b:
-            sql_query_label = st.text_input("⌨️ Enter query label (to save):",
-                key="key_sql_query_label")
-            if sql_query_label and sql_query_label not in st.session_state["sql_queries_dict"]:
-                sql_query_label_ok_flag = True
-            elif sql_query_label:
-                sql_query_label_ok_flag = False
-                with col1b:
-                    st.markdown(f"""<div class="custom-error-small">
-                        ❌ The label <b>{sql_query_label}</b> is already in use.
-                        You must pick a different label.
-                    </div>""", unsafe_allow_html=True)
-                st.write("")
-            else:
-                sql_query_label_ok_flag = False
-
-        try:
-            conn = utils.make_connection_to_db(connection_for_query)
-            connection_ok_flag = True
-
-        except:
-            with col1a:
-                st.markdown(f"""<div class="custom-error-small">
-                    ❌ The connection <b>{connection_label}</b> is not working.
-                    Please remove it and save it again in the <b>Manage Connections</b> pannel.
-                </div>""", unsafe_allow_html=True)
-                st.write("")
-            connection_ok_flag = False
-
-        if connection_ok_flag:
-
-            cur = conn.cursor()   # create a cursor
-
-            with col1:
-                sql_query = st.text_area("⌨️ Enter SQL query:*",
-                    height=150, key="key_sql_query")
-
-            if sql_query:
-
-                try:
-                    cur.execute(sql_query)
-                    sql_query_ok_flag = True
-
-                except Exception as e:
-                    with col1:
-                        st.markdown(f"""<div class="custom-error-small">
-                            ❌ <b>Invalid SQL syntax</b>. Please check your query.<br>
-                            <small><b> Full error:</b> {e}</small>
-                        </div>""", unsafe_allow_html=True)
-                        st.write("")
-                    sql_query_ok_flag = False
-
-            if sql_query and sql_query_ok_flag:
-
-                if sql_query_label_ok_flag:
-                    with col1:
-                        st.button("Save", key="key_save_sql_query_button",
-                            on_click=save_sql_query)
-
-                rows = cur.fetchall()
-                engine = st.session_state["db_connections_dict"][connection_for_query][0]
-                if engine == "SQL Server":
-                    rows = [tuple(row) for row in rows]   # rows are of type <class 'pyodbc.Row'> -> convert to tuple
-                columns = [desc[0] for desc in cur.description]
-                df = pd.DataFrame(rows, columns=columns)
-
-
-                with col1:
-                    max_rows = utils.get_max_length_for_display()[2]
-                    max_cols = utils.get_max_length_for_display()[3]
-
-                    limited_df = df.iloc[:, :max_cols]   # limit number of columns
-
-                    # Slice rows if needed
-                    if len(df) > max_rows and df.shape[1] > max_cols:
-                        st.markdown(f"""<div class="custom-warning-small">
-                            ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
-                            and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
-                        </div>""", unsafe_allow_html=True)
-                        st.write("")
-                    elif len(df) > max_rows:
-                        st.markdown(f"""<div class="custom-warning-small">
-                            ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
-                        </div>""", unsafe_allow_html=True)
-                        st.write("")
-                    elif df.shape[1] > max_cols:
-                        st.markdown(f"""<div class="custom-warning-small">
-                            ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
-                        </div>""", unsafe_allow_html=True)
-                        st.write("")
-                    st.dataframe(limited_df.head(max_rows), hide_index=True)
-
-
-
-
-
-with tab3:
     col1, col2 = st.columns([2,1])
     with col1:
         st.markdown(f"""
@@ -576,4 +436,296 @@ with tab3:
             ❌ This panel is not ready yet.
         </div>
         """, unsafe_allow_html=True)
-        st.stop()
+
+#________________________________________________
+# QUERY DATA
+with tab3:
+    if not st.session_state["db_connections_dict"]:
+        st.markdown(f"""<div class="custom-error-small">
+            ❌ No existing connections to databases.
+        </div>""", unsafe_allow_html=True)
+        st.write("")              #HERE CHANGE
+
+    else:
+
+        col1, col2 = st.columns([2,1.5])
+
+        with col2:
+            col2a, col2b = st.columns([0.5, 2])
+
+        with col2b:
+            st.write("")
+            st.write("")
+
+            check_sql_query_dict = {}
+            for sql_query_label in st.session_state["sql_queries_dict"]:
+                sql_query = st.session_state["sql_queries_dict"][sql_query_label][1]
+                connection_label = st.session_state["sql_queries_dict"][sql_query_label][0]
+
+                try:
+                    conn = utils.make_connection_to_db(connection_label)
+                    cur = conn.cursor()
+                    cur.execute(sql_query)
+                    conn.close() # optional: close immediately or keep open for queries
+                    check_sql_query_dict[sql_query_label] = "✔️"
+
+                except:
+                    check_sql_query_dict[sql_query_label] = "❌"
+
+            rows = []
+            for label in reversed(list(st.session_state["sql_queries_dict"].keys())):
+                connection = st.session_state["sql_queries_dict"][label][0]
+                database =  st.session_state["db_connections_dict"][connection][3]
+                sql_query_ok_flag = check_sql_query_dict[sql_query_label]
+                if len(st.session_state["sql_queries_dict"][label][1]) > 20:
+                    sql_query = st.session_state["sql_queries_dict"][label][1][:20] + "..."
+                else:
+                    sql_query = st.session_state["sql_queries_dict"][label][1]
+                rows.append({"Label": label, "Connection": connection,
+                        "Database": database, "Query": sql_query,
+                        "Query OK": sql_query_ok_flag})
+
+            sql_queries_df = pd.DataFrame(rows)
+            last_sql_queries_df = sql_queries_df.head(utils.get_max_length_for_display()[1])
+
+            max_length = utils.get_max_length_for_display()[1]   # max number of connections to show directly
+            if st.session_state["sql_queries_dict"]:
+                if len(st.session_state["sql_queries_dict"]) < max_length:
+                    st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
+                            🔎 saved SQL queries
+                        </div>""", unsafe_allow_html=True)
+                    st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                        </div>""", unsafe_allow_html=True)
+                else:
+                    st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
+                            🔎 last saved SQL queries
+                        </div>""", unsafe_allow_html=True)
+                    st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                            (complete list below)
+                        </div>""", unsafe_allow_html=True)
+                st.dataframe(last_sql_queries_df, hide_index=True)
+                st.write("")
+
+            #Option to show all connections (if too many)
+            if st.session_state["sql_queries_dict"] and len(st.session_state["sql_queries_dict"]) > max_length:
+                with st.expander("🔎 Show all saved SQL queries"):
+                    st.write("")
+                    st.dataframe(sql_queries_df, hide_index=True)
+
+        #PURPLE HEADING - VIEW TABLE
+        with col1:
+            st.markdown("""<div class="purple-heading">
+                    🔎 View Table
+                </div>""", unsafe_allow_html=True)
+            st.write("")
+
+        with col1:
+            col1a, col1b = st.columns(2)
+
+        with col1a:
+            list_to_choose = list(reversed(list(st.session_state["db_connections_dict"].keys())))
+            list_to_choose.insert(0, "Select a connection")
+            connection_for_table_display = st.selectbox("🖱️ Select a connection:*", list_to_choose,
+                key="key_connection_for_table_display")
+
+            # this avoids persistence in the choose a table selectbox when changing the connection
+            if "last_connection_for_table_display" not in st.session_state:
+                st.session_state["last_connection_for_table_display"] = None
+            if connection_for_table_display != st.session_state["last_connection_for_table_display"]:
+                st.session_state["key_selected_db_table"] = "Select a table"
+                st.session_state["last_connection_for_table_display"] = connection_for_table_display
+
+        if connection_for_table_display != "Select a connection":
+
+            try:
+                conn = utils.make_connection_to_db(connection_for_table_display)
+                connection_ok_flag = True
+
+            except:
+                with col1a:
+                    st.markdown(f"""<div class="custom-error-small">
+                        ❌ The connection <b>{connection_label}</b> is not working.
+                        Please remove it and save it again in the <b>Manage Connections</b> pannel.
+                    </div>""", unsafe_allow_html=True)
+                    st.write("")
+                connection_ok_flag = False
+
+            if connection_ok_flag:
+
+                cur = conn.cursor()   # create a cursor
+                engine = st.session_state["db_connections_dict"][connection_for_table_display][0]
+                database = st.session_state["db_connections_dict"][connection_for_table_display][3]
+
+                utils.get_tables_from_db(engine, cur, database)
+
+                db_tables = [row[0] for row in cur.fetchall()]
+
+
+                with col1b:
+                    list_to_choose = db_tables
+                    list_to_choose.insert(0, "Select a table")
+                    selected_db_table = st.selectbox("🖱️ Choose a table:*", list_to_choose,
+                        key="key_selected_db_table")
+
+                if selected_db_table != "Select a table":
+
+                    cur.execute(f"SELECT * FROM {selected_db_table}")
+                    rows = cur.fetchall()
+                    if engine == "SQL Server":
+                        rows = [tuple(row) for row in rows]   # rows are of type <class 'pyodbc.Row'> -> convert to tuple
+                    columns = [desc[0] for desc in cur.description]
+
+                    df = pd.DataFrame(rows, columns=columns)
+
+                    with col1:
+                        max_rows = utils.get_max_length_for_display()[2]
+                        max_cols = utils.get_max_length_for_display()[3]
+
+                        limited_df = df.iloc[:, :max_cols]   # limit number of columns
+
+                        # Slice rows if needed
+                        if len(df) > max_rows and df.shape[1] > max_cols:
+                            st.markdown(f"""<div class="custom-warning-small">
+                                ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
+                                and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+                            </div>""", unsafe_allow_html=True)
+                            st.write("")
+                        elif len(df) > max_rows:
+                            st.markdown(f"""<div class="custom-warning-small">
+                                ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
+                            </div>""", unsafe_allow_html=True)
+                            st.write("")
+                        elif df.shape[1] > max_cols:
+                            st.markdown(f"""<div class="custom-warning-small">
+                                ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+                            </div>""", unsafe_allow_html=True)
+                            st.write("")
+                        st.dataframe(limited_df.head(max_rows), hide_index=True)
+
+                    cur.close()
+                    conn.close()
+
+
+        #PURPLE HEADING - QUERY DATA
+        with col1:
+            st.write("________")
+            st.markdown("""<div class="purple-heading">
+                    ❔ Query Data
+                </div>""", unsafe_allow_html=True)
+            st.write("")
+
+        if st.session_state["sql_query_saved_ok_flag"]:
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                st.write("")
+                st.markdown(f"""<div class="custom-success">
+                    ✅ The <b>SQL query</b> has been saved!
+                </div>""", unsafe_allow_html=True)
+            st.session_state["sql_query_saved_ok_flag"] = False
+            time.sleep(st.session_state["success_display_time"])
+            st.rerun()
+
+        with col1:
+            col1a, col1b = st.columns(2)
+
+
+        with col1a:
+            list_to_choose = list(reversed(list(st.session_state["db_connections_dict"].keys())))
+            list_to_choose.insert(0, "Select a connection")
+            connection_for_query = st.selectbox("🖱️ Select a connection:*", list_to_choose,
+                key="key_connection_for_query")
+
+        if connection_for_query != "Select a connection":
+
+            with col1b:
+                sql_query_label = st.text_input("⌨️ Enter query label (to save):",
+                    key="key_sql_query_label")
+                if sql_query_label and sql_query_label not in st.session_state["sql_queries_dict"]:
+                    sql_query_label_ok_flag = True
+                elif sql_query_label:
+                    sql_query_label_ok_flag = False
+                    with col1b:
+                        st.markdown(f"""<div class="custom-error-small">
+                            ❌ The label <b>{sql_query_label}</b> is already in use.
+                            You must pick a different label.
+                        </div>""", unsafe_allow_html=True)
+                    st.write("")
+                else:
+                    sql_query_label_ok_flag = False
+
+            try:
+                conn = utils.make_connection_to_db(connection_for_query)
+                connection_ok_flag = True
+
+            except:
+                with col1a:
+                    st.markdown(f"""<div class="custom-error-small">
+                        ❌ The connection <b>{connection_label}</b> is not working.
+                        Please remove it and save it again in the <b>Manage Connections</b> pannel.
+                    </div>""", unsafe_allow_html=True)
+                    st.write("")
+                connection_ok_flag = False
+
+            if connection_ok_flag:
+
+                cur = conn.cursor()   # create a cursor
+
+                with col1:
+                    sql_query = st.text_area("⌨️ Enter SQL query:*",
+                        height=150, key="key_sql_query")
+
+                if sql_query:
+
+                    try:
+                        cur.execute(sql_query)
+                        sql_query_ok_flag = True
+
+                    except Exception as e:
+                        with col1:
+                            st.markdown(f"""<div class="custom-error-small">
+                                ❌ <b>Invalid SQL syntax</b>. Please check your query.<br>
+                                <small><b> Full error:</b> {e}</small>
+                            </div>""", unsafe_allow_html=True)
+                            st.write("")
+                        sql_query_ok_flag = False
+
+                if sql_query and sql_query_ok_flag:
+
+                    if sql_query_label_ok_flag:
+                        with col1:
+                            st.button("Save", key="key_save_sql_query_button",
+                                on_click=save_sql_query)
+
+                    rows = cur.fetchall()
+                    engine = st.session_state["db_connections_dict"][connection_for_query][0]
+                    if engine == "SQL Server":
+                        rows = [tuple(row) for row in rows]   # rows are of type <class 'pyodbc.Row'> -> convert to tuple
+                    columns = [desc[0] for desc in cur.description]
+                    df = pd.DataFrame(rows, columns=columns)
+
+
+                    with col1:
+                        max_rows = utils.get_max_length_for_display()[2]
+                        max_cols = utils.get_max_length_for_display()[3]
+
+                        limited_df = df.iloc[:, :max_cols]   # limit number of columns
+
+                        # Slice rows if needed
+                        if len(df) > max_rows and df.shape[1] > max_cols:
+                            st.markdown(f"""<div class="custom-warning-small">
+                                ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
+                                and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+                            </div>""", unsafe_allow_html=True)
+                            st.write("")
+                        elif len(df) > max_rows:
+                            st.markdown(f"""<div class="custom-warning-small">
+                                ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
+                            </div>""", unsafe_allow_html=True)
+                            st.write("")
+                        elif df.shape[1] > max_cols:
+                            st.markdown(f"""<div class="custom-warning-small">
+                                ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+                            </div>""", unsafe_allow_html=True)
+                            st.write("")
+                        st.dataframe(limited_df.head(max_rows), hide_index=True)

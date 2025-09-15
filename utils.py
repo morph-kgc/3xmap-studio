@@ -16,6 +16,8 @@ import pymysql    # another option mysql-connector-python
 import oracledb
 import pyodbc
 
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
+
 import json
 import csv
 import rdflib
@@ -1047,24 +1049,21 @@ def get_pom_dict():
 #________________________________________________________
 # Funtion to make a connection to a database
 def make_connection_to_db(connection_label):
-    engine = st.session_state["db_connections_dict"][connection_label][0]
-    host = st.session_state["db_connections_dict"][connection_label][1]
-    port= st.session_state["db_connections_dict"][connection_label][2]
-    database = st.session_state["db_connections_dict"][connection_label][3]
-    user = st.session_state["db_connections_dict"][connection_label][4]
-    password = st.session_state["db_connections_dict"][connection_label][5]
+    engine, host, port, database, user, password = st.session_state["db_connections_dict"][connection_label]
+    timeout = 3
 
     if engine == "PostgreSQL":
         conn = psycopg.connect(host=host, port=port,
-            dbname=database, user=user, password=password)
+            dbname=database, user=user, password=password,
+            connect_timeout=timeout)
 
     elif engine in ("MySQL", "MariaDB"):
         conn = pymysql.connect(host=host, port=int(port), user=user,
-            password=password, database=database)
+            password=password, database=database, connect_timeout=timeout)
 
     elif engine == "Oracle":
         conn = oracledb.connect(user=user, password=password,
-            dsn=f"{host}:{port}/{database}")
+            dsn=f"{host}:{port}/{database}", timeout=timeout)
 
     elif engine == "SQL Server":
         conn = pyodbc.connect(
@@ -1072,7 +1071,7 @@ def make_connection_to_db(connection_label):
             f"SERVER={host},{port};"
             f"DATABASE={database};"
             f"UID={user};"
-            f"PWD={password}")
+            f"PWD={password}", timeout=timeout)
 
     else:
         conn = None
@@ -1082,7 +1081,66 @@ def make_connection_to_db(connection_label):
 #___________________________________________
 
 #________________________________________________________
-# Funtion to make a connection to a database
+# Funtion to update the connection status dict
+def update_db_connection_status_dict(connection_label):
+
+    try:
+        conn = utils.make_connection_to_db(connection_label)
+        if conn:
+            conn.close() # optional: close immediately or keep open for queries
+        st.session_state["db_connection_status_dict"][connection_label] = ["✔️", ""]
+
+    except Exception as e:
+        st.session_state["db_connection_status_dict"][connection_label] = ["❌", e]
+
+#___________________________________________
+
+
+# #________________________________________________________
+# # Funtion to make a connection to a database
+# def make_connection_to_db_2(engine, host, port, database, user, password):
+#
+#     if engine == "PostgreSQL":
+#         return psycopg.connect(host=host, port=port,
+#             dbname=database, user=user, password=password,
+#             connect_timeout=5)
+#
+#     elif engine in ("MySQL", "MariaDB"):
+#         return pymysql.connect(host=host, port=int(port), user=user,
+#             password=password, database=database, connect_timeout=5)
+#
+#     elif engine == "Oracle":
+#         return oracledb.connect(user=user, password=password,
+#             dsn=f"{host}:{port}/{database}", timeout=5)
+#
+#     elif engine == "SQL Server":
+#         return pyodbc.connect(
+#             f"DRIVER={{SQL Server}};"
+#             f"SERVER={host},{port};"
+#             f"DATABASE={database};"
+#             f"UID={user};"
+#             f"PWD={password}", timeout=5)
+#
+#     return None
+#
+# #___________________________________________
+#
+# #__________________________________________________
+# # Funtion to make a connection to a database with timeout
+# def make_connection_to_db_w_timeout(connection_label, timeout=5):
+#
+#     engine, host, port, database, user, password = st.session_state["db_connections_dict"][connection_label]
+#
+#     with ThreadPoolExecutor(max_workers=1) as executor:
+#         future = executor.submit(make_connection_to_db_2, engine, host, port, database, user, password)
+#         try:
+#             return future.result(timeout=timeout)
+#         except TimeoutError:
+#             return None
+# #____________________________________________________
+
+#________________________________________________________
+# Dictionary with default ports for the different engines
 def get_default_ports():
 
     default_ports_dict = {"PostgreSQL": 5432, "MySQL": 3306,
@@ -1092,7 +1150,7 @@ def get_default_ports():
 #___________________________________________
 
 #________________________________________________________
-# Funtion to make a connection to a database
+# Funtion with the default users for the different engines
 def get_default_users():
 
     default_users_dict = {"PostgreSQL": "postgres", "MySQL": "root",
