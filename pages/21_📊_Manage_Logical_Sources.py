@@ -607,29 +607,49 @@ with tab2:
                     df = pd.DataFrame(rows, columns=columns)
 
                     with col1:
-                        max_rows = utils.get_max_length_for_display()[2]
-                        max_cols = utils.get_max_length_for_display()[3]
+                        col1a, col1b = st.columns([2,1])
+                    with col1a:
+                        column_list = df.columns.tolist()
+                        sql_column_filter_list = st.multiselect(f"""🖱️ Select columns (max {utils.get_max_length_for_display()[3]}):""",
+                            column_list, key="key_sql_column_filter")
 
-                        limited_df = df.iloc[:, :max_cols]   # limit number of columns
+                    if not sql_column_filter_list:
 
-                        # Slice rows if needed
-                        if len(df) > max_rows and df.shape[1] > max_cols:
-                            st.markdown(f"""<div class="custom-warning-small">
-                                ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
-                                and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
-                            </div>""", unsafe_allow_html=True)
-                            st.write("")
-                        elif len(df) > max_rows:
-                            st.markdown(f"""<div class="custom-warning-small">
-                                ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
-                            </div>""", unsafe_allow_html=True)
-                            st.write("")
-                        elif df.shape[1] > max_cols:
-                            st.markdown(f"""<div class="custom-warning-small">
-                                ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
-                            </div>""", unsafe_allow_html=True)
-                            st.write("")
-                        st.dataframe(limited_df.head(max_rows), hide_index=True)
+                        with col1:
+                            max_rows = utils.get_max_length_for_display()[2]
+                            max_cols = utils.get_max_length_for_display()[3]
+
+                            limited_df = df.iloc[:, :max_cols]   # limit number of columns
+
+                            # Slice rows if needed
+                            if len(df) > max_rows and df.shape[1] > max_cols:
+                                st.markdown(f"""<div class="custom-warning-small">
+                                    ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
+                                    and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+                                </div>""", unsafe_allow_html=True)
+                                st.write("")
+                            elif len(df) > max_rows:
+                                st.markdown(f"""<div class="custom-warning-small">
+                                    ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
+                                </div>""", unsafe_allow_html=True)
+                                st.write("")
+                            elif df.shape[1] > max_cols:
+                                st.markdown(f"""<div class="custom-warning-small">
+                                    ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+                                </div>""", unsafe_allow_html=True)
+                                st.write("")
+                            st.dataframe(limited_df.head(max_rows), hide_index=True)
+
+                    else:
+                        if len(sql_column_filter_list) > utils.get_max_length_for_display()[3]:
+                            with col1:
+                                st.markdown(f"""<div class="custom-error-small">
+                                    ❌ <b> Too many columns</b> selected. Please, respect the limit
+                                    of {utils.get_max_length_for_display()[3]}.
+                                </div>""", unsafe_allow_html=True)
+                        else:
+                            with col1:
+                                st.dataframe(df[sql_column_filter_list], hide_index=True)
 
                     cur.close()
                     conn.close()
@@ -1196,27 +1216,44 @@ with tab4:
             df = utils.read_tab_file(tab_filename_for_display)
             tab_file_for_display.seek(0)
 
-            with col1:
-                max_rows = utils.get_max_length_for_display()[2]
-                max_cols = utils.get_max_length_for_display()[3]
+            with col1b:
+                column_list = df.columns.tolist()
+                tab_column_filter_list = st.multiselect(f"""🖱️ Select columns (max {utils.get_max_length_for_display()[3]}):""",
+                    column_list, key="key_tab_column_filter")
 
-                limited_df = df.iloc[:, :max_cols]   # limit number of columns
+            if not tab_column_filter_list:
+                with col1:
+                    max_rows = utils.get_max_length_for_display()[2]
+                    max_cols = utils.get_max_length_for_display()[3]
 
-                # Slice rows if needed
-                if len(df) > max_rows and df.shape[1] > max_cols:
-                    st.markdown(f"""<div class="custom-warning-small">
-                        ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
-                        and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
-                    </div>""", unsafe_allow_html=True)
-                    st.write("")
-                elif len(df) > max_rows:
-                    st.markdown(f"""<div class="custom-warning-small">
-                        ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
-                    </div>""", unsafe_allow_html=True)
-                    st.write("")
-                elif df.shape[1] > max_cols:
-                    st.markdown(f"""<div class="custom-warning-small">
-                        ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
-                    </div>""", unsafe_allow_html=True)
-                    st.write("")
-                st.dataframe(limited_df.head(max_rows), hide_index=True)
+                    limited_df = df.iloc[:, :max_cols]   # limit number of columns
+
+                    # Slice rows if needed
+                    if len(df) > max_rows and df.shape[1] > max_cols:
+                        st.markdown(f"""<div class="custom-warning-small">
+                            ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
+                            and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
+                    elif len(df) > max_rows:
+                        st.markdown(f"""<div class="custom-warning-small">
+                            ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
+                    elif df.shape[1] > max_cols:
+                        st.markdown(f"""<div class="custom-warning-small">
+                            ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
+                    st.dataframe(limited_df.head(max_rows), hide_index=True)
+
+            else:
+                if len(tab_column_filter_list) > utils.get_max_length_for_display()[3]:
+                    with col1:
+                        st.markdown(f"""<div class="custom-error-small">
+                            ❌ <b> Too many columns</b> selected. Please, respect the limit
+                            of {utils.get_max_length_for_display()[3]}.
+                        </div>""", unsafe_allow_html=True)
+                else:
+                    with col1:
+                        st.dataframe(df[tab_column_filter_list], hide_index=True)
