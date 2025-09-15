@@ -688,7 +688,8 @@ def is_valid_iri(iri):
 #Funtion to create the list that stores the state of the project
 # project_state_list
 # 0. [g_label, g_mapping]     1. g_ontology_components_dict      2. structural_ns_dict
-# 3. db_connections_dict       4. db_connection_status_dict        5. sql_queries_dict
+# 3. db_connections_dict       4. db_connection_status_dict
+# 5. ds_files_dict                6. sql_queries_dict
 def save_project_state():
 
     # list to save the mapping
@@ -703,9 +704,28 @@ def save_project_state():
     project_state_list.append(st.session_state["structural_ns_dict"])
     project_state_list.append(st.session_state["db_connections_dict"])
     project_state_list.append(st.session_state["db_connection_status_dict"])
+    project_state_list.append(st.session_state["ds_files_dict"])
     project_state_list.append(st.session_state["sql_queries_dict"])
 
     return project_state_list
+
+#______________________________________________________
+
+#_________________________________________________
+#Funtion to create the list that stores the state of the project
+# project_state_list
+# 0. [g_label, g_mapping]     1. g_ontology_components_dict      2. structural_ns_dict
+# 3. db_connections_dict       4. db_connection_status_dict
+# 5. ds_files_dict                6. sql_queries_dict
+def retrieve_project_state(project_state_list):
+
+    st.session_state["g_mapping"] = project_state_list[0][1]
+    st.session_state["g_ontology_components_dict"] = project_state_list[1]
+    st.session_state["structural_ns_dict"] = project_state_list[2]
+    st.session_state["db_connections_dict"] = project_state_list[3]
+    st.session_state["db_connection_status_dict"] = project_state_list[4]
+    st.session_state["ds_files_dict"] = project_state_list[5]
+    st.session_state["sql_queries_dict"] = project_state_list[6]
 
 #______________________________________________________
 
@@ -745,19 +765,6 @@ def get_tm_dict():
     else:
         return {}
 #________________________________________________________
-
-#_________________________________________________
-# Funtion to get the allowed format for the data sources
-# HERE ADD MORE (will need to update save_tm_w_new_ls())
-#HERE ssee whether RML or R2RML (R2RML data source is the data base)
-def get_ds_allowed_tab_formats():
-
-    allowed_tab_formats_list = [".csv", ".tsv", ".xls",
-    ".xlsx", ".parquet", ".feather", ".orc", ".dta",
-    ".sas7bdat", ".sav", ".ods"]
-
-    return allowed_tab_formats_list
-#_________________________________________________
 
 #_________________________________________________
 # Funtion to get the logical soruce of a TriplesMap
@@ -1100,50 +1107,6 @@ def update_db_connection_status_dict(connection_label):
 
 #___________________________________________
 
-
-# #________________________________________________________
-# # Funtion to make a connection to a database
-# def make_connection_to_db_2(engine, host, port, database, user, password):
-#
-#     if engine == "PostgreSQL":
-#         return psycopg.connect(host=host, port=port,
-#             dbname=database, user=user, password=password,
-#             connect_timeout=5)
-#
-#     elif engine in ("MySQL", "MariaDB"):
-#         return pymysql.connect(host=host, port=int(port), user=user,
-#             password=password, database=database, connect_timeout=5)
-#
-#     elif engine == "Oracle":
-#         return oracledb.connect(user=user, password=password,
-#             dsn=f"{host}:{port}/{database}", timeout=5)
-#
-#     elif engine == "SQL Server":
-#         return pyodbc.connect(
-#             f"DRIVER={{SQL Server}};"
-#             f"SERVER={host},{port};"
-#             f"DATABASE={database};"
-#             f"UID={user};"
-#             f"PWD={password}", timeout=5)
-#
-#     return None
-#
-# #___________________________________________
-#
-# #__________________________________________________
-# # Funtion to make a connection to a database with timeout
-# def make_connection_to_db_w_timeout(connection_label, timeout=5):
-#
-#     engine, host, port, database, user, password = st.session_state["db_connections_dict"][connection_label]
-#
-#     with ThreadPoolExecutor(max_workers=1) as executor:
-#         future = executor.submit(make_connection_to_db_2, engine, host, port, database, user, password)
-#         try:
-#             return future.result(timeout=timeout)
-#         except TimeoutError:
-#             return None
-# #____________________________________________________
-
 #________________________________________________________
 # Dictionary with default ports for the different engines
 def get_default_ports():
@@ -1264,6 +1227,21 @@ def try_connection(db_connection_type, host, port, database, user, password):
             st.write("")
             return False
 #___________________________________________
+
+#_________________________________________________
+# Funtion to get the allowed format for the data sources
+# HERE ADD MORE (will need to update save_tm_w_new_ls())
+#HERE ssee whether RML or R2RML (R2RML data source is the data base)
+def get_ds_allowed_tab_formats():
+
+    allowed_tab_formats_list = [".csv", ".tsv", ".xls",
+    ".xlsx", ".parquet", ".feather", ".orc", ".dta",
+    ".sas7bdat", ".sav", ".ods"]
+
+    return allowed_tab_formats_list
+#_________________________________________________
+
+
 
 #________________________________________________________
 # Funtion to get all tables in a database

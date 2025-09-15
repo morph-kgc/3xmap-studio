@@ -165,12 +165,7 @@ def retrieve_session():
     # retrieve session___________________________
     with open(full_path, "rb") as f:     # load mapping
         project_state_list = pickle.load(f)
-    st.session_state["g_mapping"] = project_state_list[0][1]
-    st.session_state["g_ontology_components_dict"] = project_state_list[1]
-    st.session_state["structural_ns_dict"] = project_state_list[2]
-    st.session_state["db_connections_dict"] = project_state_list[3]
-    st.session_state["db_connection_status_dict"] = project_state_list[4]
-    st.session_state["sql_queries_dict"] = project_state_list[5]
+    utils.retrieve_project_state(project_state_list)
     # build the complete ontology from its components
     st.session_state["g_ontology"] = Graph()
     for g_ontology in st.session_state["g_ontology_components_dict"].values():
@@ -187,12 +182,7 @@ def retrieve_cached_mapping():
     st.session_state["g_label"] = cached_mapping_name    # g label
     with open(pkl_cache_file_path, "rb") as f:     # load mapping
         project_state_list = pickle.load(f)
-    st.session_state["g_mapping"] = project_state_list[0][1]
-    st.session_state["g_ontology_components_dict"] = project_state_list[1]
-    st.session_state["structural_ns_dict"] = project_state_list[2]
-    st.session_state["db_connections_dict"] = project_state_list[3]
-    st.session_state["db_connection_status_dict"] = project_state_list[4]
-    st.session_state["sql_queries_dict"] = project_state_list[5]
+    utils.retrieve_project_state(project_state_list)
     # build the complete ontology from its components___________
     st.session_state["g_ontology"] = Graph()
     for g_ontology in st.session_state["g_ontology_components_dict"].values():

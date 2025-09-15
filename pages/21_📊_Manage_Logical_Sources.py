@@ -107,6 +107,8 @@ def remove_connection():
 def save_ds_file():
     # save file
     st.session_state["ds_files_dict"][ds_file.name] = ds_file
+    # store information_________________
+    st.session_state["ds_file_saved_ok_flag"] = True
     # reset fields_______________________
     st.session_state["key_ds_uploader"] = str(uuid.uuid4())
 
@@ -116,8 +118,10 @@ def save_large_ds_file():
     with open(ds_file_path, "rb") as f:
         ds_file = f.read()
     st.session_state["ds_files_dict"][ds_large_filename] = ds_file
+    # store information_________________
+    st.session_state["ds_file_saved_ok_flag"] = True
     # reset fields_______________________
-    st.session_state["key_ds_uploader"] = str(uuid.uuid4())
+    st.session_state["key_large_file_checkbox"] = False
 
 # TAB3
 def save_sql_query():
@@ -467,12 +471,32 @@ with tab2:
         st.write("")
         st.write("")
 
-        rows = [{"Filename": filename.split('.')[0], "Format": filename.split('.')[-1],
-                "Size (kB)": file.size/1024}
-                for filename, file in reversed(list(st.session_state["ds_files_dict"].items()))]
+
+    rows = []
+    ds_files = list(st.session_state["ds_files_dict"].items())
+    ds_files.reverse()
+
+    for filename, file_obj in ds_files:
+        base_name = filename.split(".")[0]
+        file_format = filename.split(".")[-1]
+
+        if hasattr(file_obj, "size"):
+            file_size_kb = file_obj.size / 1024
+        elif hasattr(file_obj, "getbuffer"):
+            file_size_kb = file_obj.getbuffer().nbytes / 1024
+        elif isinstance(file_obj, bytes):
+            file_size_kb = len(file_obj) / 1024
+        else:
+            file_size_kb = None  # Unknown format
+
+        row = {"Filename": base_name, "Format": file_format,
+            "Size (kB)": round(file_size_kb, 2) if file_size_kb is not None else "N/A"}
+        rows.append(row)
+
         db_connections_df = pd.DataFrame(rows)
         last_added_db_connections_df = db_connections_df.head(utils.get_max_length_for_display()[1])
 
+    with col2b:
         max_length = utils.get_max_length_for_display()[1]   # max number of connections to show directly
         if st.session_state["ds_files_dict"]:
             if len(st.session_state["ds_files_dict"]) < max_length:
@@ -508,6 +532,15 @@ with tab2:
     with col1:
         col1a, col1b = st.columns([2,1])
 
+    if st.session_state["ds_file_saved_ok_flag"]:
+        with col1a:
+            st.write("")
+            st.markdown(f"""<div class="custom-success">
+                ✅ The <b>data source file</b> has been saved!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["ds_file_saved_ok_flag"] = False
+        time.sleep(st.session_state["success_display_time"])
+        st.rerun()
 
     ds_allowed_formats = utils.get_ds_allowed_tab_formats()            #data source for the TriplesMap
     with col1a:
@@ -524,18 +557,8 @@ with tab2:
             </div>""", unsafe_allow_html=True)
             st.write("")
 
-        elif ds_file:
-            try:
-                columns_df = pd.read_csv(ds_file)
-                ds_file.seek(0)    # reset index
-                column_list = columns_df.columns.tolist()
-                with col1a:
-                    st.button("Save", key="key_save_ds_file_button", on_click=save_ds_file)
-            except:    # empty file
-                st.markdown(f"""<div class="custom-error-small">
-                    ❌ The file <b>{ds_file.name}</b> is empty. Please load a valid file.
-                </div>""", unsafe_allow_html=True)
-                st.write("")
+        with col1a:
+            st.button("Save", key="key_save_ds_file_button", on_click=save_ds_file)
 
     if not ds_file:
         with col1b:
@@ -575,9 +598,21 @@ with tab2:
                 with col1a:
                     st.write("")
                     ds_large_filename = st.selectbox("🖱️ Select file*:", tab_files)
+
                 if ds_large_filename != "Select file":
-                    st.button("Save", key="key_save_large_ds_file_button",
-                    on_click=save_large_ds_file)
+                    if ds_large_filename in st.session_state["ds_files_dict"]:
+                        with col1a:
+                            st.write("")
+                            st.markdown(f"""<div class="custom-error-small">
+                                ❌ File <b>{ds_large_filename}</b> is already loaded.<br>
+                                <small>To update the content of this file
+                                use the <b>Update File</b> option. You can also remove the file
+                                using the <b>Remove File</b> option.</small>
+                            </div>""", unsafe_allow_html=True)
+                            st.write("")
+                    else:
+                        st.button("Save", key="key_save_large_ds_file_button",
+                        on_click=save_large_ds_file)
 
 
 
