@@ -117,8 +117,7 @@ def save_ds_file():
 def save_large_ds_file():
     # save file
     ds_file_path = os.path.join(folder_path, ds_large_filename)
-    with open(ds_file_path, "rb") as f:
-        ds_file = f.read()
+    ds_file = open(ds_file_path, "rb")
     st.session_state["ds_files_dict"][ds_large_filename] = ds_file
     # store information_________________
     st.session_state["ds_file_saved_ok_flag"] = True
@@ -818,7 +817,7 @@ with tab2:
                     with col1:
 
                         st.markdown(f"""<div class="gray-preview-message">
-                                ❔ <b style="color:#F63366;"> Query:</b> 
+                                ❔ <b style="color:#F63366;"> Query:</b>
                                 {st.session_state["sql_queries_dict"][sql_query_to_consult][1]}
                             </div></div>""", unsafe_allow_html=True)
 
@@ -910,11 +909,11 @@ with tab3:
         file_format = filename.split(".")[-1]
 
         if hasattr(file_obj, "size"):
+            # Streamlit UploadedFile
             file_size_kb = file_obj.size / 1024
-        elif hasattr(file_obj, "getbuffer"):
-            file_size_kb = file_obj.getbuffer().nbytes / 1024
-        elif isinstance(file_obj, bytes):
-            file_size_kb = len(file_obj) / 1024
+        elif hasattr(file_obj, "fileno"):
+            # File object from open(path, "rb")
+            file_size_kb = os.fstat(file_obj.fileno()).st_size / 1024
         else:
             file_size_kb = None  # Unknown format
 
@@ -1153,3 +1152,71 @@ with tab3:
                 st.write("")
 
                 st.button("Remove", key="key_remove_file_button", on_click=remove_file)
+
+
+#________________________________________________
+# DISPLAY TABULAR DATA
+with tab4:
+
+    col1, col2 = st.columns([2,1.5])
+
+    with col2:
+        col2a, col2b = st.columns([0.5, 2])
+
+
+    if not st.session_state["ds_files_dict"]:
+        st.markdown(f"""<div class="custom-error-small">
+            ❌ No data sources with tabular data have been added.
+        </div>""", unsafe_allow_html=True)
+        st.write("")              #HERE CHANGE
+
+    else:
+
+        #PURPLE HEADING - VIEW TABLE
+        with col1:
+            st.write("")
+            st.markdown("""<div class="purple-heading">
+                    🔎 View Table
+                </div>""", unsafe_allow_html=True)
+            st.write("")
+
+        with col1:
+            col1a, col1b = st.columns(2)
+
+        with col1a:
+            list_to_choose = list(reversed(list(st.session_state["ds_files_dict"].keys())))
+            list_to_choose.insert(0, "Select file")
+            tab_filename_for_display = st.selectbox("🖱️ Select file:*", list_to_choose,
+                key="key_tab_filename_for_display")
+
+        if tab_filename_for_display != "Select file":
+
+            tab_file_for_display = st.session_state["ds_files_dict"][tab_filename_for_display]
+
+            df = utils.read_tab_file(tab_filename_for_display)
+            tab_file_for_display.seek(0)
+
+            with col1:
+                max_rows = utils.get_max_length_for_display()[2]
+                max_cols = utils.get_max_length_for_display()[3]
+
+                limited_df = df.iloc[:, :max_cols]   # limit number of columns
+
+                # Slice rows if needed
+                if len(df) > max_rows and df.shape[1] > max_cols:
+                    st.markdown(f"""<div class="custom-warning-small">
+                        ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
+                        and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+                    </div>""", unsafe_allow_html=True)
+                    st.write("")
+                elif len(df) > max_rows:
+                    st.markdown(f"""<div class="custom-warning-small">
+                        ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
+                    </div>""", unsafe_allow_html=True)
+                    st.write("")
+                elif df.shape[1] > max_cols:
+                    st.markdown(f"""<div class="custom-warning-small">
+                        ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+                    </div>""", unsafe_allow_html=True)
+                    st.write("")
+                st.dataframe(limited_df.head(max_rows), hide_index=True)

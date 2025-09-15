@@ -6,3 +6,6 @@ PyMySQL
 cryptography
 oracledb
 pyodbc
+pyreadstat
+pyarrow
+odfpy

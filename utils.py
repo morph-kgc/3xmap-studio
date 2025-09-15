@@ -1228,19 +1228,6 @@ def try_connection(db_connection_type, host, port, database, user, password):
             return False
 #___________________________________________
 
-#_________________________________________________
-# Funtion to get the allowed format for the data sources
-# HERE ADD MORE (will need to update save_tm_w_new_ls())
-#HERE ssee whether RML or R2RML (R2RML data source is the data base)
-def get_ds_allowed_tab_formats():
-
-    allowed_tab_formats_list = [".csv", ".tsv", ".xls",
-    ".xlsx", ".parquet", ".feather", ".orc", ".dta",
-    ".sas7bdat", ".sav", ".ods"]
-
-    return allowed_tab_formats_list
-#_________________________________________________
-
 #________________________________________________________
 # Funtion to get all tables in a database
 def get_tables_from_db(engine, cur, database):
@@ -1278,6 +1265,59 @@ def get_tables_from_db(engine, cur, database):
     else:
         pass
 #___________________________________________
+
+#_________________________________________________
+# Funtion to get the allowed format for the data sources
+def get_ds_allowed_tab_formats():
+
+    allowed_tab_formats_list = [".csv", ".tsv", ".xls",
+    ".xlsx", ".parquet", ".feather", ".orc", ".dta",
+    ".sas7bdat", ".sav", ".ods"]
+
+    return allowed_tab_formats_list
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to read tabular data
+def read_tab_file(filename):
+
+    file = st.session_state["ds_files_dict"][filename]
+    file_format = filename.split(".")[-1]
+
+    if file_format == "csv":
+        read_content = pd.read_csv(file)
+
+    elif file_format == "tsv":
+        read_content = pd.read_csv(file, sep="\t")
+
+    elif file_format in ["xls", "xlsx", "ods"]:
+        read_content = pd.read_excel(file)
+
+    elif file_format == "parquet":
+        read_content = pd.read_parquet(file)
+
+    elif file_format == "feather":
+        read_content = pd.read_feather(file)
+
+    elif file_format == "orc":
+        import pyarrow.orc as orc
+        orc_file = orc.ORCFile(file)
+        read_content = orc_file.read().to_pandas()
+
+    elif file_format == "dta":
+        read_content, _ = pyreadstat.read_dta(file)
+
+    elif file_format == "sas7bdat":
+        read_content, _ = pyreadstat.read_sas7bdat(file)
+
+    elif file_format == "sav":
+        read_content, _ = pyreadstat.read_sav(file)
+
+    else:
+        read_content = ""   # should not occur
+
+    return read_content
+#_________________________________________________
 
 #HEREIGO
 
