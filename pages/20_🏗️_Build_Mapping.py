@@ -869,7 +869,7 @@ with tab1:
                 with col1:
                     col1a, col1b = st.columns([2,1])
                 with col1a:
-                    ds_file = st.file_uploader(f"""🖱️ Upload data source file*""",
+                    ds_file = st.file_uploader(f"""🖱️ Upload data source file:*""",
                         type=ds_allowed_formats, key=st.session_state["key_ds_uploader"])
 
                 if ds_file and not logical_source_label in labelled_ls_list:

@@ -688,7 +688,7 @@ def is_valid_iri(iri):
 #Funtion to create the list that stores the state of the project
 # project_state_list
 # 0. [g_label, g_mapping]     1. g_ontology_components_dict      2. structural_ns_dict
-# 3. db_connections_dict       4. sql_queries_dict
+# 3. db_connections_dict       4. db_connection_status_dict        5. sql_queries_dict
 def save_project_state():
 
     # list to save the mapping
@@ -696,11 +696,13 @@ def save_project_state():
     mapping_list.append(st.session_state["g_label"])
     mapping_list.append(st.session_state["g_mapping"])
 
+    # list to save session
     project_state_list = []
     project_state_list.append(mapping_list)
     project_state_list.append(st.session_state["g_ontology_components_dict"])
     project_state_list.append(st.session_state["structural_ns_dict"])
     project_state_list.append(st.session_state["db_connections_dict"])
+    project_state_list.append(st.session_state["db_connection_status_dict"])
     project_state_list.append(st.session_state["sql_queries_dict"])
 
     return project_state_list
@@ -748,10 +750,13 @@ def get_tm_dict():
 # Funtion to get the allowed format for the data sources
 # HERE ADD MORE (will need to update save_tm_w_new_ls())
 #HERE ssee whether RML or R2RML (R2RML data source is the data base)
-def get_ds_allowed_formats():
-    # allowed_formats_list = (".csv",".json", ".xml")
-    allowed_formats_list = (".csv")
-    return allowed_formats_list
+def get_ds_allowed_tab_formats():
+
+    allowed_tab_formats_list = [".csv", ".tsv", ".xls",
+    ".xlsx", ".parquet", ".feather", ".orc", ".dta",
+    ".sas7bdat", ".sav", ".ods"]
+
+    return allowed_tab_formats_list
 #_________________________________________________
 
 #_________________________________________________
@@ -1363,8 +1368,8 @@ def get_confirm_button():
 #_________________________________________________
 #Allowed data formats
 def get_ds_allowed_formats():
-    allowed_formats_list = (".csv",".json", ".xml")
-    return allowed_formats_list
+    allowed_tab_formats_list = (".csv",".json", ".xml")
+    return allowed_tab_formats_list
 
 
 #_________________________________________________

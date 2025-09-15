@@ -8,6 +8,7 @@ import psycopg
 import pymysql    # another option mysql-connector-python
 import oracledb
 import pyodbc
+import uuid   # to handle uploader keys
 
 # Header
 st.markdown("""
@@ -35,6 +36,7 @@ st.markdown("""
 utils.import_st_aesthetics()
 st.write("")
 
+
 # Initialise session state variables
 #TAB1
 if "db_connections_dict" not in st.session_state:
@@ -47,6 +49,15 @@ if "db_connection_removed_ok_flag" not in st.session_state:
     st.session_state["db_connection_removed_ok_flag"] = False
 
 #TAB2
+if "key_ds_uploader" not in st.session_state:
+    st.session_state["key_ds_uploader"] = str(uuid.uuid4())
+if "ds_files_dict" not in st.session_state:
+    st.session_state["ds_files_dict"] = {}
+if "ds_file_saved_ok_flag" not in st.session_state:
+    st.session_state["ds_file_saved_ok_flag"] = False
+
+
+#TAB3
 if "sql_queries_dict" not in st.session_state:
     st.session_state["sql_queries_dict"] = {}
 if "sql_query_saved_ok_flag" not in st.session_state:
@@ -93,6 +104,22 @@ def remove_connection():
     st.session_state["key_connection_labels_to_remove_list"] = []
 
 # TAB2
+def save_ds_file():
+    # save file
+    st.session_state["ds_files_dict"][ds_file.name] = ds_file
+    # reset fields_______________________
+    st.session_state["key_ds_uploader"] = str(uuid.uuid4())
+
+def save_large_ds_file():
+    # save file
+    ds_file_path = os.path.join(folder_path, ds_large_filename)
+    with open(ds_file_path, "rb") as f:
+        ds_file = f.read()
+    st.session_state["ds_files_dict"][ds_large_filename] = ds_file
+    # reset fields_______________________
+    st.session_state["key_ds_uploader"] = str(uuid.uuid4())
+
+# TAB3
 def save_sql_query():
     # store information________________
     st.session_state["sql_query_saved_ok_flag"] = True  # for success message
@@ -178,7 +205,6 @@ with tab1:
                 🔌 Add Connection to Data Source
             </div>""", unsafe_allow_html=True)
         st.write("")
-
 
     if st.session_state["db_connection_saved_ok_flag"]:
         with col1:
@@ -428,14 +454,132 @@ with tab1:
 #________________________________________________
 # NON-SQL DATA SOURCES
 with tab2:
-    col1, col2 = st.columns([2,1])
+
+    col1, col2 = st.columns([2,1.5])
+
     with col1:
-        st.markdown(f"""
-        <div style="background-color:#f8d7da; padding:1em;
-                    border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-            ❌ This panel is not ready yet.
-        </div>
-        """, unsafe_allow_html=True)
+        col1a, col1b = st.columns([2,1])
+
+    with col2:
+        col2a, col2b = st.columns([0.5, 2])
+
+    with col2b:
+        st.write("")
+        st.write("")
+
+        rows = [{"Filename": filename.split('.')[0], "Format": filename.split('.')[-1],
+                "Size (kB)": file.size/1024}
+                for filename, file in reversed(list(st.session_state["ds_files_dict"].items()))]
+        db_connections_df = pd.DataFrame(rows)
+        last_added_db_connections_df = db_connections_df.head(utils.get_max_length_for_display()[1])
+
+        max_length = utils.get_max_length_for_display()[1]   # max number of connections to show directly
+        if st.session_state["ds_files_dict"]:
+            if len(st.session_state["ds_files_dict"]) < max_length:
+                st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
+                        🔎 uploaded files
+                    </div>""", unsafe_allow_html=True)
+                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                    </div>""", unsafe_allow_html=True)
+            else:
+                st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
+                        🔎 last uploaded files
+                    </div>""", unsafe_allow_html=True)
+                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                        (complete list below)
+                    </div>""", unsafe_allow_html=True)
+            st.dataframe(last_added_db_connections_df, hide_index=True)
+
+        #Option to show all connections (if too many)
+        if st.session_state["ds_files_dict"] and len(st.session_state["ds_files_dict"]) > max_length:
+            with st.expander("🔎 Show all files"):
+                st.write("")
+                st.dataframe(db_connections_df, hide_index=True)
+
+
+    #PURPLE HEADING - UPLOAD FILE
+    with col1:
+        st.write("")
+        st.markdown("""<div class="purple-heading">
+                📁 Upload File
+            </div>""", unsafe_allow_html=True)
+        st.write("")
+
+    with col1:
+        col1a, col1b = st.columns([2,1])
+
+
+    ds_allowed_formats = utils.get_ds_allowed_tab_formats()            #data source for the TriplesMap
+    with col1a:
+        ds_file = st.file_uploader(f"""🖱️ Upload data source file:*""",
+            type=ds_allowed_formats, key=st.session_state["key_ds_uploader"])
+
+        if ds_file and ds_file.name in st.session_state["ds_files_dict"]:
+            st.write("")
+            st.markdown(f"""<div class="custom-error-small">
+                ❌ File <b>{ds_file.name}</b> is already loaded.<br>
+                <small>To update the content of this file
+                use the <b>Update File</b> option. You can also remove the file
+                using the <b>Remove File</b> option.</small>
+            </div>""", unsafe_allow_html=True)
+            st.write("")
+
+        elif ds_file:
+            try:
+                columns_df = pd.read_csv(ds_file)
+                ds_file.seek(0)    # reset index
+                column_list = columns_df.columns.tolist()
+                with col1a:
+                    st.button("Save", key="key_save_ds_file_button", on_click=save_ds_file)
+            except:    # empty file
+                st.markdown(f"""<div class="custom-error-small">
+                    ❌ The file <b>{ds_file.name}</b> is empty. Please load a valid file.
+                </div>""", unsafe_allow_html=True)
+                st.write("")
+
+    if not ds_file:
+        with col1b:
+            st.write("")
+            st.write("")
+            large_file_checkbox = st.checkbox(
+                "🐘 My file is larger than 200 MB",
+                key="key_large_file_checkbox")
+
+        if large_file_checkbox:
+
+            folder_name = "data_sources"
+
+            with col1a:
+                st.markdown(f"""<div class="info-message-small">
+                        ℹ️ Please add your file to the <b style="color:#F63366;">
+                        {folder_name}</b> folder inside the main folder. Then select
+                        from list below (do not use uploader).
+                    </span></div>""", unsafe_allow_html=True)
+
+            folder_path = os.path.join(os.getcwd(), folder_name)
+
+            if not os.path.isdir(folder_path):
+                with col1a:
+                    st.write("")
+                    st.markdown(f"""<div class="custom-warning-small">
+                            ⚠️ Folder <b>{folder_name}</b> does not exist. Please,
+                            create it within the main folder and add your file to it.
+                        </div>""", unsafe_allow_html=True)
+                    st.write("")
+            else:
+                tab_files = [f for f in os.listdir(folder_path)
+                    if os.path.isfile(os.path.join(folder_path, f)) and any(f.endswith(ext)
+                    for ext in ds_allowed_formats)]
+                list_to_choose = tab_files
+                list_to_choose.insert(0, "Select file")
+                with col1a:
+                    st.write("")
+                    ds_large_filename = st.selectbox("🖱️ Select file*:", tab_files)
+                if ds_large_filename != "Select file":
+                    st.button("Save", key="key_save_large_ds_file_button",
+                    on_click=save_large_ds_file)
+
+
 
 #________________________________________________
 # QUERY DATA
