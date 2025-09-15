@@ -525,7 +525,7 @@ with tab2:
     with col1:
         st.write("")
         st.markdown("""<div class="purple-heading">
-                📁 Upload File
+                📁 Upload File <small>(or Update)</small>
             </div>""", unsafe_allow_html=True)
         st.write("")
 
@@ -549,15 +549,18 @@ with tab2:
 
         if ds_file and ds_file.name in st.session_state["ds_files_dict"]:
             st.write("")
-            st.markdown(f"""<div class="custom-error-small">
-                ❌ File <b>{ds_file.name}</b> is already loaded.<br>
-                <small>To update the content of this file
-                use the <b>Update File</b> option. You can also remove the file
-                using the <b>Remove File</b> option.</small>
+            st.markdown(f"""<div class="custom-warning-small">
+                ⚠️ File <b>{ds_file.name}</b> is already loaded.<br>
+                <small>If you continue its content will be updated.</small>
             </div>""", unsafe_allow_html=True)
             st.write("")
+            update_file_checkbox = st.checkbox(
+            ":gray-badge[⚠️ I am sure I want to update the file]",
+            key="key_update_file_checkbox")
+            if update_file_checkbox:
+                st.button("Save", key="key_save_ds_file_button", on_click=save_ds_file)
 
-        with col1a:
+        elif ds_file:
             st.button("Save", key="key_save_ds_file_button", on_click=save_ds_file)
 
     if not ds_file:
@@ -603,16 +606,20 @@ with tab2:
                     if ds_large_filename in st.session_state["ds_files_dict"]:
                         with col1a:
                             st.write("")
-                            st.markdown(f"""<div class="custom-error-small">
-                                ❌ File <b>{ds_large_filename}</b> is already loaded.<br>
-                                <small>To update the content of this file
-                                use the <b>Update File</b> option. You can also remove the file
-                                using the <b>Remove File</b> option.</small>
+                            st.markdown(f"""<div class="custom-warning-small">
+                                ⚠️ File <b>{ds_large_filename}</b> is already loaded.<br>
+                                <small>If you continue its content will be updated.</small>
                             </div>""", unsafe_allow_html=True)
                             st.write("")
+                            update_large_file_checkbox = st.checkbox(
+                            ":gray-badge[⚠️ I am sure I want to update the file]",
+                            key="key_update_large_file_checkbox")
+                            if update_large_file_checkbox:
+                                st.button("Save", key="key_save_large_ds_file_button", on_click=save_large_ds_file)
                     else:
-                        st.button("Save", key="key_save_large_ds_file_button",
-                        on_click=save_large_ds_file)
+                        with col1a:
+                            st.button("Save", key="key_save_large_ds_file_button",
+                            on_click=save_large_ds_file)
 
 
 
