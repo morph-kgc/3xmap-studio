@@ -1241,8 +1241,6 @@ def get_ds_allowed_tab_formats():
     return allowed_tab_formats_list
 #_________________________________________________
 
-
-
 #________________________________________________________
 # Funtion to get all tables in a database
 def get_tables_from_db(engine, cur, database):
