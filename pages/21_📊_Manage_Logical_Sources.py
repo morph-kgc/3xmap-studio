@@ -55,6 +55,8 @@ if "ds_files_dict" not in st.session_state:
     st.session_state["ds_files_dict"] = {}
 if "ds_file_saved_ok_flag" not in st.session_state:
     st.session_state["ds_file_saved_ok_flag"] = False
+if "ds_file_removed_ok_flag" not in st.session_state:
+    st.session_state["ds_file_removed_ok_flag"] = False
 
 
 #TAB3
@@ -122,6 +124,15 @@ def save_large_ds_file():
     st.session_state["ds_file_saved_ok_flag"] = True
     # reset fields_______________________
     st.session_state["key_large_file_checkbox"] = False
+
+def remove_file():
+    # delete files________________
+    for file in ds_files_to_remove_list:
+        del st.session_state["ds_files_dict"][file]
+    # store information________________
+    st.session_state["ds_file_removed_ok_flag"] = True  # for success message
+    # reset fields_____________________
+    st.session_state["key_ds_files_to_remove_list"] = []
 
 # TAB3
 def save_sql_query():
@@ -330,7 +341,7 @@ with tab1:
         with col1:
             st.write("_______")
             st.markdown("""<div class="purple-heading">
-                    🗑️ Remove Connection
+                    🗑️ Remove Connections
                 </div>""", unsafe_allow_html=True)
             st.write("")
 
@@ -631,6 +642,99 @@ with tab2:
                             on_click=save_large_ds_file)
 
 
+    if not st.session_state["ds_files_dict"] and st.session_state["ds_file_removed_ok_flag"]:
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.write("")
+            st.markdown(f"""<div class="custom-success">
+                ✅ The <b>data source file/s</b> have been removed!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["ds_file_removed_ok_flag"] = False
+        time.sleep(st.session_state["success_display_time"])
+        st.rerun()
+
+    #PURPLE HEADING - REMOVE FILE
+    if st.session_state["ds_files_dict"]:
+        with col1:
+            st.write("_______")
+            st.markdown("""<div class="purple-heading">
+                    🗑️ Remove Files
+                </div>""", unsafe_allow_html=True)
+            st.write("")
+
+        if st.session_state["ds_file_removed_ok_flag"]:
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                st.write("")
+                st.markdown(f"""<div class="custom-success">
+                    ✅ The <b>data source file/s</b> have been removed!
+                </div>""", unsafe_allow_html=True)
+            st.session_state["ds_file_removed_ok_flag"] = False
+            time.sleep(st.session_state["success_display_time"])
+            st.rerun()
+
+        with col1:
+            col1a, col1b = st.columns([2,1])
+
+        list_to_choose =  list(reversed(list(st.session_state["ds_files_dict"].keys())))
+        if len(list_to_choose) > 1:
+            list_to_choose.insert(0, "Select all")
+        with col1a:
+            ds_files_to_remove_list = st.multiselect("🖱️ Select files:*",list_to_choose,
+                key="key_ds_files_to_remove_list")
+
+        if "Select all" in ds_files_to_remove_list:
+            ds_files_to_remove_list = list(st.session_state["ds_files_dict"].keys())
+            with col1a:
+                if len(ds_files_to_remove_list) == 1:
+                    st.markdown(f"""<div class="custom-warning">
+                            ⚠️ If you continue, the file <b style="color:#F63366;">
+                            {utils.format_list_for_markdown(ds_files_to_remove_list)}</b>
+                            will be removed.
+                        </div>""", unsafe_allow_html=True)
+                elif len(ds_files_to_remove_list) < 6:
+                    st.markdown(f"""<div class="custom-warning">
+                            ⚠️ If you continue, the files <b style="color:#F63366;">
+                            {utils.format_list_for_markdown(ds_files_to_remove_list)}</b>
+                            will be removed.
+                        </div>""", unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""<div class="custom-warning">
+                            ⚠️ If you continue, <b style="color:#F63366;">all files</b>
+                            will be removed.
+                        </div>""", unsafe_allow_html=True)
+                st.write("")
+
+
+                delete_all_files_checkbox= st.checkbox(
+                ":gray-badge[⚠️ I am sure I want to delete all files]",
+                key="key_delete_sm_class_checkbox")
+                if delete_all_files_checkbox:
+                    st.button("Remove", key="key_remove_file_button", on_click=remove_file)
+        elif ds_files_to_remove_list:
+            with col1a:
+                if len(ds_files_to_remove_list) == 1:
+                    st.markdown(f"""<div class="custom-warning">
+                            ⚠️ If you continue, the file <b style="color:#F63366;">
+                            {utils.format_list_for_markdown(ds_files_to_remove_list)}</b>
+                            will be removed.
+                        </div>""", unsafe_allow_html=True)
+                elif len(ds_files_to_remove_list) < 6:
+                    st.markdown(f"""<div class="custom-warning">
+                            ⚠️ If you continue, the files <b style="color:#F63366;">
+                            {utils.format_list_for_markdown(ds_files_to_remove_list)}</b>
+                            will be removed.
+                        </div>""", unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""<div class="custom-warning">
+                            ⚠️ If you continue, the <b style="color:#F63366;">selected files</b>
+                            will be removed.
+                        </div>""", unsafe_allow_html=True)
+                st.write("")
+
+                st.button("Remove", key="key_remove_file_button", on_click=remove_file)
 
 #________________________________________________
 # QUERY DATA
