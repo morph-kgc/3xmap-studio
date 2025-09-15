@@ -1316,6 +1316,8 @@ def read_tab_file(filename):
     else:
         read_content = ""   # should not occur
 
+    file.seek(0)
+
     return read_content
 #_________________________________________________
 

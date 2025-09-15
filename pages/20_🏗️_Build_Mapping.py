@@ -1285,63 +1285,61 @@ with tab2:
 
             elif sm_option == "🆕 Create new Subject Map":
 
-                with col1:
-                    col1a, col1b = st.columns([2.5,1])
                 if tm_label_for_sm != "Select a TriplesMap":   #TriplesMap selected
                     tm_iri_for_sm = tm_dict[tm_label_for_sm]
                     ls_iri_for_sm = next(st.session_state["g_mapping"].objects(tm_iri_for_sm, RML.logicalSource), None)
-                    ds_filename_for_sm = next(st.session_state["g_mapping"].objects(ls_iri_for_sm, RML.source), None)
-
-                    if ds_filename_for_sm in st.session_state["ds_cache_dict"]:
-                        column_list = st.session_state["ds_cache_dict"][ds_filename_for_sm]
-                        with col1a:
-                            st.markdown(f"""<div class="info-message-small">
-                                    🛢️ The data source is <b>{ds_filename_for_sm}</b>.
-                                </div>""", unsafe_allow_html=True)
-                            st.write("")
-                    else:
-                        with col1b:
-                            st.write("")
-                            st.write("")
-                        column_list = []
-
-                        with col1a:
-                            ds_allowed_formats = utils.get_ds_allowed_formats()
-                            ds_file_for_sm = st.file_uploader(f"""🖱️ Upload data source file {ds_filename_for_sm} (optional):""",
-                                type=ds_allowed_formats, key=st.session_state["key_ds_uploader_for_sm"])
-
-                        with col1b:
-                            if not ds_file_for_sm:
-                                st.markdown(f"""<div class="info-message-small">
-                                        🛢️ The data source <b>{ds_filename_for_sm}</b> is not cached.
-                                        Load it here <b>if needed</b>.
-                                    </div>""", unsafe_allow_html=True)
+                    ds_for_sm = str(next(st.session_state["g_mapping"].objects(ls_iri_for_sm, RML.source), None))
+                    reference_formulation_for_sm = next(st.session_state["g_mapping"].objects(ls_iri_for_sm, QL.referenceFormulation), None)
 
 
-                            if ds_file_for_sm and ds_filename_for_sm != Literal(ds_file_for_sm.name):
-                                st.markdown(f"""<div class="custom-error-small">
-                                    ❌ The names of the uploaded file <b>({ds_file_for_sm.name})</b> and the
-                                    data source <b>({ds_filename_for_sm})</b> do not match.
-                                    Please upload the correct file for the data source.
-                                </div>""", unsafe_allow_html=True)
-                            elif ds_file_for_sm:
-                                try:
-                                    columns_df = pd.read_csv(ds_file_for_sm)
-                                    column_list = columns_df.columns.tolist()
-                                    st.markdown(f"""<div class="custom-success-small">
-                                        ✔️ The data source is loaded correctly from file <b>{ds_filename_for_sm}</b>.
-                                    </div>""", unsafe_allow_html=True)
-                                except:   # empty file
-                                    st.markdown(f"""<div class="custom-error-small">
-                                        ❌ The file <b>{ds_file_for_sm.name}</b> is empty.
-                                        Please upload the correct file for the data source.
-                                    </div>""", unsafe_allow_html=True)
-                                    column_list = []
-                                    st.write("")
+                    #HEREIGO
+                    jdbc_for_sm_list = []
+                    for conn in st.session_state["db_connections_dict"]:
+                        [engine, host, port, database, user, password] = st.session_state["db_connections_dict"][conn]
+                        if engine == "Oracle":
+                            jdbc_str = f"jdbc:oracle:thin:@{host}:{port}:{database}"
+                            jdbc_for_sm_list.append(jdbc_str)
+                        elif engine == "SQL Server":
+                            jdbc_str = f"jdbc:sqlserver://{host}:{port};databaseName={database}"
+                            jdbc_for_sm_list.append(jdbc_str)
+                        elif engine == "PostgreSQL":
+                            jdbc_str = f"jdbc:postgresql://{host}:{port}/{database}"
+                            jdbc_for_sm_list.append(jdbc_str)
+                        elif engine == "MySQL":
+                            jdbc_str = f"jdbc:mysql://{host}:{port}/{database}"
+                            jdbc_for_sm_list.append(jdbc_str)
+                        elif engine =="MariaDB":
+                            jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
+                            jdbc_for_sm_list.append(jdbc_str)
+
 
                     with col1:
-                        col1a, col1b = st.columns(2)
-                    with col1a:
+                        if ds_for_sm in st.session_state["ds_files_dict"]:
+                            st.markdown(f"""<div class="info-message-small">
+                                    🛢️ The data source is <b>{ds_for_sm}</b>.
+                                </div>""", unsafe_allow_html=True)
+                            st.write("")
+                            df = utils.read_tab_file(ds_for_sm)
+                            column_list = df.columns.tolist()
+                            st.write("TABULAR", reference_formulation_for_sm, column_list)
+                        elif ds_for_sm in jdbc_for_sm_list:
+                            st.markdown(f"""<div class="info-message-small">
+                                    🛢️ The data source is <b>{ds_for_sm}</b>.
+                                </div>""", unsafe_allow_html=True)
+                            st.write("")
+                        else:
+                            st.markdown(f"""<div class="info-message-small">
+                                    🛢️ The data source <b>{ds_for_sm}</b> is not available.<br>
+                                    <small>Please load it in the <b>Manage Logical Sources</b> page.
+                                    Otherwise, column references will need to be entered manually, which is discouraged.</small>
+                                </div>""", unsafe_allow_html=True)
+                            st.write("")
+                            column_list = []
+
+
+
+
+                    with col1b:
                         sm_label = st.text_input("⌨️ Enter Subject Map label (optional):", key="key_sm_label_new")
                     NS = st.session_state["structural_ns_dict"]["Subject Map"][1]
                     sm_iri = BNode() if not sm_label else NS[sm_label]
