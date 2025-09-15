@@ -489,8 +489,17 @@ with tab2:
         else:
             file_size_kb = None  # Unknown format
 
+        if not file_size_kb:
+            file_size = None
+        elif file_size_kb < 1:
+            file_size = f"""{int(file_size_kb*1024)} bytes"""
+        elif file_size_kb < 1024:
+            file_size = f"""{int(file_size_kb)} kB"""
+        else:
+            file_size = f"""{int(file_size_kb/1024)} MB"""
+
         row = {"Filename": base_name, "Format": file_format,
-            "Size (kB)": round(file_size_kb, 2) if file_size_kb is not None else "N/A"}
+            "Size": file_size if file_size_kb is not None else "N/A"}
         rows.append(row)
 
         db_connections_df = pd.DataFrame(rows)
