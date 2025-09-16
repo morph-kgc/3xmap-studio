@@ -15,6 +15,7 @@ import psycopg
 import pymysql    # another option mysql-connector-python
 import oracledb
 import pyodbc
+import sqlglot
 
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 
@@ -824,6 +825,170 @@ def remove_triplesmap(tm_label):
 
     g.remove((tm_iri, None, None))   # remove tm triple
 #______________________________________________________
+def get_column_list_and_give_info(tm_iri):
+
+    ls_iri = next(st.session_state["g_mapping"].objects(tm_iri, RML.logicalSource), None)
+    ds = str(next(st.session_state["g_mapping"].objects(ls_iri, RML.source), None))
+    reference_formulation = next(st.session_state["g_mapping"].objects(ls_iri, QL.referenceFormulation), None)
+    query_as_ds = next(st.session_state["g_mapping"].objects(ls_iri, RML.query), None)
+    table_name_as_ds = next(st.session_state["g_mapping"].objects(ls_iri, RR.tableName), None)
+
+    jdbc_dict = {}
+    for conn in st.session_state["db_connections_dict"]:
+        [engine, host, port, database, user, password] = st.session_state["db_connections_dict"][conn]
+        if engine == "Oracle":
+            jdbc_str = f"jdbc:oracle:thin:@{host}:{port}:{database}"
+            jdbc_dict[conn] = jdbc_str
+        elif engine == "SQL Server":
+            jdbc_str = f"jdbc:sqlserver://{host}:{port};databaseName={database}"
+            jdbc_dict[conn] = jdbc_str
+        elif engine == "PostgreSQL":
+            jdbc_str = f"jdbc:postgresql://{host}:{port}/{database}"
+            jdbc_dict[conn] = jdbc_str
+        elif engine == "MySQL":
+            jdbc_str = f"jdbc:mysql://{host}:{port}/{database}"
+            jdbc_dict[conn] = jdbc_str
+        elif engine =="MariaDB":
+            jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
+            jdbc_dict[conn] = jdbc_str
+
+    if ds in st.session_state["ds_files_dict"]:   # saved non-sql data source
+
+        df = utils.read_tab_file(ds)
+        column_list = df.columns.tolist()
+
+        st.markdown(f"""<div class="info-message-small">
+                🛢️ The data source is <b>{ds}</b>.
+            </div>""", unsafe_allow_html=True)
+        st.write("")
+
+    elif ds in jdbc_dict.values():        # saved sql data source
+
+        for i_conn, i_jdbc_str in jdbc_dict.items():
+            if  i_jdbc_str == ds:
+                [engine, host, port, i_database, user, password] = st.session_state["db_connections_dict"][conn]
+                conn_label = i_conn
+                jdbc_str = i_jdbc_str
+                database = i_database
+                break
+
+
+        if query_as_ds:
+            try:
+                conn = utils.make_connection_to_db(conn_label)
+                cur = conn.cursor()
+                cur.execute(query_as_ds)
+                column_list = [description[0] for description in cur.description]
+                conn.close() # optional: close immediately or keep open for queries
+                if not column_list:
+                    st.markdown(f"""<div class="custom-warning-small">
+                        ⚠️ Logical source's query yielded no columns. <small>Please,
+                        check the query in the <b>📊 Manage Logical Sources</b> page
+                        to enable automatic column detection.
+                        Manual entry of column references is discouraged.</small>
+                    </div>""", unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""<div class="info-message-small">
+                            📊 The data source is the database <b>{database}</b>.<br>
+                             <small>{conn_label}: <b>{jdbc_str}</b></small>
+                        </div>""", unsafe_allow_html=True)
+                    st.write("")
+
+            except:
+                st.markdown(f"""<div class="custom-warning-small">
+                    ⚠️ Connection to database or logical source's query failed.
+                    <small>Please, check them in the <b>📊 Manage Logical Sources</b> page
+                    to enable automatic column detection.
+                    Manual entry of column references is discouraged.</small>
+
+                </div>""", unsafe_allow_html=True)
+                column_list = []
+
+        elif table_name_as_ds:
+            try:
+                conn = utils.make_connection_to_db(conn_label)
+                cur = conn.cursor()
+
+                cur.execute(f"SELECT * FROM {table_name_as_ds} LIMIT 0")
+                column_list = [desc[0] for desc in cur.description]
+
+                conn.close()
+
+                if not column_list:
+                    st.markdown(f"""<div class="custom-warning-small">
+                        ⚠️ Table <b>{table_name_as_ds}</b> contains no columns.
+                        <small>Please check the table definition in the <b>📊 Manage Logical Sources</b> page
+                        to enable automatic column detection.
+                        Manual entry of column references is discouraged.</small>
+                    </div>""", unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""<div class="info-message-small">
+                            📊 The data source is the database <b>{database}</b>.<br>
+                             <small>{conn_label}: <b>{jdbc_str}</b></small>
+                        </div>""", unsafe_allow_html=True)
+                    st.write("")
+
+            except:
+                st.markdown(f"""<div class="custom-warning-small">
+                    ⚠️ Failed to connect to the database or access table <b>{table_name_as_ds}</b>.
+                    <small>Please verify the connection and table name in the <b>📊 Manage Logical Sources</b> page
+                    to enable automatic column detection.
+                    Manual entry of column references is discouraged.</small>
+                </div>""", unsafe_allow_html=True)
+                column_list = []
+
+        else:
+            st.markdown(f"""<div class="custom-warning-small">
+                ⚠️ Triple indicating either <code>RML.query</code> or <code>RR.tableName</code>
+                is missing.<br>
+                <small>Please check the <b>Logical Source</b> of the TriplesMap
+                to enable automatic column detection.
+                Manual entry of column references is discouraged.</small>
+            </div>""", unsafe_allow_html=True)
+            column_list = []
+
+    elif query_as_ds:    # try to look for the columns in the query
+        parsed = sqlglot.parse_one(query_as_ds)
+        column_list = [str(col) for col in parsed.find_all(sqlglot.expressions.Column)]
+
+        if column_list:
+            st.markdown(f"""<div class="custom-warning-small">
+                    ⚠️ The data source <b>{ds}</b> is not available,
+                    but column references have been taken from the
+                    logical source's query.<br>
+                    <small> However, connecting to the database is still recommended.</small>
+                </div>""", unsafe_allow_html=True)
+
+        else:
+            st.markdown(f"""<div class="custom-warning-small">
+                    ⚠️ The data source <b>{ds}</b> is not available.<br>
+                    <small>Please load it in the <b>📊 Manage Logical Sources</b> page
+                    to enable automatic column detection.
+                    Manual entry of column references is discouraged.</small>
+                </div>""", unsafe_allow_html=True)
+
+
+    else:                                                           # data source not saved
+        if reference_formulation == QL.SQL:
+            st.markdown(f"""<div class="custom-warning-small">
+                    ⚠️ The data source <b>{ds}</b> is not available.<br>
+                    <small>Please connect to the database in the <b>📊 Manage Logical Sources</b> page
+                    to enable automatic column detection.
+                    Manual entry of column references is discouraged.</small>
+                </div>""", unsafe_allow_html=True)
+        else:
+            st.markdown(f"""<div class="custom-warning-small">
+                    ⚠️ The data source <b>{ds}</b> is not available.<br>
+                    <small>Please load it in the <b>📊 Manage Logical Sources</b> page
+                    to enable automatic column detection.
+                    Manual entry of column references is discouraged.</small>
+                </div>""", unsafe_allow_html=True)
+            st.write("")
+        column_list = []
+
+    return column_list
+
+
 
 #________________________________________________________
 # Funtion to get the dictionary of the Subject Maps

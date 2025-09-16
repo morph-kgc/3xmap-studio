@@ -305,9 +305,6 @@ def save_sm_template():   #function to save subject map (template option)
     st.session_state["sm_template_list"] = []
     st.session_state["sm_template_prefix"] = ""
     st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
-    # cache data source if given_________________
-    if not ds_filename_for_sm in st.session_state["ds_cache_dict"] and column_list:
-        st.session_state["ds_cache_dict"][ds_filename_for_sm] = column_list
 
 def save_sm_constant():   #function to save subject map (constant option)
     # add triples________________________
@@ -329,9 +326,6 @@ def save_sm_constant():   #function to save subject map (constant option)
     st.session_state["sm_saved_ok_flag"] = True
     # reset fields_________________________
     st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
-    # cache data source if given_________________
-    if not ds_filename_for_sm in st.session_state["ds_cache_dict"] and column_list:
-        st.session_state["ds_cache_dict"][ds_filename_for_sm] = column_list
 
 def save_sm_reference():   #function to save subject map (reference option)
     # add triples____________________
@@ -353,9 +347,6 @@ def save_sm_reference():   #function to save subject map (reference option)
     st.session_state["sm_saved_ok_flag"] = True
     # reset fields____________________
     st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
-    # cache data source if given_________________
-    if not ds_filename_for_sm in st.session_state["ds_cache_dict"]:
-        st.session_state["ds_cache_dict"][ds_filename_for_sm] = column_list
 
 def change_term_type_to_BNode():
     # add triples______________________
@@ -723,9 +714,9 @@ with tab1:
 
             with col1b:
                 if labelled_ls_list:    # if there exist labelled logical sources
-                    ls_options_list = ["📑 Existing Logical Source", "📊 Relational Database", "🛢️ Non-relational data"]
+                    ls_options_list = ["📑 Existing Logical Source", "📊 SQL Database", "🛢️ Non-SQL data"]
                 else:
-                    ls_options_list = ["📊 Relational Database", "🛢️ Non-relational data"]
+                    ls_options_list = ["📊 SQL Database", "🛢️ Non-SQL data"]
                 ls_option = st.radio("🖱️ Choose the logical source option:*", ls_options_list, horizontal=False)
                 st.write("")
 
@@ -741,7 +732,7 @@ with tab1:
                         save_tm_button_existing_ls = st.button("Save", key="key_save_tm_w_existing_ls", on_click=save_tm_w_existing_ls)
 
 
-            if ls_option == "📊 Relational Database":
+            if ls_option == "📊 SQL Database":
                 with col1a:
                     logical_source_label = st.text_input("⌨️ Enter label for the logical source (optional):")
                     if logical_source_label in labelled_ls_list:
@@ -855,37 +846,37 @@ with tab1:
                                 if selected_table_for_ls != "Select a table":
                                     st.button("Save", key="key_save_tm_w_table_name", on_click=save_tm_w_table_name)
 
-            if ls_option == "🛢️ Non-relational data":
+            if ls_option == "🛢️ Non-SQL data":
                 with col1a:
                     logical_source_label = st.text_input("⌨️ Enter label for the logical source (optional):")
                     if logical_source_label in labelled_ls_list:
                         with col1b:
-                            st.markdown(f"""<div class="custom-warning-small">
-                                    ⚠️ The logical source label <b>{logical_source_label}</b>
+                            st.markdown(f"""<div class="custom-error-small">
+                                    ❌ The logical source label <b>{logical_source_label}</b>
                                     is already in use. Please, pick a different label or leave blank.
                                 </div>""", unsafe_allow_html=True)
                             st.write("")
 
-                ds_allowed_formats = utils.get_ds_allowed_formats()            #data source for the TriplesMap
-                with col1:
-                    col1a, col1b = st.columns([2,1])
-                with col1a:
-                    ds_file = st.file_uploader(f"""🖱️ Upload data source file:*""",
-                        type=ds_allowed_formats, key=st.session_state["key_ds_uploader"])
+                    if not st.session_state["ds_files_dict"]:
+                        st.markdown(f"""<div class="custom-error-small">
+                            ❌ No non-SQL data sources are available. Please go to the <b>
+                            Manage Logical Sources</b> page to load the files.
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
 
-                if ds_file and not logical_source_label in labelled_ls_list:
-                    try:
-                        columns_df = pd.read_csv(ds_file)
-                        ds_file.seek(0)    # reset index
-                        column_list = columns_df.columns.tolist()
-                        with col1a:
+                    else:
+                        list_to_choose = list(reversed(st.session_state["ds_files_dict"].keys()))
+                        list_to_choose.insert(0, "Select file")
+                        ds_filename_for_tm = st.selectbox("🖱️ Select the data source file:*", list_to_choose,
+                        key="key_ds_filename_for_tm")
+
+                        ds_file = None
+                        if ds_filename_for_tm != "Select file":
+                            ds_file = st.session_state["ds_files_dict"][ds_filename_for_tm]
+
+
+                        if ds_file and not logical_source_label in labelled_ls_list:
                             st.button("Save", key="key_save_tm_w_non_relational_ls", on_click=save_tm_w_non_relational_ls)
-                    except:    # empty file
-                        with col1a:
-                            st.markdown(f"""<div class="custom-error-small">
-                                ❌ The file <b>{ds_file.name}</b> appears to be empty or corrupted. Please load a valid file.
-                            </div>""", unsafe_allow_html=True)
-                            st.write("")
 
 
     # remove tm success message - show here if "Remove" purple heading is not going to be shown
@@ -1263,9 +1254,8 @@ with tab2:
         if tm_label_for_sm != "Select a TriplesMap":
             if existing_sm_list:  # if there exist labelled subject maps
                 with col1b:
-                    sm_options_list = ["📑 Select existing Subject Map", "🆕 Create new Subject Map"]
+                    sm_options_list = ["🆕 Create new Subject Map", "📑 Select existing Subject Map"]
                     sm_option = st.radio("🖱️ Select an option:*", sm_options_list)
-                    st.write("")
 
             else:
                     sm_option = "🆕 Create new Subject Map"
@@ -1290,129 +1280,11 @@ with tab2:
                     tm_iri_for_sm = tm_dict[tm_label_for_sm]
                     ls_iri_for_sm = next(st.session_state["g_mapping"].objects(tm_iri_for_sm, RML.logicalSource), None)
                     ds_for_sm = str(next(st.session_state["g_mapping"].objects(ls_iri_for_sm, RML.source), None))
-                    reference_formulation_for_sm = next(st.session_state["g_mapping"].objects(ls_iri_for_sm, QL.referenceFormulation), None)
-                    query_as_ds_for_sm = next(st.session_state["g_mapping"].objects(ls_iri_for_sm, RML.query), None)
-
-
-                    # GET COLUMN LIST AND GIVE INFO ON DATA SOURCE
-
-                    # dictionary of jdbc strings of saved database connections
-                    jdbc_for_sm_dict = {}
-                    for conn in st.session_state["db_connections_dict"]:
-                        [engine, host, port, database, user, password] = st.session_state["db_connections_dict"][conn]
-                        if engine == "Oracle":
-                            jdbc_str = f"jdbc:oracle:thin:@{host}:{port}:{database}"
-                            jdbc_for_sm_dict[conn] = jdbc_str
-                        elif engine == "SQL Server":
-                            jdbc_str = f"jdbc:sqlserver://{host}:{port};databaseName={database}"
-                            jdbc_for_sm_dict[conn] = jdbc_str
-                        elif engine == "PostgreSQL":
-                            jdbc_str = f"jdbc:postgresql://{host}:{port}/{database}"
-                            jdbc_for_sm_dict[conn] = jdbc_str
-                        elif engine == "MySQL":
-                            jdbc_str = f"jdbc:mysql://{host}:{port}/{database}"
-                            jdbc_for_sm_dict[conn] = jdbc_str
-                        elif engine =="MariaDB":
-                            jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
-                            jdbc_for_sm_dict[conn] = jdbc_str
-
-
-                    with col1:
-                        if ds_for_sm in st.session_state["ds_files_dict"]:   # saved non-sql data source
-
-                            df = utils.read_tab_file(ds_for_sm)
-                            column_list = df.columns.tolist()
-
-                            st.markdown(f"""<div class="info-message-small">
-                                    🛢️ The data source is <b>{ds_for_sm}</b>.
-                                </div>""", unsafe_allow_html=True)
-                            st.write("")
-
-                        elif ds_for_sm in jdbc_for_sm_dict.values():        # saved sql data source
-
-                            for i_conn, i_jdbc_str in jdbc_for_sm_dict.items():
-                                if  i_jdbc_str == ds_for_sm:
-                                    [engine, host, port, i_database, user, password] = st.session_state["db_connections_dict"][conn]
-                                    conn_label = i_conn
-                                    jdbc_str = i_jdbc_str
-                                    database = i_database
-                                    break
-
-                            st.markdown(f"""<div class="info-message-small">
-                                    📊 The data source is the database <b>{database}</b>.<br>
-                                     <small>{conn_label}: <b>{jdbc_str}</b></small>
-                                </div>""", unsafe_allow_html=True)
-                            st.write("")
-
-                            if query_as_ds_for_sm:
-                                try:
-                                    conn = utils.make_connection_to_db(conn_label)
-                                    cur = conn.cursor()
-                                    cur.execute(query_as_ds_for_sm)
-                                    column_list = [description[0] for description in cur.description]
-                                    conn.close() # optional: close immediately or keep open for queries
-                                    if not column_list:
-                                        st.markdown(f"""<div class="custom-error-small">
-                                            ❌ Logical source's query yielded no columns. <small>Please,
-                                            check the query in the <b>Manage Logical Sources</b> page
-                                            to enable automatic column detection.
-                                            Manual entry of column references is discouraged.</small>
-                                        </div>""", unsafe_allow_html=True)
-
-                                except:
-                                    st.markdown(f"""<div class="custom-error-small">
-                                        ❌ Connection to database or logical source's query failed.
-                                        <small>Please, check them in the <b>Manage Logical Sources</b> page
-                                        to enable automatic column detection.
-                                        Manual entry of column references is discouraged.</small>
-
-                                    </div>""", unsafe_allow_html=True)
-                                    column_list = []
-
-
-                        elif query_as_ds_for_sm:    # try to look for the columns in the query
-                            parsed = sqlglot.parse_one(query_as_ds_for_sm)
-                            column_list = [str(col) for col in parsed.find_all(sqlglot.expressions.Column)]
-
-                            if column_list:
-                                st.markdown(f"""<div class="info-message-small">
-                                        📊 The data source <b>{ds_for_sm}</b> is not available,
-                                        but column references have been taken from the
-                                        logical source's query.<br>
-                                        <small> However, connecting to the database is still recommended.</small>
-                                    </div>""", unsafe_allow_html=True)
-
-                            else:
-                                st.markdown(f"""<div class="info-message-small">
-                                        📊 The data source <b>{ds_for_sm}</b> is not available.<br>
-                                        <small>Please load it in the <b>Manage Logical Sources</b> page
-                                        to enable automatic column detection.
-                                        Manual entry of column references is discouraged.</small>
-                                    </div>""", unsafe_allow_html=True)
-
-
-                        else:                                                           # data source not saved
-                            if reference_formulation_for_sm == QL.SQL:
-                                st.markdown(f"""<div class="info-message-small">
-                                        📊 The data source <b>{ds_for_sm}</b> is not available.<br>
-                                        <small>Please connect to the database in the <b>Manage Logical Sources</b> page
-                                        to enable automatic column detection.
-                                        Manual entry of column references is discouraged.</small>
-                                    </div>""", unsafe_allow_html=True)
-                            else:
-                                st.markdown(f"""<div class="info-message-small">
-                                        🛢️ The data source <b>{ds_for_sm}</b> is not available.<br>
-                                        <small>Please load it in the <b>Manage Logical Sources</b> page
-                                        to enable automatic column detection.
-                                        Manual entry of column references is discouraged.</small>
-                                    </div>""", unsafe_allow_html=True)
-                                st.write("")
-                                column_list = []
-
-
-
 
                     with col1b:
+                        column_list = utils.get_column_list_and_give_info(tm_iri_for_sm)
+
+                    with col1a:
                         sm_label = st.text_input("⌨️ Enter Subject Map label (optional):", key="key_sm_label_new")
                     NS = st.session_state["structural_ns_dict"]["Subject Map"][1]
                     sm_iri = BNode() if not sm_label else NS[sm_label]
@@ -1424,7 +1296,9 @@ with tab2:
                             st.write("")
 
                     with col1:
-                        st.write("")
+                        st.markdown("""
+                        <div style='margin: 4px 0; border-top: 1px solid #ccc;'></div>
+                        """, unsafe_allow_html=True)
                         sm_generation_rule_list = ["Template 📐", "Constant 🔒", "Reference 📊"]
                         sm_generation_rule = st.radio("🖱️ Define the Subject Map generation rule:*",
                             sm_generation_rule_list, horizontal=True, key="key_sm_generation_rule_radio")
@@ -1457,30 +1331,15 @@ with tab2:
                             with col1b:
                                 if not column_list:   #data source is not available (load)
                                     sm_template_variable_part = st.text_input("⌨️ Manually enter column of the data source:*")
-                                    if not ds_file_for_sm:
-                                        # st.markdown(f"""<div class="custom-error-small">
-                                        #         ❌ To add a variable part, you must first load the
-                                        #         <b>data source file</b>.
-                                        #     </div>""", unsafe_allow_html=True)
-                                        st.markdown(f"""<div class="custom-warning-small-orange">
-                                                🚧 <b>Manual input is strongly discouraged!</b> We recommend loading the
-                                                <b>data source file</b> above to add a variable part.
-                                            </div>""", unsafe_allow_html=True)
-                                    else:
-                                        # st.markdown(f"""<div class="custom-error-small">
-                                        #     ❌ To add a variable part, please upload the correct <b>data source file</b>.
-                                        #     </div>""", unsafe_allow_html=True)
-                                        st.markdown(f"""<div class="custom-warning-small-orange">
-                                                🚧 <b>Manual input is strongly discouraged!</b> We recommend loading the
-                                                <b>correct data source file</b> above to add a variable part.
-                                            </div>""", unsafe_allow_html=True)
+                                    st.markdown("""<div style='text-align: right; font-size: 10.5px; color: #cc9a06; font-weight: bold; margin-top: -10px;'>
+                                        ⚠️ discouraged
+                                    </div>""", unsafe_allow_html=True)
+                                    if sm_template_variable_part:
+                                        st.button("Add", key="save_sm_template_variable_part_button", on_click=save_sm_template_variable_part)
                                 else:  # data source is available
                                     list_to_choose = column_list.copy()
                                     list_to_choose.insert(0, "Select a column")
                                     sm_template_variable_part = st.selectbox("🖱️ Select the column of the data source:", list_to_choose, key="key_sm_template_variable_part")
-                                    st.markdown(f"""<div style="font-size:12px; margin-top:-1em; text-align: right;">
-                                            🛢️ The data source is <b style="color:#F63366;">{ds_filename_for_sm}</b>.
-                                        </div>""", unsafe_allow_html=True)
                                     if st.session_state["sm_template_list"] and st.session_state["sm_template_list"][-1].endswith("}"):
                                         st.markdown(f"""<div class="custom-warning-small">
                                                 ⚠️ Including two adjacent variable parts is strongly discouraged.
@@ -1545,7 +1404,7 @@ with tab2:
 
                         with col1b:
                             st.write("")
-                            sm_term_type_template = st.radio(label="🖱️ Select Term type:*", options=["🌐 IRI", "👻 BNode"],
+                            sm_term_type_template = st.radio(label="🖱️ Select term type:*", options=["🌐 IRI", "👻 BNode"],
                                 key="sm_term_type_template")
 
                         if sm_term_type_template == "🌐 IRI" and not st.session_state["sm_template_prefix"] and sm_template:
@@ -1567,7 +1426,7 @@ with tab2:
                             sm_constant = st.text_input("⌨️ Enter constant:*", key="key_sm_constant")
 
                         with col1b:
-                            sm_term_type_constant = st.radio(label="🖱️ Select Term type:*", options=["🌐 IRI"], horizontal=True,
+                            sm_term_type_constant = st.radio(label="🖱️ Select term type:*", options=["🌐 IRI"], horizontal=True,
                                 key="sm_term_type_constant")
 
                         mapping_ns_dict = utils.get_mapping_ns_dict()
@@ -1603,25 +1462,15 @@ with tab2:
                             list_to_choose.insert(0, "Select a column")
 
                         with col1b:
-                            sm_term_type_reference = st.radio(label="🖱️ Select Term type:*", options=["🌐 IRI", "👻 BNode"],
+                            sm_term_type_reference = st.radio(label="🖱️ Select term type:*", options=["🌐 IRI", "👻 BNode"],
                                 horizontal=True, key="sm_term_type_reference")
 
                         if not column_list:   #data source is not available (load)
                             with col1a:
                                 sm_column_name = st.text_input("⌨️ Manually enter column of the data source:*")
-                            if not ds_file_for_sm:
-                                with col1a:
-                                    st.markdown(f"""<div class="custom-warning-small-orange">
-                                            🚧 <b>Manual input is strongly discouraged!</b> We recommend loading the
-                                            <b>data source file</b> above to continue.
-                                        </div>""", unsafe_allow_html=True)
-                            else:
-
-                                with col1a:
-                                    st.markdown(f"""<div class="custom-warning-small-orange">
-                                            🚧 <b>Manual input is strongly discouraged!</b> We recommend loading the
-                                            <b>correct data source file</b> above to continue.
-                                        </div>""", unsafe_allow_html=True)
+                                st.markdown("""<div style='text-align: right; font-size: 10.5px; color: #cc9a06; font-weight: bold; margin-top: -10px;'>
+                                    ⚠️ discouraged
+                                </div>""", unsafe_allow_html=True)
 
                             if sm_column_name and sm_term_type_reference == "🌐 IRI":
                                 with col1b:
@@ -1635,9 +1484,6 @@ with tab2:
                             with col1a:
                                 sm_column_name = st.selectbox(f"""🖱️ Select the column of the data source:*""", list_to_choose,
                                     key="key_sm_column_name")
-                            st.markdown(f"""<div style="font-size:12px; margin-top:-1em; text-align: right;">
-                                    🛢️ The data source is <b style="color:#F63366;">{ds_filename_for_sm}</b>.
-                                </div>""", unsafe_allow_html=True)
 
                             if sm_column_name != "Select a column" and sm_term_type_reference == "🌐 IRI":
                                 with col1b:
@@ -1651,6 +1497,10 @@ with tab2:
                             st.write("")
 
                     # DISPLAY INFO AND SAVE________________________________
+                    with col1:
+                        st.markdown("""
+                        <div style='margin: 4px 0; border-top: 1px solid #ccc;'></div>
+                        """, unsafe_allow_html=True)
                     if sm_generation_rule == "Template 📐":
                         with col1:
                             col1a, col1b = st.columns([2,1])
@@ -2863,7 +2713,7 @@ with tab3:
 
                 with col3b:
                     st.write("")
-                    om_term_type_template = st.radio(label="🖱️ Select Term type:*", options=["🌐 IRI", "📘 Literal", "👻 BNode"],
+                    om_term_type_template = st.radio(label="🖱️ Select term type:*", options=["🌐 IRI", "📘 Literal", "👻 BNode"],
                         key="om_term_type_template")
 
                 if om_term_type_template == "🌐 IRI" and not st.session_state["template_om_is_iri_flag"] and om_template:
@@ -2903,7 +2753,7 @@ with tab3:
                     om_constant = st.text_input("⌨️ Enter constant:*", key="key_om_constant")
 
                 with col3b:
-                    om_term_type_constant = st.radio(label="🖱️ Select Term type:*", options=["📘 Literal", "🌐 IRI"], horizontal=True,
+                    om_term_type_constant = st.radio(label="🖱️ Select term type:*", options=["📘 Literal", "🌐 IRI"], horizontal=True,
                         key="om_term_type_constant")
 
                 if om_constant and om_term_type_constant == "🌐 IRI":
