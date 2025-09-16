@@ -9,3 +9,4 @@ pyodbc
 pyreadstat
 pyarrow
 odfpy
+sqlglot

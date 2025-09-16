@@ -1321,6 +1321,53 @@ def read_tab_file(filename):
     return read_content
 #_________________________________________________
 
+#_________________________________________________
+# Funtion to read tabular data
+# for files that are not yet saved
+# HERE - Leave only this one and change name
+def read_tab_file_unsaved(file):
+
+    filename = file.name
+    file_format = filename.split(".")[-1]
+
+    if file_format == "csv":
+        read_content = pd.read_csv(file)
+
+    elif file_format == "tsv":
+        read_content = pd.read_csv(file, sep="\t")
+
+    elif file_format in ["xls", "xlsx", "ods"]:
+        read_content = pd.read_excel(file)
+
+    elif file_format == "parquet":
+        read_content = pd.read_parquet(file)
+
+    elif file_format == "feather":
+        read_content = pd.read_feather(file)
+
+    elif file_format == "orc":
+        import pyarrow.orc as orc
+        orc_file = orc.ORCFile(file)
+        read_content = orc_file.read().to_pandas()
+
+    elif file_format == "dta":
+        read_content, _ = pyreadstat.read_dta(file)
+
+    elif file_format == "sas7bdat":
+        read_content, _ = pyreadstat.read_sas7bdat(file)
+
+    elif file_format == "sav":
+        read_content, _ = pyreadstat.read_sav(file)
+
+    else:
+        read_content = ""   # should not occur
+
+    file.seek(0)
+
+    return read_content
+#_________________________________________________
+
+
 #HEREIGO
 
 

@@ -11,6 +11,7 @@ import re
 import uuid   # to handle uploader keys
 import io
 from io import IOBase
+import sqlglot
 
 # Header
 st.markdown("""
@@ -806,7 +807,7 @@ with tab1:
                                         try:
                                             cur.execute(sql_query)
                                             sql_query_ok_flag = True
-                                        except e:
+                                        except:
                                             with col1:
                                                 st.markdown(f"""<div class="custom-error-small">
                                                     ❌ <b>Invalid SQL syntax</b>. Please check your query.<br>
@@ -882,7 +883,7 @@ with tab1:
                     except:    # empty file
                         with col1a:
                             st.markdown(f"""<div class="custom-error-small">
-                                ❌ The file <b>{ds_file.name}</b> is empty. Please load a valid file.
+                                ❌ The file <b>{ds_file.name}</b> appears to be empty or corrupted. Please load a valid file.
                             </div>""", unsafe_allow_html=True)
                             st.write("")
 
@@ -1290,51 +1291,123 @@ with tab2:
                     ls_iri_for_sm = next(st.session_state["g_mapping"].objects(tm_iri_for_sm, RML.logicalSource), None)
                     ds_for_sm = str(next(st.session_state["g_mapping"].objects(ls_iri_for_sm, RML.source), None))
                     reference_formulation_for_sm = next(st.session_state["g_mapping"].objects(ls_iri_for_sm, QL.referenceFormulation), None)
+                    query_as_ds_for_sm = next(st.session_state["g_mapping"].objects(ls_iri_for_sm, RML.query), None)
 
 
-                    #HEREIGO
-                    jdbc_for_sm_list = []
+                    # GET COLUMN LIST AND GIVE INFO ON DATA SOURCE
+
+                    # dictionary of jdbc strings of saved database connections
+                    jdbc_for_sm_dict = {}
                     for conn in st.session_state["db_connections_dict"]:
                         [engine, host, port, database, user, password] = st.session_state["db_connections_dict"][conn]
                         if engine == "Oracle":
                             jdbc_str = f"jdbc:oracle:thin:@{host}:{port}:{database}"
-                            jdbc_for_sm_list.append(jdbc_str)
+                            jdbc_for_sm_dict[conn] = jdbc_str
                         elif engine == "SQL Server":
                             jdbc_str = f"jdbc:sqlserver://{host}:{port};databaseName={database}"
-                            jdbc_for_sm_list.append(jdbc_str)
+                            jdbc_for_sm_dict[conn] = jdbc_str
                         elif engine == "PostgreSQL":
                             jdbc_str = f"jdbc:postgresql://{host}:{port}/{database}"
-                            jdbc_for_sm_list.append(jdbc_str)
+                            jdbc_for_sm_dict[conn] = jdbc_str
                         elif engine == "MySQL":
                             jdbc_str = f"jdbc:mysql://{host}:{port}/{database}"
-                            jdbc_for_sm_list.append(jdbc_str)
+                            jdbc_for_sm_dict[conn] = jdbc_str
                         elif engine =="MariaDB":
                             jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
-                            jdbc_for_sm_list.append(jdbc_str)
+                            jdbc_for_sm_dict[conn] = jdbc_str
 
 
                     with col1:
-                        if ds_for_sm in st.session_state["ds_files_dict"]:
-                            st.markdown(f"""<div class="info-message-small">
-                                    🛢️ The data source is <b>{ds_for_sm}</b>.
-                                </div>""", unsafe_allow_html=True)
-                            st.write("")
+                        if ds_for_sm in st.session_state["ds_files_dict"]:   # saved non-sql data source
+
                             df = utils.read_tab_file(ds_for_sm)
                             column_list = df.columns.tolist()
-                            st.write("TABULAR", reference_formulation_for_sm, column_list)
-                        elif ds_for_sm in jdbc_for_sm_list:
+
                             st.markdown(f"""<div class="info-message-small">
                                     🛢️ The data source is <b>{ds_for_sm}</b>.
                                 </div>""", unsafe_allow_html=True)
                             st.write("")
-                        else:
+
+                        elif ds_for_sm in jdbc_for_sm_dict.values():        # saved sql data source
+
+                            for i_conn, i_jdbc_str in jdbc_for_sm_dict.items():
+                                if  i_jdbc_str == ds_for_sm:
+                                    [engine, host, port, i_database, user, password] = st.session_state["db_connections_dict"][conn]
+                                    conn_label = i_conn
+                                    jdbc_str = i_jdbc_str
+                                    database = i_database
+                                    break
+
                             st.markdown(f"""<div class="info-message-small">
-                                    🛢️ The data source <b>{ds_for_sm}</b> is not available.<br>
-                                    <small>Please load it in the <b>Manage Logical Sources</b> page.
-                                    Otherwise, column references will need to be entered manually, which is discouraged.</small>
+                                    📊 The data source is the database <b>{database}</b>.<br>
+                                     <small>{conn_label}: <b>{jdbc_str}</b></small>
                                 </div>""", unsafe_allow_html=True)
                             st.write("")
-                            column_list = []
+
+                            if query_as_ds_for_sm:
+                                try:
+                                    conn = utils.make_connection_to_db(conn_label)
+                                    cur = conn.cursor()
+                                    cur.execute(query_as_ds_for_sm)
+                                    column_list = [description[0] for description in cur.description]
+                                    conn.close() # optional: close immediately or keep open for queries
+                                    if not column_list:
+                                        st.markdown(f"""<div class="custom-error-small">
+                                            ❌ Logical source's query yielded no columns. <small>Please,
+                                            check the query in the <b>Manage Logical Sources</b> page
+                                            to enable automatic column detection.
+                                            Manual entry of column references is discouraged.</small>
+                                        </div>""", unsafe_allow_html=True)
+
+                                except:
+                                    st.markdown(f"""<div class="custom-error-small">
+                                        ❌ Connection to database or logical source's query failed.
+                                        <small>Please, check them in the <b>Manage Logical Sources</b> page
+                                        to enable automatic column detection.
+                                        Manual entry of column references is discouraged.</small>
+
+                                    </div>""", unsafe_allow_html=True)
+                                    column_list = []
+
+
+                        elif query_as_ds_for_sm:    # try to look for the columns in the query
+                            parsed = sqlglot.parse_one(query_as_ds_for_sm)
+                            column_list = [str(col) for col in parsed.find_all(sqlglot.expressions.Column)]
+
+                            if column_list:
+                                st.markdown(f"""<div class="info-message-small">
+                                        📊 The data source <b>{ds_for_sm}</b> is not available,
+                                        but column references have been taken from the
+                                        logical source's query.<br>
+                                        <small> However, connecting to the database is still recommended.</small>
+                                    </div>""", unsafe_allow_html=True)
+
+                            else:
+                                st.markdown(f"""<div class="info-message-small">
+                                        📊 The data source <b>{ds_for_sm}</b> is not available.<br>
+                                        <small>Please load it in the <b>Manage Logical Sources</b> page
+                                        to enable automatic column detection.
+                                        Manual entry of column references is discouraged.</small>
+                                    </div>""", unsafe_allow_html=True)
+
+
+                        else:                                                           # data source not saved
+                            if reference_formulation_for_sm == QL.SQL:
+                                st.markdown(f"""<div class="info-message-small">
+                                        📊 The data source <b>{ds_for_sm}</b> is not available.<br>
+                                        <small>Please connect to the database in the <b>Manage Logical Sources</b> page
+                                        to enable automatic column detection.
+                                        Manual entry of column references is discouraged.</small>
+                                    </div>""", unsafe_allow_html=True)
+                            else:
+                                st.markdown(f"""<div class="info-message-small">
+                                        🛢️ The data source <b>{ds_for_sm}</b> is not available.<br>
+                                        <small>Please load it in the <b>Manage Logical Sources</b> page
+                                        to enable automatic column detection.
+                                        Manual entry of column references is discouraged.</small>
+                                    </div>""", unsafe_allow_html=True)
+                                st.write("")
+                                column_list = []
 
 
 
@@ -1351,6 +1424,7 @@ with tab2:
                             st.write("")
 
                     with col1:
+                        st.write("")
                         sm_generation_rule_list = ["Template 📐", "Constant 🔒", "Reference 📊"]
                         sm_generation_rule = st.radio("🖱️ Define the Subject Map generation rule:*",
                             sm_generation_rule_list, horizontal=True, key="key_sm_generation_rule_radio")
