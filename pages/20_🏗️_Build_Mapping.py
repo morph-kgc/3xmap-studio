@@ -325,6 +325,7 @@ def save_sm_constant():   #function to save subject map (constant option)
     st.session_state["last_added_sm_list"].insert(0, [sm_iri, tm_label_for_sm])
     st.session_state["sm_saved_ok_flag"] = True
     # reset fields_________________________
+    st.session_state["sm_template_list"] = []   # in case it is not empty
     st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
 
 def save_sm_reference():   #function to save subject map (reference option)
@@ -337,7 +338,7 @@ def save_sm_reference():   #function to save subject map (reference option)
         sm_iri = NS[sm_label]
     st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, sm_iri))
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RR.SubjectMap))
-    st.session_state["g_mapping"].add((sm_iri, RR.reference, Literal(sm_reference)))    #HERE change to RR.column in R2RML
+    st.session_state["g_mapping"].add((sm_iri, RR.reference, Literal(sm_column_name)))    #HERE change to RR.column in R2RML
     if sm_term_type_reference == "🌐 IRI":
         st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.IRI))
     elif sm_term_type_reference == "👻 BNode":
@@ -346,6 +347,7 @@ def save_sm_reference():   #function to save subject map (reference option)
     st.session_state["last_added_sm_list"].insert(0, [sm_iri, tm_label_for_sm])
     st.session_state["sm_saved_ok_flag"] = True
     # reset fields____________________
+    st.session_state["sm_template_list"] = []   # in case it is not empty
     st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
 
 def change_term_type_to_BNode():
@@ -1216,7 +1218,7 @@ with tab2:
         with col1:
             col1a, col2a = st.columns([2,0.5])
         with col1a:
-            st.markdown(f"""<div class="custom-error-small">
+            st.markdown(f"""<div class="info-message-small-gray">
                 🔒 <b>All existing TriplesMaps have already been assigned a Subject Map.</b><br>
                 <ul style="margin-top:0.5em; margin-bottom:0; font-size:0.9em; list-style-type: disc; padding-left: 1.2em;">
                     <li>You can add new TriplesMaps in the <b>Add TriplesMap</b> panel.</li>
@@ -1301,7 +1303,8 @@ with tab2:
                         """, unsafe_allow_html=True)
                         sm_generation_rule_list = ["Template 📐", "Constant 🔒", "Reference 📊"]
                         sm_generation_rule = st.radio("🖱️ Define the Subject Map generation rule:*",
-                            sm_generation_rule_list, horizontal=True, key="key_sm_generation_rule_radio")
+                            sm_generation_rule_list, horizontal=True, key="key_sm_generation_rule_radio",
+                                label_visibility="collapsed")
 
 
                     #_______________________________________________
@@ -1475,8 +1478,9 @@ with tab2:
                             if sm_column_name and sm_term_type_reference == "🌐 IRI":
                                 with col1b:
                                     st.markdown(f"""<div class="custom-warning-small">
-                                            ⚠️ Term type is <b>🌐 IRI</b>: Make sure that the values in the referenced column
-                                            are valid IRIs.
+                                            ⚠️ Term type is <b>🌐 IRI</b>.
+                                            <small>Make sure that the values in the referenced column
+                                            are valid IRIs.</small>
                                         </div>""", unsafe_allow_html=True)
                                     st.write("")
 
@@ -1488,8 +1492,9 @@ with tab2:
                             if sm_column_name != "Select a column" and sm_term_type_reference == "🌐 IRI":
                                 with col1b:
                                     st.markdown(f"""<div class="custom-warning-small">
-                                            ⚠️ Term type is <b>🌐 IRI</b>: Make sure that the values in the referenced column
-                                            are valid IRIs.
+                                            ⚠️ Term type is <b>🌐 IRI</b>.
+                                            <small>Make sure that the values in the referenced column
+                                            are valid IRIs.</small>
                                         </div>""", unsafe_allow_html=True)
                                     st.write("")
 
@@ -1510,10 +1515,10 @@ with tab2:
 
                         if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):
                             sm_complete_flag = "❌ No"
-                            inner_html += f"""<tr><td><b>Object Map label</b></td>
+                            inner_html += f"""<tr><td><b>Subject Map label</b></td>
                             <td>{sm_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
                         else:
-                            inner_html += f"""<tr><td><b>Object Map label</b></td><td>{sm_label}</td></tr>"""
+                            inner_html += f"""<tr><td><b>Subject Map label</b></td><td>{sm_label}</td></tr>"""
 
                         inner_html += f"""<tr><td><b>Generation rule*</b></td><td>{sm_generation_rule}</td></tr>
                         <tr><td><b>Template*</b></td><td>{sm_template}</td></tr>
@@ -1540,10 +1545,10 @@ with tab2:
 
                         if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):
                             sm_complete_flag = "❌ No"
-                            inner_html += f"""<tr><td><b>Object Map label</b></td>
+                            inner_html += f"""<tr><td><b>Subject Map label</b></td>
                             <td>{sm_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
                         else:
-                            inner_html += f"""<tr><td><b>Object Map label</b></td><td>{sm_label}</td></tr>"""
+                            inner_html += f"""<tr><td><b>Subject Map label</b></td><td>{sm_label}</td></tr>"""
 
                         inner_html += f"""<tr><td><b>Generation rule*</b></td><td>{sm_generation_rule}</td></tr>
                         <tr><td><b>Constant*</b></td><td>{sm_constant}</td></tr>
@@ -1575,10 +1580,10 @@ with tab2:
 
                         if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):
                             sm_complete_flag = "❌ No"
-                            inner_html += f"""<tr><td><b>Object Map label</b></td>
+                            inner_html += f"""<tr><td><b>Subject Map label</b></td>
                             <td>{sm_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
                         else:
-                            inner_html += f"""<tr><td><b>Object Map label</b></td><td>{sm_label}</td></tr>"""
+                            inner_html += f"""<tr><td><b>Subject Map label</b></td><td>{sm_label}</td></tr>"""
 
                         inner_html += f"""<tr><td><b>Generation rule*</b></td><td>{sm_generation_rule}</td></tr>
                         <tr><td><b>Data source column*</b></td><td>{sm_column_name_display}</td></tr>
@@ -1605,9 +1610,9 @@ with tab2:
                     # INFO AND SAVE BUTTON____________________________________
                     if sm_complete_flag == "✔️ Yes":
                         with col1c:
-                            st.markdown(f"""<div class="custom-success-small">
-                                ✅ All required fields are complete.<br>
-                                🧐 Double-check the information before saving. </div>
+                            st.markdown(f"""<div class="info-message-small-gray">
+                                ℹ️ All required fields are complete.<br>
+                                <small>🧐 Double-check the information before saving.</smalL> </div>
                             """, unsafe_allow_html=True)
                             st.write("")
                             if sm_generation_rule == "Template 📐":
@@ -1619,8 +1624,8 @@ with tab2:
 
                     else:
                         with col1c:
-                            st.markdown(f"""<div class="custom-warning">
-                                    ⚠️ All <b>required fields (*)</b> must be filled in order to save the Subject Map.
+                            st.markdown(f"""<div class="info-message-small-gray">
+                                    ℹ️ All <b>required fields (*)</b> must be filled in order to save the Subject Map.
                                 </div>""", unsafe_allow_html=True)
                             st.write("")
 
@@ -2864,11 +2869,11 @@ with tab3:
                 elif om_column_name != "Select a column" and om_term_type_reference == "🌐 IRI":
                     with col3b:
                         st.markdown(f"""<div class="custom-warning-small">
-                                ⚠️ Term type is <b>🌐 IRI</b>: Make sure that the values in the referenced column
-                                are valid IRIs.
+                                ⚠️ Term type is <b>🌐 IRI</b>.
+                                <small>Make sure that the values in the referenced column
+                                are valid IRIs.</small>
                             </div>""", unsafe_allow_html=True)
                         st.write("")
-
 
         if tm_label_for_pom != "Select a TriplesMap":
             st.write("______")
@@ -3067,9 +3072,9 @@ with tab3:
 
             if pom_complete_flag == "✔️ Yes" and om_complete_flag == "✔️ Yes":
                 with col4:
-                    st.markdown(f"""<div class="custom-success">
-                        ✅ All required fields are complete.<br>
-                        🧐 Double-check the information before saving. </div>
+                    st.markdown(f"""<div class="info-message-small-gray">
+                        ℹ️ All required fields are complete.<br>
+                        <small>🧐 Double-check the information before saving.</smalL> </div>
                     """, unsafe_allow_html=True)
                     st.write("")
                     st.session_state["pom_iri_to_create"] = pom_iri    # otherwise it will change value in the on_click function
@@ -3084,10 +3089,11 @@ with tab3:
                         save_pom_bnode_button = st.button("Save", on_click=save_bnode_bnode, key="key_save_pom_bnode_button")
             else:
                 with col4:
-                    st.markdown(f"""<div class="custom-warning">
-                            ⚠️ All <b>required fields (*)</b> must be filled in order to save a Predicate-Object Map.
+                    st.markdown(f"""<div class="info-message-small-gray">
+                            ℹ️ All <b>required fields (*)</b> must be filled in order to save the Subject Map.
                         </div>""", unsafe_allow_html=True)
                     st.write("")
+
 
 
 

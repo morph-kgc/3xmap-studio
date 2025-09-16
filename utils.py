@@ -196,7 +196,7 @@ def import_st_aesthetics():
         justify-content: center; align-items: center; word-break: break-word;
         overflow-wrap: anywhere; white-space: normal;}
 
-    .info-message-small-gray b {color: #2b2b2b;}
+    .info-message-small-gray b {color: #333333;}
 
 
     /* INFO TABLE GRAY */
@@ -1008,7 +1008,7 @@ def get_sm_dict():
 
         template = st.session_state["g_mapping"].value(sm_iri, RR.template)
         constant = st.session_state["g_mapping"].value(sm_iri, RR.constant)
-        reference = st.session_state["g_mapping"].value(sm_iri, RML.reference)
+        reference = st.session_state["g_mapping"].value(sm_iri, RR.reference)
 
         sm_id_iri = None
         sm_type = None
