@@ -108,8 +108,12 @@ def import_st_aesthetics():
                 font-size:1.1rem; font-weight:600; color:#511D66;}
 
     /* GRAY PREVIEW MESSAGE */
-            .gray-preview-message {background-color:#f9f9f9; padding:1em; border-radius:5px;
+            .gray-preview-message {background-color:#f9f9f9; padding:0.7em; border-radius:5px;
             color:#333333; border:1px solid #e0e0e0;}
+
+    /* GRAY PREVIEW MESSAGE SMALL*/
+            .gray-preview-message-small {background-color:#f9f9f9; padding:0.4em; border-radius:5px;
+            color:#333333; border:1px solid #e0e0e0; font-size:0.92em}
 
     /* GREEN STATUS MESSAGE */
             .green-status-message {background-color:#d4edda; padding:1em;
@@ -161,6 +165,17 @@ def import_st_aesthetics():
 
         .custom-warning-small b {color: #cc9a06;}
 
+
+    /* WARNING MESSAGE SUBTLE*/
+        .custom-warning-subtle {border-left: 4px solid #e0c36d;
+            ; padding: 0.4em 0.6em;
+            color: #6c5e2e; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
+            margin: 0.5em 0; background-color: transparent;
+            border-radius: 4px; box-sizing: border-box;}
+
+        .custom-warning-subtle b {color: #cc9a06; font-weight: 600;}
+
+
     /* WARNING MESSAGE SMALL ORANGE */
     .custom-warning-small-orange {background-color: #ffe3c0; padding: 0.5em;
         border-radius: 5px; color: #8a3c00; font-size: 0.92em;
@@ -181,6 +196,15 @@ def import_st_aesthetics():
             align-items: center;}
 
         .custom-error-small b {color: #a94442;}
+
+    /* ERROR MESSAGE SUBTLE */
+        .custom-error-subtle {border-left: 4px solid #e89ca0;
+            padding: 0.4em 0.6em; color: #7a2e33; font-size: 0.85em;
+            font-family: "Source Sans Pro", sans-serif; margin: 0.5em 0;
+            background-color: transparent; border-radius: 4px;
+            box-sizing: border-box;}
+
+        .custom-error-subtle b {color: #a94442; font-weight: 600;}
 
     /* INFO MESSAGE SMALL */
     .info-message-small {background-color: #eaf4ff; padding: 0.5em;
@@ -208,11 +232,48 @@ def import_st_aesthetics():
         font-size: 0.85rem; word-wrap: break-word; white-space: normal;
         overflow-wrap: anywhere;}
 
+    /* INFO MESSAGE SUBTLE */
+    .custom-info-subtle {border-left: 4px solid #0c5460;
+        ;padding: 0.4em 0.6em;
+        color: #0c5460; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
+        margin: 0.5em 0; background-color: transparent;
+        border-radius: 4px; box-sizing: border-box;}
+
+    .custom-info-subtle b {
+        color: #003366; font-weight:600;}
+
     /* TITLE ROW */
     .title-row td {font-size: 0.9rem; font-weight: bold; text-align: center;
         padding-bottom: 6px;}
 
     </style>""", unsafe_allow_html=True)
+
+
+# st.markdown("""<div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+#     <span style="font-size:0.95rem;">
+#         🚧 Working without an ontology could result in structural inconsistencies.
+#     <small>
+#         This is especially discouraged when building Predicate-Object Maps.
+#     </small></span>""", unsafe_allow_html=True)
+
+    # CUSTOM WARNING SUBTLE WITH BORDER
+    # .custom-warning-subtle {border-left: 4px solid #e0c36d;
+    #     border-top: 1px solid #f3e6b0; border-right: 1px solid #f3e6b0;
+    #     border-bottom: 1px solid #f3e6b0; padding: 0.4em 0.6em;
+    #     color: #6c5e2e; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
+    #     margin: 0.5em 0; background-color: transparent; border-radius: 4px;
+    #     box-sizing: border-box;}
+    #
+    # .custom-warning-subtle b {color: #b48a00; font-weight: 600;}
+
+    # CUSTOM WARNING SUBTLE WITHOUT BORDER
+    # .custom-warning-subtle {background-color: #fdfdfd; padding: 0.4em;
+    #     border-left: 3px solid #e0c36d; color: #6c5e2e; font-size: 0.85em;
+    #     font-family: "Source Sans Pro", sans-serif; margin: 0.5em 0;}
+    #
+    # .custom-warning-subtle b {color: #b48a00; font-weight: 600;}
+
+
 
 #_______________________________________________________
 
@@ -889,7 +950,7 @@ def get_column_list_and_give_info(tm_iri):
                     </div>""", unsafe_allow_html=True)
                 else:
                     st.markdown(f"""<div class="info-message-small">
-                            📊 The data source is the database <b>{database}</b>.<br>
+                            📊 The data source is the database <b style="color:#F63366;">{database}</b>.<br>
                              <small>{conn_label}: <b>{jdbc_str}</b></small>
                         </div>""", unsafe_allow_html=True)
                     st.write("")
@@ -923,7 +984,7 @@ def get_column_list_and_give_info(tm_iri):
                     </div>""", unsafe_allow_html=True)
                 else:
                     st.markdown(f"""<div class="info-message-small">
-                            📊 The data source is the database <b>{database}</b>.<br>
+                            📊 The data source is the database <b style="color:#F63366;">{database}</b>.<br>
                              <small>{conn_label}: <b>{jdbc_str}</b></small>
                         </div>""", unsafe_allow_html=True)
                     st.write("")
@@ -961,7 +1022,7 @@ def get_column_list_and_give_info(tm_iri):
 
         else:
             st.markdown(f"""<div class="custom-warning-small">
-                    ⚠️ The data source <b>{ds}</b> is not available.<br>
+                    ⚠️ The data source <b>{ds}</b> is not available.
                     <small>Please load it in the <b>📊 Manage Logical Sources</b> page
                     to enable automatic column detection.
                     Manual entry of column references is discouraged.</small>
@@ -978,7 +1039,7 @@ def get_column_list_and_give_info(tm_iri):
                 </div>""", unsafe_allow_html=True)
         else:
             st.markdown(f"""<div class="custom-warning-small">
-                    ⚠️ The data source <b>{ds}</b> is not available.<br>
+                    ⚠️ The data source <b>{ds}</b> is not available.
                     <small>Please load it in the <b>📊 Manage Logical Sources</b> page
                     to enable automatic column detection.
                     Manual entry of column references is discouraged.</small>

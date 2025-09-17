@@ -477,9 +477,6 @@ def save_pom_template():
     st.session_state["om_template_list"] = []    # reset template
     st.session_state["om_term_type_template"] = "🌐 IRI"
     st.session_state["key_om_label"] = ""
-    # cache data source if given_________________
-    if not ds_filename_for_pom in st.session_state["ds_cache_dict"] and column_list:
-        st.session_state["ds_cache_dict"][ds_filename_for_pom] = column_list
 
 def save_pom_constant():
     # add triples pom________________________
@@ -513,9 +510,6 @@ def save_pom_constant():
     st.session_state["key_om_constant"] = ""
     st.session_state["om_term_type_constant"] = "📘 Literal"
     st.session_state["key_om_label"] = ""
-    # cache data source if given_________________
-    if not ds_filename_for_pom in st.session_state["ds_cache_dict"] and column_list:
-        st.session_state["ds_cache_dict"][ds_filename_for_pom] = column_list
 
 def save_pom_reference():
     # add triples pom________________________
@@ -524,13 +518,13 @@ def save_pom_reference():
     st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RR.objectMap, om_iri))
     # add triples om________________________
     st.session_state["g_mapping"].add((om_iri, RDF.type, RR.ObjectMap))
-    st.session_state["g_mapping"].add((om_iri, RR.reference, Literal(om_reference)))    #HERE change to RR.column in R2RML
+    st.session_state["g_mapping"].add((om_iri, RR.reference, Literal(om_column_name)))    #HERE change to RR.column in R2RML
     if om_term_type_reference == "📘 Literal":
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.Literal))
-        if om_datatype != "Select datatype" and om_datatype != "Natural language tag":
+        if om_datatype_reference != "Select datatype" and om_datatype_reference != "Natural language tag":
             datatype_dict = utils.get_datatypes_dict()
-            st.session_state["g_mapping"].add((om_iri, RR.datatype, datatype_dict[om_datatype]))
-        elif om_datatype == "Natural language tag":
+            st.session_state["g_mapping"].add((om_iri, RR.datatype, datatype_dict[om_datatype_reference]))
+        elif om_datatype_reference == "Natural language tag":
             st.session_state["g_mapping"].add((om_iri, RR.language, om_language_tag))
     elif om_term_type_reference == "🌐 IRI":
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.IRI))
@@ -547,9 +541,6 @@ def save_pom_reference():
     st.session_state["key_om_column_name"] = "Select a column"
     st.session_state["om_term_type_reference"] = "📘 Literal"
     st.session_state["key_om_label"] = ""
-    # cache data source if given_________________
-    if not ds_filename_for_pom in st.session_state["ds_cache_dict"]:
-        st.session_state["ds_cache_dict"][ds_filename_for_pom] = column_list
 
 def delete_pom():           #function to delete a Predicate-Object Map
     for pom_iri in pom_to_delete_iri_list:
@@ -1208,7 +1199,7 @@ with tab2:
 
     if not tm_dict:
         with col1a:
-            st.markdown(f"""<div class="custom-error-small">
+            st.markdown(f"""<div class="info-message-small-gray">
                 🔒 No TriplesMaps in mapping {st.session_state["g_label"]}.<br>
                 You can add new TriplesMaps in the <b>Add TriplesMap</b> panel.
                     </div>""", unsafe_allow_html=True)
@@ -1298,8 +1289,7 @@ with tab2:
                             st.write("")
 
                     with col1:
-                        st.markdown("""
-                        <div style='margin: 4px 0; border-top: 1px solid #ccc;'></div>
+                        st.markdown("""<div style='margin: 4px 0; border-top: 1px solid #ccc;'></div>
                         """, unsafe_allow_html=True)
                         sm_generation_rule_list = ["Template 📐", "Constant 🔒", "Reference 📊"]
                         sm_generation_rule = st.radio("🖱️ Define the Subject Map generation rule:*",
@@ -1346,8 +1336,9 @@ with tab2:
                                     if st.session_state["sm_template_list"] and st.session_state["sm_template_list"][-1].endswith("}"):
                                         st.markdown(f"""<div class="custom-warning-small">
                                                 ⚠️ Including two adjacent variable parts is strongly discouraged.
-                                                <b>Best practice:</b> Add a separator between variables to improve clarity.</div>
-                                            """, unsafe_allow_html=True)
+                                                <small><b>Best practice:</b> Add a separator between variables to improve clarity.</small>
+                                            </div>""", unsafe_allow_html=True)
+                                        st.write("")
                                     if sm_template_variable_part != "Select a column":
                                         st.button("Add", key="save_sm_template_variable_part_button", on_click=save_sm_template_variable_part)
 
@@ -2389,7 +2380,7 @@ with tab3:
     #PURPLE HEADING - ADD NEW TRIPLESMAP
     with col1:
         st.markdown("""<div class="purple-heading">
-                🆕 Create the Predicate-Object Map
+                🧱 Add New Predicate-Object Map
             </div>""", unsafe_allow_html=True)
         st.write("")
 
@@ -2397,7 +2388,7 @@ with tab3:
 
     #POM_____________________________________________________
     with col1:
-        col1a, col1b = st.columns([2,1])
+        col1a, col1b = st.columns(2)
 
 
     #list of all triplesmaps with assigned Subject Map
@@ -2428,77 +2419,22 @@ with tab3:
                 tm_label_for_pom = st.selectbox("🖱️ Select a TriplesMap:*", list_to_choose, key="key_tm_label_for_pom")
 
         if tm_label_for_pom != "Select a TriplesMap":
-            sm_dict = utils.get_sm_dict()
-
-
 
             tm_iri_for_pom = tm_dict[tm_label_for_pom]
 
-            if tm_label_for_pom in tm_w_sm_list:
-                sm_iri_for_pom = st.session_state["g_mapping"].value(subject=tm_iri_for_pom, predicate=RR.subjectMap)
-                sm_label_for_pom = sm_dict[sm_iri_for_pom][0]
-                with col1b:
-                    st.write("")
-                    st.markdown(f"""<div class = "info-message-small">
-                            ℹ️ The Subject Map is <b>{sm_label_for_pom}</b>.
-                        </div>""", unsafe_allow_html=True)
-                    st.write("")
-            else:
+            with col1b:
+                st.write("")
+                column_list = utils.get_column_list_and_give_info(tm_iri_for_pom)
+
+            sm_dict = utils.get_sm_dict()
+
+            if not tm_label_for_pom in tm_w_sm_list:
                 sm_label_for_pom = ""
-                with col1b:
-                    st.markdown(f"""<div class="custom-warning-small-orange">
-                            🚧 The TriplesMap <b>{tm_label_for_pom}</b> has not been assigned
-                            a Subject Map yet. <b>The TriplesMap will be invalid if no Subject Map is added</b>.
-                        </div>""", unsafe_allow_html=True)
-                    st.write("")
-
-
-            ls_iri_for_pom = next(st.session_state["g_mapping"].objects(tm_iri_for_pom, RML.logicalSource), None)
-            ds_filename_for_pom = next(st.session_state["g_mapping"].objects(ls_iri_for_pom, RML.source), None)
-
-            selected_p_iri = ""   # initialise
-            column_list = []   # initialise
-
-            if ds_filename_for_pom in st.session_state["ds_cache_dict"]:
-                column_list = st.session_state["ds_cache_dict"][ds_filename_for_pom]
-
-            else:  # if data source is not cached - ASK FOR DATA SOURCE FILE
                 with col1:
-                    col1a, col1b = st.columns([2,1])
-                with col1a:
-                    ds_allowed_formats = utils.get_ds_allowed_formats()
-                    ds_file_for_pom = st.file_uploader(f"""🖱️ Upload data source file {ds_filename_for_pom} (optional):""",
-                        type=ds_allowed_formats, key=st.session_state["key_ds_uploader_for_pom"])
-
-                with col1b:
-                    st.write("")
-                    st.write("")
-                    if not ds_file_for_pom:
-                        st.markdown(f"""<div class="info-message-small">
-                                🛢️ The data source <b>{ds_filename_for_pom}</b> is not cached.
-                                Load it here <b>if needed</b>.
-                            </div>""", unsafe_allow_html=True)
-
-
-                    if ds_file_for_pom and ds_filename_for_pom != Literal(ds_file_for_pom.name):
-                        st.markdown(f"""<div class="custom-error-small">
-                            ❌ The names of the uploaded file <b>({ds_file_for_pom.name})</b> and the
-                            data source <b>({ds_filename_for_pom})</b> do not match.
-                            Please upload the correct file for the data source.
+                    st.markdown(f"""<div class="custom-warning-subtle">
+                            ⚠️ TriplesMap <b>tm4</b> has no Subject Map.
+                            <small>It will be invalid without one.</small>
                         </div>""", unsafe_allow_html=True)
-                    elif ds_file_for_pom:
-                        try:
-                            columns_df = pd.read_csv(ds_file_for_pom)
-                            column_list = columns_df.columns.tolist()
-                            st.markdown(f"""<div class="custom-success-small">
-                                ✔️ The data source is loaded correctly from file <b>{ds_filename_for_pom}</b>.
-                            </div>""", unsafe_allow_html=True)
-                        except:   # empty file
-                            st.markdown(f"""<div class="custom-error-small">
-                                ❌ The file <b>{ds_file_for_pom.name}</b> is empty.
-                                Please upload the correct file for the data source.
-                            </div>""", unsafe_allow_html=True)
-                            column_list = []
                     st.write("")
 
             # HERE CREATE THE PREDICATE MAP
@@ -2506,7 +2442,8 @@ with tab3:
             col1, col2, col3 = st.columns([1.5,0.2,2])
 
             with col1:
-                st.write("______")
+                st.markdown("""<div style='margin: 4px 0; border-top: 1px solid #ccc;'></div>
+                """, unsafe_allow_html=True)
                 st.markdown("""<span style="font-size:1.1em; font-weight:bold;">
                         🏗️ Create the Predicate Map</span><br>
                     """,unsafe_allow_html=True)
@@ -2581,11 +2518,19 @@ with tab3:
                     NS = Namespace(mapping_ns_dict[manual_p_ns_prefix])
                     selected_p_iri = NS[manual_p_label]
 
+            if not st.session_state["g_ontology_label"]:
+                with col1:
+                    st.markdown("""<div class="custom-warning-subtle">
+                            ⚠️ <b>Working without an ontology</b> could result in structural inconsistencies.
+                        <small>
+                            This is especially discouraged when building Predicate-Object Maps.
+                        </small></span>""", unsafe_allow_html=True)
 
 
             # BUILD OBJECT MAP_______________________________________________
             with col3:
-                st.write("____")
+                st.markdown("""<div style='margin: 4px 0; border-top: 1px solid #ccc;'></div>
+                """, unsafe_allow_html=True)
                 st.markdown("""<span style="font-size:1.1em; font-weight:bold;">
                         🏗️ Create the Object Map</span><br>
                     """,unsafe_allow_html=True)
@@ -2637,16 +2582,9 @@ with tab3:
                     with col3b:
                         if not column_list:   #data source is not available (load)
                             om_template_variable_part = st.text_input("⌨️ Manually enter column of the data source:*", key="key_om_template_variable_part")
-                            if not ds_file_for_pom:
-                                    st.markdown(f"""<div class="custom-warning-small-orange">
-                                            🚧 <b>Manual input is strongly discouraged!</b> We recommend loading the
-                                            <b>data source file</b> above to add a variable part.
-                                        </div>""", unsafe_allow_html=True)
-                            else:
-                                    st.markdown(f"""<div class="custom-warning-small-orange">
-                                            🚧 <b>Manual input is strongly discouraged!</b> We recommend loading the
-                                            <b>correct data source file</b> above to add a variable part.
-                                        </div>""", unsafe_allow_html=True)
+                            st.markdown("""<div style='text-align: right; font-size: 10.5px; color: #cc9a06; font-weight: bold; margin-top: -10px;'>
+                                ⚠️ discouraged
+                            </div>""", unsafe_allow_html=True)
                             if om_template_variable_part:
                                 save_om_template_variable_part_button = st.button("Add", key="save_om_template_variable_part_button", on_click=save_om_template_variable_part)
 
@@ -2654,14 +2592,12 @@ with tab3:
                             list_to_choose = column_list.copy()
                             list_to_choose.insert(0, "Select a column")
                             om_template_variable_part = st.selectbox("🖱️ Select the column of the data source:", list_to_choose, key="key_om_template_variable_part")
-                            st.markdown(f"""<div style="font-size:12px; margin-top:-1em; text-align: right;">
-                                    🛢️ The data source is <b style="color:#F63366;">{ds_filename_for_pom}</b>.
-                                </div>""", unsafe_allow_html=True)
                             if st.session_state["om_template_list"] and st.session_state["om_template_list"][-1].endswith("}"):
                                 st.markdown(f"""<div class="custom-warning-small">
                                         ⚠️ Including two adjacent variable parts is strongly discouraged.
-                                        <b>Best practice:</b> Add a separator between variables to improve clarity.
+                                        <small><b>Best practice:</b> Add a separator between variables to improve clarity.</small>
                                     </div>""", unsafe_allow_html=True)
+                                st.write("")
                             if om_template_variable_part != "Select a column":
                                 save_om_template_variable_part_button = st.button("Add", key="save_om_template_variable_part_button", on_click=save_om_template_variable_part)
 
@@ -2802,33 +2738,20 @@ with tab3:
 
 
                 with col3:
-                    col3a, col3b = st.columns([1,1.2])
+                    col3a, col3b, col3c = st.columns([1.5,0.1,1])
 
                 if not column_list:   #data source is not available (load)
                     with col3a:
                         om_column_name = st.text_input("⌨️ Manually enter column of the data source:*", key="key_om_column_name")
-                        if not ds_file_for_pom:
-                                st.markdown(f"""<div class="custom-warning-small-orange">
-                                        🚧 <b>Manual input is strongly discouraged!</b> We recommend loading the
-                                        <b>data source file</b> above to continue.
-                                    </div>""", unsafe_allow_html=True)
-                                st.write("")
-                        else:
-                                st.markdown(f"""<div class="custom-warning-small-orange">
-                                        🚧 <b>Manual input is strongly discouraged!</b> We recommend loading the
-                                        <b>correct data source file</b> above to continue.
-                                    </div>""", unsafe_allow_html=True)
-                                st.write("")
+                        st.markdown("""<div style='text-align: right; font-size: 10.5px; color: #cc9a06; font-weight: bold; margin-top: -10px;'>
+                            ⚠️ discouraged
+                        </div>""", unsafe_allow_html=True)
                 else:
                     with col3a:
                         list_to_choose = column_list.copy()
                         list_to_choose.insert(0, "Select a column")
                         om_column_name = st.selectbox(f"""🖱️ Select the column of the data source:*""", list_to_choose,
                             key="key_om_column_name")
-                        st.markdown(f"""<div style="font-size:12px; margin-top:-1em; text-align: right;">
-                                🛢️ The data source is <b style="color:#F63366;">{ds_filename_for_pom}</b>.
-                            </div>""", unsafe_allow_html=True)
-                        st.write("")
 
                 # if not column_list:   #data source is not available (load)
                 #     with col3b:
@@ -2846,7 +2769,7 @@ with tab3:
                 #
                 # else:
 
-                with col3b:
+                with col3c:
                     om_term_type_reference = st.radio(label="🖱️ Select Term type:*", options=["📘 Literal", "🌐 IRI", "👻 BNode"],
                         horizontal=True, key="om_term_type_reference")
 
@@ -3061,14 +2984,14 @@ with tab3:
 
 
             # INFO AND SAVE BUTTON____________________________________
-            if not st.session_state["g_ontology_label"]:
-                with col4:
-                    st.markdown("""<div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-                        <span style="font-size:0.95rem;">
-                            🚧 Working without an ontology could result in structural inconsistencies.
-                        <div style="font-size: 0.85em; margin-top: 4px;">
-                            This is especially discouraged when building Predicate-Object Maps.
-                        </span></div>""", unsafe_allow_html=True)
+            # if not st.session_state["g_ontology_label"]:
+            #     with col4:
+            #         st.markdown("""<div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
+            #             <span style="font-size:0.95rem;">
+            #                 🚧 Working without an ontology could result in structural inconsistencies.
+            #             <small>
+            #                 This is especially discouraged when building Predicate-Object Maps.
+            #             </small></span>""", unsafe_allow_html=True)
 
             if pom_complete_flag == "✔️ Yes" and om_complete_flag == "✔️ Yes":
                 with col4:
