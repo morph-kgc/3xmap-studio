@@ -670,7 +670,7 @@ with tab1:
             col1a, col1b = st.columns([2,1])
         with col1a:
             st.write("")
-            st.markdown(f"""<div class="custom-success">
+            st.markdown(f"""<div class="success-message-flag">
                 ✅ The TriplesMap <b style="color:#F63366;">{st.session_state["tm_label"]}</b> has been added!
             </div>""", unsafe_allow_html=True)
         st.session_state["tm_saved_ok_flag"] = False
@@ -730,7 +730,7 @@ with tab1:
                     logical_source_label = st.text_input("⌨️ Enter label for the logical source (optional):")
                     if logical_source_label in labelled_ls_list:
                         with col1b:
-                            st.markdown(f"""<div class="custom-warning-small">
+                            st.markdown(f"""<div class="warning-message">
                                     ⚠️ The logical source label <b>{logical_source_label}</b>
                                     is already in use. Please, pick a different label or leave blank.
                                 </div>""", unsafe_allow_html=True)
@@ -740,7 +740,7 @@ with tab1:
                     col1a, col1b = st.columns(2)
                 with col1a:
                     if not st.session_state["db_connections_dict"]:
-                        st.markdown(f"""<div class="custom-error-small">
+                        st.markdown(f"""<div class="error-message">
                             ❌ No connections to database are available. Please go to the <b>
                             Manage Logical Sources</b> page.
                         </div>""", unsafe_allow_html=True)
@@ -758,7 +758,7 @@ with tab1:
 
                             except Exception as e:
                                 conn = ""
-                                st.markdown(f"""<div class="custom-error-small">
+                                st.markdown(f"""<div class="error-message">
                                     ❌ Connection <b>{db_connection_for_ls}</b> is not working. Please go to the <b>
                                     Manage Logical Sources</b> page to manage the connections to Databases.
                                 </div>""", unsafe_allow_html=True)
@@ -793,7 +793,7 @@ with tab1:
                                             sql_query_ok_flag = True
                                         except:
                                             with col1:
-                                                st.markdown(f"""<div class="custom-error-small">
+                                                st.markdown(f"""<div class="error-message">
                                                     ❌ <b>Invalid SQL syntax</b>. Please check your query.<br>
                                                 </div>""", unsafe_allow_html=True)
                                                 st.write("")
@@ -813,7 +813,7 @@ with tab1:
                                     sql_query_ok_flag = True
                                 except:
                                     with col1a:
-                                        st.markdown(f"""<div class="custom-error-small">
+                                        st.markdown(f"""<div class="error-message">
                                             ❌ <b>Invalid SQL syntax</b>. Please check your query.<br>
                                         </div>""", unsafe_allow_html=True)
                                         st.write("")
@@ -844,14 +844,14 @@ with tab1:
                     logical_source_label = st.text_input("⌨️ Enter label for the logical source (optional):")
                     if logical_source_label in labelled_ls_list:
                         with col1b:
-                            st.markdown(f"""<div class="custom-error-small">
+                            st.markdown(f"""<div class="error-message">
                                     ❌ The logical source label <b>{logical_source_label}</b>
                                     is already in use. Please, pick a different label or leave blank.
                                 </div>""", unsafe_allow_html=True)
                             st.write("")
 
                     if not st.session_state["ds_files_dict"]:
-                        st.markdown(f"""<div class="custom-error-small">
+                        st.markdown(f"""<div class="error-message">
                             ❌ No non-SQL data sources are available. Please go to the <b>
                             Manage Logical Sources</b> page to load the files.
                         </div>""", unsafe_allow_html=True)
@@ -1069,7 +1069,7 @@ with tab1:
                         st.button("Delete", on_click=delete_tm)
             else:   #if "Select all" selected
                 with col1b:
-                    st.markdown(f"""<div class="custom-warning-small">
+                    st.markdown(f"""<div class="warning-message">
                             ⚠️ If you continue, <b>all TriplesMaps will be deleted</b>.
                             Make sure you want to go ahead.
                         </div>""", unsafe_allow_html=True)
@@ -1175,7 +1175,7 @@ with tab2:
             col1a, col1b = st.columns([2,1])
         with col1a:
             st.write("")
-            st.markdown(f"""<div class="custom-success">
+            st.markdown(f"""<div class="success-message-flag">
                 ✅ The <b>Subject Map</b> has been created!
             </div>""", unsafe_allow_html=True)
         st.session_state["sm_saved_ok_flag"] = False
@@ -1283,7 +1283,7 @@ with tab2:
                     sm_iri = BNode() if not sm_label else NS[sm_label]
                     if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):
                         with col1a:
-                            st.markdown(f"""<div class="custom-error-small">
+                            st.markdown(f"""<div class="error-message">
                                 ❌ That <b>Subject Map label</b> is already in use. Please pick another label or leave blank.
                             </div>""", unsafe_allow_html=True)
                             st.write("")
@@ -1313,7 +1313,7 @@ with tab2:
                             with col1b:
                                 sm_template_fixed_part = st.text_input("⌨️ Enter fixed part:", key="key_sm_fixed_part")
                                 if re.search(r"[ \t\n\r<>\"{}|\\^`]", sm_template_fixed_part):
-                                    st.markdown(f"""<div class="custom-warning-small">
+                                    st.markdown(f"""<div class="warning-message">
                                             ⚠️ You included a space or an unescaped character, which is discouraged.
                                         </div>""", unsafe_allow_html=True)
                                     st.write("")
@@ -1334,7 +1334,7 @@ with tab2:
                                     list_to_choose.insert(0, "Select a column")
                                     sm_template_variable_part = st.selectbox("🖱️ Select the column of the data source:", list_to_choose, key="key_sm_template_variable_part")
                                     if st.session_state["sm_template_list"] and st.session_state["sm_template_list"][-1].endswith("}"):
-                                        st.markdown(f"""<div class="custom-warning-small">
+                                        st.markdown(f"""<div class="warning-message">
                                                 ⚠️ Including two adjacent variable parts is strongly discouraged.
                                                 <small><b>Best practice:</b> Add a separator between variables to improve clarity.</small>
                                             </div>""", unsafe_allow_html=True)
@@ -1350,7 +1350,7 @@ with tab2:
                                 list_to_choose.insert(0, "Select a namespace")
                                 sm_template_ns_prefix = st.selectbox("🖱️ Select a namespace for the template:", list_to_choose, key="key_sm_template_ns_prefix")
                                 if not mapping_ns_dict:
-                                    st.markdown(f"""<div class="custom-error-small">
+                                    st.markdown(f"""<div class="error-message">
                                             ❌ No namespaces available. You can add namespaces in the
                                              <b>Global Configuration</b> page.
                                         </div>""", unsafe_allow_html=True)
@@ -1365,7 +1365,7 @@ with tab2:
                             with col1b:
                                 st.write("")
                                 st.write("")
-                                st.markdown(f"""<div class="custom-warning-small">
+                                st.markdown(f"""<div class="warning-message">
                                         ⚠️ The current template will be deleted.
                                     </div>""", unsafe_allow_html=True)
                                 st.write("")
@@ -1404,7 +1404,7 @@ with tab2:
                         if sm_term_type_template == "🌐 IRI" and not st.session_state["sm_template_prefix"] and sm_template:
                             with col1a:
 
-                                st.markdown(f"""<div class="custom-error-small">
+                                st.markdown(f"""<div class="error-message">
                                     ❌ Term type is <b>🌐 IRI</b>: You must <b>add a namespace</b>.
                                 </div>""", unsafe_allow_html=True)
                                 st.write("")
@@ -1432,7 +1432,7 @@ with tab2:
 
                             if not mapping_ns_dict:
                                 with col1b:
-                                    st.markdown(f"""<div class="custom-error-small">
+                                    st.markdown(f"""<div class="error-message">
                                             ❌ You must add namespaces in
                                             the <b>Global Configuration</b> page.
                                         </div>""", unsafe_allow_html=True)
@@ -1468,7 +1468,7 @@ with tab2:
 
                             if sm_column_name and sm_term_type_reference == "🌐 IRI":
                                 with col1b:
-                                    st.markdown(f"""<div class="custom-warning-small">
+                                    st.markdown(f"""<div class="warning-message">
                                             ⚠️ Term type is <b>🌐 IRI</b>.
                                             <small>Make sure that the values in the referenced column
                                             are valid IRIs.</small>
@@ -1482,7 +1482,7 @@ with tab2:
 
                             if sm_column_name != "Select a column" and sm_term_type_reference == "🌐 IRI":
                                 with col1b:
-                                    st.markdown(f"""<div class="custom-warning-small">
+                                    st.markdown(f"""<div class="warning-message">
                                             ⚠️ Term type is <b>🌐 IRI</b>.
                                             <small>Make sure that the values in the referenced column
                                             are valid IRIs.</small>
@@ -1703,7 +1703,7 @@ with tab2:
                             🔖 The Subject Map <b>{sm_label_for_config}</b> is assigned to the TriplesMap <b>{corresponding_tm_list[0]}</b>.
                         </div>""", unsafe_allow_html=True)
                 else:
-                    st.markdown(f"""<div class="custom-error-small">
+                    st.markdown(f"""<div class="error-message">
                             ❌ The Subject Map <b>{sm_label_for_config}</b> is not assigned to any TriplesMap. Please check your mapping.
                         </div>""", unsafe_allow_html=True)
                 st.write("")
@@ -1875,21 +1875,21 @@ with tab2:
                         if st.session_state["g_ontology"] and not ontology_classes_dict: #there is an ontology but it has no classes
                             with col1b:
                                 st.write("")
-                                st.markdown(f"""<div class="custom-warning-small">
-                                          ⚠️  Your <b>ontology</b> does not define any classes.
+                                st.markdown(f"""<div class="warning-message">
+                                          ⚠️ Your <b>ontology</b> does not define any classes.
                                           Using an ontology with predefined classes is recommended.
                                     </div>""", unsafe_allow_html=True)
                         elif st.session_state["g_ontology"]:   #there exists an ontology and it has classes
                             with col1b:
                                 st.write("")
-                                st.markdown(f"""<div class="custom-warning-small">
+                                st.markdown(f"""<div class="warning-message">
                                           ⚠️ The option <b>Class outside ontology</b> lacks ontology alignment.
                                           An ontology-driven approach is recommended.
                                     </div>""", unsafe_allow_html=True)
                         else:
                             with col1b:
                                 st.write("")
-                                st.markdown(f"""<div class="custom-warning-small">
+                                st.markdown(f"""<div class="warning-message">
                                         ⚠️ You are working without an ontology. We recommend loading an ontology
                                         from the <b> Global Configuration</b> page.
                                     </div>""", unsafe_allow_html=True)
@@ -1906,7 +1906,7 @@ with tab2:
                         if not mapping_ns_dict:
                             with col1a:
                                 st.write("")
-                                st.markdown(f"""<div class="custom-error-small">
+                                st.markdown(f"""<div class="error-message">
                                         ❌ No namespaces available. You can add namespaces in the
                                          <b>Global Configuration</b> page.
                                     </div>""", unsafe_allow_html=True)
@@ -1973,7 +1973,7 @@ with tab2:
 
                         if not mapping_ns_dict:
                             st.write("")
-                            st.markdown(f"""<div class="custom-error-small">
+                            st.markdown(f"""<div class="error-message">
                                     ❌ No namespaces available. You can add namespaces in the
                                      <b>Global Configuration</b> page.
                                 </div>""", unsafe_allow_html=True)
@@ -2004,8 +2004,8 @@ with tab2:
             st.write("")
             st.write("")
             st.write("")
-            st.markdown(f"""<div class="custom-success">
-                The <b>Subject Map/s</b> have been deleted!
+            st.markdown(f"""<div class="success-message-flag">
+                ✅ The <b>Subject Map/s</b> have been deleted!
             </div>""", unsafe_allow_html=True)
         st.session_state["labelled_sm_deleted_ok_flag"] = False
         time.sleep(st.session_state["success_display_time"])
@@ -2026,8 +2026,8 @@ with tab2:
             st.write("")
             st.write("")
             st.write("")
-            st.markdown(f"""<div class="custom-success">
-                The <b>Subject Map/s</b> have been unassigned!
+            st.markdown(f"""<div class="success-message-flag">
+                ✅ The <b>Subject Map/s</b> have been unassigned!
             </div>""", unsafe_allow_html=True)
         st.session_state["sm_unassigned_ok_flag"] = False
         time.sleep(st.session_state["success_display_time"])
@@ -2169,7 +2169,7 @@ with tab2:
 
                 if "Select all" in sm_to_remove_label_list:
                     with col1b:
-                        st.markdown(f"""<div class="custom-warning-small">
+                        st.markdown(f"""<div class="warning-message">
                                 ⚠️ You are deleting <b>all labelled Subject Maps</b>.
                                 Make sure you want to go ahead.
                             </div>""", unsafe_allow_html=True)
@@ -2320,7 +2320,7 @@ with tab2:
 
             if "Select all" in tm_to_unassign_sm_list_input:
                 with col1b:
-                    st.markdown(f"""<div class="custom-warning-small">
+                    st.markdown(f"""<div class="warning-message">
                             ⚠️ You are deleting <b>all Subject Maps</b>.
                             Make sure you want to go ahead.
                         </div>""", unsafe_allow_html=True)
@@ -2399,7 +2399,7 @@ with tab3:
 
     if not tm_dict:
         with col1a:
-            st.markdown(f"""<div class="custom-error-small">
+            st.markdown(f"""<div class="error-message">
                     ❌ No TriplesMaps in mapping <b>{st.session_state["g_label"]}</b>.
                     You can add new TriplesMaps in the <b>Add TriplesMap</b> option.
                 </div>""", unsafe_allow_html=True)
@@ -2431,7 +2431,7 @@ with tab3:
             if not tm_label_for_pom in tm_w_sm_list:
                 sm_label_for_pom = ""
                 with col1:
-                    st.markdown(f"""<div class="custom-warning-subtle">
+                    st.markdown(f"""<div class="warning-message">
                             ⚠️ TriplesMap <b>tm4</b> has no Subject Map.
                             <small>It will be invalid without one.</small>
                         </div>""", unsafe_allow_html=True)
@@ -2458,7 +2458,7 @@ with tab3:
                 pom_iri = BNode() if not pom_label else NS[pom_label]
             if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectMap, pom_iri)), None):
                 with col1a:
-                    st.markdown(f"""<div class="custom-error-small">
+                    st.markdown(f"""<div class="error-message">
                         ❌ That <b>Predicate-Object Map label</b> is already in use. Please pick another label or leave blank.
                     </div>""", unsafe_allow_html=True)
 
@@ -2498,7 +2498,7 @@ with tab3:
                     with col1:
                         col1a, col1b = st.columns([2,1])
                     with col1:
-                        st.markdown(f"""<div class="custom-error-small">
+                        st.markdown(f"""<div class="error-message">
                                 ❌ You must add namespaces in the <b>Global Configuration</b> page.
                             </div>""", unsafe_allow_html=True)
                         st.write("")
@@ -2520,7 +2520,7 @@ with tab3:
 
             if not st.session_state["g_ontology_label"]:
                 with col1:
-                    st.markdown("""<div class="custom-warning-subtle">
+                    st.markdown("""<div class="warning-message">
                             ⚠️ <b>Working without an ontology</b> could result in structural inconsistencies.
                         <small>
                             This is especially discouraged when building Predicate-Object Maps.
@@ -2545,7 +2545,7 @@ with tab3:
             om_iri = BNode() if not om_label else NS[om_label]
             if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
                 with col3a:
-                    st.markdown(f"""<div class="custom-error-small">
+                    st.markdown(f"""<div class="error-message">
                         ❌ That <b>Object Map label</b> is already in use. Please pick another label or leave blank.
                     </div>""", unsafe_allow_html=True)
 
@@ -2571,7 +2571,7 @@ with tab3:
                     with col3b:
                         om_template_fixed_part = st.text_input("⌨️ Enter fixed part:", key="key_om_fixed_part")
                         if re.search(r"[ \t\n\r<>\"{}|\\^`]", om_template_fixed_part):
-                            st.markdown(f"""<div class="custom-warning-small">
+                            st.markdown(f"""<div class="warning-message">
                                     ⚠️ You included a space or an unescaped character, which is discouraged.
                                 </div>""", unsafe_allow_html=True)
                             st.write("")
@@ -2593,7 +2593,7 @@ with tab3:
                             list_to_choose.insert(0, "Select a column")
                             om_template_variable_part = st.selectbox("🖱️ Select the column of the data source:", list_to_choose, key="key_om_template_variable_part")
                             if st.session_state["om_template_list"] and st.session_state["om_template_list"][-1].endswith("}"):
-                                st.markdown(f"""<div class="custom-warning-small">
+                                st.markdown(f"""<div class="warning-message">
                                         ⚠️ Including two adjacent variable parts is strongly discouraged.
                                         <small><b>Best practice:</b> Add a separator between variables to improve clarity.</small>
                                     </div>""", unsafe_allow_html=True)
@@ -2609,7 +2609,7 @@ with tab3:
                         list_to_choose.insert(0, "Select a namespace")
                         om_template_ns_prefix = st.selectbox("🖱️ Select a namespace for the template:", list_to_choose, key="key_om_template_ns_prefix")
                         if not mapping_ns_dict:
-                            st.markdown(f"""<div class="custom-error-small">
+                            st.markdown(f"""<div class="error-message">
                                     ❌ No namespaces available. You can add namespaces in the
                                      <b>Global Configuration</b> page.
                                 </div>""", unsafe_allow_html=True)
@@ -2623,7 +2623,7 @@ with tab3:
                 elif build_template_action_om == "🗑️ Reset template":
                     with col3b:
                         st.write("")
-                        st.markdown(f"""<div class="custom-warning-small">
+                        st.markdown(f"""<div class="warning-message">
                                 ⚠️ The current template will be deleted.
                             </div>""", unsafe_allow_html=True)
                         st.button("Reset", on_click=reset_om_template)
@@ -2660,7 +2660,7 @@ with tab3:
                 if om_term_type_template == "🌐 IRI" and not st.session_state["template_om_is_iri_flag"] and om_template:
                     with col3a:
 
-                        st.markdown(f"""<div class="custom-error-small">
+                        st.markdown(f"""<div class="error-message">
                             ❌ Term type is <b>🌐 IRI</b>: You must <b>add a namespace</b>.
                         </div>""", unsafe_allow_html=True)
                         st.write("")
@@ -2707,7 +2707,7 @@ with tab3:
 
                     if not mapping_ns_dict:
                         with col3b:
-                            st.markdown(f"""<div class="custom-error-small">
+                            st.markdown(f"""<div class="error-message">
                                     ❌ You must add namespaces in
                                     the <b>Global Configuration</b> page.
                                 </div>""", unsafe_allow_html=True)
@@ -2757,12 +2757,12 @@ with tab3:
                 #     with col3b:
                 #         st.write("")
                 #         if not ds_file_for_pom:
-                #             st.markdown(f"""<div class="custom-error-small">
+                #             st.markdown(f"""<div class="error-message">
                 #                     ❌ You must load the
                 #                     <b>data source file</b> to continue.
                 #                 </div>""", unsafe_allow_html=True)
                 #         else:
-                #             st.markdown(f"""<div class="custom-error-small">
+                #             st.markdown(f"""<div class="error-message">
                 #                 ❌ Please upload the correct <b>data source file</b> to continue.
                 #                 </div>""", unsafe_allow_html=True)
                 #
@@ -2791,7 +2791,7 @@ with tab3:
 
                 elif om_column_name != "Select a column" and om_term_type_reference == "🌐 IRI":
                     with col3b:
-                        st.markdown(f"""<div class="custom-warning-small">
+                        st.markdown(f"""<div class="warning-message">
                                 ⚠️ Term type is <b>🌐 IRI</b>.
                                 <small>Make sure that the values in the referenced column
                                 are valid IRIs.</small>
@@ -2809,7 +2809,7 @@ with tab3:
             if st.session_state["pom_saved_ok_flag"]:
                 with col1:
                     st.write("")
-                    st.markdown(f"""<div class="custom-success">
+                    st.markdown(f"""<div class="success-message-flag">
                         ✅ The <b style="color:#F63366;">Predicate-Object Map</b> has been created!
                     </div>""", unsafe_allow_html=True)
                 st.session_state["pom_saved_ok_flag"] = False
@@ -3029,7 +3029,7 @@ with tab3:
             col1a, col1b = st.columns([2,1])
         with col1a:
             st.write("")
-            st.markdown(f"""<div class="custom-success">
+            st.markdown(f"""<div class="success-message-flag">
                 ✅ The Predicate-Object Map/s have been deleted!
             </div>""", unsafe_allow_html=True)
             st.write("")
@@ -3105,7 +3105,7 @@ with tab3:
                     with col1:
                         col1a, col1b = st.columns([2,1])
                     with col1a:
-                        st.markdown(f"""<div class="custom-warning-small">
+                        st.markdown(f"""<div class="warning-message">
                                 ⚠️ You are deleting <b>all Predicate-Object Maps</b>
                                 of the TriplesMap {tm_to_delete_pom_label}.
                                 Make sure you want to go ahead.

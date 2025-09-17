@@ -428,7 +428,7 @@ with tab1:
 
     if st.session_state["new_g_mapping_created_ok_flag"]:
         with col1a:
-            st.markdown(f"""<div class="custom-success">
+            st.markdown(f"""<div class="success-message-flag">
                 ✅ The mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> has been created!
             </div>""", unsafe_allow_html=True)
         st.session_state["new_g_mapping_created_ok_flag"] = False
@@ -452,26 +452,16 @@ with tab1:
         with col1:
             col1a, col1b = st.columns([2,1])
         if st.session_state["g_label_temp_new"]:   #after a label and file have been given
-            with col1a:
-                st.write("")
-                st.markdown(f"""<div class="custom-warning-orange">
-                        🚧 The mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b>
-                        is already loaded and will be overwritten if you continue. You can export
-                        the current mapping or save the session in
-                        the <b>Save Mapping </b>
-                        pannel.
-                    </div>""", unsafe_allow_html=True)
-                st.write("")
-
-            with col1b:
-                st.write("")
-                st.markdown(f"""
-                    <div style="background-color:#F5F5F5; border:1px dashed #511D66;
-                    padding:10px; border-radius:5px; margin-bottom:8px;">
-                    <span style="font-size:0.95rem;">
+            with col1:
+                st.markdown(f"""<div class="warning-message">
+                        ⚠️ If you continue:<br>
+                        <div style="margin-left:1.5em;">
                         🗑️ Mapping <b>{st.session_state["g_label"]}</b> will be overwritten.<br>
-                        🆕 Mapping <b>{st.session_state["g_label_temp_new"]}</b> will be created.
-                    </span></div>""", unsafe_allow_html=True)
+                        🆕 Mapping <b>{st.session_state["g_label_temp_new"]}</b> will be created.<br>
+                        </div>
+                        <small>You can export the current mapping or save the session in
+                        the <b>Save Mapping </b> pannel.</small>
+                    </div>""", unsafe_allow_html=True)
 
             with col1a:
                 overwrite_g_mapping_checkbox = st.checkbox(
@@ -502,7 +492,7 @@ with tab1:
     if st.session_state["existing_g_mapping_loaded_ok_flag"]:
         with col1a:
             st.write("")
-            st.markdown(f"""<div class="custom-success">
+            st.markdown(f"""<div class="success-message-flag">
                 ✅ The mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> has been loaded!
             </div>""", unsafe_allow_html=True)
         st.session_state["existing_g_mapping_loaded_ok_flag"] = False
@@ -540,27 +530,17 @@ with tab1:
         with col1:
             col1a, col1b = st.columns([2,1])
         if st.session_state["g_label_temp_existing"] and selected_load_file:   #after a label and file have been given
-            with col1a:
-                st.write("")
-                st.markdown(f"""<div class="custom-warning-orange">
-                        🚧 The mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b>
-                        is already loaded and will be overwritten if you continue. You can export
-                        the current mapping or save the session in
-                        the <b>Save Mapping </b>
-                        pannel.
-                    </div>""", unsafe_allow_html=True)
-                st.write("")
-
-
-            with col1b:
-                st.write("")
-                st.markdown(f"""
-                    <div style="background-color:#F5F5F5; border:1px dashed #511D66;
-                    padding:10px; border-radius:5px; margin-bottom:8px;">
-                    <span style="font-size:0.95rem;">
+            with col1:
+                st.markdown(f"""<div class="warning-message">
+                        ⚠️ If you continue:<br>
+                        <div style="margin-left:1.5em;">
                         🗑️ Mapping <b>{st.session_state["g_label"]}</b> will be overwritten.<br>
-                        🆕 Mapping <b>{st.session_state["g_label_temp_existing"]}</b> will be created.
-                    </span></div>""", unsafe_allow_html=True)
+                        🆕 Mapping <b>{st.session_state["g_label_temp_new"]}</b> will be created.<br>
+                        </div>
+                        <small>You can export the current mapping or save the session in
+                        the <b>Save Mapping </b> pannel.</small>
+                    </div>""", unsafe_allow_html=True)
+
             with col1a:
                 overwrite_g_mapping_checkbox = st.checkbox(
                 f""":gray-badge[⚠️ I am completely sure I want to overwrite mapping {st.session_state["g_label"]}]""",
@@ -587,7 +567,7 @@ with tab1:
                 col1a, col1b = st.columns([2,1])
             with col1a:
                 st.write("")
-                st.markdown(f"""<div class="custom-success">
+                st.markdown(f"""<div class="success-message-flag">
                     ✅ The session <b>{st.session_state["selected_pkl_file_wo_extension"]}</b> has been retrieved!
                 </div>""", unsafe_allow_html=True)
             st.session_state["session_retrieved_ok_flag"] = False
@@ -605,15 +585,35 @@ with tab1:
             selected_pkl_file_w_extension = pkl_files_dict[selected_pkl_file_wo_extension] if selected_pkl_file_wo_extension != "Select a session" else ""
 
         if selected_pkl_file_w_extension:
-            st.button("Retrieve", key="key_retrieve_session_button", on_click=retrieve_session)
 
+            if st.session_state["g_mapping"]:
+                with col1a:
+                    overwrite_g_mapping_checkbox_retrieve = st.checkbox(
+                    f""":gray-badge[⚠️ I am completely sure I want to overwrite mapping {st.session_state["g_label"]}]""",
+                    key="key_overwrite_g_mapping_checkbox_retrieve")
 
+                if overwrite_g_mapping_checkbox_retrieve:
+                    with col1a:
+                        st.button("Retrieve", key="key_retrieve_session_button_1", on_click=retrieve_session)
 
+                with col1:
+                    st.markdown(f"""<div class="warning-message">
+                            ⚠️ If you continue:<br>
+                            <div style="margin-left:1.5em;">
+                            🗑️ Mapping <b>{st.session_state["g_label"]}</b> will be overwritten.<br>
+                            🆕 Session <b>{selected_pkl_file_wo_extension}</b> will be retrieved.<br>
+                            </div>
+                            <small>You can export the current mapping or save the session in
+                            the <b>Save Mapping </b> pannel.</small>
+                        </div>""", unsafe_allow_html=True)
+
+            else:
+                st.button("Retrieve", key="key_retrieve_session_button_2", on_click=retrieve_session)
 
     if st.session_state["cached_mapping_retrieved_ok_flag"]:
         with col3:
             st.write("")
-            st.markdown(f"""<div class="custom-success">
+            st.markdown(f"""<div class="success-message-flag">
                 ✅ Mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> has been retrieved from cache!
             </div>""", unsafe_allow_html=True)
         st.session_state["cached_mapping_retrieved_ok_flag"] = False
@@ -623,7 +623,7 @@ with tab1:
     if st.session_state["g_label_changed_ok_flag"]:
         with col3:
             st.write("")
-            st.markdown(f"""<div class="custom-success">
+            st.markdown(f"""<div class="success-message-flag">
                 ✅ Mapping was renamed to <b style="color:#F63366;">{st.session_state["g_label"]}</b>!
             </div>""", unsafe_allow_html=True)
         st.session_state["g_label_changed_ok_flag"] = False
@@ -634,30 +634,26 @@ with tab1:
     with col3:
         if st.session_state["g_label"]:
             if st.session_state["g_mapping_source_cache"][0] == "file":
-                st.markdown(f"""<div class="green-status-message">
+                st.markdown(f"""<div class="blue-status-message">
                         <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                         style="vertical-align:middle; margin-right:8px; height:20px;">
                         You are working with mapping
-                        <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
-                        <ul style="font-size:0.85rem; margin-top:6px; margin-left:15px; padding-left:10px;">
+                        <b>{st.session_state["g_label"]}</b>.
+                        <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
                             <li>Mapping was loaded from file <b>{st.session_state["g_mapping_source_cache"][1]}</b></li>
                             <li>When loaded, mapping had <b>{st.session_state["original_g_size_cache"]} TriplesMaps</b></li>
                             <li>Now mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps<b/></li>
-                        </ul>
-                    </div>
-                """, unsafe_allow_html=True)
+                        </ul></div>""", unsafe_allow_html=True)
             else:
-                st.markdown(f"""<div class="green-status-message">
+                st.markdown(f"""<div class="blue-status-message">
                         <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                         style="vertical-align:middle; margin-right:8px; height:20px;">
                         You are working with mapping
-                        <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
-                        <ul style="font-size:0.85rem; margin-top:6px; margin-left:15px; padding-left:10px;">
+                        <b>{st.session_state["g_label"]}</b>.
+                        <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
                             <li>Mapping was created <b>from scratch</b></li>
                             <li>Mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps<b/></li>
-                        </ul>
-                    </div>
-                """, unsafe_allow_html=True)
+                        </ul></div>""", unsafe_allow_html=True)
 
 
         else:
@@ -697,7 +693,7 @@ with tab1:
                 "🏷️ Rename mapping",
                 key="key_change_mapping_label_checkbox")
             if change_g_label_checkbox:
-                g_label_candidate = st.text_input("⌨️ Enter new mapping label*:")
+                g_label_candidate = st.text_input("⌨️ Enter new mapping label:*")
 
                 if g_label_candidate:
                     st.markdown(f"""<div class="info-message-small">
@@ -721,8 +717,8 @@ with tab2:
             col1a, col1b = st.columns([2,1])
         with col1a:
             st.write("")
-            st.markdown(f"""<div class="custom-success">
-                ✅ The ontology <b style="color:#F63366;">{st.session_state["g_ontology_label"]}</b> has been loaded!
+            st.markdown(f"""<div class="success-message-flag">
+                ✅ The ontology <b>{st.session_state["g_ontology_label"]}</b> has been loaded!
             </div>""", unsafe_allow_html=True)
         st.session_state["g_ontology_loaded_ok_flag"] = False
         time.sleep(st.session_state["success_display_time"])
@@ -733,7 +729,7 @@ with tab2:
             col1a, col1b = st.columns([2,1])
         with col1a:
             st.write("")
-            st.markdown(f"""<div class="custom-success">
+            st.markdown(f"""<div class="success-message-flag">
                 ✅ The <b>ontology</b> has been reduced!
             </div>""", unsafe_allow_html=True)
         st.session_state["g_ontology_reduced_ok_flag"] = False
@@ -745,7 +741,7 @@ with tab2:
             col1a, col1b = st.columns([2,1])
         with col1a:
             st.write("")
-            st.markdown(f"""<div class="custom-success">
+            st.markdown(f"""<div class="success-message-flag">
                 ✅ The <b>ontology</b> has been discarded!
             </div>""", unsafe_allow_html=True)
         st.session_state["g_ontology_discarded_ok_flag"] = False
@@ -760,15 +756,15 @@ with tab2:
 
             if st.session_state["g_ontology"]:
                 if len(st.session_state["g_ontology_components_dict"]) > 1:
-                    ontology_items = '\n'.join([f"""<li><b style="color:#F63366;">{ont}</b></li>""" for ont in st.session_state["g_ontology_components_dict"]])
-                    st.markdown(f"""<div class="green-status-message">
+                    ontology_items = '\n'.join([f"""<li><b>{ont}</b></li>""" for ont in st.session_state["g_ontology_components_dict"]])
+                    st.markdown(f"""<div class="blue-status-message">
                             🧩 Your <b>ontology</b> is the merger of:
-                        <ul>
+                        <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
                             {ontology_items}
                         </ul></div>""", unsafe_allow_html=True)
                 else:
-                    st.markdown(f"""<div class="green-status-message">
-                            🧩 The ontology <b style="color:#F63366;">
+                    st.markdown(f"""<div class="blue-status-message">
+                            🧩 The ontology <b>
                             {next(iter(st.session_state["g_ontology_components_dict"]))}</b>
                             is loaded.
                         </div>""", unsafe_allow_html=True)
@@ -783,10 +779,9 @@ with tab2:
     with col2b:
         st.write("")
         st.write("")
-        st.markdown("""<div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-            <span style="font-size:0.95rem;">
+        st.markdown("""<div class="info-message-subtle-gray">
         🐢 Certain options in this panel can be a bit slow, some patience may be required.
-            </span></div>""", unsafe_allow_html=True)
+            </div>""", unsafe_allow_html=True)
 
 
     #LOAD ONTOLOGY FROM URL___________________________________
@@ -819,7 +814,7 @@ with tab2:
             if not utils.is_valid_ontology(g_candidate):
                 with col1b:
                     st.write("")
-                    st.markdown(f"""<div class="custom-error-small">
+                    st.markdown(f"""<div class="error-message">
                         ❌ URL does not link to a valid ontology.
                     </div>""", unsafe_allow_html=True)
                     st.write("")
@@ -828,11 +823,11 @@ with tab2:
 
                 with col1b:
                     st.write("")
-                    st.markdown(f"""<div class="custom-success-small">
-                            ✅ Valid ontology: <b style="color:#F63366;">
+                    st.markdown(f"""<div class="success-message-small">
+                            ✔️ Valid ontology: <b style="color:#F63366;">
                             {st.session_state["g_ontology_from_link_candidate_label"]}</b>
                             (parsed successfully with format
-                            <b>{st.session_state["g_ontology_from_link_candidate_fmt"]}</b>)
+                            <b>{st.session_state["g_ontology_from_link_candidate_fmt"]}.</b>)
                         </div>""", unsafe_allow_html=True)
                 with col1a:
                     st.button("Load", key="key_load_ontology_from_link_button", on_click=load_ontology_from_link)
@@ -869,7 +864,7 @@ with tab2:
                 with col1b:
                     st.write("")
                     st.write("")
-                    st.markdown(f"""<div class="custom-error-small">
+                    st.markdown(f"""<div class="error-message">
                         ❌ File does not contain a valid ontology.
                     </div>""", unsafe_allow_html=True)
                     st.write("")
@@ -878,11 +873,11 @@ with tab2:
                 with col1b:
                     st.write("")
                     st.write("")
-                    st.markdown(f"""<div class="custom-success-small">
-                            ✅ Valid ontology: <b style="color:#F63366;">
+                    st.markdown(f"""<div class="success-message-small">
+                            ✔️ Valid ontology: <b style="color:#F63366;">
                             {st.session_state["g_ontology_from_file_candidate_label"]}</b>
                             (parsed successfully with format
-                            <b>{st.session_state["g_ontology_from_file_candidate_fmt"]}</b>)
+                            <b>{st.session_state["g_ontology_from_file_candidate_fmt"]}.</b>)
                         </div>""", unsafe_allow_html=True)
 
                 with col1a:
@@ -919,7 +914,7 @@ with tab2:
                 if not utils.is_valid_ontology(g_candidate):
                     with col1b:
                         st.write("")
-                        st.markdown(f"""<div class="custom-error-small">
+                        st.markdown(f"""<div class="error-message">
                             ❌ URL does not link to a valid ontology.
                         </div>""", unsafe_allow_html=True)
                         st.write("")
@@ -935,18 +930,18 @@ with tab2:
                 else:
                     with col1b:
                         st.write("")
-                        st.markdown(f"""<div class="custom-success-small">
-                                ✅ Valid ontology: <b style="color:#F63366;">
+                        st.markdown(f"""<div class="success-message-small">
+                                ✔️ Valid ontology: <b style="color:#F63366;">
                                 {st.session_state["g_ontology_from_link_candidate_label"]}</b>
                                 (parsed successfully with format
-                                <b>{st.session_state["g_ontology_from_link_candidate_fmt"]}</b>)
+                                <b>{st.session_state["g_ontology_from_link_candidate_fmt"]}.</b>)
                             </div>""", unsafe_allow_html=True)
 
                     if utils.check_ontology_overlap(st.session_state["g_ontology_from_link_candidate"], st.session_state["g_ontology"]):
                         with col1a:
                             st.markdown(f"""<div class="custom-warning">
-                                    ⚠️ Caution: <b>Ontologies overlap</b>. Check your ontologies
-                                    externally to make sure they are aligned and compatible.
+                                    ⚠️ <b>Ontologies overlap</b>. <small>Check your ontologies
+                                    externally to make sure they are aligned and compatible.</small>
                                 </div>""", unsafe_allow_html=True)
                             st.write("")
                     with col1a:
@@ -974,38 +969,39 @@ with tab2:
                     with col1b:
                         st.write("")
                         st.write("")
-                        st.markdown(f"""<div class="custom-error-small">
-                            ❌ File does not contain a valid ontology.
+                        st.markdown(f"""<div class="error-message">
+                            ❌ <b>File does not contain a valid ontology</b>.
                         </div>""", unsafe_allow_html=True)
                         st.write("")
 
                 elif st.session_state["g_ontology_from_file_candidate_label"] in st.session_state["g_ontology_components_dict"]:
                     with col1b:
-                        st.markdown(f"""<div class="custom-warning">
-                                ⚠️ The ontology <b style="color:#F63366;">
+                        st.markdown(f"""<div class="error-message">
+                                ⚠️ The ontology <b>
                                 {st.session_state["g_ontology_from_file_candidate_label"]}</b>
                                 is already loaded.
                             </div>""", unsafe_allow_html=True)
 
                 else:
+                    with col1a:
+                        st.button("Add", key="key_extend_ontology_from_file_button", on_click=extend_ontology_from_file)
                     with col1b:
                         st.write("")
-                        st.markdown(f"""<div class="custom-success-small">
-                                ✅ Valid ontology: <b style="color:#F63366;">
-                                {st.session_state["g_ontology_from_file_candidate_label"]}</b>
-                                (parsed successfully with format
-                                <b>{st.session_state["g_ontology_from_file_candidate_fmt"]}</b>)
+                        st.markdown(f"""<div class="success-message">
+                                ✔️ Valid ontology <b>
+                                {st.session_state["g_ontology_from_file_candidate_label"]}</b><br>
+                                <small>(parsed successfully with format
+                                <b>{st.session_state["g_ontology_from_file_candidate_fmt"]}</b>).</small>
                             </div>""", unsafe_allow_html=True)
 
                     if utils.check_ontology_overlap(st.session_state["g_ontology_from_file_candidate"], st.session_state["g_ontology"]):
-                        with col1a:
-                            st.markdown(f"""<div class="custom-warning">
-                                    ⚠️ Caution: <b>Ontologies overlap</b>. Check your ontologies
-                                    externally to make sure they are aligned and compatible.
+                        with col1b:
+                            st.write("")
+                            st.markdown(f"""<div class="warning-message">
+                                    ⚠️ <b>Ontologies overlap</b>. <small>Check your ontologies
+                                    externally to make sure they are aligned and compatible.</small>
                                 </div>""", unsafe_allow_html=True)
                             st.write("")
-                    with col1a:
-                        st.button("Add", key="key_extend_ontology_from_file_button", on_click=extend_ontology_from_file)
 
         with col1:
             st.write("________")
@@ -1024,13 +1020,15 @@ with tab2:
             ontology_components_list = list(st.session_state["g_ontology_components_dict"].keys())
             ontologies_to_drop_list = st.multiselect("Select ontologies to be dropped:", ontology_components_list)
 
-        if ontologies_to_drop_list:
-            ontologies_to_drop_itemise = '\n'.join([f"""<li><b style="color:#F63366;">{ont}</b></li>""" for ont in ontologies_to_drop_list])
-            with col1b:
-                st.write("")
-                st.markdown(f"""<div class="gray-preview-message">
-                        👆 You selected: <ul> {ontologies_to_drop_itemise}
-                    </ul></div>""", unsafe_allow_html=True)
+        # if ontologies_to_drop_list:
+        #     ontologies_to_drop_itemise = '\n'.join([f"""<li><b>{ont}</b></li>""" for ont in ontologies_to_drop_list])
+        #     with col1b:
+        #         st.write("")
+        #         st.markdown(f"""<div class="custom-info-subtle">
+        #                 👆 You selected:
+        #                 <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
+        #                 {ontologies_to_drop_itemise}
+        #             </ul></div>""", unsafe_allow_html=True)
 
         if ontologies_to_drop_list:
             with col1a:
@@ -1157,7 +1155,7 @@ with tab3:
                 formatted_bound_ns = ", ".join(st.session_state["bound_ns_list"][:-1]) + " and " + st.session_state["bound_ns_list"][-1]
                 if len(st.session_state["bound_ns_list"]) == 1:
                     st.write("")
-                    st.markdown(f"""<div class="custom-success">
+                    st.markdown(f"""<div class="success-message-flag">
                         ✅ The Namespace <b style="color:#F63366;">
                         {st.session_state["bound_ns_list"][0]}</b> has been bound!
                     </div>""", unsafe_allow_html=True)
@@ -1219,35 +1217,35 @@ with tab3:
                 valid_prefix_input = False
                 if prefix_input in ontology_ns_dict:
                     with col1a:
-                        st.markdown(f"""<div class="custom-error-small">
+                        st.markdown(f"""<div class="error-message">
                             ❌ <b> Prefix {prefix_input} is contained in the ontology: </b> <br>
                             You can either choose a different prefix or bind {prefix_input} directly from the ontology namespaces option.
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                 elif prefix_input in predefined_ns_dict:
                     with col1a:
-                        st.markdown(f"""<div class="custom-error-small">
+                        st.markdown(f"""<div class="error-message">
                             ❌ <b> Prefix {prefix_input} is tied to a predefined namespace: </b> <br>
                             You can either choose a different prefix or bind {prefix_input} directly from the predefined namespaces option.
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                 elif prefix_input in default_ns_dict:
                     with col1a:
-                        st.markdown(f"""<div class="custom-error-small">
+                        st.markdown(f"""<div class="error-message">
                             ❌ <b> Prefix {prefix_input} is tied to a default namespace: </b> <br>
                             You must choose a different prefix.
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                 elif prefix_input in default_structural_ns_dict:
                     with col1a:
-                        st.markdown(f"""<div class="custom-error-small">
+                        st.markdown(f"""<div class="error-message">
                             ❌ <b> Prefix {prefix_input} is tied to a default structural namespace: </b> <br>
                             You must choose a different prefix.
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                 elif prefix_input in mapping_ns_dict:
                     with col1a:
-                        st.markdown(f"""<div class="custom-error-small">
+                        st.markdown(f"""<div class="error-message">
                             ❌ <b> Prefix {prefix_input} is already in use: </b> <br>
                             You can either choose a different prefix or unbind {prefix_input} to reassing it.
                         </div>""", unsafe_allow_html=True)
@@ -1259,42 +1257,42 @@ with tab3:
                 valid_iri_input = False
                 if iri_input in ontology_ns_dict.values():
                     with col1a:
-                        st.markdown(f"""<div class="custom-error-small">
+                        st.markdown(f"""<div class="error-message">
                             ❌ <b> Namespace is contained in the ontology: </b> <br>
                             You can either choose a different IRI or bind {iri_input} directly from the ontology namespaces option.
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                 elif iri_input in predefined_ns_dict.values():
                     with col1a:
-                        st.markdown(f"""<div class="custom-error-small">
+                        st.markdown(f"""<div class="error-message">
                             ❌ <b> IRI matches a predefined namespace: </b> <br>
                             You can either choose a different IRI or bind {iri_input} directly from the predefined namespaces option.
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                 elif iri_input in default_ns_dict.values():
                     with col1a:
-                        st.markdown(f"""<div class="custom-error-small">
+                        st.markdown(f"""<div class="error-message">
                             ❌ <b> IRI matches a default namespace: </b> <br>
                             You must choose a different IRI.
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                 elif iri_input in default_structural_ns_dict.values():
                     with col1a:
-                        st.markdown(f"""<div class="custom-error-small">
+                        st.markdown(f"""<div class="error-message">
                             ❌ <b> IRI matches a default structural namespace: </b> <br>
                             You must choose a different IRI.
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                 elif URIRef(iri_input) in mapping_ns_dict.values():
                     with col1a:
-                        st.markdown(f"""<div class="custom-error-small">
+                        st.markdown(f"""<div class="error-message">
                             ❌ <b> Namespace is already in use: </b> <br>
                             You can either choose a different IRI or unbind {iri_input} to reassing it.
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                 elif not utils.is_valid_iri(iri_input):
                     with col1a:
-                        st.markdown(f"""<div class="custom-error-small">
+                        st.markdown(f"""<div class="error-message">
                             ❌ <b> Invalid IRI: </b> <br>
                             Please make sure it statrs with a valid scheme (e.g., http, https), includes no illegal characters
                             and ends with a delimiter (/, # or :).
@@ -1326,7 +1324,7 @@ with tab3:
             if not there_are_predefined_ns_unbound_flag:
                 with col1a:
                     st.write("")
-                    st.markdown(f"""<div class="custom-error-small">
+                    st.markdown(f"""<div class="error-message">
                         ❌ All <b>predefined namespaces<b> are already bound.
                     </div>""", unsafe_allow_html=True)
                     st.write("")
@@ -1442,7 +1440,7 @@ with tab3:
             if not there_are_ontology_ns_unbound_flag:
                 with col1a:
                     st.write("")
-                    st.markdown(f"""<div class="custom-error-small">
+                    st.markdown(f"""<div class="error-message">
                         ❌ All <b>ontology namespaces</b> are already bound.
                     </div>""", unsafe_allow_html=True)
                     st.write("")
@@ -1553,7 +1551,7 @@ with tab3:
                 formatted_deleted_ns = ", ".join(st.session_state["removed_ns_list"][:-1]) + " and " + st.session_state["removed_ns_list"][-1]
                 if len(st.session_state["removed_ns_list"]) == 1:
                     st.write("")
-                    st.markdown(f"""<div class="custom-success">
+                    st.markdown(f"""<div class="success-message-flag">
                         ✅ The Namespace <b style="color:#F63366;">
                         {st.session_state["removed_ns_list"][0]}</b> has been unbound!
                     </div>""", unsafe_allow_html=True)
@@ -1581,14 +1579,9 @@ with tab3:
         if mapping_ns_dict:   #only if there are namespaces
             with col1:
                 st.write("______")
-                st.markdown("""
-                <div style="background-color:#e6e6fa; border:1px solid #511D66;
-                            border-radius:5px; padding:10px; margin-bottom:8px;">
-                    <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
+                st.markdown("""<div class="purple-heading">
                         🏛️ Define Structural Namespaces
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                    </div>""", unsafe_allow_html=True)
                 st.markdown("")
 
                 with col1:
@@ -1597,7 +1590,7 @@ with tab3:
                 if st.session_state["structural_ns_changed_ok_flag"] :
                     with col1a:
                         st.write("")
-                        st.markdown(f"""<div class="custom-success">
+                        st.markdown(f"""<div class="success-message-flag">
                             ✅ The <b>structural namespace</b> has been changed!
                         </div>""", unsafe_allow_html=True)
                     st.session_state["structural_ns_changed_ok_flag"]  = False
@@ -1634,28 +1627,28 @@ with tab3:
                             valid_prefix_input = False
                             if structural_ns_prefix_candidate in ontology_ns_dict:
                                 with col1a:
-                                    st.markdown(f"""<div class="custom-error-small">
+                                    st.markdown(f"""<div class="error-message">
                                         ❌ <b> Prefix {structural_ns_prefix_candidate} is contained in the ontology: </b> <br>
                                         You must choose a different prefix.
                                     </div>""", unsafe_allow_html=True)
                                     st.write("")
                             elif structural_ns_prefix_candidate in predefined_ns_dict:
                                 with col1a:
-                                    st.markdown(f"""<div class="custom-error-small">
+                                    st.markdown(f"""<div class="error-message">
                                         ❌ <b> Prefix {structural_ns_prefix_candidate} is tied to a predefined namespace: </b> <br>
                                         You must choose a different prefix.
                                     </div>""", unsafe_allow_html=True)
                                     st.write("")
                             elif structural_ns_prefix_candidate in default_ns_dict:
                                 with col1a:
-                                    st.markdown(f"""<div class="custom-error-small">
+                                    st.markdown(f"""<div class="error-message">
                                         ❌ <b> Prefix {structural_ns_prefix_candidate} is tied to a default namespace: </b> <br>
                                         You must choose a different prefix.
                                     </div>""", unsafe_allow_html=True)
                                     st.write("")
                             elif structural_ns_prefix_candidate in mapping_ns_dict:
                                 with col1a:
-                                    st.markdown(f"""<div class="custom-error-small">
+                                    st.markdown(f"""<div class="error-message">
                                         ❌ <b> Prefix {prefix_input} is already in use: </b> <br>
                                         You can either choose a different prefix or unbind {structural_ns_prefix_candidate} to reassing it.
                                     </div>""", unsafe_allow_html=True)
@@ -1667,35 +1660,35 @@ with tab3:
                             valid_iri_input = False
                             if structural_ns_iri_candidate in ontology_ns_dict.values():
                                 with col1a:
-                                    st.markdown(f"""<div class="custom-error-small">
+                                    st.markdown(f"""<div class="error-message">
                                         ❌ <b> Namespace is contained in the ontology: </b> <br>
                                         You must choose a different IRI.
                                     </div>""", unsafe_allow_html=True)
                                     st.write("")
                             elif structural_ns_iri_candidate in predefined_ns_dict.values():
                                 with col1a:
-                                    st.markdown(f"""<div class="custom-error-small">
+                                    st.markdown(f"""<div class="error-message">
                                         ❌ <b> IRI matches a predefined namespace: </b> <br>
                                         You must choose a different IRI.
                                     </div>""", unsafe_allow_html=True)
                                     st.write("")
                             elif structural_ns_iri_candidate in default_ns_dict.values():
                                 with col1a:
-                                    st.markdown(f"""<div class="custom-error-small">
+                                    st.markdown(f"""<div class="error-message">
                                         ❌ <b> IRI matches a default namespace: </b> <br>
                                         You must choose a different IRI.
                                     </div>""", unsafe_allow_html=True)
                                     st.write("")
                             elif URIRef(iri_input) in mapping_ns_dict.values():
                                 with col1a:
-                                    st.markdown(f"""<div class="custom-error-small">
+                                    st.markdown(f"""<div class="error-message">
                                         ❌ <b> Namespace is already in use: </b> <br>
                                         You can either choose a different IRI or unbind {structural_ns_iri_candidate} to reassing it.
                                     </div>""", unsafe_allow_html=True)
                                     st.write("")
                             elif not utils.is_valid_iri(structural_ns_iri_candidate):
                                 with col1a:
-                                    st.markdown(f"""<div class="custom-error-small">
+                                    st.markdown(f"""<div class="error-message">
                                         ❌ <b> Invalid IRI: </b> <br>
                                         Please make sure it statrs with a valid scheme (e.g., http, https), includes no illegal characters
                                         and ends with a delimiter (/, # or :).
@@ -1726,14 +1719,9 @@ with tab3:
 
             with col1:
                 st.write("______")
-                st.markdown("""
-                <div style="background-color:#e6e6fa; border:1px solid #511D66;
-                            border-radius:5px; padding:10px; margin-bottom:8px;">
-                    <div style="font-size:1.1rem; font-weight:600; color:#511D66;">
+                st.markdown("""<div class="purple-heading">
                         🗑️ Unbind Existing Namespace
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                    </div>""", unsafe_allow_html=True)
                 st.markdown("")
 
             if st.session_state["ns_unbound_ok_flag"]:  # show message here if "Unbind" purple heading is going to be shown
@@ -1743,7 +1731,7 @@ with tab3:
                     formatted_deleted_ns = ", ".join(st.session_state["removed_ns_list"][:-1]) + " and " + st.session_state["removed_ns_list"][-1]
                     if len(st.session_state["removed_ns_list"]) == 1:
                         st.write("")
-                        st.markdown(f"""<div class="custom-success">
+                        st.markdown(f"""<div class="success-message-flag">
                             ✅ The Namespace <b style="color:#F63366;">
                             {st.session_state["removed_ns_list"][0]}</b> has been unbound!
                         </div>""", unsafe_allow_html=True)
@@ -1808,7 +1796,7 @@ with tab3:
                 with col1a:
                     formatted_ns_to_unbind = utils.format_list_for_markdown(ns_to_unbind_list)
                     st.write("")
-                    st.markdown(f"""<div class="custom-warning-small">
+                    st.markdown(f"""<div class="warning-message">
                             ⚠️ The namespaces <b>{formatted_ns_to_unbind}</b> will be deleted.
                         </div>""", unsafe_allow_html=True)
                     st.write("")
@@ -1851,7 +1839,7 @@ with tab3:
                 with col1a:
                     formatted_mapping_ns = utils.format_list_for_markdown(list(mapping_ns_dict))
                     st.write("")
-                    st.markdown(f"""<div class="custom-warning-small">
+                    st.markdown(f"""<div class="warning-message">
                             ⚠️ The namespaces <b>{formatted_mapping_ns}</b> will be deleted.<br>
                             ⚠️ You are deleting <b>all namespaces</b>.
                             Make sure you want to go ahead.
@@ -1903,7 +1891,7 @@ with tab4:
                 st.write("")
                 existing_pkl_file_list = [f for f in os.listdir() if f.endswith("_cache__.pkl")]
                 if existing_pkl_file_list:
-                    st.markdown(f"""<div class="custom-warning-small">
+                    st.markdown(f"""<div class="warning-message">
                             ⚠️ Any previously cached mapping will be deleted.
                         </div>""", unsafe_allow_html=True)
                 st.write("")
@@ -1914,7 +1902,7 @@ with tab4:
                 col1a, col1b = st.columns([2,1])
             with col1a:
                 st.write("")
-                st.markdown(f"""<div class="custom-success">
+                st.markdown(f"""<div class="success-message-flag">
                     ✅ Current state of mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> has been cached!
                 </div>""", unsafe_allow_html=True)
             st.session_state["progress_saved_ok_flag"] = False
@@ -1933,7 +1921,7 @@ with tab4:
                 col1a, col1b = st.columns([2,1])
             with col1a:
                 st.write("")
-                st.markdown(f"""<div class="custom-success">
+                st.markdown(f"""<div class="success-message-flag">
                     ✅ The mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> has been exported!
                 </div>""", unsafe_allow_html=True)
             st.session_state["key_export_filename_selectbox"] = ""
@@ -1956,7 +1944,7 @@ with tab4:
 
         if "." in export_filename:
             with col1c:
-                st.markdown(f"""<div class="custom-warning-small">
+                st.markdown(f"""<div class="warning-message">
                         ⚠️ The filename <b style="color:#cc9a06;">{export_filename}</b>
                         seems to include an extension.
                     </div>""", unsafe_allow_html=True)
@@ -2027,7 +2015,7 @@ with tab4:
                         inner_html += f"""<b>{len(tm_wo_pom_list)} TriplesMaps</b> have not been assigned
                         a Predicate-Object Map.<br>"""
 
-                full_html = f"""<div class="custom-warning-small-orange">
+                full_html = f"""<div class="warning-message-orange">
                         {inner_html}
                     </div>"""
 
@@ -2045,7 +2033,7 @@ with tab4:
             with col1:
                 col1a, col1b = st.columns([2,1])
             with col1a:
-                st.markdown(f"""<div class="custom-success">
+                st.markdown(f"""<div class="success-message-flag">
                     ✅ The session has been saved to file <b style="color:#F63366;">{st.session_state["pkl_filename"]}</b>!
                 </div>""", unsafe_allow_html=True)
             st.session_state["session_saved_ok_flag"] = False
@@ -2060,7 +2048,7 @@ with tab4:
         if pkl_filename:
             if "." in pkl_filename:
                 with col1b:
-                    st.markdown(f"""<div class="custom-warning-small">
+                    st.markdown(f"""<div class="warning-message">
                             ⚠️ The filename <b style="color:#cc9a06;">{pkl_filename}</b>
                             seems to include an extension.
                         </div>""", unsafe_allow_html=True)
@@ -2072,7 +2060,7 @@ with tab4:
 
         if pkl_filename and os.path.isfile(file_path):
             with col1a:
-                st.markdown(f"""<div class="custom-warning-small">
+                st.markdown(f"""<div class="warning-message">
                         ⚠️ <b>A session was already saved with this filename</b>. Please, pick
                         a different filename unless you want to overwrite it.
                     </div>""", unsafe_allow_html=True)
@@ -2097,7 +2085,7 @@ with tab5:
     with col1:
         st.write("")
         st.write("")
-        st.markdown(f"""<div class="custom-error-small">
+        st.markdown(f"""<div class="error-message">
             ❌ Panel <b>not ready</b> yet.
         </div>""", unsafe_allow_html=True)
 

@@ -223,7 +223,7 @@ with tab1:
             col1a, col1b = st.columns([2,1])
         with col1a:
             st.write("")
-            st.markdown(f"""<div class="custom-success">
+            st.markdown(f"""<div class="success-message-flag">
                 ✅ The <b>connection to the database</b> has been saved!
             </div>""", unsafe_allow_html=True)
         st.session_state["db_connection_saved_ok_flag"] = False
@@ -239,7 +239,7 @@ with tab1:
         conn_label = st.text_input("⌨️ Enter label:*", key="key_conn_label")
         if conn_label in st.session_state["db_connections_dict"]:
             with col1a:
-                st.markdown(f"""<div class="custom-error-small">
+                st.markdown(f"""<div class="error-message">
                     ❌ Label <b>{conn_label}</b> is already in use.<br>
                     You must choose a different label for this connection.
                         </div>""", unsafe_allow_html=True)
@@ -279,7 +279,7 @@ with tab1:
             col1a, col1b = st.columns([2,1])
         with col1a:
             st.write("")
-            st.markdown(f"""<div class="custom-success">
+            st.markdown(f"""<div class="success-message-flag">
                 ✅ The <b>connection to the database</b> has been removed!
             </div>""", unsafe_allow_html=True)
         st.session_state["db_connection_removed_ok_flag"] = False
@@ -327,7 +327,7 @@ with tab1:
 
                 if status == "❌":
                     with col1:
-                        st.markdown(f"""<div class="custom-error-small">
+                        st.markdown(f"""<div class="error-message">
                             ❌ <b>Connection error:</b>
                             {str(st.session_state["db_connection_status_dict"][connection_label_to_check][1])}
                         </div>""", unsafe_allow_html=True)
@@ -347,7 +347,7 @@ with tab1:
                 col1a, col1b = st.columns([2,1])
             with col1a:
                 st.write("")
-                st.markdown(f"""<div class="custom-success">
+                st.markdown(f"""<div class="success-message-flag">
                     ✅ The <b>connection/s to the database</b> have been removed!
                 </div>""", unsafe_allow_html=True)
             st.session_state["db_connection_removed_ok_flag"] = False
@@ -368,19 +368,19 @@ with tab1:
             connection_labels_to_remove_list = list(st.session_state["db_connections_dict"].keys())
             with col1a:
                 if len(connection_labels_to_remove_list) == 1:
-                    st.markdown(f"""<div class="custom-warning">
+                    st.markdown(f"""<div class="warning-message">
                             ⚠️ If you continue, connection<b style="color:#F63366;">
                             {utils.format_list_for_markdown(connection_labels_to_remove_list)}</b>
                             and its queries will be removed.
                         </div>""", unsafe_allow_html=True)
                 elif len(connection_labels_to_remove_list) < 6:
-                    st.markdown(f"""<div class="custom-warning">
+                    st.markdown(f"""<div class="warning-message">
                             ⚠️ If you continue, connections<b style="color:#F63366;">
                             {utils.format_list_for_markdown(connection_labels_to_remove_list)}</b>
                             and their queries will be removed.
                         </div>""", unsafe_allow_html=True)
                 else:
-                    st.markdown(f"""<div class="custom-warning">
+                    st.markdown(f"""<div class="warning-message">
                             ⚠️ If you continue, <b style="color:#F63366;">all connections</b>
                             and their queries will be removed.
                         </div>""", unsafe_allow_html=True)
@@ -408,31 +408,31 @@ with tab1:
 
             with col1a:
                 if not connection_labels_to_remove_list:
-                    st.markdown(f"""<div class="custom-success-small">
+                    st.markdown(f"""<div class="success-message-small">
                         ✔️ All <b>connections</b> are working (no ❌ connections to remove).
                     </div>""", unsafe_allow_html=True)
                 elif not not_working_connections_list and len(connection_labels_to_remove_list) == 1:
-                    st.markdown(f"""<div class="custom-warning">
+                    st.markdown(f"""<div class="warning-message">
                             ⚠️ If you continue, connection <b style="color:#F63366;">
                             {utils.format_list_for_markdown(connection_labels_to_remove_list)}</b>
                             and its queries will be removed.<br>
                             <small>All <b>connections</b> are working (no ❌ connections).</small>
                         </div>""", unsafe_allow_html=True)
                 elif not not_working_connections_list and len(connection_labels_to_remove_list) > 1:
-                    st.markdown(f"""<div class="custom-warning">
+                    st.markdown(f"""<div class="warning-message">
                             ⚠️ If you continue, connections <b style="color:#F63366;">
                             {utils.format_list_for_markdown(connection_labels_to_remove_list)}</b>
                             and their queries will be removed.<br>
                             <small>All <b>connections</b> are working (no ❌ connections to remove).</small>
                         </div>""", unsafe_allow_html=True)
                 elif not_working_connections_list and len(connection_labels_to_remove_list) == 1:
-                    st.markdown(f"""<div class="custom-warning">
+                    st.markdown(f"""<div class="warning-message">
                             ⚠️ If you continue, connection <b style="color:#F63366;">
                             {utils.format_list_for_markdown(connection_labels_to_remove_list)}</b>
                             and its queries will be removed.
                         </div>""", unsafe_allow_html=True)
                 elif not_working_connections_list and len(connection_labels_to_remove_list) > 1:
-                    st.markdown(f"""<div class="custom-warning">
+                    st.markdown(f"""<div class="warning-message">
                             ⚠️ If you continue, connections <b style="color:#F63366;">
                             {utils.format_list_for_markdown(connection_labels_to_remove_list)}</b>
                             and their queries will be removed.
@@ -444,19 +444,19 @@ with tab1:
         elif connection_labels_to_remove_list:
             with col1a:
                 if len(connection_labels_to_remove_list) == 1:
-                    st.markdown(f"""<div class="custom-warning">
+                    st.markdown(f"""<div class="warning-message">
                             ⚠️ If you continue, connection<b style="color:#F63366;">
                             {utils.format_list_for_markdown(connection_labels_to_remove_list)}</b>
                             and its queries will be removed.
                         </div>""", unsafe_allow_html=True)
                 elif len(connection_labels_to_remove_list) < 6:
-                    st.markdown(f"""<div class="custom-warning">
+                    st.markdown(f"""<div class="warning-message">
                             ⚠️ If you continue, connections<b style="color:#F63366;">
                             {utils.format_list_for_markdown(connection_labels_to_remove_list)}</b>
                             and their queries will be removed.
                         </div>""", unsafe_allow_html=True)
                 else:
-                    st.markdown(f"""<div class="custom-warning">
+                    st.markdown(f"""<div class="warning-message">
                             ⚠️ If you continue, the <b style="color:#F63366;">selected connections</b>
                             and their queries will be removed.
                         </div>""", unsafe_allow_html=True)
@@ -467,7 +467,7 @@ with tab1:
 # QUERY SQL DATA
 with tab2:
     if not st.session_state["db_connections_dict"]:
-        st.markdown(f"""<div class="custom-error-small">
+        st.markdown(f"""<div class="error-message">
             ❌ No existing connections to databases.
         </div>""", unsafe_allow_html=True)
         st.write("")              #HERE CHANGE
@@ -570,7 +570,7 @@ with tab2:
 
             except:
                 with col1a:
-                    st.markdown(f"""<div class="custom-error-small">
+                    st.markdown(f"""<div class="error-message">
                         ❌ The connection <b>{connection_label}</b> is not working.
                         Please remove it and save it again in the <b>Manage Connections</b> pannel.
                     </div>""", unsafe_allow_html=True)
@@ -621,18 +621,18 @@ with tab2:
 
                             # Slice rows if needed
                             if len(df) > max_rows and df.shape[1] > max_cols:
-                                st.markdown(f"""<div class="custom-warning-small">
+                                st.markdown(f"""<div class="warning-message">
                                     ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
                                     and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
                                 </div>""", unsafe_allow_html=True)
                                 st.write("")
                             elif len(df) > max_rows:
-                                st.markdown(f"""<div class="custom-warning-small">
+                                st.markdown(f"""<div class="warning-message">
                                     ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
                                 </div>""", unsafe_allow_html=True)
                                 st.write("")
                             elif df.shape[1] > max_cols:
-                                st.markdown(f"""<div class="custom-warning-small">
+                                st.markdown(f"""<div class="warning-message">
                                     ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
                                 </div>""", unsafe_allow_html=True)
                                 st.write("")
@@ -641,7 +641,7 @@ with tab2:
                     else:
                         if len(sql_column_filter_list) > utils.get_max_length_for_display()[3]:
                             with col1:
-                                st.markdown(f"""<div class="custom-error-small">
+                                st.markdown(f"""<div class="error-message">
                                     ❌ <b> Too many columns</b> selected. Please, respect the limit
                                     of {utils.get_max_length_for_display()[3]}.
                                 </div>""", unsafe_allow_html=True)
@@ -666,7 +666,7 @@ with tab2:
                 col1a, col1b = st.columns([2,1])
             with col1a:
                 st.write("")
-                st.markdown(f"""<div class="custom-success">
+                st.markdown(f"""<div class="success-message-flag">
                     ✅ The <b>SQL query</b> has been saved!
                 </div>""", unsafe_allow_html=True)
             st.session_state["sql_query_saved_ok_flag"] = False
@@ -693,7 +693,7 @@ with tab2:
                 elif sql_query_label:
                     sql_query_label_ok_flag = False
                     with col1b:
-                        st.markdown(f"""<div class="custom-error-small">
+                        st.markdown(f"""<div class="error-message">
                             ❌ The label <b>{sql_query_label}</b> is already in use.
                             You must pick a different label.
                         </div>""", unsafe_allow_html=True)
@@ -707,7 +707,7 @@ with tab2:
 
             except:
                 with col1a:
-                    st.markdown(f"""<div class="custom-error-small">
+                    st.markdown(f"""<div class="error-message">
                         ❌ The connection <b>{connection_label}</b> is not working.
                         Please remove it and save it again in the <b>Manage Connections</b> pannel.
                     </div>""", unsafe_allow_html=True)
@@ -730,7 +730,7 @@ with tab2:
 
                     except Exception as e:
                         with col1:
-                            st.markdown(f"""<div class="custom-error-small">
+                            st.markdown(f"""<div class="error-message">
                                 ❌ <b>Invalid SQL syntax</b>. Please check your query.<br>
                                 <small><b> Full error:</b> {e}</small>
                             </div>""", unsafe_allow_html=True)
@@ -760,18 +760,18 @@ with tab2:
 
                         # Slice rows if needed
                         if len(df) > max_rows and df.shape[1] > max_cols:
-                            st.markdown(f"""<div class="custom-warning-small">
+                            st.markdown(f"""<div class="warning-message">
                                 ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
                                 and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
                             </div>""", unsafe_allow_html=True)
                             st.write("")
                         elif len(df) > max_rows:
-                            st.markdown(f"""<div class="custom-warning-small">
+                            st.markdown(f"""<div class="warning-message">
                                 ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
                             </div>""", unsafe_allow_html=True)
                             st.write("")
                         elif df.shape[1] > max_cols:
-                            st.markdown(f"""<div class="custom-warning-small">
+                            st.markdown(f"""<div class="warning-message">
                                 ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
                             </div>""", unsafe_allow_html=True)
                             st.write("")
@@ -815,7 +815,7 @@ with tab2:
 
                 except:
                     with col1a:
-                        st.markdown(f"""<div class="custom-error-small">
+                        st.markdown(f"""<div class="error-message">
                             ❌ The connection <b>{connection_label}</b> is not working.
                             Please check it in the <b>Manage Connections</b> pannel.
                         </div>""", unsafe_allow_html=True)
@@ -849,7 +849,7 @@ with tab2:
                         except Exception as e:
                             with col1:
                                 st.write("")
-                                st.markdown(f"""<div class="custom-error-small">
+                                st.markdown(f"""<div class="error-message">
                                     ❌ <b>Invalid SQL syntax</b>. Please check your query.<br>
                                     <small><b> Full error:</b> {e}</small>
                                 </div>""", unsafe_allow_html=True)
@@ -874,18 +874,18 @@ with tab2:
 
                             # Slice rows if needed
                             if len(df) > max_rows and df.shape[1] > max_cols:
-                                st.markdown(f"""<div class="custom-warning-small">
+                                st.markdown(f"""<div class="warning-message">
                                     ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
                                     and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
                                 </div>""", unsafe_allow_html=True)
                                 st.write("")
                             elif len(df) > max_rows:
-                                st.markdown(f"""<div class="custom-warning-small">
+                                st.markdown(f"""<div class="warning-message">
                                     ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
                                 </div>""", unsafe_allow_html=True)
                                 st.write("")
                             elif df.shape[1] > max_cols:
-                                st.markdown(f"""<div class="custom-warning-small">
+                                st.markdown(f"""<div class="warning-message">
                                     ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
                                 </div>""", unsafe_allow_html=True)
                                 st.write("")
@@ -991,7 +991,7 @@ with tab3:
     if st.session_state["ds_file_saved_ok_flag"]:
         with col1a:
             st.write("")
-            st.markdown(f"""<div class="custom-success">
+            st.markdown(f"""<div class="success-message-flag">
                 ✅ The <b>data source file</b> has been saved!
             </div>""", unsafe_allow_html=True)
         st.session_state["ds_file_saved_ok_flag"] = False
@@ -1009,7 +1009,7 @@ with tab3:
 
                 if ds_file.name in st.session_state["ds_files_dict"]:
                     st.write("")
-                    st.markdown(f"""<div class="custom-warning-small">
+                    st.markdown(f"""<div class="warning-message">
                         ⚠️ File <b>{ds_file.name}</b> is already loaded.<br>
                         <small>If you continue its content will be updated.</small>
                     </div>""", unsafe_allow_html=True)
@@ -1025,7 +1025,7 @@ with tab3:
 
             except:    # empty file
                 with col1a:
-                    st.markdown(f"""<div class="custom-error-small">
+                    st.markdown(f"""<div class="error-message">
                         ❌ The file <b>{ds_file.name}</b> appears to be empty or corrupted. Please load a valid file.
                     </div>""", unsafe_allow_html=True)
                     st.write("")
@@ -1055,7 +1055,7 @@ with tab3:
             if not os.path.isdir(folder_path):
                 with col1a:
                     st.write("")
-                    st.markdown(f"""<div class="custom-warning-small">
+                    st.markdown(f"""<div class="warning-message">
                             ⚠️ Folder <b>{folder_name}</b> does not exist. Please,
                             create it within the main folder and add your file to it.
                         </div>""", unsafe_allow_html=True)
@@ -1080,7 +1080,7 @@ with tab3:
                         if ds_large_filename in st.session_state["ds_files_dict"]:
                             with col1a:
                                 st.write("")
-                                st.markdown(f"""<div class="custom-warning-small">
+                                st.markdown(f"""<div class="warning-message">
                                     ⚠️ File <b>{ds_large_filename}</b> is already loaded.<br>
                                     <small>If you continue its content will be updated.</small>
                                 </div>""", unsafe_allow_html=True)
@@ -1097,7 +1097,7 @@ with tab3:
 
                     except:    # empty file
                         with col1a:
-                            st.markdown(f"""<div class="custom-error-small">
+                            st.markdown(f"""<div class="error-message">
                                 ❌ The file <b>{ds_large_filename}</b> appears to be empty or corrupted. Please select a valid file.
                             </div>""", unsafe_allow_html=True)
                             st.write("")
@@ -1108,7 +1108,7 @@ with tab3:
             col1a, col1b = st.columns([2,1])
         with col1a:
             st.write("")
-            st.markdown(f"""<div class="custom-success">
+            st.markdown(f"""<div class="success-message-flag">
                 ✅ The <b>data source file/s</b> have been removed!
             </div>""", unsafe_allow_html=True)
         st.session_state["ds_file_removed_ok_flag"] = False
@@ -1129,7 +1129,7 @@ with tab3:
                 col1a, col1b = st.columns([2,1])
             with col1a:
                 st.write("")
-                st.markdown(f"""<div class="custom-success">
+                st.markdown(f"""<div class="success-message-flag">
                     ✅ The <b>data source file/s</b> have been removed!
                 </div>""", unsafe_allow_html=True)
             st.session_state["ds_file_removed_ok_flag"] = False
@@ -1150,19 +1150,19 @@ with tab3:
             ds_files_to_remove_list = list(st.session_state["ds_files_dict"].keys())
             with col1a:
                 if len(ds_files_to_remove_list) == 1:
-                    st.markdown(f"""<div class="custom-warning">
+                    st.markdown(f"""<div class="warning-message">
                             ⚠️ If you continue, the file <b style="color:#F63366;">
                             {utils.format_list_for_markdown(ds_files_to_remove_list)}</b>
                             will be removed.
                         </div>""", unsafe_allow_html=True)
                 elif len(ds_files_to_remove_list) < 6:
-                    st.markdown(f"""<div class="custom-warning">
+                    st.markdown(f"""<div class="warning-message">
                             ⚠️ If you continue, the files <b style="color:#F63366;">
                             {utils.format_list_for_markdown(ds_files_to_remove_list)}</b>
                             will be removed.
                         </div>""", unsafe_allow_html=True)
                 else:
-                    st.markdown(f"""<div class="custom-warning">
+                    st.markdown(f"""<div class="warning-message">
                             ⚠️ If you continue, <b style="color:#F63366;">all files</b>
                             will be removed.
                         </div>""", unsafe_allow_html=True)
@@ -1177,19 +1177,19 @@ with tab3:
         elif ds_files_to_remove_list:
             with col1a:
                 if len(ds_files_to_remove_list) == 1:
-                    st.markdown(f"""<div class="custom-warning">
+                    st.markdown(f"""<div class="warning-message">
                             ⚠️ If you continue, the file <b style="color:#F63366;">
                             {utils.format_list_for_markdown(ds_files_to_remove_list)}</b>
                             will be removed.
                         </div>""", unsafe_allow_html=True)
                 elif len(ds_files_to_remove_list) < 6:
-                    st.markdown(f"""<div class="custom-warning">
+                    st.markdown(f"""<div class="warning-message">
                             ⚠️ If you continue, the files <b style="color:#F63366;">
                             {utils.format_list_for_markdown(ds_files_to_remove_list)}</b>
                             will be removed.
                         </div>""", unsafe_allow_html=True)
                 else:
-                    st.markdown(f"""<div class="custom-warning">
+                    st.markdown(f"""<div class="warning-message">
                             ⚠️ If you continue, the <b style="color:#F63366;">selected files</b>
                             will be removed.
                         </div>""", unsafe_allow_html=True)
@@ -1209,7 +1209,7 @@ with tab4:
 
 
     if not st.session_state["ds_files_dict"]:
-        st.markdown(f"""<div class="custom-error-small">
+        st.markdown(f"""<div class="error-message">
             ❌ No data sources with tabular data have been added.
         </div>""", unsafe_allow_html=True)
         st.write("")              #HERE CHANGE
@@ -1254,18 +1254,18 @@ with tab4:
 
                     # Slice rows if needed
                     if len(df) > max_rows and df.shape[1] > max_cols:
-                        st.markdown(f"""<div class="custom-warning-small">
+                        st.markdown(f"""<div class="warning-message">
                             ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
                             and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                     elif len(df) > max_rows:
-                        st.markdown(f"""<div class="custom-warning-small">
+                        st.markdown(f"""<div class="warning-message">
                             ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                     elif df.shape[1] > max_cols:
-                        st.markdown(f"""<div class="custom-warning-small">
+                        st.markdown(f"""<div class="warning-message">
                             ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
                         </div>""", unsafe_allow_html=True)
                         st.write("")
@@ -1274,7 +1274,7 @@ with tab4:
             else:
                 if len(tab_column_filter_list) > utils.get_max_length_for_display()[3]:
                     with col1:
-                        st.markdown(f"""<div class="custom-error-small">
+                        st.markdown(f"""<div class="error-message">
                             ❌ <b> Too many columns</b> selected. Please, respect the limit
                             of {utils.get_max_length_for_display()[3]}.
                         </div>""", unsafe_allow_html=True)

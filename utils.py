@@ -103,108 +103,80 @@ def import_st_aesthetics():
             height: 14px !important;}
 
     /* PURPLE HEADINGS */
-            .purple-heading {background-color:#e6e6fa; border:1px solid #511D66;
+            .purple-heading {background-color:#e6e6fa; border-bottom:4px solid #511D66;
                 border-radius:5px; padding:10px; margin-bottom:8px;
                 font-size:1.1rem; font-weight:600; color:#511D66;}
+
+
+
+
 
     /* GRAY PREVIEW MESSAGE */
             .gray-preview-message {background-color:#f9f9f9; padding:0.7em; border-radius:5px;
             color:#333333; border:1px solid #e0e0e0;}
 
-    /* GRAY PREVIEW MESSAGE SMALL*/
-            .gray-preview-message-small {background-color:#f9f9f9; padding:0.4em; border-radius:5px;
-            color:#333333; border:1px solid #e0e0e0; font-size:0.92em}
+    /* BLUE STATUS MESSAGE */
+            .blue-status-message {background-color: #eaf4ff; padding: 0.8em;
+            border-radius: 5px; color: #0c5460; border-left: 4px solid #0c5460;}
 
-    /* GREEN STATUS MESSAGE */
-            .green-status-message {background-color:#d4edda; padding:1em;
-            border-radius:5px; color:#155724; border:1px solid #511D66;}
+            .blue-status-message b {color: #0c5460;}
+
+    /* BLUE STATUS MESSAGE SMALL */
+        .blue-status-message-small {background-color: #eaf4ff; padding: 0.8em;
+          border-radius: 5px; color: #0c5460; border-left: 4px solid #0c5460;
+          line-height: 1.1;}
+
+        .blue-status-message-small b {color: #0c5460;}
 
     /* GRAY STATUS MESSAGE */
             .gray-status-message {background-color:#f5f5f5; padding:1em;
             border-radius:5px; color:#2a0134; border:1px solid #511D66;}
 
-    /* GREEN STATUS MESSAGE SMALL */
-        .green-status-message-small {background-color: #d4edda; padding: 1em;
-          border-radius: 5px; color: #155724; border: 1px solid #511D66;
-          line-height: 1.1;}
-
-        .green-status-message-small p {margin-bottom: 0.3em;}
-
-    /* SUCCESS MESSAGE */
-        .custom-success {background-color: #d4edda; padding: 1em;
+    /* SUCCESS MESSAGE FLAG */
+        .success-message {background-color: #d4edda; padding: 1em;
             border-radius: 5px; color: #155724;}
 
-        .custom-success b {color: #0f5132;}
+        .success-message b {color: #0f5132;}
 
-    /* SUCCESS MESSAGE SMALL*/
-        .custom-success-small {background-color: #d4edda; padding: 0.5em;
-            border-radius: 5px; color: #155724;
-            font-size: 0.92em; justify-content: center;
-            align-items: center;}
+    /* SUCCESS MESSAGE */
+    .success-message {border-left: 4px solid #155724;
+        ;padding: 0.4em 0.6em;
+        color: #155724; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
+        margin: 0.5em 0; background-color: #edf7f1;
+        border-radius: 4px; box-sizing: border-box;}
 
-        .custom-success-small b {color: #0f5132;}
+    .success-message b {color: #0f5132; font-weight:600;}
 
-    /* WARNING MESSAGE */
-        .custom-warning {background-color: #fff7db; padding: 1em;
-            border-radius: 5px; color: #856404;
-            font-size: 0.92em;}
-
-        .custom-warning b {color: #cc9a06;}
-
-    /* WARNING MESSAGE ORANGE */
-    .custom-warning-orange {background-color: #ffe3c0; padding: 1em;
-        border-radius: 5px; color: #8a3c00; font-size: 1em;}
-
-    .custom-warning-small-orange b {color: #d66a00;}
-
-    /* WARNING MESSAGE SMALL*/
-        .custom-warning-small {background-color: #fff7db; padding: 0.5em;
-            border-radius: 5px; color: #856404;
-            font-size: 0.92em; justify-content: center;
-            align-items: center;}
-
-        .custom-warning-small b {color: #cc9a06;}
-
-
-    /* WARNING MESSAGE SUBTLE*/
-        .custom-warning-subtle {border-left: 4px solid #e0c36d;
+    /* WARNING MESSAGE*/
+        .warning-message {border-left: 4px solid #e0c36d;
             ; padding: 0.4em 0.6em;
             color: #6c5e2e; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
-            margin: 0.5em 0; background-color: transparent;
+            margin: 0.5em 0; background-color: #fff7db;
             border-radius: 4px; box-sizing: border-box;}
 
-        .custom-warning-subtle b {color: #cc9a06; font-weight: 600;}
-
-
-    /* WARNING MESSAGE SMALL ORANGE */
-    .custom-warning-small-orange {background-color: #ffe3c0; padding: 0.5em;
-        border-radius: 5px; color: #8a3c00; font-size: 0.92em;
-        justify-content: center; align-items: center;}
-
-    .custom-warning-small-orange b {color: #d66a00;}
+        .warning-message b {color: #cc9a06; font-weight: 600;}
 
      /* ERROR MESSAGE */
-        .custom-error {background-color: #f9dbdd; padding: 1em;
-            border-radius: 5px; color: #721c24;}
-
-        .custom-error b {color: #a94442;}
-
-     /* ERROR MESSAGE SMALL*/
-        .custom-error-small {background-color: #f9dbdd; padding: 0.5em;
+        .error-message {background-color: #fbe6e8; padding: 0.5em;
             border-radius: 5px; color: #721c24;
             font-size: 0.92em; justify-content: center;
             align-items: center;}
 
-        .custom-error-small b {color: #a94442;}
+        .error-message b {color: #a94442;}
 
-    /* ERROR MESSAGE SUBTLE */
-        .custom-error-subtle {border-left: 4px solid #e89ca0;
+    /* ERROR MESSAGE 2 (side accent) */
+        .error-message-2 {border-left: 4px solid #e89ca0;
             padding: 0.4em 0.6em; color: #7a2e33; font-size: 0.85em;
             font-family: "Source Sans Pro", sans-serif; margin: 0.5em 0;
             background-color: transparent; border-radius: 4px;
             box-sizing: border-box;}
 
-        .custom-error-subtle b {color: #a94442; font-weight: 600;}
+        .error-message-2 b {color: #a94442; font-weight: 600;}
+
+
+
+
+
 
     /* INFO MESSAGE SMALL */
     .info-message-small {background-color: #eaf4ff; padding: 0.5em;
@@ -222,16 +194,6 @@ def import_st_aesthetics():
 
     .info-message-small-gray b {color: #333333;}
 
-
-    /* INFO TABLE GRAY */
-    .info-table-gray {border-collapse: collapse; width: 100%;
-        background-color: #f5f5f5; border-radius: 5px; table-layout: auto;
-        max-width: 100%; word-break: break-word;}
-
-    .info-table-gray td {padding: 4px 8px; vertical-align: top;
-        font-size: 0.85rem; word-wrap: break-word; white-space: normal;
-        overflow-wrap: anywhere;}
-
     /* INFO MESSAGE SUBTLE */
     .custom-info-subtle {border-left: 4px solid #0c5460;
         ;padding: 0.4em 0.6em;
@@ -241,6 +203,25 @@ def import_st_aesthetics():
 
     .custom-info-subtle b {
         color: #003366; font-weight:600;}
+
+    /* INFO MESSAGE SUBTLE GRAY */
+    .info-message-subtle-gray {border-left: 4px solid #999999;
+        ;padding: 0.4em 0.6em;
+        color: #4d4d4d; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
+        margin: 0.5em 0; background-color: #f5f5f5;
+        border-radius: 4px; box-sizing: border-box;}
+
+    .info-message-subtle-gray b {
+        color: #111111; font-weight:600;}
+
+    /* INFO TABLE GRAY */
+    .info-table-gray {border-collapse: collapse; width: 100%;
+        background-color: #f5f5f5; border-radius: 5px; table-layout: auto;
+        max-width: 100%; word-break: break-word;}
+
+    .info-table-gray td {padding: 4px 8px; vertical-align: top;
+        font-size: 0.85rem; word-wrap: break-word; white-space: normal;
+        overflow-wrap: anywhere;}
 
     /* TITLE ROW */
     .title-row td {font-size: 0.9rem; font-weight: bold; text-align: center;
@@ -294,33 +275,33 @@ def get_missing_g_mapping_error_message():
 def get_corner_status_message():
     if st.session_state["g_ontology"]:
         if len(st.session_state["g_ontology_components_dict"]) > 1:
-            ontology_items = '\n'.join([f"""<li><b style="color:#F63366;">{ont}</b></li>""" for ont in st.session_state["g_ontology_components_dict"]])
-            st.markdown(f"""<div class="green-status-message-small">
+            ontology_items = '\n'.join([f"""<li><b>{ont}</b></li>""" for ont in st.session_state["g_ontology_components_dict"]])
+            st.markdown(f"""<div class="blue-status-message-small">
                     <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                     style="vertical-align:middle; margin-right:8px; height:20px;">
                     You are working with mapping
-                    <b style="color:#F63366;">{st.session_state["g_label"]}</b>.<br> <br>
+                    <b>{st.session_state["g_label"]}</b>.<br> <br>
                     🧩 Your <b>ontology</b> is the merger of:
-                    <ul style="font-size:0.85rem; margin-top:6px; margin-left:15px; padding-left:10px;">
+                    <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
                 <ul>
                     {ontology_items}
                 </ul></div>""", unsafe_allow_html=True)
         else:
-            st.markdown(f"""<div class="green-status-message-small">
+            st.markdown(f"""<div class="blue-status-message-small">
                     <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                     style="vertical-align:middle; margin-right:8px; height:20px;">
                     You are working with mapping
-                    <b style="color:#F63366;">{st.session_state["g_label"]}</b>.<br> <br>
-                    🧩 The ontology <b style="color:#F63366;">
+                    <b>{st.session_state["g_label"]}</b>.<br> <br>
+                    🧩 The ontology <b>
                     {next(iter(st.session_state["g_ontology_components_dict"]))}</b>
                     is loaded.
                 </div>""", unsafe_allow_html=True)
     else:
-        st.markdown(f"""<div class="green-status-message-small">
+        st.markdown(f"""<div class="blue-status-message-small">
                 <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                 style="vertical-align:middle; margin-right:8px; height:20px;">
                 You are working with mapping
-                <b style="color:#F63366;">{st.session_state["g_label"]}</b>.<br> <br>
+                <b>{st.session_state["g_label"]}</b>.<br> <br>
                 🚫 <b>No ontology</b> is loaded.
             </div>
         """, unsafe_allow_html=True)
@@ -942,7 +923,7 @@ def get_column_list_and_give_info(tm_iri):
                 column_list = [description[0] for description in cur.description]
                 conn.close() # optional: close immediately or keep open for queries
                 if not column_list:
-                    st.markdown(f"""<div class="custom-warning-small">
+                    st.markdown(f"""<div class="warning-message">
                         ⚠️ Logical source's query yielded no columns. <small>Please,
                         check the query in the <b>📊 Manage Logical Sources</b> page
                         to enable automatic column detection.
@@ -956,7 +937,7 @@ def get_column_list_and_give_info(tm_iri):
                     st.write("")
 
             except:
-                st.markdown(f"""<div class="custom-warning-small">
+                st.markdown(f"""<div class="warning-message">
                     ⚠️ Connection to database or logical source's query failed.
                     <small>Please, check them in the <b>📊 Manage Logical Sources</b> page
                     to enable automatic column detection.
@@ -976,7 +957,7 @@ def get_column_list_and_give_info(tm_iri):
                 conn.close()
 
                 if not column_list:
-                    st.markdown(f"""<div class="custom-warning-small">
+                    st.markdown(f"""<div class="warning-message">
                         ⚠️ Table <b>{table_name_as_ds}</b> contains no columns.
                         <small>Please check the table definition in the <b>📊 Manage Logical Sources</b> page
                         to enable automatic column detection.
@@ -990,7 +971,7 @@ def get_column_list_and_give_info(tm_iri):
                     st.write("")
 
             except:
-                st.markdown(f"""<div class="custom-warning-small">
+                st.markdown(f"""<div class="warning-message">
                     ⚠️ Failed to connect to the database or access table <b>{table_name_as_ds}</b>.
                     <small>Please verify the connection and table name in the <b>📊 Manage Logical Sources</b> page
                     to enable automatic column detection.
@@ -999,7 +980,7 @@ def get_column_list_and_give_info(tm_iri):
                 column_list = []
 
         else:
-            st.markdown(f"""<div class="custom-warning-small">
+            st.markdown(f"""<div class="warning-message">
                 ⚠️ Triple indicating either <code>RML.query</code> or <code>RR.tableName</code>
                 is missing.<br>
                 <small>Please check the <b>Logical Source</b> of the TriplesMap
@@ -1013,7 +994,7 @@ def get_column_list_and_give_info(tm_iri):
         column_list = [str(col) for col in parsed.find_all(sqlglot.expressions.Column)]
 
         if column_list:
-            st.markdown(f"""<div class="custom-warning-small">
+            st.markdown(f"""<div class="warning-message">
                     ⚠️ The data source <b>{ds}</b> is not available,
                     but column references have been taken from the
                     logical source's query.<br>
@@ -1021,7 +1002,7 @@ def get_column_list_and_give_info(tm_iri):
                 </div>""", unsafe_allow_html=True)
 
         else:
-            st.markdown(f"""<div class="custom-warning-small">
+            st.markdown(f"""<div class="warning-message">
                     ⚠️ The data source <b>{ds}</b> is not available.
                     <small>Please load it in the <b>📊 Manage Logical Sources</b> page
                     to enable automatic column detection.
@@ -1031,14 +1012,14 @@ def get_column_list_and_give_info(tm_iri):
 
     else:                                                           # data source not saved
         if reference_formulation == QL.SQL:
-            st.markdown(f"""<div class="custom-warning-small">
+            st.markdown(f"""<div class="warning-message">
                     ⚠️ The data source <b>{ds}</b> is not available.<br>
                     <small>Please connect to the database in the <b>📊 Manage Logical Sources</b> page
                     to enable automatic column detection.
                     Manual entry of column references is discouraged.</small>
                 </div>""", unsafe_allow_html=True)
         else:
-            st.markdown(f"""<div class="custom-warning-small">
+            st.markdown(f"""<div class="warning-message">
                     ⚠️ The data source <b>{ds}</b> is not available.
                     <small>Please load it in the <b>📊 Manage Logical Sources</b> page
                     to enable automatic column detection.
@@ -1365,7 +1346,7 @@ def try_connection(db_connection_type, host, port, database, user, password):
             return True
 
         except psycopg.OperationalError as e:
-            st.markdown(f"""<div class="custom-error-small">
+            st.markdown(f"""<div class="error-message">
                 ❌ <b>Connection failed.</b><br>
                 <small><b>Full error</b>: {e.args[0]} </small>
             </div>""", unsafe_allow_html=True)
@@ -1373,7 +1354,7 @@ def try_connection(db_connection_type, host, port, database, user, password):
             return False
 
         except Exception as e:
-            st.markdown(f"""<div class="custom-error-small">
+            st.markdown(f"""<div class="error-message">
                 ❌ <b>Unexpected error.</b><br>
                 <small><b>Full error</b>: {str(e)} </small>
             </div>""", unsafe_allow_html=True)
@@ -1388,7 +1369,7 @@ def try_connection(db_connection_type, host, port, database, user, password):
             return True
 
         except pymysql.MySQLError as e:
-            st.markdown(f"""<div class="custom-error-small">
+            st.markdown(f"""<div class="error-message">
                 ❌ <b>Connection failed.</b><br>
                 <small><b>Full error</b>: {e.args[0]} </small>
             </div>""", unsafe_allow_html=True)
@@ -1396,7 +1377,7 @@ def try_connection(db_connection_type, host, port, database, user, password):
             return False
 
         except Exception as e:
-            st.markdown(f"""<div class="custom-error-small">
+            st.markdown(f"""<div class="error-message">
                 ❌ <b>Unexpected error.</b><br>
                 <small><b>Full error</b>: {str(e)} </small>
             </div>""", unsafe_allow_html=True)
@@ -1411,7 +1392,7 @@ def try_connection(db_connection_type, host, port, database, user, password):
             return True
 
         except oracledb.OperationalError as e:
-            st.markdown(f"""<div class="custom-error-small">
+            st.markdown(f"""<div class="error-message">
                 ❌ <b>Connection failed.</b><br>
                 <small><b>Full error</b>: {e.args[0]} </small>
             </div>""", unsafe_allow_html=True)
@@ -1419,7 +1400,7 @@ def try_connection(db_connection_type, host, port, database, user, password):
             return False
 
         except Exception as e:
-            st.markdown(f"""<div class="custom-error-small">
+            st.markdown(f"""<div class="error-message">
                 ❌ <b>Unexpected error.</b><br>
                 <small><b>Full error</b>: {str(e)} </small>
             </div>""", unsafe_allow_html=True)
@@ -1438,7 +1419,7 @@ def try_connection(db_connection_type, host, port, database, user, password):
             return True
 
         except pyodbc.OperationalError as e:
-            st.markdown(f"""<div class="custom-error-small">
+            st.markdown(f"""<div class="error-message">
                 ❌ <b>Connection failed.</b><br>
                 <small><b>Full error</b>: {e.args[0]} </small>
             </div>""", unsafe_allow_html=True)
@@ -1446,7 +1427,7 @@ def try_connection(db_connection_type, host, port, database, user, password):
             return False
 
         except Exception as e:
-            st.markdown(f"""<div class="custom-error-small">
+            st.markdown(f"""<div class="error-message">
                 ❌ <b>Unexpected error.</b><br>
                 <small><b>Full error</b>: {str(e)} </small>
             </div>""", unsafe_allow_html=True)
@@ -2163,8 +2144,29 @@ def get_tmap_exclusive_derived_triples(x_tmap_label):
 #___________________________________________________________________________________
 
 
+# OLD MESSAGE STYLES
+
+    # /* WARNING MESSAGE SMALL*/
+    #     .custom-warning-small {background-color: #fff7db; padding: 0.5em;
+    #         border-radius: 5px; color: #856404;
+    #         font-size: 0.92em; justify-content: center;
+    #         align-items: center;}
+    #
+    #     .custom-warning-small b {color: #cc9a06;}
+
+    # /* SUCCESS MESSAGE SMALL*/
+    #     .success-message-small {background-color: #edf7f1; padding: 0.5em;
+    #         border-radius: 5px; color: #155724;
+    #         font-size: 0.92em; justify-content: center;
+    #         align-items: center;}
+    #
+    #     .success-message-small b {color: #0f5132;}
+
+
+
 #COLORS:
 #f5f5f5 light gray
 #555555 dark gray
 #F63366 Streamlit salmon
+#f26a7e Streamlit salmon less saturated
 #ff7a7a lighter streamlit salmon
