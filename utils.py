@@ -113,7 +113,11 @@ def import_st_aesthetics():
 
     /* GRAY PREVIEW MESSAGE */
             .gray-preview-message {background-color:#f9f9f9; padding:0.7em; border-radius:5px;
-            color:#333333; border:1px solid #e0e0e0;}
+            color:#333333; border:1px solid #e0e0e0; font-size: 0.92em;}
+
+    /* BLUE PREVIEW MESSAGE */
+            .blue-preview-message {background-color:#eaf4ff; padding:0.7em; border-radius:5px;
+            color:#0c5460; border:1px solid #0c5460; font-size: 0.92em;}
 
     /* BLUE STATUS MESSAGE */
             .blue-status-message {background-color: #eaf4ff; padding: 0.8em;
@@ -130,13 +134,18 @@ def import_st_aesthetics():
 
     /* GRAY STATUS MESSAGE */
             .gray-status-message {background-color:#f5f5f5; padding:1em;
-            border-radius:5px; color:#2a0134; border:1px solid #511D66;}
+            border-radius:5px; color:#2a0134; border-left:4px solid #777777;}
+
+    /* GRAY STATUS MESSAGE SMALL */
+        .gray-status-message-small {background-color: #f5f5f5; padding: 0.8em;
+          border-radius: 5px; color: #2a0134; border-left: 4px solid #777777;
+          line-height: 1.1;}
 
     /* SUCCESS MESSAGE FLAG */
-        .success-message {background-color: #d4edda; padding: 1em;
+        .success-message-flag {background-color: #d4edda; padding: 1em;
             border-radius: 5px; color: #155724;}
 
-        .success-message b {color: #0f5132;}
+        .success-message-flag b {color: #0f5132;}
 
     /* SUCCESS MESSAGE */
     .success-message {border-left: 4px solid #155724;
@@ -156,23 +165,24 @@ def import_st_aesthetics():
 
         .warning-message b {color: #cc9a06; font-weight: 600;}
 
-     /* ERROR MESSAGE */
-        .error-message {background-color: #fbe6e8; padding: 0.5em;
-            border-radius: 5px; color: #721c24;
-            font-size: 0.92em; justify-content: center;
-            align-items: center;}
-
-        .error-message b {color: #a94442;}
-
-    /* ERROR MESSAGE 2 (side accent) */
-        .error-message-2 {border-left: 4px solid #e89ca0;
+    /* ERROR MESSAGE */
+        .error-message {border-left: 4px solid #e89ca0;
             padding: 0.4em 0.6em; color: #7a2e33; font-size: 0.85em;
             font-family: "Source Sans Pro", sans-serif; margin: 0.5em 0;
-            background-color: transparent; border-radius: 4px;
+            background-color: #fbe6e8; border-radius: 4px;
             box-sizing: border-box;}
 
-        .error-message-2 b {color: #a94442; font-weight: 600;}
+        .error-message b {color: #a94442; font-weight: 600;}
 
+    /* INFO MESSAGE GRAY */
+    .info-message-gray {border-left: 4px solid #777777;
+        ;padding: 0.4em 0.6em;
+        color: #4d4d4d; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
+        margin: 0.5em 0; background-color: #f5f5f5;
+        border-radius: 4px; box-sizing: border-box;}
+
+    .info-message-gray b {
+        color: #111111; font-weight:600;}
 
 
 
@@ -203,16 +213,6 @@ def import_st_aesthetics():
 
     .custom-info-subtle b {
         color: #003366; font-weight:600;}
-
-    /* INFO MESSAGE SUBTLE GRAY */
-    .info-message-subtle-gray {border-left: 4px solid #999999;
-        ;padding: 0.4em 0.6em;
-        color: #4d4d4d; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
-        margin: 0.5em 0; background-color: #f5f5f5;
-        border-radius: 4px; box-sizing: border-box;}
-
-    .info-message-subtle-gray b {
-        color: #111111; font-weight:600;}
 
     /* INFO TABLE GRAY */
     .info-table-gray {border-collapse: collapse; width: 100%;
@@ -276,7 +276,7 @@ def get_corner_status_message():
     if st.session_state["g_ontology"]:
         if len(st.session_state["g_ontology_components_dict"]) > 1:
             ontology_items = '\n'.join([f"""<li><b>{ont}</b></li>""" for ont in st.session_state["g_ontology_components_dict"]])
-            st.markdown(f"""<div class="blue-status-message-small">
+            st.markdown(f"""<div class="gray-status-message-small">
                     <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                     style="vertical-align:middle; margin-right:8px; height:20px;">
                     You are working with mapping
@@ -287,7 +287,7 @@ def get_corner_status_message():
                     {ontology_items}
                 </ul></div>""", unsafe_allow_html=True)
         else:
-            st.markdown(f"""<div class="blue-status-message-small">
+            st.markdown(f"""<div class="gray-status-message-small">
                     <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                     style="vertical-align:middle; margin-right:8px; height:20px;">
                     You are working with mapping
@@ -297,7 +297,7 @@ def get_corner_status_message():
                     is loaded.
                 </div>""", unsafe_allow_html=True)
     else:
-        st.markdown(f"""<div class="blue-status-message-small">
+        st.markdown(f"""<div class="gray-status-message-small">
                 <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                 style="vertical-align:middle; margin-right:8px; height:20px;">
                 You are working with mapping
@@ -343,9 +343,10 @@ def format_list_for_markdown(xlist):
 # Function to get the max_length for the display options
 # 0. complete dataframes      1. last added dataframes
 # 2. Queries display (rows)    3. Queries display (columns)
+# 4. List of multiselect items for hard display     # 5 Long lists for soft display
 def get_max_length_for_display():
 
-    return [50, 10, 100, 20]
+    return [50, 10, 100, 20, 5, 5]
 
 #_______________________________________________________
 
@@ -930,9 +931,9 @@ def get_column_list_and_give_info(tm_iri):
                         Manual entry of column references is discouraged.</small>
                     </div>""", unsafe_allow_html=True)
                 else:
-                    st.markdown(f"""<div class="info-message-small">
+                    st.markdown(f"""<div class="blue-preview-message">
                             📊 The data source is the database <b style="color:#F63366;">{database}</b>.<br>
-                             <small>{conn_label}: <b>{jdbc_str}</b></small>
+                             <small>🔌 {conn_label} → <b>{jdbc_str}</b></small>
                         </div>""", unsafe_allow_html=True)
                     st.write("")
 
@@ -964,9 +965,9 @@ def get_column_list_and_give_info(tm_iri):
                         Manual entry of column references is discouraged.</small>
                     </div>""", unsafe_allow_html=True)
                 else:
-                    st.markdown(f"""<div class="info-message-small">
+                    st.markdown(f"""<div class="blue-preview-message">
                             📊 The data source is the database <b style="color:#F63366;">{database}</b>.<br>
-                             <small>{conn_label}: <b>{jdbc_str}</b></small>
+                             <small>🔌 {conn_label} → <b>{jdbc_str}</b></small>
                         </div>""", unsafe_allow_html=True)
                     st.write("")
 
@@ -2161,6 +2162,14 @@ def get_tmap_exclusive_derived_triples(x_tmap_label):
     #         align-items: center;}
     #
     #     .success-message-small b {color: #0f5132;}
+
+     # /* ERROR MESSAGE */
+     #    .error-message {background-color: #fbe6e8; padding: 0.5em;
+     #        border-radius: 5px; color: #721c24;
+     #        font-size: 0.92em; justify-content: center;
+     #        align-items: center;}
+     #
+     #    .error-message b {color: #a94442;}
 
 
 

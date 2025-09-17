@@ -693,13 +693,10 @@ with tab1:
     if tm_label:   #after a label has been given
         if tm_label in tm_dict:   #if label is already in use
             with col1a:
-                st.markdown(f"""
-                <div style="background-color:#f8d7da; padding:1em;
-                            border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
+                st.markdown(f"""<div class="error-message">
                     ❌ TriplesMap label <b style="color:#a94442;">{tm_label}</b> already in use.
                     Please pick a different label.
-                </div>
-                """, unsafe_allow_html=True)
+                </div>""", unsafe_allow_html=True)
                 st.write("")
 
         else:    #if label is valid
@@ -1002,7 +999,7 @@ with tab1:
                 with col1:
                     col1a, col1b = st.columns([2,1])
                 with col1a:
-                    st.markdown(f"""<div class="info-message-small-gray">
+                    st.markdown(f"""<div class="info-message-gray">
                             {inner_html}
                         <div>""", unsafe_allow_html=True)
                     st.write("")
@@ -1010,7 +1007,7 @@ with tab1:
         else:   #Select all option
             sm_dict = utils.get_sm_dict()
             inner_html = ""
-            max_length = 8
+            max_length = utils.get_max_length_for_display()[4]
             if len(tm_dict) < max_length:
                 for tm in tm_dict:
                     inner_html += f"""<b>🔖 {tm}</b> ("""
@@ -1049,7 +1046,7 @@ with tab1:
                 with col1:
                     col1a, col1b = st.columns([2,1])
                 with col1a:
-                    st.markdown(f"""<div class="info-message-small-gray">
+                    st.markdown(f"""<div class="info-message-gray">
                             {inner_html}
                         <div>""", unsafe_allow_html=True)
                     st.write("")
@@ -1199,7 +1196,7 @@ with tab2:
 
     if not tm_dict:
         with col1a:
-            st.markdown(f"""<div class="info-message-small-gray">
+            st.markdown(f"""<div class="info-message-gray">
                 🔒 No TriplesMaps in mapping {st.session_state["g_label"]}.<br>
                 You can add new TriplesMaps in the <b>Add TriplesMap</b> panel.
                     </div>""", unsafe_allow_html=True)
@@ -1209,7 +1206,7 @@ with tab2:
         with col1:
             col1a, col2a = st.columns([2,0.5])
         with col1a:
-            st.markdown(f"""<div class="info-message-small-gray">
+            st.markdown(f"""<div class="info-message-gray">
                 🔒 <b>All existing TriplesMaps have already been assigned a Subject Map.</b><br>
                 <ul style="margin-top:0.5em; margin-bottom:0; font-size:0.9em; list-style-type: disc; padding-left: 1.2em;">
                     <li>You can add new TriplesMaps in the <b>Add TriplesMap</b> panel.</li>
@@ -1390,7 +1387,6 @@ with tab2:
                                         📐 <b> Build your <b style="color:#F63366;">template</b> and preview it here.</b> <br>
                                     <div style="font-size:13px; color:#666666; margin-top:0.2em;">
                                         🛈 You can add as many parts as you need.
-                                        For <b style="color:#F63366;">🌐 IRI term type</b>, make sure to add a namespace.
                                     </div></div>""", unsafe_allow_html=True)
                                 st.write("")
 
@@ -1405,7 +1401,7 @@ with tab2:
                             with col1a:
 
                                 st.markdown(f"""<div class="error-message">
-                                    ❌ Term type is <b>🌐 IRI</b>: You must <b>add a namespace</b>.
+                                    ❌ Term type is <b>🌐 IRI</b>. <small>You must <b>add a namespace</b>.</small>
                                 </div>""", unsafe_allow_html=True)
                                 st.write("")
 
@@ -1601,9 +1597,9 @@ with tab2:
                     # INFO AND SAVE BUTTON____________________________________
                     if sm_complete_flag == "✔️ Yes":
                         with col1c:
-                            st.markdown(f"""<div class="info-message-small-gray">
-                                ℹ️ All required fields are complete.<br>
-                                <small>🧐 Double-check the information before saving.</smalL> </div>
+                            st.markdown(f"""<div class="success-message">
+                                🧐  All <b>required fields (*)</b> are complete.
+                                <small>Double-check the information before saving.</smalL> </div>
                             """, unsafe_allow_html=True)
                             st.write("")
                             if sm_generation_rule == "Template 📐":
@@ -1615,8 +1611,8 @@ with tab2:
 
                     else:
                         with col1c:
-                            st.markdown(f"""<div class="info-message-small-gray">
-                                    ℹ️ All <b>required fields (*)</b> must be filled in order to save the Subject Map.
+                            st.markdown(f"""<div class="warning-message">
+                                    ⚠️ All <b>required fields (*)</b> must be filled in order to save the Subject Map.
                                 </div>""", unsafe_allow_html=True)
                             st.write("")
 
@@ -1719,7 +1715,7 @@ with tab2:
                 with col1:
                     col1a, col1b = st.columns([2,1])
                 with col1b:
-                    st.markdown(f"""<div class="info-message-small-gray">
+                    st.markdown(f"""<div class="info-message-gray">
                             <b> 🆔 Term type </b>: <br>
                              Indicates the target graph for the subject map triples.
                              If not given, the default graph will be used.
@@ -1755,7 +1751,7 @@ with tab2:
                 with col1:
                     col1a, col1b = st.columns([2,1])
                 with col1b:
-                    st.markdown(f"""<div class="info-message-small-gray">
+                    st.markdown(f"""<div class="info-message-gray">
                             <b> 🏷️ Subject class </b>: <br>
                              Declares the ontology-based class of the generated subjects.
                         </div>""", unsafe_allow_html=True)
@@ -1927,7 +1923,7 @@ with tab2:
                 with col1:
                     col1a, col1b = st.columns([2,1])
                 with col1b:
-                    st.markdown(f"""<div class="info-message-small-gray">
+                    st.markdown(f"""<div class="info-message-gray">
                             <b> 🗺️️ Graph map </b>: <br>
                              Indicates the target graph for the subject map triples.
                         </div>""", unsafe_allow_html=True)
@@ -2083,7 +2079,7 @@ with tab2:
 
             if not sm_to_remove_label_list:
                 with col1b:
-                    st.markdown(f"""<div class="info-message-small-gray">
+                    st.markdown(f"""<div class="info-message-gray">
                             ℹ️ The selected <b>Subject Maps</b> will be deleted, and
                             therefore unassigned from their <b>TriplesMaps</b>.
                         </div>""", unsafe_allow_html=True)
@@ -2144,7 +2140,7 @@ with tab2:
                 col1a, col1b = st.columns([2,1])
             with col1a:
                 if sm_to_remove_label_list:
-                    st.markdown(f"""<div class="info-message-small-gray">
+                    st.markdown(f"""<div class="info-message-gray">
                             {inner_html}
                         </div>""", unsafe_allow_html=True)
                     st.write("")
@@ -2205,7 +2201,7 @@ with tab2:
 
             if not tm_to_unassign_sm_list_input:
                 with col1b:
-                    st.markdown(f"""<div class="info-message-small-gray">
+                    st.markdown(f"""<div class="info-message-gray">
                             ℹ️ The selected <b>Subject Maps</b> will be detached from their
                             <b>TriplesMaps</b>, and permanently removed if they are not assigned to any other.
                         </div>""", unsafe_allow_html=True)
@@ -2266,7 +2262,7 @@ with tab2:
                 col1a, col1b = st.columns([2,1])
             if tm_to_unassign_sm_list:
                 with col1a:
-                    st.markdown(f"""<div class="info-message-small-gray">
+                    st.markdown(f"""<div class="info-message-gray">
                             {inner_html}
                         </div>""", unsafe_allow_html=True)
             with col1a:
@@ -2430,9 +2426,9 @@ with tab3:
 
             if not tm_label_for_pom in tm_w_sm_list:
                 sm_label_for_pom = ""
-                with col1:
+                with col1a:
                     st.markdown(f"""<div class="warning-message">
-                            ⚠️ TriplesMap <b>tm4</b> has no Subject Map.
+                            ⚠️ TriplesMap <b>{tm_label_for_pom}</b> has no Subject Map.
                             <small>It will be invalid without one.</small>
                         </div>""", unsafe_allow_html=True)
                     st.write("")
@@ -2647,7 +2643,6 @@ with tab3:
                                 📐 <b> Build your <b style="color:#F63366;">template</b> and preview it here.</b> <br>
                             <div style="font-size:13px; color:#666666; margin-top:0.2em;">
                                 🛈 You can add as many parts as you need.
-                                For <b style="color:#F63366;">🌐 IRI term type</b>, make sure to add a namespace.
                             </div></div>""", unsafe_allow_html=True)
                         st.write("")
 
@@ -2661,7 +2656,7 @@ with tab3:
                     with col3a:
 
                         st.markdown(f"""<div class="error-message">
-                            ❌ Term type is <b>🌐 IRI</b>: You must <b>add a namespace</b>.
+                            ❌ Term type is <b>🌐 IRI</b>. <small>You must <b>add a namespace</b></small>.
                         </div>""", unsafe_allow_html=True)
                         st.write("")
 
@@ -2834,8 +2829,9 @@ with tab3:
 
                 pom_complete_flag = "✔️ Yes" if selected_p_label != "Select a predicate" else "❌ No"
                 selected_p_label_display = selected_p_label if selected_p_label != "Select a predicate" else ""
-                p_ont = utils.get_ontology_identifier(selected_p_iri)
-                selected_p_label_display += " (" + p_ont + ")" if p_ont else selected_p_label_display
+                if selected_p_label != "Select a predicate":
+                    p_ont = utils.get_ontology_identifier(selected_p_iri)
+                    selected_p_label_display += " (" + p_ont + ")" if p_ont else selected_p_label_display
 
                 inner_html += f"""<tr><td><b>Predicate*</b></td><td>{selected_p_label_display}</td></tr>"""
 
@@ -2995,9 +2991,9 @@ with tab3:
 
             if pom_complete_flag == "✔️ Yes" and om_complete_flag == "✔️ Yes":
                 with col4:
-                    st.markdown(f"""<div class="info-message-small-gray">
-                        ℹ️ All required fields are complete.<br>
-                        <small>🧐 Double-check the information before saving.</smalL> </div>
+                    st.markdown(f"""<div class="success-message">
+                        🧐  All <b>required fields (*)</b> are complete.
+                        <small>Double-check the information before saving.</smalL> </div>
                     """, unsafe_allow_html=True)
                     st.write("")
                     st.session_state["pom_iri_to_create"] = pom_iri    # otherwise it will change value in the on_click function
@@ -3012,8 +3008,8 @@ with tab3:
                         save_pom_bnode_button = st.button("Save", on_click=save_bnode_bnode, key="key_save_pom_bnode_button")
             else:
                 with col4:
-                    st.markdown(f"""<div class="info-message-small-gray">
-                            ℹ️ All <b>required fields (*)</b> must be filled in order to save the Subject Map.
+                    st.markdown(f"""<div class="warning-message">
+                            ⚠️ All <b>required fields (*)</b> must be filled in order to save the Subject Map.
                         </div>""", unsafe_allow_html=True)
                     st.write("")
 

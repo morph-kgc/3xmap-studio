@@ -778,8 +778,7 @@ with tab2:
         col2a,col2b = st.columns([2,1.5])
     with col2b:
         st.write("")
-        st.write("")
-        st.markdown("""<div class="info-message-subtle-gray">
+        st.markdown("""<div class="info-message-gray">
         🐢 Certain options in this panel can be a bit slow, some patience may be required.
             </div>""", unsafe_allow_html=True)
 
@@ -815,7 +814,7 @@ with tab2:
                 with col1b:
                     st.write("")
                     st.markdown(f"""<div class="error-message">
-                        ❌ URL does not link to a valid ontology.
+                        ❌ <b>URL does not link to a valid ontology.</b>
                     </div>""", unsafe_allow_html=True)
                     st.write("")
 
@@ -865,7 +864,7 @@ with tab2:
                     st.write("")
                     st.write("")
                     st.markdown(f"""<div class="error-message">
-                        ❌ File does not contain a valid ontology.
+                        ❌ <b>File does not contain a valid ontology</b>.
                     </div>""", unsafe_allow_html=True)
                     st.write("")
 
@@ -873,11 +872,11 @@ with tab2:
                 with col1b:
                     st.write("")
                     st.write("")
-                    st.markdown(f"""<div class="success-message-small">
+                    st.markdown(f"""<div class="success-message">
                             ✔️ Valid ontology: <b style="color:#F63366;">
                             {st.session_state["g_ontology_from_file_candidate_label"]}</b>
                             (parsed successfully with format
-                            <b>{st.session_state["g_ontology_from_file_candidate_fmt"]}.</b>)
+                            <b>{st.session_state["g_ontology_from_file_candidate_fmt"]}</b>).
                         </div>""", unsafe_allow_html=True)
 
                 with col1a:
@@ -915,7 +914,7 @@ with tab2:
                     with col1b:
                         st.write("")
                         st.markdown(f"""<div class="error-message">
-                            ❌ URL does not link to a valid ontology.
+                            ❌ <b>URL does not link to a valid ontology.</b>
                         </div>""", unsafe_allow_html=True)
                         st.write("")
 
@@ -1218,36 +1217,38 @@ with tab3:
                 if prefix_input in ontology_ns_dict:
                     with col1a:
                         st.markdown(f"""<div class="error-message">
-                            ❌ <b> Prefix {prefix_input} is contained in the ontology: </b> <br>
-                            You can either choose a different prefix or bind {prefix_input} directly from the ontology namespaces option.
+                            ❌ <b> Prefix {prefix_input} is contained in the ontology. </b>
+                            <small>You can either choose a different prefix or bind {prefix_input}
+                            directly from the ontology namespaces option.</small>
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                 elif prefix_input in predefined_ns_dict:
                     with col1a:
                         st.markdown(f"""<div class="error-message">
-                            ❌ <b> Prefix {prefix_input} is tied to a predefined namespace: </b> <br>
-                            You can either choose a different prefix or bind {prefix_input} directly from the predefined namespaces option.
+                            ❌ <b> Prefix {prefix_input} is tied to a predefined namespace. </b>
+                            <small>You can either choose a different prefix or bind {prefix_input}
+                            directly from the predefined namespaces option.</small
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                 elif prefix_input in default_ns_dict:
                     with col1a:
                         st.markdown(f"""<div class="error-message">
-                            ❌ <b> Prefix {prefix_input} is tied to a default namespace: </b> <br>
-                            You must choose a different prefix.
+                            ❌ <b> Prefix {prefix_input} is tied to a default namespace. </b>
+                            <small>You must choose a different prefix.</small>
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                 elif prefix_input in default_structural_ns_dict:
                     with col1a:
                         st.markdown(f"""<div class="error-message">
-                            ❌ <b> Prefix {prefix_input} is tied to a default structural namespace: </b> <br>
-                            You must choose a different prefix.
+                            ❌ <b> Prefix {prefix_input} is tied to a default structural namespace. </b>
+                            <small>You must choose a different prefix.</small>
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                 elif prefix_input in mapping_ns_dict:
                     with col1a:
                         st.markdown(f"""<div class="error-message">
-                            ❌ <b> Prefix {prefix_input} is already in use: </b> <br>
-                            You can either choose a different prefix or unbind {prefix_input} to reassing it.
+                            ❌ <b> Prefix {prefix_input} is already in use. </b>
+                            <small>You can either choose a different prefix or unbind {prefix_input} to reassing it.</small>
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                 else:
@@ -1258,44 +1259,47 @@ with tab3:
                 if iri_input in ontology_ns_dict.values():
                     with col1a:
                         st.markdown(f"""<div class="error-message">
-                            ❌ <b> Namespace is contained in the ontology: </b> <br>
-                            You can either choose a different IRI or bind {iri_input} directly from the ontology namespaces option.
+                            ❌ <b> Namespace is contained in the ontology. </b>
+                            <small>You can either choose a different IRI or bind {iri_input}
+                            directly from the ontology namespaces option.</small>
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                 elif iri_input in predefined_ns_dict.values():
                     with col1a:
                         st.markdown(f"""<div class="error-message">
-                            ❌ <b> IRI matches a predefined namespace: </b> <br>
-                            You can either choose a different IRI or bind {iri_input} directly from the predefined namespaces option.
+                            ❌ <b> IRI matches a predefined namespace. </b>
+                            <small>You can either choose a different IRI or bind {iri_input}
+                            directly from the predefined namespaces option.</small>
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                 elif iri_input in default_ns_dict.values():
                     with col1a:
                         st.markdown(f"""<div class="error-message">
-                            ❌ <b> IRI matches a default namespace: </b> <br>
-                            You must choose a different IRI.
+                            ❌ <b> IRI matches a default namespace. </b>
+                            <small>You must choose a different IRI.</small>
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                 elif iri_input in default_structural_ns_dict.values():
                     with col1a:
                         st.markdown(f"""<div class="error-message">
-                            ❌ <b> IRI matches a default structural namespace: </b> <br>
-                            You must choose a different IRI.
+                            ❌ <b> IRI matches a default structural namespace. </b>
+                            <small>You must choose a different IRI.</small>
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                 elif URIRef(iri_input) in mapping_ns_dict.values():
                     with col1a:
                         st.markdown(f"""<div class="error-message">
-                            ❌ <b> Namespace is already in use: </b> <br>
-                            You can either choose a different IRI or unbind {iri_input} to reassing it.
+                            ❌ <b> Namespace is already in use. </b>
+                            <small>You can either choose a different IRI or unbind {iri_input}
+                            to reassing it.</small>
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                 elif not utils.is_valid_iri(iri_input):
                     with col1a:
                         st.markdown(f"""<div class="error-message">
-                            ❌ <b> Invalid IRI: </b> <br>
-                            Please make sure it statrs with a valid scheme (e.g., http, https), includes no illegal characters
-                            and ends with a delimiter (/, # or :).
+                            ❌ <b> Invalid IRI. </b>
+                            <small>Please make sure it starts with a valid scheme (e.g., http, https), includes no illegal characters
+                            and ends with a delimiter (/, # or :).</small>
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                 else:
@@ -1323,9 +1327,8 @@ with tab3:
 
             if not there_are_predefined_ns_unbound_flag:
                 with col1a:
-                    st.write("")
-                    st.markdown(f"""<div class="error-message">
-                        ❌ All <b>predefined namespaces<b> are already bound.
+                    st.markdown(f"""<div class="info-message-gray">
+                        🔒 All <b>predefined namespaces<b> are already bound.
                     </div>""", unsafe_allow_html=True)
                     st.write("")
             else:
@@ -1440,8 +1443,8 @@ with tab3:
             if not there_are_ontology_ns_unbound_flag:
                 with col1a:
                     st.write("")
-                    st.markdown(f"""<div class="error-message">
-                        ❌ All <b>ontology namespaces</b> are already bound.
+                    st.markdown(f"""<div class="info-message-gray">
+                        🔒 All <b>ontology namespaces</b> are already bound.
                     </div>""", unsafe_allow_html=True)
                     st.write("")
             else:
@@ -1604,12 +1607,13 @@ with tab3:
                         key="key_selected_structural_component")
 
                 if selected_structural_component != "Select a component":
-                    with col1a:
+                    with col1:
                         st.markdown(f"""<div class="gray-preview-message">
                                 🔒 {selected_structural_component} base IRI:<br>
-                                <b style="color:#F63366;">
-                                {st.session_state["structural_ns_dict"][selected_structural_component][1]}</b>
-                                <b>({st.session_state["structural_ns_dict"][selected_structural_component][0]})</b><br>
+                                <span style="font-size:0.92em;"><b>
+                                🔗 {st.session_state["structural_ns_dict"][selected_structural_component][0]}</b> →
+                                <b style="color:#F63366;">{st.session_state["structural_ns_dict"][selected_structural_component][1]}
+                                </span></b><br>
                                 <small>To change it, enter another option below.</small>
                             </div>""", unsafe_allow_html=True)
                         st.write("")
@@ -1628,29 +1632,30 @@ with tab3:
                             if structural_ns_prefix_candidate in ontology_ns_dict:
                                 with col1a:
                                     st.markdown(f"""<div class="error-message">
-                                        ❌ <b> Prefix {structural_ns_prefix_candidate} is contained in the ontology: </b> <br>
-                                        You must choose a different prefix.
+                                        ❌ <b> Prefix {structural_ns_prefix_candidate} is contained in the ontology. </b>
+                                        <small>You must choose a different prefix.</small>
                                     </div>""", unsafe_allow_html=True)
                                     st.write("")
                             elif structural_ns_prefix_candidate in predefined_ns_dict:
                                 with col1a:
                                     st.markdown(f"""<div class="error-message">
-                                        ❌ <b> Prefix {structural_ns_prefix_candidate} is tied to a predefined namespace: </b> <br>
-                                        You must choose a different prefix.
+                                        ❌ <b> Prefix {structural_ns_prefix_candidate} is tied to a predefined namespace. </b>
+                                        <small>You must choose a different prefix.</small>
                                     </div>""", unsafe_allow_html=True)
                                     st.write("")
                             elif structural_ns_prefix_candidate in default_ns_dict:
                                 with col1a:
                                     st.markdown(f"""<div class="error-message">
-                                        ❌ <b> Prefix {structural_ns_prefix_candidate} is tied to a default namespace: </b> <br>
-                                        You must choose a different prefix.
+                                        ❌ <b> Prefix {structural_ns_prefix_candidate} is tied to a default namespace. </b>
+                                        <small>You must choose a different prefix.</small>
                                     </div>""", unsafe_allow_html=True)
                                     st.write("")
                             elif structural_ns_prefix_candidate in mapping_ns_dict:
                                 with col1a:
                                     st.markdown(f"""<div class="error-message">
-                                        ❌ <b> Prefix {prefix_input} is already in use: </b> <br>
-                                        You can either choose a different prefix or unbind {structural_ns_prefix_candidate} to reassing it.
+                                        ❌ <b> Prefix {prefix_input} is already in use. </b>
+                                        <small>You can either choose a different prefix or unbind
+                                        {structural_ns_prefix_candidate} to reassing it.</small>
                                     </div>""", unsafe_allow_html=True)
                                     st.write("")
                             else:
@@ -1661,37 +1666,39 @@ with tab3:
                             if structural_ns_iri_candidate in ontology_ns_dict.values():
                                 with col1a:
                                     st.markdown(f"""<div class="error-message">
-                                        ❌ <b> Namespace is contained in the ontology: </b> <br>
-                                        You must choose a different IRI.
+                                        ❌ <b> Namespace is contained in the ontology. </b>
+                                        <small>You must choose a different IRI.</small>
                                     </div>""", unsafe_allow_html=True)
                                     st.write("")
                             elif structural_ns_iri_candidate in predefined_ns_dict.values():
                                 with col1a:
                                     st.markdown(f"""<div class="error-message">
-                                        ❌ <b> IRI matches a predefined namespace: </b> <br>
-                                        You must choose a different IRI.
+                                        ❌ <b> IRI matches a predefined namespace. </b>
+                                        <small>You must choose a different IRI.</small>
                                     </div>""", unsafe_allow_html=True)
                                     st.write("")
                             elif structural_ns_iri_candidate in default_ns_dict.values():
                                 with col1a:
                                     st.markdown(f"""<div class="error-message">
-                                        ❌ <b> IRI matches a default namespace: </b> <br>
-                                        You must choose a different IRI.
+                                        ❌ <b> IRI matches a default namespace. </b>
+                                        <small>You must choose a different IRI.</small>
                                     </div>""", unsafe_allow_html=True)
                                     st.write("")
                             elif URIRef(iri_input) in mapping_ns_dict.values():
                                 with col1a:
                                     st.markdown(f"""<div class="error-message">
-                                        ❌ <b> Namespace is already in use: </b> <br>
-                                        You can either choose a different IRI or unbind {structural_ns_iri_candidate} to reassing it.
+                                        ❌ <b> Namespace is already in use. </b>
+                                        <small>You can either choose a different IRI or unbind
+                                        {structural_ns_iri_candidate} to reassing it.</small>
                                     </div>""", unsafe_allow_html=True)
                                     st.write("")
                             elif not utils.is_valid_iri(structural_ns_iri_candidate):
                                 with col1a:
                                     st.markdown(f"""<div class="error-message">
-                                        ❌ <b> Invalid IRI: </b> <br>
-                                        Please make sure it statrs with a valid scheme (e.g., http, https), includes no illegal characters
-                                        and ends with a delimiter (/, # or :).
+                                        ❌ <b> Invalid IRI. </b>
+                                        <small>Please make sure it statrs with a valid scheme (e.g., http, https),
+                                        includes no illegal characters
+                                        and ends with a delimiter (/, # or :).</small>
                                     </div>""", unsafe_allow_html=True)
                                     st.write("")
                             else:
@@ -1709,11 +1716,12 @@ with tab3:
                                 st.button("Confirm", key="key_change_structural_ns_button", on_click=change_structural_ns)
 
                     if not structural_ns_iri_candidate and not structural_ns_prefix_candidate:
-                        with col1a:
-                            default_structural_ns_session_state = utils.get_default_structural_ns_session_state()
-                            structural_ns_prefix_candidate = default_structural_ns_session_state[selected_structural_component][0]
-                            structural_ns_iri_candidate = default_structural_ns_session_state[selected_structural_component][1]
-                            st.button("Set to default", key="key_structural_ns_set_to_default_button", on_click=change_structural_ns)
+                        if st.session_state["structural_ns_dict"][selected_structural_component] != utils.get_default_structural_ns_session_state()[selected_structural_component]:
+                            with col1a:
+                                default_structural_ns_session_state = utils.get_default_structural_ns_session_state()
+                                structural_ns_prefix_candidate = default_structural_ns_session_state[selected_structural_component][0]
+                                structural_ns_iri_candidate = default_structural_ns_session_state[selected_structural_component][1]
+                                st.button("Set to default", key="key_structural_ns_set_to_default_button", on_click=change_structural_ns)
 
 
 
@@ -1760,56 +1768,57 @@ with tab3:
                 mapping_ns_list.append("Select all")
 
             with col1:
-                col1a, col1b = st.columns([2,1.2])
+                col1a, col1b = st.columns([2,1])
                 with col1a:
                     ns_to_unbind_list = st.multiselect("🖱️ Select namespace/s to unbind:*", reversed(mapping_ns_list), key="key_unbind_multiselect")
 
+
             if ns_to_unbind_list and "Select all" not in ns_to_unbind_list:
+
                 # create a single info message
                 inner_html = ""
-                max_length = 6
+                max_length = utils.get_max_length_for_display()[4]
+                formatted_ns_to_unbind = utils.format_list_for_markdown(ns_to_unbind_list)
                 if len(ns_to_unbind_list) <= max_length:
                     for prefix in ns_to_unbind_list:
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            <b>🔗 {prefix}</b> → {mapping_ns_dict[prefix]}
+                        inner_html += f"""<div style="margin-bottom:4px;">
+                            <small><b>🔗 {prefix}</b> → {mapping_ns_dict[prefix]}</small>
                         </div>"""
                     # wrap it all in a single info box
-                    full_html = f"""<div class="info-message-small-gray">
+                    full_html = f"""<div class="info-message-gray">
                         {inner_html}</div>"""
 
                 else:   # many sm to remove
                     for prefix in ns_to_unbind_list[:max_length]:
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            <b>🔗 {prefix}</b> → {mapping_ns_dict[prefix]}
+                        inner_html += f"""<div style="margin-bottom:4px;">
+                            <small><b>🔗 {prefix}</b> → {mapping_ns_dict[prefix]}</small>
                         </div>"""
-                    inner_html += f"""<div style="margin-bottom:6px;">
-                        🔗 ...
+                    inner_html += f"""<div style="margin-bottom:4px;">
+                        <small>🔗 ... <b>(+{len(ns_to_unbind_list[:max_length])})</b></small>
                     </div>"""
                     # wrap it all in a single info box
-                    full_html = f"""<div class="info-message-small-gray">
+                    full_html = f"""<div class="info-message-gray">
                         {inner_html}</div>"""
                 # render
                 if len(ns_to_unbind_list) > 0:
                     with col1a:
                         st.markdown(full_html, unsafe_allow_html=True)
-
-                with col1a:
-                    formatted_ns_to_unbind = utils.format_list_for_markdown(ns_to_unbind_list)
-                    st.write("")
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ The namespaces <b>{formatted_ns_to_unbind}</b> will be deleted.
-                        </div>""", unsafe_allow_html=True)
-                    st.write("")
-
                 with col1a:
                     st.write("")
-                    st.button(f"Unbind", key="key_unbind_ns_button", on_click=unbind_namespaces)
+                    unbind_ns_button_checkbox = st.checkbox(
+                    ":gray-badge[⚠️ I want to unbind the namespaces]",
+                    key="key_unbind_all_ns_button_checkbox")
+                    if unbind_ns_button_checkbox:
+                        st.button(f"Unbind", key="key_unbind_ns_button", on_click=unbind_namespaces)
 
 
             elif ns_to_unbind_list:    # unbind all namespaces
+                with col1:
+                    col1a, col1b = st.columns([2,1])
+
                 # create a single info message
                 inner_html = ""
-                max_length = 4
+                max_length = utils.get_max_length_for_display()[4]
                 if len(mapping_ns_dict) <= max_length:
                     for prefix in mapping_ns_dict:
                         if prefix != "Select all":
@@ -1817,33 +1826,31 @@ with tab3:
                                 🔗 <b>{prefix}</b> → {mapping_ns_dict[prefix]}
                             </div>"""
                     # wrap it all in a single info box
-                    full_html = f"""<div class="info-message-small-gray">
+                    full_html = f"""<div class="info-message-gray">
                         {inner_html}</div>"""
 
                 else:   # many sm to remove
                     for prefix in list(mapping_ns_dict)[:max_length]:
                         if prefix != "Select all":
-                            inner_html += f"""<div style="margin-bottom:6px;">
-                                🔗 <b>{prefix}</b> → {mapping_ns_dict[prefix]}
+                            inner_html += f"""<div style="margin-bottom:2px;">
+                                <small>🔗 <b>{prefix}</b> → {mapping_ns_dict[prefix]}</small>
                             </div>"""
-                    inner_html += f"""<div style="margin-bottom:6px;">
-                        🔗 ...
+                    inner_html += f"""<div style="margin-bottom:2px;">
+                        <small>🔗 ... <b>(+{len(list(mapping_ns_dict)[:max_length])})</b></small>
                     </div>"""
                     # wrap it all in a single info box
-                    full_html = f"""<div class="info-message-small-gray">
+                    full_html = f"""<div class="info-message-gray">
                         {inner_html}</div>"""
                 # render
                 with col1a:
                     st.markdown(full_html, unsafe_allow_html=True)
+                with col1b:
+                    st.markdown(f"""<div class="warning-message">
+                        ⚠️ You are deleting <b>all namespaces</b>.
+                        Make sure you want to go ahead.
+                    </div>""", unsafe_allow_html=True)
 
                 with col1a:
-                    formatted_mapping_ns = utils.format_list_for_markdown(list(mapping_ns_dict))
-                    st.write("")
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ The namespaces <b>{formatted_mapping_ns}</b> will be deleted.<br>
-                            ⚠️ You are deleting <b>all namespaces</b>.
-                            Make sure you want to go ahead.
-                        </div>""", unsafe_allow_html=True)
                     st.write("")
                     unbind_all_ns_button_checkbox = st.checkbox(
                     ":gray-badge[⚠️ I want to unbind all namespaces]",
@@ -1992,30 +1999,30 @@ with tab4:
 
         if st.session_state["g_label"] and export_filename:
             if tm_wo_sm_list or tm_wo_pom_list:
-                max_length = 20
+                max_length = utils.get_max_length_for_display()[5]
 
-                inner_html = f"""<div style="font-size:1.1em; font-weight:bold;">
-                    🚧 The mapping <b>{st.session_state["g_label"]}</b> is incomplete!</div><br>"""
+                inner_html = f"""⚠️ The mapping <b>{st.session_state["g_label"]}</b> is incomplete!
+                    <br>"""
 
                 if tm_wo_sm_list:
                     if len(tm_wo_sm_list) < max_length:
                         tm_wo_sm_list_display = utils.format_list_for_markdown(tm_wo_sm_list)
-                        inner_html += f"""The TriplesMaps <b>{tm_wo_sm_list_display}</b> have not been assigned
-                        a Subject Map.<br>"""
+                        inner_html += f"""<small>The TriplesMaps <b>{tm_wo_sm_list_display}</b> have not been assigned
+                        a Subject Map.</small><br>"""
                     else:
-                        inner_html += f"""<b>{len(tm_wo_sm_list)} TriplesMaps</b> have not been assigned
-                        a Subject Map.<br>"""
+                        inner_html += f"""<small><b>{len(tm_wo_sm_list)} TriplesMaps</b> have not been assigned
+                        a Subject Map.</small><br>"""
 
                 if tm_wo_pom_list:
                     if len(tm_wo_pom_list) < max_length:
                         tm_wo_pom_list_display = utils.format_list_for_markdown(tm_wo_pom_list)
-                        inner_html += f"""The TriplesMaps <b>{tm_wo_pom_list_display}</b> have not been assigned
-                        a Predicate-Object Map.<br>"""
+                        inner_html += f"""<small>The TriplesMaps <b>{tm_wo_pom_list_display}</b> have not been assigned
+                        a Predicate-Object Map.</small><br>"""
                     else:
-                        inner_html += f"""<b>{len(tm_wo_pom_list)} TriplesMaps</b> have not been assigned
-                        a Predicate-Object Map.<br>"""
+                        inner_html += f"""<small><b>{len(tm_wo_pom_list)} TriplesMaps</b> have not been assigned
+                        a Predicate-Object Map.</small><br>"""
 
-                full_html = f"""<div class="warning-message-orange">
+                full_html = f"""<div class="warning-message">
                         {inner_html}
                     </div>"""
 
@@ -2024,6 +2031,7 @@ with tab4:
 
 
         with col1:
+            st.write("________")
             st.markdown("""<div class="purple-heading">
                     💾 Save session
                 </div>""", unsafe_allow_html=True)
