@@ -57,8 +57,6 @@ if "tm_deleted_ok_flag" not in st.session_state:
     st.session_state["tm_deleted_ok_flag"] = False
 if "removed_tm_list" not in st.session_state:
     st.session_state["removed_tm_list"] = []
-if "ds_cache_dict" not in st.session_state:
-    st.session_state["ds_cache_dict"] = {}
 
 #TAB2
 if "key_ds_uploader_for_sm" not in st.session_state:
@@ -128,20 +126,18 @@ def save_tm_w_non_relational_ls():
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    #bind to logical source
     st.session_state["g_mapping"].add((ls_iri, RML.source, Literal(ds_filename)))    #bind ls to source file
     file_extension = ds_filename.rsplit(".", 1)[-1]    # bind to reference formulation
-    if file_extension.lower() == "csv":
+    if file_extension.lower() in ["csv", "tsv"]:
         st.session_state["g_mapping"].add((ls_iri, QL.referenceFormulation, QL.CSV))
-    elif file_extension.lower() == "json":
-        st.session_state["g_mapping"].add((ls_iri, QL.referenceFormulation, QL.JSONPath))
-    elif file_extension.lower() == "xml":
-        st.session_state["g_mapping"].add((ls_iri, QL.referenceFormulation, QL.XPath))
-    st.session_state["g_mapping"].add((tm_iri, RDF.type, RR.TriplesMap))
+    elif file_extension.lower() == "xlsx":
+        st.session_state["g_mapping"].add((ls_iri, QL.referenceFormulation, QL.Excel))
+    elif file_extension.lower() == "parquet":
+        st.session_state["g_mapping"].add((ls_iri, QL.referenceFormulation, QL.Parquet))
+    elif file_extension.lower() == "orc":
+        st.session_state["g_mapping"].add((ls_iri, QL.referenceFormulation, QL.ORC))
+    st.session_state["g_mapping"].add((tm_iri, RDF.type, RR.TriplesMap))   #HEREIGO
     # store information____________________
     st.session_state["tm_saved_ok_flag"] = True  # for success message
     st.session_state["last_added_tm_list"].insert(0, st.session_state["tm_label"])    # to display last added tm
-    if file_extension.lower() == "csv":
-        columns_df = pd.read_csv(ds_file)
-        ds_file.seek(0)
-        st.session_state["ds_cache_dict"][Literal(ds_file.name)] = columns_df.columns.tolist()
     # reset fields_______________________
     st.session_state["key_tm_label_input"] = ""
     st.session_state["key_ds_uploader"] = str(uuid.uuid4())

@@ -1068,10 +1068,10 @@ with tab3:
                 else:
                     st.button("Save", key="key_save_ds_file_button", on_click=save_ds_file)
 
-            except:    # empty file
+            except Exception as e:    # empty file
                 with col1a:
                     st.markdown(f"""<div class="error-message">
-                        ❌ The file <b>{ds_file.name}</b> appears to be empty or corrupted. Please load a valid file.
+                        ❌ The file <b>{ds_file.name}</b> appears to be empty or corrupted. Please load a valid file. {e}
                     </div>""", unsafe_allow_html=True)
                     st.write("")
 
