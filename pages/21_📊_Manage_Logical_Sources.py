@@ -900,13 +900,13 @@ with tab3:
             col1a, col1b = st.columns([2,1])
 
         if not st.session_state["db_connections_dict"]:
-            view_table_option = "🛢️ Non-SQL data"
+            view_table_option = "🛢️ Tabular data"
         elif not st.session_state["ds_files_dict"]:
             view_table_option = "📊 SQL Database"
         else:
             with col1b:
                 st.write("")
-                view_table_option = st.radio("", ["📊 SQL Database", "🛢️ Non-SQL data"],
+                view_table_option = st.radio("", ["📊 SQL Database", "🛢️ Tabular data"],
                     label_visibility="collapsed", key="key_view_table_option")
 
 
@@ -1015,7 +1015,7 @@ with tab3:
                         cur.close()
                         conn.close()
 
-        if view_table_option == "🛢️ Non-SQL data":
+        if view_table_option == "🛢️ Tabular data":
 
             with col1a:
                 list_to_choose = list(reversed(list(st.session_state["ds_files_dict"].keys())))

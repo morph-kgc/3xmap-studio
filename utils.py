@@ -487,11 +487,16 @@ RML, RR, QL = get_required_ns().values()
 # HERE expand options, now reduced version
 def get_g_mapping_file_formats_dict():
     # allowed_format_dict = {"turtle": ".ttl", "rdf": ".rdf","xml": ".xml",
-    #     "json": ".json", "json-ld": ".jsonld", "n-triples": ".nt",
+    #     "json": ".json", "jsonld": ".jsonld", "ntriples": ".nt",
     #     "n3": ".n3","trig": ".trig","trix": ".trix"}
 
-    allowed_format_dict = {"turtle": ".ttl","xml": ".xml",
-        "n-triples": ".nt", "n3": ".n3","trig": ".trig"}
+    # allowed_format_dict = {"turtle": ".ttl","xml": ".xml",
+    #     "ntriples": ".nt", "n3": ".n3", "trig": ".trig"}
+
+    allowed_format_dict = {"turtle": ".ttl",
+        "ntriples": ".nt", "trig": ".trig", "jsonld": ".jsonld"}
+
+    # missing hdt, nquads
 
     return allowed_format_dict
 #_______________________________________________________
@@ -588,7 +593,7 @@ def parse_ontology(source):
     if isinstance(source, IOBase):
         content = source.read()
         source.seek(0)  # reset index so that file can be reused
-        for fmt in ["xml", "turtle", "json-ld", "ntriples", "trig", "trix"]:
+        for fmt in ["xml", "turtle", "jsonld", "ntriples", "trig", "trix"]:
             g = Graph()
             try:
                 g.parse(data=content, format=fmt)
@@ -599,7 +604,7 @@ def parse_ontology(source):
         return [Graph(), None]
 
     # If source is a string (either raw RDF or a file path/URL) - Just URL in our case
-    for fmt in ["xml", "turtle", "json-ld", "ntriples", "trig", "trix"]:
+    for fmt in ["xml", "turtle", "jsonld", "ntriples", "trig", "trix"]:
         g = Graph()
         try:
             g.parse(source, format=fmt)
@@ -655,7 +660,7 @@ def get_ontology_human_readable_name(g, source_link=None, source_file=None):
 def get_g_ontology_file_formats_dict():
 
     allowed_format_dict = {"owl": ".owl", "turtle": ".ttl", "longturtle": ".ttl", "n3": ".n3",
-    "ntriples": ".nt", "nquads": "nq", "trig": ".trig", "json-ld": ".jsonld",
+    "ntriples": ".nt", "nquads": "nq", "trig": ".trig", "jsonld": ".jsonld",
     "xml": ".xml", "pretty-xml": ".xml", "trix": ".trix"}
 
     return allowed_format_dict

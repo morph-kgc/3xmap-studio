@@ -700,9 +700,9 @@ with tab1:
 
             with col1b:
                 if labelled_ls_list:    # if there exist labelled logical sources
-                    ls_options_list = ["📑 Existing Logical Source", "📊 SQL Database", "🛢️ Non-SQL data"]
+                    ls_options_list = ["📑 Existing Logical Source", "📊 SQL Database", "🛢️ Tabular data"]
                 else:
-                    ls_options_list = ["📊 SQL Database", "🛢️ Non-SQL data"]
+                    ls_options_list = ["📊 SQL Database", "🛢️ Tabular data"]
                 ls_option = st.radio("🖱️ Choose the logical source option:*", ls_options_list, horizontal=False)
                 st.write("")
 
@@ -832,7 +832,7 @@ with tab1:
                                 if selected_table_for_ls != "Select a table":
                                     st.button("Save", key="key_save_tm_w_table_name", on_click=save_tm_w_table_name)
 
-            if ls_option == "🛢️ Non-SQL data":
+            if ls_option == "🛢️ Tabular data":
                 with col1a:
                     logical_source_label = st.text_input("⌨️ Enter label for the logical source (optional):")
                     if logical_source_label in labelled_ls_list:
