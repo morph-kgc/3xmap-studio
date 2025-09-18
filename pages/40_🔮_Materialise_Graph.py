@@ -40,7 +40,7 @@ if "morph-kgc_ds_dict" not in st.session_state:
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
 
-tab1, tab2, tab3, tab4 = st.tabs(["Materialise", "Add Data Sources", "Add Mappings"])
+tab1, tab2, tab3 = st.tabs(["Materialise", "Add Data Sources", "Add Mappings"])
 
 
 #________________________________________________
@@ -52,9 +52,28 @@ with tab1:
     with col1:
         col1a, col1b = st.columns([2,1])
 
-    # PURPLE HEADING - ADD NEW CONNECTION
+    # PURPLE HEADING - ADD DATA SOURCE
     with col1:
         st.markdown("""<div class="purple-heading">
-                📊 Add Data Source
+                📊 Configure Data Source
+            </div>""", unsafe_allow_html=True)
+        st.write("")
+
+        with col1:
+            col1a, col1b = st.columns([2,1])
+
+        with col1a:
+            mk_ds_label = st.text_input("⌨️ Enter data source label:*", key="key_mk_ds_label")
+
+        with col1b:
+            st.write("")
+            mk_ds_type = st.radio("🖱️ Select an option:*", ["📊 SQL Database", "🛢️ Non-SQL data"],
+                label_visibility="collapsed", key="key_mk_ds_type")
+
+    # PURPLE HEADING - ADD OPTIONS
+    with col1:
+        st.write("_______")
+        st.markdown("""<div class="purple-heading">
+                ⚙️ Configure Options
             </div>""", unsafe_allow_html=True)
         st.write("")

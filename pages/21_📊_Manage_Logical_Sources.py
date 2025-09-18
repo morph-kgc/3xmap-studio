@@ -896,21 +896,21 @@ with tab3:
                 </div>""", unsafe_allow_html=True)
             st.write("")
 
+        with col1:
+            col1a, col1b = st.columns([2,1])
 
         if not st.session_state["db_connections_dict"]:
             view_table_option = "🛢️ Non-SQL data"
         elif not st.session_state["ds_files_dict"]:
             view_table_option = "📊 SQL Database"
         else:
-            with col1:
+            with col1b:
+                st.write("")
                 view_table_option = st.radio("", ["📊 SQL Database", "🛢️ Non-SQL data"],
-                    label_visibility="collapsed", horizontal=True, key="key_view_table_option")
+                    label_visibility="collapsed", key="key_view_table_option")
 
 
         if view_table_option == "📊 SQL Database":
-
-            with col1:
-                col1a, col1b = st.columns(2)
 
             with col1a:
                 list_to_choose = list(reversed(list(st.session_state["db_connections_dict"].keys())))
@@ -950,8 +950,10 @@ with tab3:
 
                     db_tables = [row[0] for row in cur.fetchall()]
 
+                    with col1:
+                        col1a, col1b = st.columns([1,2])
 
-                    with col1b:
+                    with col1a:
                         list_to_choose = db_tables
                         list_to_choose.insert(0, "Select a table")
                         selected_db_table = st.selectbox("🖱️ Choose a table:*", list_to_choose,
@@ -967,9 +969,7 @@ with tab3:
 
                         df = pd.DataFrame(rows, columns=columns)
 
-                        with col1:
-                            col1a, col1b = st.columns([2,1])
-                        with col1a:
+                        with col1b:
                             column_list = df.columns.tolist()
                             sql_column_filter_list = st.multiselect(f"""🖱️ Select columns (max {utils.get_max_length_for_display()[3]}):""",
                                 column_list, key="key_sql_column_filter")
@@ -1017,8 +1017,6 @@ with tab3:
 
         if view_table_option == "🛢️ Non-SQL data":
 
-            with col1:
-                col1a, col1b = st.columns(2)
             with col1a:
                 list_to_choose = list(reversed(list(st.session_state["ds_files_dict"].keys())))
                 list_to_choose.insert(0, "Select file")
@@ -1032,7 +1030,7 @@ with tab3:
                 df = utils.read_tab_file(tab_filename_for_display)
                 tab_file_for_display.seek(0)
 
-                with col1b:
+                with col1a:
                     column_list = df.columns.tolist()
                     tab_column_filter_list = st.multiselect(f"""🖱️ Select columns (max {utils.get_max_length_for_display()[3]}):""",
                         column_list, key="key_tab_column_filter")
