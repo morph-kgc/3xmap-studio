@@ -184,6 +184,15 @@ def import_st_aesthetics():
     .info-message-gray b {
         color: #111111; font-weight:600;}
 
+    /* INFO MESSAGE BLUE */
+    .info-message-blue {border-left: 4px solid #0c5460;
+        ;padding: 0.4em 0.6em;
+        color: #0c5460; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
+        margin: 0.5em 0; background-color: #eaf4ff;
+        border-radius: 4px; box-sizing: border-box;}
+
+    .info-message-blue b {
+        color: #003366; font-weight:600;}
 
 
 
@@ -204,15 +213,6 @@ def import_st_aesthetics():
 
     .info-message-small-gray b {color: #333333;}
 
-    /* INFO MESSAGE SUBTLE */
-    .custom-info-subtle {border-left: 4px solid #0c5460;
-        ;padding: 0.4em 0.6em;
-        color: #0c5460; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
-        margin: 0.5em 0; background-color: transparent;
-        border-radius: 4px; box-sizing: border-box;}
-
-    .custom-info-subtle b {
-        color: #003366; font-weight:600;}
 
     /* INFO TABLE GRAY */
     .info-table-gray {border-collapse: collapse; width: 100%;
@@ -1483,6 +1483,27 @@ def get_ds_allowed_tab_formats():
     ".sas7bdat", ".sav", ".ods"]
 
     return allowed_tab_formats_list
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to get jdbc str from connection
+def get_jdbc_str(conn):
+
+    [engine, host, port, database, user, password] = st.session_state["db_connections_dict"][conn]
+
+    if engine == "Oracle":
+        jdbc_str = f"jdbc:oracle:thin:@{host}:{port}:{database}"
+    elif engine == "SQL Server":
+        jdbc_str = f"jdbc:sqlserver://{host}:{port};databaseName={database}"
+    elif engine == "PostgreSQL":
+        jdbc_str = f"jdbc:postgresql://{host}:{port}/{database}"
+    elif engine == "MySQL":
+        jdbc_str = f"jdbc:mysql://{host}:{port}/{database}"
+    elif engine =="MariaDB":
+        jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
+
+    return jdbc_str
+
 #_________________________________________________
 
 #_________________________________________________

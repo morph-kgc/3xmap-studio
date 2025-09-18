@@ -1068,7 +1068,7 @@ with tab1:
                 with col1b:
                     st.markdown(f"""<div class="warning-message">
                             ⚠️ If you continue, <b>all TriplesMaps will be deleted</b>.
-                            Make sure you want to go ahead.
+                            <small>Make sure you want to go ahead.</small>
                         </div>""", unsafe_allow_html=True)
                     st.write("")
                 with col1a:
@@ -2076,65 +2076,50 @@ with tab2:
 
             if "Select all" in sm_to_remove_label_list:
                 sm_to_remove_iri_list = labelled_sm_list
+                sm_to_remove_label_list = list(reversed(labelled_sm_dict.keys()))
 
             if not sm_to_remove_label_list:
                 with col1b:
                     st.markdown(f"""<div class="info-message-gray">
-                            ℹ️ The selected <b>Subject Maps</b> will be deleted, and
-                            therefore unassigned from their <b>TriplesMaps</b>.
+                            ℹ️ The selected <b>Subject Maps</b> will be deleted
+                            <small>(and therefore unassigned from their <b>TriplesMaps</b>).</small>
                         </div>""", unsafe_allow_html=True)
                     st.write("")
 
             # create a single info message
-            max_length = 5
-            inner_html = f"""<div style="margin-bottom:6px;">
+            max_length = utils.get_max_length_for_display()[4]
+            inner_html = f"""<div style="margin-bottom:1px;">
                     <b>Subject Map</b> →
                     <b>TriplesMaps</b>
                 </div>"""
-            if len(sm_to_remove_iri_list) <= max_length:
-                for sm in sm_to_remove_iri_list:
-                    sm_label = sm_dict[sm][0]
-                    corresponding_tm_list = sm_dict[sm][4]
-                    if len(corresponding_tm_list) > 1:
-                        formatted_corresponding_tm = ", ".join(corresponding_tm_list[:-1]) + " and " + corresponding_tm_list[-1]
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            🔖 <b>{sm_label}</b> → {formatted_corresponding_tm}
-                        </div>"""
-                    elif len(corresponding_tm_list) == 1:
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            🔖 <b>{sm_label}</b> → {corresponding_tm_list[0]}
-                        </div>"""
-                    else:
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            ❌ The Subject Map <b>{sm_label_for_config}</b> is not assigned to any TriplesMap. Please check your mapping.
-                        </div>"""
-                # wrap it all in a single info box
-                full_html = f"""<div class="info-message-small">
-                    {inner_html}</div>"""
 
-            else:   # many sm to remove
-                for sm in sm_to_remove_iri_list[:max_length]:
-                    sm_label = sm_dict[sm][0]
-                    corresponding_tm_list = sm_dict[sm][4]
-                    if len(corresponding_tm_list) > 1:
-                        formatted_corresponding_tm = ", ".join(corresponding_tm_list[:-1]) + " and " + corresponding_tm_list[-1]
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            🔖 <b>{sm_label}</b> → {formatted_corresponding_tm}
-                        </div>"""
-                    elif len(corresponding_tm_list) == 1:
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            🔖 <b>{sm_label}</b> → {corresponding_tm_list[0]}
-                        </div>"""
-                    else:
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            ❌ The Subject Map <b>{sm_label_for_config}</b> is not assigned to any TriplesMap. Please check your mapping.
-                        </div>"""
-                inner_html += f"""<div style="margin-bottom:6px;">
-                    🔖 ...
+            for sm in sm_to_remove_iri_list[:max_length]:
+                sm_label_to_remove = sm_dict[sm][0]
+                corresponding_tm_list = sm_dict[sm][4]
+                if len(corresponding_tm_list) > 1:
+                    formatted_corresponding_tm = ", ".join(corresponding_tm_list[:-1]) + " and " + corresponding_tm_list[-1]
+                    inner_html += f"""<div style="margin-bottom:1px;">
+                        <small>🔖 <b>{sm_label_to_remove}</b> → {formatted_corresponding_tm}</small>
+                    </div>"""
+                elif len(corresponding_tm_list) == 1:
+                    inner_html += f"""<div style="margin-bottom:1px;">
+                        <small>🔖 <b>{sm_label_to_remove}</b> → {corresponding_tm_list[0]}</small>
+                    </div>"""
+                else:
+                    inner_html += f"""<div style="margin-bottom:1px;">
+                        <small>❌ The Subject Map <b>{sm_label_to_remove}</b> is not assigned to any TriplesMap.
+                        Please check your mapping.</small>
+                    </div>"""
+
+
+            if len(sm_to_remove_iri_list) > max_length:   # many sm to remove
+                inner_html += f"""<div style="margin-bottom:1px;">
+                    <small>🔖 ... (+{len(sm_to_remove_iri_list[:max_length])})</small>
                 </div>"""
-                # wrap it all in a single info box
-                full_html = f"""<div class="info-message-small">
-                    {inner_html}</div>"""
+
+            # wrap it all in a single info box
+            full_html = f"""<div class="info-message-small">
+                {inner_html}</div>"""
 
             with col1:
                 col1a, col1b = st.columns([2,1])
@@ -2148,32 +2133,32 @@ with tab2:
             # render
             if sm_to_remove_iri_list:
 
-                inner_html = f"""ℹ️ """
+
+                inner_html = ""
                 sm_to_remove_label_list_mod = [sm for sm in sm_to_remove_label_list if sm != "Select all"]
                 formatted_sm_to_remove = utils.format_list_for_markdown(sm_to_remove_label_list_mod)
-                if len(sm_to_remove_iri_list) == 1:
-                    inner_html += f"""The Subject Map <b>{formatted_sm_to_remove}</b> will be completely removed."""
-                elif len(sm_to_remove_iri_list) > 1:
-                    inner_html += f"""The Subject Maps <b>{formatted_sm_to_remove}</b> will be completely removed."""
-                if sm_to_remove_iri_list:
-                    with col1b:
-                        st.markdown(f"""<div class="info-message-small">
-                                {inner_html}
-                            <div>""", unsafe_allow_html=True)
-                        st.write("")
+                if len(sm_to_remove_label_list_mod) == 1:
+                    inner_html += f"""ℹ️ The Subject Map <b>{formatted_sm_to_remove}</b> will be completely removed."""
+                elif len(sm_to_remove_label_list_mod) > 1:
+                    inner_html += f"""ℹ️ The Subject Maps <b>{formatted_sm_to_remove}</b> will be completely removed."""
+
+                with col1b:
+                    st.markdown(f"""<div class="info-message-blue">
+                            {inner_html}
+                        <div>""", unsafe_allow_html=True)
 
 
                 if "Select all" in sm_to_remove_label_list:
                     with col1b:
                         st.markdown(f"""<div class="warning-message">
                                 ⚠️ You are deleting <b>all labelled Subject Maps</b>.
-                                Make sure you want to go ahead.
+                                <small>Make sure you want to go ahead.</small>
                             </div>""", unsafe_allow_html=True)
                         st.write("")
                 if len(sm_to_remove_iri_list):
                     with col1a:
                         delete_labelled_sm_checkbox = st.checkbox(
-                        ":gray-badge[⚠️ I am completely sure I want to delete the Subject Map/s]",
+                        ":gray-badge[⚠️ I am sure I want to delete the Subject Map/s]",
                         key="delete_labelled_sm_checkbox")
                     if delete_labelled_sm_checkbox:
                         st.session_state["sm_to_remove_label_list"] = sm_to_remove_label_list
@@ -2203,58 +2188,39 @@ with tab2:
                 with col1b:
                     st.markdown(f"""<div class="info-message-gray">
                             ℹ️ The selected <b>Subject Maps</b> will be detached from their
-                            <b>TriplesMaps</b>, and permanently removed if they are not assigned to any other.
+                            <b>TriplesMaps</b>, and permanently removed
+                            <small>(unless they are assigned to another TriplesMap).</small>
                         </div>""", unsafe_allow_html=True)
                     st.write("")
 
             # create a single info message
-            max_length = 5
-            inner_html = f"""<div style="margin-bottom:6px;">
+            max_length = utils.get_max_length_for_display()[4]
+            inner_html = f"""<div style="margin-bottom:1px;">
                     <b>TriplesMap</b> → <b>Subject Map</b> →
                     <b>Linked TriplesMaps (if any)</b>
                 </div>"""
-            if len(tm_to_unassign_sm_list) <= max_length:
-                for tm in tm_to_unassign_sm_list:
-                    tm_iri = tm_dict[tm]
-                    sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RR.subjectMap)
-                    sm_label = sm_dict[sm_iri][0]
-                    other_tm_with_sm = [split_uri(s)[1] for s, p, o in st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)) if s != tm_iri]
-                    if other_tm_with_sm:
-                        if len(other_tm_with_sm) > 1:
-                            formatted_corresponding_tm = ", ".join(other_tm_with_sm[:-1]) + " and " + other_tm_with_sm[-1]
-                        else:
-                            formatted_corresponding_tm = other_tm_with_sm[0]
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            🔖 {tm} → <b>{sm_label}</b> → {formatted_corresponding_tm}
-                        </div>"""
-                    else:
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            🔖 {tm} →  <b>{sm_label}</b>
-                        </div>"""
-                # wrap it all in a single info box
-                full_html = f"""<div class="info-message-small">
-                    {inner_html}</div>"""
 
-            else:   # many sm to remove
-                for tm in tm_to_unassign_sm_list[:max_length]:
-                    tm_iri = tm_dict[tm]
-                    sm = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RR.subjectMap)
-                    sm_label = sm_dict[sm][0]
-                    other_tm_with_sm = [split_uri(s)[1] for s, p, o in st.session_state["g_mapping"].triples((None, RR.subjectMap, sm)) if s != tm_iri]
-                    if other_tm_with_sm:
-                        if len(other_tm_with_sm) > 1:
-                            formatted_corresponding_tm = ", ".join(other_tm_with_sm[:-1]) + " and " + other_tm_with_sm[-1]
-                        else:
-                            formatted_corresponding_tm = other_tm_with_sm[0]
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            🔖 {tm} → <b>{sm_label}</b> → {formatted_corresponding_tm}
-                        </div>"""
+            for tm in tm_to_unassign_sm_list[:max_length]:
+                tm_iri = tm_dict[tm]
+                sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RR.subjectMap)
+                sm_label_to_unassign = sm_dict[sm_iri][0]
+                other_tm_with_sm = [split_uri(s)[1] for s, p, o in st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)) if s != tm_iri]
+                if other_tm_with_sm:
+                    if len(other_tm_with_sm) > 1:
+                        formatted_corresponding_tm = ", ".join(other_tm_with_sm[:-1]) + " and " + other_tm_with_sm[-1]
                     else:
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            🔖 {tm} →  <b>{sm_label}</b>
-                        </div>"""
-                inner_html += f"""<div style="margin-bottom:6px;">
-                    🔖 ...
+                        formatted_corresponding_tm = other_tm_with_sm[0]
+                    inner_html += f"""<div style="margin-bottom:1px;">
+                        <small>🔖 {tm} → <b>{sm_label_to_unassign}</b> → {formatted_corresponding_tm}</small>
+                    </div>"""
+                else:
+                    inner_html += f"""<div style="margin-bottom:1px;">
+                        <small>🔖 {tm} →  <b>{sm_label_to_unassign}</b></small>
+                    </div>"""
+
+            if len(tm_to_unassign_sm_list) > max_length:   # many sm to remove
+                inner_html += f"""<div style="margin-bottom:1px;">
+                    <small>🔖 ... (+{len(tm_to_unassign_sm_list[:max_length])})</small>
                 </div>"""
 
             # render
@@ -2275,57 +2241,56 @@ with tab2:
             for tm in tm_to_unassign_sm_list:
                 tm_iri = tm_dict[tm]
                 sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RR.subjectMap)
-                sm_label = sm_dict[sm_iri][0]
+                sm_label_to_unassign = sm_dict[sm_iri][0]
                 other_tm_with_sm = [split_uri(s)[1] for s, p, o in st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)) if s != tm_iri]
                 if all(tm in tm_to_unassign_sm_list for tm in other_tm_with_sm):   # if upon deletion sm is no longer assigned to any tm
-                    if sm_label not in sm_to_completely_remove_list:
-                        sm_to_completely_remove_list.append(sm_label)
+                    if sm_label_to_unassign not in sm_to_completely_remove_list:
+                        sm_to_completely_remove_list.append(sm_label_to_unassign)
                 else:
-                    sm_to_just_unassign_list.append(sm_label)
+                    sm_to_just_unassign_list.append(sm_label_to_unassign)
 
             # warning messages
-            inner_html = "ℹ️ "
+            inner_html = ""
             formatted_tm_to_unassign_sm = utils.format_list_for_markdown(tm_to_unassign_sm_list)
             formatted_sm_to_completely_remove = utils.format_list_for_markdown(sm_to_completely_remove_list)
             formatted_sm_to_just_unassign = utils.format_list_for_markdown(sm_to_just_unassign_list)
 
-            max_length = 2
+            max_length = utils.get_max_length_for_display()[5]
             if len(sm_to_just_unassign_list) == 1:
-                inner_html += f"""The Subject Map <b>{formatted_sm_to_just_unassign}</b> will be unassigned from
+                inner_html += f"""ℹ️ The Subject Map <b>{formatted_sm_to_just_unassign}</b> will be unassigned from
                 its TriplesMap.<br>"""
             elif sm_to_just_unassign_list and len(sm_to_just_unassign_list) < max_length:
-                inner_html += f"""The Subject Maps <b>{formatted_sm_to_just_unassign}</b> will be unassigned from
+                inner_html += f"""ℹ️ The Subject Maps <b>{formatted_sm_to_just_unassign}</b> will be unassigned from
                 their TriplesMaps</b>.<br>"""
             elif sm_to_just_unassign_list:
-                inner_html += f"""<b>{len(sm_to_just_unassign_list)} Subject Maps</b> will be unassigned from
+                inner_html += f"""ℹ️ <b>{len(sm_to_just_unassign_list)} Subject Maps</b> will be unassigned from
                 their TriplesMaps.<br>"""
             if len(sm_to_completely_remove_list) == 1:
-                inner_html += f"""The Subject Map <b>{formatted_sm_to_completely_remove}</b> will be completely removed."""
+                inner_html += f"""ℹ️ The Subject Map <b>{formatted_sm_to_completely_remove}</b> will be completely removed."""
             elif sm_to_completely_remove_list and len(sm_to_completely_remove_list) < max_length:
-                inner_html += f"""The Subject Maps <b>{formatted_sm_to_completely_remove}</b> will be completely removed."""
+                inner_html += f"""ℹ️ The Subject Maps <b>{formatted_sm_to_completely_remove}</b> will be completely removed."""
             elif sm_to_completely_remove_list:
-                inner_html += f"""<b>{len(sm_to_completely_remove_list)} Subject Maps</b> will be completely removed."""
+                inner_html += f"""ℹ️ <b>{len(sm_to_completely_remove_list)} Subject Maps</b> will be completely removed."""
 
             if tm_to_unassign_sm_list:
                 with col1b:
-                    st.markdown(f"""<div class="info-message-small">
+                    st.markdown(f"""<div class="info-message-blue">
                             {inner_html}
                         <div>""", unsafe_allow_html=True)
-                    st.write("")
 
 
             if "Select all" in tm_to_unassign_sm_list_input:
                 with col1b:
                     st.markdown(f"""<div class="warning-message">
                             ⚠️ You are deleting <b>all Subject Maps</b>.
-                            Make sure you want to go ahead.
+                            <small>Make sure you want to go ahead.</small>
                         </div>""", unsafe_allow_html=True)
-                    st.write("")
+
 
             if tm_to_unassign_sm_list:
                 with col1a:
                     unassign_sm_checkbox = st.checkbox(
-                    ":gray-badge[⚠️ I am completely sure I want to unassign the Subject Map/s]",
+                    ":gray-badge[⚠️ I am sure I want to unassign the Subject Map/s]",
                     key="key_unassign_sm_checkbox")
                 if unassign_sm_checkbox:
                     st.session_state["sm_to_completely_remove_list"] = sm_to_completely_remove_list
@@ -3104,7 +3069,7 @@ with tab3:
                         st.markdown(f"""<div class="warning-message">
                                 ⚠️ You are deleting <b>all Predicate-Object Maps</b>
                                 of the TriplesMap {tm_to_delete_pom_label}.
-                                Make sure you want to go ahead.
+                                <small>Make sure you want to go ahead.</small>
                             </div>""", unsafe_allow_html=True)
                         st.write("")
                     with col1a:

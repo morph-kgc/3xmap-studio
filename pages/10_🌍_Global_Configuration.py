@@ -822,7 +822,7 @@ with tab2:
 
                 with col1b:
                     st.write("")
-                    st.markdown(f"""<div class="success-message-small">
+                    st.markdown(f"""<div class="success-message">
                             ✔️ Valid ontology: <b style="color:#F63366;">
                             {st.session_state["g_ontology_from_link_candidate_label"]}</b>
                             (parsed successfully with format
@@ -1779,26 +1779,19 @@ with tab3:
                 inner_html = ""
                 max_length = utils.get_max_length_for_display()[4]
                 formatted_ns_to_unbind = utils.format_list_for_markdown(ns_to_unbind_list)
-                if len(ns_to_unbind_list) <= max_length:
-                    for prefix in ns_to_unbind_list:
-                        inner_html += f"""<div style="margin-bottom:4px;">
-                            <small><b>🔗 {prefix}</b> → {mapping_ns_dict[prefix]}</small>
-                        </div>"""
-                    # wrap it all in a single info box
-                    full_html = f"""<div class="info-message-gray">
-                        {inner_html}</div>"""
+                for prefix in ns_to_unbind_list[:max_length]:
+                    inner_html += f"""<div style="margin-bottom:4px;">
+                        <small><b>🔗 {prefix}</b> → {mapping_ns_dict[prefix]}</small>
+                    </div>"""
 
-                else:   # many sm to remove
-                    for prefix in ns_to_unbind_list[:max_length]:
-                        inner_html += f"""<div style="margin-bottom:4px;">
-                            <small><b>🔗 {prefix}</b> → {mapping_ns_dict[prefix]}</small>
-                        </div>"""
+                if len(ns_to_unbind_list) > max_length:   # many sm to remove
                     inner_html += f"""<div style="margin-bottom:4px;">
                         <small>🔗 ... <b>(+{len(ns_to_unbind_list[:max_length])})</b></small>
                     </div>"""
-                    # wrap it all in a single info box
-                    full_html = f"""<div class="info-message-gray">
-                        {inner_html}</div>"""
+
+                # wrap it all in a single info box
+                full_html = f"""<div class="info-message-gray">
+                    {inner_html}</div>"""
                 # render
                 if len(ns_to_unbind_list) > 0:
                     with col1a:
@@ -1819,35 +1812,28 @@ with tab3:
                 # create a single info message
                 inner_html = ""
                 max_length = utils.get_max_length_for_display()[4]
-                if len(mapping_ns_dict) <= max_length:
-                    for prefix in mapping_ns_dict:
-                        if prefix != "Select all":
-                            inner_html += f"""<div style="margin-bottom:6px;">
-                                🔗 <b>{prefix}</b> → {mapping_ns_dict[prefix]}
-                            </div>"""
-                    # wrap it all in a single info box
-                    full_html = f"""<div class="info-message-gray">
-                        {inner_html}</div>"""
 
-                else:   # many sm to remove
-                    for prefix in list(mapping_ns_dict)[:max_length]:
-                        if prefix != "Select all":
-                            inner_html += f"""<div style="margin-bottom:2px;">
-                                <small>🔗 <b>{prefix}</b> → {mapping_ns_dict[prefix]}</small>
-                            </div>"""
+                for prefix in list(mapping_ns_dict)[:max_length]:
+                    if prefix != "Select all":
+                        inner_html += f"""<div style="margin-bottom:6px;">
+                            🔗 <b>{prefix}</b> → {mapping_ns_dict[prefix]}
+                        </div>"""
+
+                if len(mapping_ns_dict) > max_length:   # many sm to remove
                     inner_html += f"""<div style="margin-bottom:2px;">
                         <small>🔗 ... <b>(+{len(list(mapping_ns_dict)[:max_length])})</b></small>
                     </div>"""
-                    # wrap it all in a single info box
-                    full_html = f"""<div class="info-message-gray">
-                        {inner_html}</div>"""
+
+                # wrap it all in a single info box
+                full_html = f"""<div class="info-message-gray">
+                    {inner_html}</div>"""
                 # render
                 with col1a:
                     st.markdown(full_html, unsafe_allow_html=True)
                 with col1b:
                     st.markdown(f"""<div class="warning-message">
                         ⚠️ You are deleting <b>all namespaces</b>.
-                        Make sure you want to go ahead.
+                        <small>Make sure you want to go ahead.</small>
                     </div>""", unsafe_allow_html=True)
 
                 with col1a:

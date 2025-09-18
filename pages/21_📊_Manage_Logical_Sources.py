@@ -384,49 +384,53 @@ with tab1:
 
         if "Select all" in connection_labels_to_remove_list:
             connection_labels_to_remove_list = list(st.session_state["db_connections_dict"].keys())
-            # for conn in connection_labels_to_remove_list:
-            #
-            #     [engine, host, port, database, user, password] = st.session_state["db_connections_dict"][db_connection_for_ls]
-            #     if engine == "Oracle":
-            #         jdbc_str = f"jdbc:oracle:thin:@{host}:{port}:{database}"
-            #     elif engine == "SQL Server":
-            #         jdbc_str = f"jdbc:sqlserver://{host}:{port};databaseName={database}"
-            #     elif engine == "PostgreSQL":
-            #         jdbc_str = f"jdbc:postgresql://{host}:{port}/{database}"
-            #     elif engine == "MySQL":
-            #         jdbc_str = f"jdbc:mysql://{host}:{port}/{database}"
-            #     elif engine =="MariaDB":
-            #         jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
-            #
-            with col1a:
-                if len(connection_labels_to_remove_list) == 1:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, connection<b style="color:#F63366;">
-                            {utils.format_list_for_markdown(connection_labels_to_remove_list)}</b>
-                            and its queries will be removed.
-                        </div>""", unsafe_allow_html=True)
-                elif len(connection_labels_to_remove_list) < 6:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, connections<b style="color:#F63366;">
-                            {utils.format_list_for_markdown(connection_labels_to_remove_list)}</b>
-                            and their queries will be removed.
-                        </div>""", unsafe_allow_html=True)
-                else:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, <b style="color:#F63366;">all connections</b>
-                            and their queries will be removed.
-                        </div>""", unsafe_allow_html=True)
+
+            # create a single info message
+            inner_html = ""
+            max_length = utils.get_max_length_for_display()[4]
+
+            for conn in connection_labels_to_remove_list[:max_length]:
+                jdbc_str = utils.get_jdbc_str(conn)
+                inner_html += f"""<div style="margin-bottom:4px;">
+                    <small><b>🔌 {conn}</b> → {jdbc_str}</small>
+                </div>"""
+            # wrap it all in a single info box
+            full_html = f"""<div class="info-message-gray">
+                {inner_html}</div>"""
+
+            if len(connection_labels_to_remove_list) > max_length:   # many sm to remove
+                inner_html += f"""<div style="margin-bottom:4px;">
+                    <small>🔌 ... <b>(+{len(connection_labels_to_remove_list[:max_length])})</b></small>
+                </div>"""
+
+            # wrap it all in a single info box
+            full_html = f"""<div class="info-message-gray">
+                {inner_html}</div>"""
+            # render
+
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            if len(connection_labels_to_remove_list) > 0:
+                with col1a:
+                    st.markdown(full_html, unsafe_allow_html=True)
+
+            with col1b:
+                st.markdown(f"""<div class="warning-message">
+                    ⚠️ You are removing <b>all connections</b> to databases.
+                    <small>Make sure you want to go ahead.</small>
+                </div>""", unsafe_allow_html=True)
                 st.write("")
 
-
+            with col1a:
                 delete_all_connections_checkbox= st.checkbox(
                 ":gray-badge[⚠️ I am sure I want to delete all connections]",
-                key="key_delete_sm_class_checkbox")
+                key="key_delete_all_connections_checkbox")
                 if delete_all_connections_checkbox:
                     st.button("Remove", key="key_remove_connection_button", on_click=remove_connection)
 
 
         elif "Select all ❌" in connection_labels_to_remove_list:
+
             not_working_connections_list = []
 
             for connection_label in st.session_state["db_connections_dict"]:
@@ -434,64 +438,77 @@ with tab1:
                 if st.session_state["db_connection_status_dict"][connection_label][0] == "❌":
                     not_working_connections_list.append(connection_label)
 
-
             connection_labels_to_remove_list.remove("Select all ❌")
             connection_labels_to_remove_list = list(set(connection_labels_to_remove_list + not_working_connections_list))
 
+            # create a single info message
+            inner_html = ""
+            max_length = utils.get_max_length_for_display()[4]
+
+            for conn in connection_labels_to_remove_list[:max_length]:
+                jdbc_str = utils.get_jdbc_str(conn)
+                inner_html += f"""<div style="margin-bottom:4px;">
+                    <small><b>🔌 {conn}</b> → {jdbc_str}</small>
+                </div>"""
+
+            if len(connection_labels_to_remove_list) > max_length:   # many sm to remove
+                inner_html += f"""<div style="margin-bottom:4px;">
+                    <small>🔌 ... <b>(+{len(connection_labels_to_remove_list[:max_length])})</b></small>
+                </div>"""
+
+            if not_working_connections_list:
+                inner_html += f"""<div style="margin-bottom:4px;">
+                    <small>Complete list of ❌ connections:
+                    <b>{utils.format_list_for_markdown(not_working_connections_list)}</b></small>
+                </div>"""
+            else:
+                inner_html += f"""<div style="margin-bottom:4px;">
+                    <small>✔️ All <b>connections</b> are working <small>(no ❌ connections to remove).</small>
+                </div>"""
+
+            # wrap it all in a single info box
+            full_html = f"""<div class="info-message-gray">
+                {inner_html}</div>"""
+            # render
             with col1a:
-                if not connection_labels_to_remove_list:
-                    st.markdown(f"""<div class="success-message-small">
-                        ✔️ All <b>connections</b> are working (no ❌ connections to remove).
-                    </div>""", unsafe_allow_html=True)
-                elif not not_working_connections_list and len(connection_labels_to_remove_list) == 1:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, connection <b style="color:#F63366;">
-                            {utils.format_list_for_markdown(connection_labels_to_remove_list)}</b>
-                            and its queries will be removed.<br>
-                            <small>All <b>connections</b> are working (no ❌ connections).</small>
-                        </div>""", unsafe_allow_html=True)
-                elif not not_working_connections_list and len(connection_labels_to_remove_list) > 1:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, connections <b style="color:#F63366;">
-                            {utils.format_list_for_markdown(connection_labels_to_remove_list)}</b>
-                            and their queries will be removed.<br>
-                            <small>All <b>connections</b> are working (no ❌ connections to remove).</small>
-                        </div>""", unsafe_allow_html=True)
-                elif not_working_connections_list and len(connection_labels_to_remove_list) == 1:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, connection <b style="color:#F63366;">
-                            {utils.format_list_for_markdown(connection_labels_to_remove_list)}</b>
-                            and its queries will be removed.
-                        </div>""", unsafe_allow_html=True)
-                elif not_working_connections_list and len(connection_labels_to_remove_list) > 1:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, connections <b style="color:#F63366;">
-                            {utils.format_list_for_markdown(connection_labels_to_remove_list)}</b>
-                            and their queries will be removed.
-                        </div>""", unsafe_allow_html=True)
-                st.write("")
+                st.markdown(full_html, unsafe_allow_html=True)
+
+            with col1a:
                 if connection_labels_to_remove_list:
-                    st.button("Remove", key="key_remove_connection_button", on_click=remove_connection)
+                    st.write("")
+                    delete_all_cross_connections_checkbox= st.checkbox(
+                    ":gray-badge[⚠️ I am sure I want to delete the connections]",
+                    key="key_delete_all_cross_connections_checkbox")
+                    if delete_all_cross_connections_checkbox:
+                        st.button("Remove", key="key_remove_connection_button", on_click=remove_connection)
 
         elif connection_labels_to_remove_list:
+            # create a single info message
+            inner_html = ""
+            max_length = utils.get_max_length_for_display()[4]
+
+            for conn in connection_labels_to_remove_list[:max_length]:
+                jdbc_str = utils.get_jdbc_str(conn)
+                inner_html += f"""<div style="margin-bottom:4px;">
+                    <small><b>🔌 {conn}</b> → {jdbc_str}</small>
+                </div>"""
+
+            if len(connection_labels_to_remove_list) > max_length:   # many sm to remove
+                inner_html += f"""<div style="margin-bottom:4px;">
+                    <small>🔌 ... <b>(+{len(connection_labels_to_remove_list[:max_length])})</b></small>
+                </div>"""
+
+            # wrap it all in a single info box
+            full_html = f"""<div class="info-message-gray">
+                {inner_html}</div>"""
+            # render
             with col1a:
-                if len(connection_labels_to_remove_list) == 1:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, connection<b style="color:#F63366;">
-                            {utils.format_list_for_markdown(connection_labels_to_remove_list)}</b>
-                            and its queries will be removed.
-                        </div>""", unsafe_allow_html=True)
-                elif len(connection_labels_to_remove_list) < 6:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, connections<b style="color:#F63366;">
-                            {utils.format_list_for_markdown(connection_labels_to_remove_list)}</b>
-                            and their queries will be removed.
-                        </div>""", unsafe_allow_html=True)
-                else:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, the <b style="color:#F63366;">selected connections</b>
-                            and their queries will be removed.
-                        </div>""", unsafe_allow_html=True)
+                st.markdown(full_html, unsafe_allow_html=True)
+
+            delete_connections_checkbox= st.checkbox(
+            ":gray-badge[⚠️ I am sure I want to delete the connections]",
+            key="key_delete_connections_checkbox")
+            if delete_connections_checkbox:
                 st.write("")
                 st.button("Remove", key="key_remove_connection_button", on_click=remove_connection)
 
