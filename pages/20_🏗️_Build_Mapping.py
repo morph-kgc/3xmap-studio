@@ -2397,6 +2397,13 @@ with tab3:
                             <small>It will be invalid without one.</small>
                         </div>""", unsafe_allow_html=True)
                     st.write("")
+            else:
+                for sm in sm_dict:
+                    if tm_label_for_pom in sm_dict[sm][4]:
+                        sm_label_for_pom = sm_dict[sm][0]
+                        break
+                    sm_label_for_pom = ""
+
 
             # HERE CREATE THE PREDICATE MAP
 
