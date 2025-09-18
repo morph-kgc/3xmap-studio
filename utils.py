@@ -107,6 +107,11 @@ def import_st_aesthetics():
                 border-radius:5px; padding:10px; margin-bottom:8px;
                 font-size:1.1rem; font-weight:600; color:#511D66;}
 
+    /* GRAY HEADINGS */
+            .gray-heading {background-color:#f2f2f2; border-bottom:4px solid #777777;
+                border-radius:5px; padding:6px; margin-bottom:8px;
+                font-size:1rem; font-weight:600; color:#333333;}
+
 
 
 

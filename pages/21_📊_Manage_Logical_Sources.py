@@ -11,11 +11,9 @@ import pyodbc
 import uuid   # to handle uploader keys
 
 # Header
-st.markdown("""
-<div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
-            border-radius:8px; margin-bottom:16px;">
-    <span style="font-size:1.7rem; margin-right:18px;">📊</span>
-    <div>
+st.markdown("""<div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
+    border-radius:8px; margin-bottom:16px;">
+    <span style="font-size:1.7rem; margin-right:18px;">📊</span><div>
         <h3 style="margin:0; font-size:1.75rem;">
             <span style="color:#511D66; font-weight:bold; margin-right:12px;">◽◽◽◽◽</span>
             Manage Logical Tables
@@ -25,9 +23,7 @@ st.markdown("""
             Manage the connections to <b>relational data sources</b>, load files from <b>non-relational sources</b>
             and <b>query data</b>.
         </p>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+    </div></div>""", unsafe_allow_html=True)
 
 #____________________________________________
 #PRELIMINARY

@@ -1310,7 +1310,7 @@ with tab3:
                 if valid_iri_input and valid_prefix_input:
                     with col1a:
                         st.write("")
-                        st.markdown(f"""<div class="info-message-small">
+                        st.markdown(f"""<div class="info-message-gray">
                                 <b>🔗 {prefix_input}</b> → {iri_input}
                             </div>""", unsafe_allow_html=True)
                         st.write("")
@@ -1343,79 +1343,46 @@ with tab3:
                 if predefined_ns_to_bind_list and "Select all" not in predefined_ns_to_bind_list:
                     # create a single info message
                     inner_html = ""
-                    max_length = 5
-                    if len(predefined_ns_to_bind_list) <= max_length:
-                        for prefix in predefined_ns_to_bind_list:
-                            inner_html += f"""<div style="margin-bottom:6px;">
-                                <b>🔗 {prefix}</b> → {predefined_ns_dict[prefix]}
-                            </div>"""
-                        # wrap it all in a single info box
-                        full_html = f"""<div class="info-message-small">
-                            {inner_html}</div>"""
-                        # render
-                        with col1a:
-                            st.write("")
-                            st.markdown(full_html, unsafe_allow_html=True)
-
-                    else:   # many sm to remove
-                        for prefix in predefined_ns_to_bind_list[:max_length]:
-                            inner_html += f"""<div style="margin-bottom:6px;">
-                                <b>🔗 {prefix}</b> → {predefined_ns_dict[prefix]}
-                            </div>"""
+                    max_length = utils.get_max_length_for_display()[4]
+                    for prefix in predefined_ns_to_bind_list[:max_length]:
                         inner_html += f"""<div style="margin-bottom:6px;">
-                            🔗 ...
+                            <b>🔗 {prefix}</b> → {predefined_ns_dict[prefix]}
                         </div>"""
-                        # wrap it all in a single info box
-                        full_html = f"""<div class="info-message-small-gray">
-                            {inner_html}</div>"""
-                        # render
-                        with col1a:
-                            st.write("")
-                            st.markdown(full_html, unsafe_allow_html=True)
-                        with col1a:
-                            formatted_predefined_ns_to_bind = utils.format_list_for_markdown(predefined_ns_to_bind_list)
-                            st.write("")
-                            st.markdown(f"""<div class="info-message-small-gray">
-                                    ℹ️ The namespaces <b>{formatted_predefined_ns_to_bind}</b> will be bound.
-                                </div>""", unsafe_allow_html=True)
-                            st.write("")
+
+                    if len(predefined_ns_to_bind_list) > max_length:   # many sm to remove
+                        inner_html += f"""<div style="margin-bottom:6px;">
+                            🔗 ... <b>(+{len(predefined_ns_to_bind_list[max_length:])})</b>
+                        </div>"""
+                    # wrap it all in a single info box
+                    full_html = f"""<div class="info-message-gray">
+                        {inner_html}</div>"""
+                    # render
+                    with col1a:
+                        st.markdown(full_html, unsafe_allow_html=True)
+                        st.write("")
 
                 elif predefined_ns_to_bind_list:
                     # create a single info message
                     inner_html = ""
-                    max_length = 6
-                    if len(predefined_ns_dict) <= max_length:
-                        for prefix in predefined_ns_dict:
-                            inner_html += f"""<div style="margin-bottom:6px;">
-                                <b>🔗 {prefix}</b> → {predefined_ns_dict[prefix]}
-                            </div>"""
-                        # wrap it all in a single info box
-                        full_html = f"""<div class="info-message-small-gray">
-                            {inner_html}</div>"""
-
-                    else:   # many sm to remove
-                        for prefix in list(predefined_ns_dict)[:max_length]:
-                            inner_html += f"""<div style="margin-bottom:6px;">
-                                <b>🔗 {prefix}</b> → {predefined_ns_dict[prefix]}
-                            </div>"""
+                    max_length = utils.get_max_length_for_display()[4]
+                    for prefix in list(predefined_ns_dict)[:max_length]:
                         inner_html += f"""<div style="margin-bottom:6px;">
-                            🔗 ...
+                            <b>🔗 {prefix}</b> → {predefined_ns_dict[prefix]}
                         </div>"""
-                        # wrap it all in a single info box
-                        full_html = f"""<div class="info-message-small-gray">
-                            {inner_html}</div>"""
+
+
+                    if len(predefined_ns_dict) > max_length:   # many sm to remove
+                        inner_html += f"""<div style="margin-bottom:6px;">
+                            🔗 ... <b>(+{len(list(predefined_ns_dict)[max_length:])})</b>
+                        </div>"""
+
+                    # wrap it all in a single info box
+                    full_html = f"""<div class="info-message-gray">
+                        {inner_html}</div>"""
                     # render
                     with col1a:
-                        st.write("")
                         st.markdown(full_html, unsafe_allow_html=True)
-                    with col1a:
-                        formatted_predefined_ns = utils.format_list_for_markdown(list(predefined_ns_dict))
                         st.write("")
-                        st.markdown(f"""<div class="info-message-small">
-                                ℹ️ The namespaces <b>{formatted_predefined_ns}</b> will be bound.
-                            </div>""", unsafe_allow_html=True)
-                        st.write("")
-
 
 
                 if predefined_ns_to_bind_list:
@@ -1459,76 +1426,47 @@ with tab3:
                 if ontology_ns_to_bind_list and "Select all" not in ontology_ns_to_bind_list:
                     # create a single info message
                     inner_html = ""
-                    max_length = 5
-                    if len(ontology_ns_to_bind_list) <= max_length:
-                        for prefix in ontology_ns_to_bind_list:
-                            inner_html += f"""<div style="margin-bottom:6px;">
-                                <b>🔗 {prefix}</b> → {ontology_ns_dict[prefix]}
-                            </div>"""
-                        # wrap it all in a single info box
-                        full_html = f"""<div class="info-message-small">
-                            {inner_html}</div>"""
-                        # render
-                        with col1a:
-                            st.markdown(full_html, unsafe_allow_html=True)
+                    max_length = utils.get_max_length_for_display()[4]
 
-                    else:   # many sm to remove
-                        for prefix in ontology_ns_to_bind_list[:max_length]:
-                            inner_html += f"""<div style="margin-bottom:6px;">
-                                <b>🔗 {prefix}</b> → {ontology_ns_dict[prefix]}
-                            </div>"""
+                    for prefix in ontology_ns_to_bind_list:
                         inner_html += f"""<div style="margin-bottom:6px;">
-                            🔗 ...
+                            <b>🔗 {prefix}</b> → {ontology_ns_dict[prefix]}
                         </div>"""
-                        # wrap it all in a single info box
-                        full_html = f"""<div class="info-message-small-gray">
-                            {inner_html}</div>"""
-                        # render
-                        with col1a:
-                            st.write("")
-                            st.markdown(full_html, unsafe_allow_html=True)
-                        with col1a:
-                            formatted_ontology_ns_to_bind = utils.format_list_for_markdown(ontology_ns_to_bind_list)
-                            st.write("")
-                            st.markdown(f"""<div class="info-message-small">
-                                    ℹ️ The namespaces <b>{formatted_ontology_ns_to_bind}</b> will be bound.
-                                </div>""", unsafe_allow_html=True)
-                            st.write("")
+
+                    if len(ontology_ns_to_bind_list) > max_length:
+                        inner_html += f"""<div style="margin-bottom:6px;">
+                            🔗 ... <b>(+{len(ontology_ns_to_bind_list[max_length:])})</b>
+                        </div>"""
+
+                    # wrap it all in a single info box
+                    full_html = f"""<div class="info-message-gray">
+                        {inner_html}</div>"""
+                    # render
+                    with col1a:
+                        st.markdown(full_html, unsafe_allow_html=True)
+                        st.write("")
 
                 elif ontology_ns_to_bind_list:
                     # create a single info message
                     inner_html = ""
-                    max_length = 6
-                    if len(ontology_ns_dict) <= max_length:
-                        for prefix in ontology_ns_dict:
-                            inner_html += f"""<div style="margin-bottom:6px;">
-                                <b>🔗 {prefix}</b> → {ontology_ns_dict[prefix]}
-                            </div>"""
-                        # wrap it all in a single info box
-                        full_html = f"""<div class="info-message-small-gray">
-                            {inner_html}</div>"""
+                    max_length = utils.get_max_length_for_display()[4]
 
-                    else:   # many sm to remove
-                        for prefix in list(ontology_ns_dict)[:max_length]:
-                            inner_html += f"""<div style="margin-bottom:6px;">
-                                <b>🔗 {prefix}</b> → {ontology_ns_dict[prefix]}
-                            </div>"""
+                    for prefix in list(ontology_ns_dict)[:max_length]:
                         inner_html += f"""<div style="margin-bottom:6px;">
-                            🔗 ...
+                            <b>🔗 {prefix}</b> → {ontology_ns_dict[prefix]}
                         </div>"""
-                        # wrap it all in a single info box
-                        full_html = f"""<div class="info-message-small-gray">
-                            {inner_html}</div>"""
+
+                    if len(ontology_ns_dict) > max_length:
+                        inner_html += f"""<div style="margin-bottom:6px;">
+                            🔗 ... <b>(+{len(list(ontology_ns_dict)[max_length:])})</b>
+                        </div>"""
+
+                    # wrap it all in a single info box
+                    full_html = f"""<div class="info-message-gray">
+                        {inner_html}</div>"""
                     # render
                     with col1a:
-                        st.write("")
                         st.markdown(full_html, unsafe_allow_html=True)
-                    with col1a:
-                        formatted_ontology_ns = utils.format_list_for_markdown(list(ontology_ns_dict))
-                        st.write("")
-                        st.markdown(f"""<div class="info-message-small">
-                                ℹ️ The namespaces <b>{formatted_ontology_ns}</b> will be bound.
-                            </div>""", unsafe_allow_html=True)
                         st.write("")
 
                 if ontology_ns_to_bind_list:
@@ -1780,13 +1718,13 @@ with tab3:
                 max_length = utils.get_max_length_for_display()[4]
                 formatted_ns_to_unbind = utils.format_list_for_markdown(ns_to_unbind_list)
                 for prefix in ns_to_unbind_list[:max_length]:
-                    inner_html += f"""<div style="margin-bottom:4px;">
-                        <small><b>🔗 {prefix}</b> → {mapping_ns_dict[prefix]}</small>
+                    inner_html += f"""<div style="margin-bottom:6px;">
+                        <b>🔗 {prefix}</b> → {mapping_ns_dict[prefix]}
                     </div>"""
 
                 if len(ns_to_unbind_list) > max_length:   # many sm to remove
-                    inner_html += f"""<div style="margin-bottom:4px;">
-                        <small>🔗 ... <b>(+{len(ns_to_unbind_list[:max_length])})</b></small>
+                    inner_html += f"""<div style="margin-bottom:6px;">
+                        🔗 ... <b>(+{len(ns_to_unbind_list[:max_length])})</b>
                     </div>"""
 
                 # wrap it all in a single info box
@@ -1821,7 +1759,7 @@ with tab3:
 
                 if len(mapping_ns_dict) > max_length:   # many sm to remove
                     inner_html += f"""<div style="margin-bottom:2px;">
-                        <small>🔗 ... <b>(+{len(list(mapping_ns_dict)[:max_length])})</b></small>
+                        🔗 ... <b>(+{len(list(mapping_ns_dict)[:max_length])})</b>
                     </div>"""
 
                 # wrap it all in a single info box

@@ -1266,6 +1266,7 @@ with tab2:
 
             elif sm_option == "🆕 Create new Subject Map":
 
+
                 if tm_label_for_sm != "Select a TriplesMap":   #TriplesMap selected
                     tm_iri_for_sm = tm_dict[tm_label_for_sm]
                     ls_iri_for_sm = next(st.session_state["g_mapping"].objects(tm_iri_for_sm, RML.logicalSource), None)
@@ -1286,8 +1287,13 @@ with tab2:
                             st.write("")
 
                     with col1:
-                        st.markdown("""<div style='margin: 4px 0; border-top: 1px solid #ccc;'></div>
-                        """, unsafe_allow_html=True)
+                        st.write("")
+                        st.markdown("""<div class="gray-heading">
+                                🏗️ Create the Subject Map</dic><br>
+                            """,unsafe_allow_html=True)
+
+
+                    with col1:
                         sm_generation_rule_list = ["Template 📐", "Constant 🔒", "Reference 📊"]
                         sm_generation_rule = st.radio("🖱️ Define the Subject Map generation rule:*",
                             sm_generation_rule_list, horizontal=True, key="key_sm_generation_rule_radio",
@@ -1490,9 +1496,11 @@ with tab2:
 
                     # DISPLAY INFO AND SAVE________________________________
                     with col1:
-                        st.markdown("""
-                        <div style='margin: 4px 0; border-top: 1px solid #ccc;'></div>
-                        """, unsafe_allow_html=True)
+                        st.write("")
+                        st.markdown("""<div class="gray-heading">
+                                💾 Check and save Subject Map</dic><br>
+                            """,unsafe_allow_html=True)
+
                     if sm_generation_rule == "Template 📐":
                         with col1:
                             col1a, col1b = st.columns([2,1])
@@ -1688,38 +1696,36 @@ with tab2:
 
             with col1:
                 col1a, col1b = st.columns([2,1])
-            with col1a:
+            with col1b:
                 if len(corresponding_tm_list) > 1:
                     formatted_corresponding_tm = ", ".join(corresponding_tm_list[:-1]) + " and " + corresponding_tm_list[-1]
-                    st.markdown(f"""<div class="info-message-small">
+                    st.markdown(f"""<div class="info-message-blue">
                             🔖 The Subject Map <b>{sm_label_for_config}</b> is assigned to the TriplesMaps <b>{formatted_corresponding_tm}</b>.
                         </div>""", unsafe_allow_html=True)
                 elif len(corresponding_tm_list) == 1:
-                    st.markdown(f"""<div class="info-message-small">
+                    st.markdown(f"""<div class="info-message-blue">
                             🔖 The Subject Map <b>{sm_label_for_config}</b> is assigned to the TriplesMap <b>{corresponding_tm_list[0]}</b>.
                         </div>""", unsafe_allow_html=True)
                 else:
                     st.markdown(f"""<div class="error-message">
                             ❌ The Subject Map <b>{sm_label_for_config}</b> is not assigned to any TriplesMap. Please check your mapping.
                         </div>""", unsafe_allow_html=True)
-                st.write("")
 
             sm_config_options_list = ["🆔 Term type", "🏷️ Subject class", "🗺️️ Graph map"]
-            with col1:
-                sm_config_selected_option = st.radio("", sm_config_options_list,
-                    label_visibility="collapsed", horizontal=True)
+            with col1a:
+                sm_config_selected_option = st.radio("🖱️ Select an option:*", sm_config_options_list,
+                    horizontal=True)
 
             #TERM TYPE - IRI by default, but can be changed to BNode
             if sm_config_selected_option == "🆔 Term type":
 
                 with col1:
                     col1a, col1b = st.columns([2,1])
-                with col1b:
-                    st.markdown(f"""<div class="info-message-gray">
-                            <b> 🆔 Term type </b>: <br>
-                             Indicates the target graph for the subject map triples.
-                             If not given, the default graph will be used.
-                        </div>""", unsafe_allow_html=True)
+                # with col1b:
+                #     st.markdown(f"""<div class="info-message-gray">
+                #             <b> 🆔 Term type </b>: <br>
+                #              Indicates the target graph for the subject map triples.
+                #         </div>""", unsafe_allow_html=True)
 
 
                 if not st.session_state["g_mapping"].value(sm_iri_for_config, RR["termType"]):   # if termType not indicated yet, make it IRI (default)
@@ -1748,13 +1754,11 @@ with tab2:
             #SUBJECT CLASS (ontology-based)
             if sm_config_selected_option == "🏷️ Subject class":
 
-                with col1:
-                    col1a, col1b = st.columns([2,1])
-                with col1b:
-                    st.markdown(f"""<div class="info-message-gray">
-                            <b> 🏷️ Subject class </b>: <br>
-                             Declares the ontology-based class of the generated subjects.
-                        </div>""", unsafe_allow_html=True)
+                # with col1b:
+                #     st.markdown(f"""<div class="info-message-gray">
+                #             <b> 🏷️ Subject class </b>: <br>
+                #              Declares the ontology-based class of the generated subjects.
+                #         </div>""", unsafe_allow_html=True)
 
 
                 #Check whether the subject map already has a class
@@ -1865,32 +1869,32 @@ with tab2:
                     #CLASS OUTSIDE ONTOLOGY
                     if class_type == "🚫 Class outside ontology":
 
-                        with col1:
-                            col1a, col1b = st.columns([2,1])
-
                         if st.session_state["g_ontology"] and not ontology_classes_dict: #there is an ontology but it has no classes
                             with col1b:
                                 st.write("")
                                 st.markdown(f"""<div class="warning-message">
                                           ⚠️ Your <b>ontology</b> does not define any classes.
-                                          Using an ontology with predefined classes is recommended.
+                                          <small>Using an ontology with predefined classes is recommended.</small>
                                     </div>""", unsafe_allow_html=True)
                         elif st.session_state["g_ontology"]:   #there exists an ontology and it has classes
                             with col1b:
                                 st.write("")
                                 st.markdown(f"""<div class="warning-message">
                                           ⚠️ The option <b>Class outside ontology</b> lacks ontology alignment.
-                                          An ontology-driven approach is recommended.
+                                          <small>An ontology-driven approach is recommended.</small>
                                     </div>""", unsafe_allow_html=True)
                         else:
                             with col1b:
                                 st.write("")
                                 st.markdown(f"""<div class="warning-message">
-                                        ⚠️ You are working without an ontology. We recommend loading an ontology
-                                        from the <b> Global Configuration</b> page.
+                                        ⚠️ You are working <b>without an ontology</b>. <small>Loading an ontology
+                                        from the <b> Global Configuration</b> page is encouraged.</small>
                                     </div>""", unsafe_allow_html=True)
 
                         mapping_ns_dict = utils.get_mapping_ns_dict()
+
+                        with col1:
+                            col1a, col1b = st.columns(2)
 
                         subject_class_prefix_list = list(mapping_ns_dict.keys())
                         with col1a:
@@ -1909,7 +1913,7 @@ with tab2:
                         else:
                             if subject_class_prefix != "Select a namespace":
                                 NS = Namespace(mapping_ns_dict[subject_class_prefix])
-                            with col1a:
+                            with col1b:
                                 subject_class_input = st.text_input("⌨️ Enter subject class:*", key="key_subject_class_input")
                             if subject_class_input and subject_class_prefix != "Select a namespace":
                                 subject_class = NS[subject_class_input]
@@ -1922,12 +1926,12 @@ with tab2:
 
                 with col1:
                     col1a, col1b = st.columns([2,1])
-                with col1b:
-                    st.markdown(f"""<div class="info-message-gray">
-                            <b> 🗺️️ Graph map </b>: <br>
-                             Indicates the target graph for the subject map triples.
-                        </div>""", unsafe_allow_html=True)
-                    st.write("")
+                # with col1b:
+                #     st.markdown(f"""<div class="info-message-gray">
+                #             <b> 🗺️️ Graph map </b>: <br>
+                #              Indicates the target graph for the subject map triples.
+                #         </div>""", unsafe_allow_html=True)
+                #     st.write("")
 
 
                 subject_graph = st.session_state["g_mapping"].value(sm_iri_for_config, RR["graph"])
@@ -1961,6 +1965,10 @@ with tab2:
                             </small></div>""", unsafe_allow_html=True)
                         st.write("")
 
+                    with col1:
+                        col1a, col1b = st.columns(2)
+
+                    with col1a:
                         mapping_ns_dict = utils.get_mapping_ns_dict()
                         subject_graph_prefix_list = list(mapping_ns_dict.keys())
                         subject_graph_prefix_list.insert(0,"Select a namespace")
@@ -1974,7 +1982,8 @@ with tab2:
                                      <b>Global Configuration</b> page.
                                 </div>""", unsafe_allow_html=True)
                         else:
-                            subject_graph_input = st.text_input("🖱️ Enter subject graph:*", key="key_subject_graph_input")
+                            with col1b:
+                                subject_graph_input = st.text_input("🖱️ Enter subject graph:*", key="key_subject_graph_input")
                             if subject_graph_prefix != "Select a namespace":
                                 NS = Namespace(mapping_ns_dict[subject_graph_prefix])
 
@@ -2410,10 +2419,8 @@ with tab3:
             col1, col2, col3 = st.columns([1.5,0.2,2])
 
             with col1:
-                st.markdown("""<div style='margin: 4px 0; border-top: 1px solid #ccc;'></div>
-                """, unsafe_allow_html=True)
-                st.markdown("""<span style="font-size:1.1em; font-weight:bold;">
-                        🏗️ Create the Predicate Map</span><br>
+                st.markdown("""<div class="gray-heading">
+                        🏗️ Create the Predicate Map</dic><br>
                     """,unsafe_allow_html=True)
                 st.write("")
 
@@ -2497,10 +2504,8 @@ with tab3:
 
             # BUILD OBJECT MAP_______________________________________________
             with col3:
-                st.markdown("""<div style='margin: 4px 0; border-top: 1px solid #ccc;'></div>
-                """, unsafe_allow_html=True)
-                st.markdown("""<span style="font-size:1.1em; font-weight:bold;">
-                        🏗️ Create the Object Map</span><br>
+                st.markdown("""<div class="gray-heading">
+                        🏗️ Create the Object Map</div><br>
                     """,unsafe_allow_html=True)
 
 
@@ -2766,12 +2771,11 @@ with tab3:
                         st.write("")
 
         if tm_label_for_pom != "Select a TriplesMap":
-            st.write("______")
-            st.markdown("""<span style="font-size:1.1em; font-weight:bold;">
-                💾 Check and save Predicate-Object Map</span><br>
-            """, unsafe_allow_html=True)
-            st.write("")
 
+            st.write("")
+            st.markdown("""<div class="gray-heading">
+                💾 Check and save Predicate-Object Map</div><br>
+            """, unsafe_allow_html=True)
 
             if st.session_state["pom_saved_ok_flag"]:
                 with col1:
