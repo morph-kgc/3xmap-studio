@@ -27,12 +27,20 @@ st.markdown("""<div style="display:flex; align-items:center; background-color:#f
 utils.import_st_aesthetics()
 st.write("")
 
+# Namespaces
+RML, RR, QL = utils.get_required_ns().values()
+
+
+# Initialise session state variables
+#TAB1
+if "morph-kgc_ds_dict" not in st.session_state:
+    st.session_state["morph-kgc_ds_dict"] = {}
 
 
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
 
-tab1, tab2, tab3, tab4 = st.tabs(["Mappings", "Data Sources", "Options", "Materialise"])
+tab1, tab2, tab3, tab4 = st.tabs(["Materialise", "Add Data Sources", "Add Mappings"])
 
 
 #________________________________________________
@@ -47,6 +55,6 @@ with tab1:
     # PURPLE HEADING - ADD NEW CONNECTION
     with col1:
         st.markdown("""<div class="purple-heading">
-                🔌 Add Data Source
+                📊 Add Data Source
             </div>""", unsafe_allow_html=True)
         st.write("")

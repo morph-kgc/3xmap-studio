@@ -809,11 +809,18 @@ with tab2:
 #________________________________________________
 # QUERY DATA
 with tab3:
-    if not st.session_state["db_connections_dict"]:
-        st.markdown(f"""<div class="error-message">
-            ❌ No existing connections to databases.
-        </div>""", unsafe_allow_html=True)
-        st.write("")              #HERE CHANGE
+
+    col1, col2 = st.columns([2,1.5])
+
+    with col1:
+        col1a, col1b = st.columns([2,1])
+
+    if not st.session_state["db_connections_dict"] and not st.session_state["ds_files_dict"]:
+            with col1:
+                st.markdown(f"""<div class="error-message">
+                    ❌ <b>No Logical Sources have been added.</b> <small>You can add them in the
+                    <b>Manage SQL Data Sources</b> and <b>Manage Tabular Data Sources</b> pannels.</small>
+                </div>""", unsafe_allow_html=True)
 
     else:
 
@@ -889,16 +896,15 @@ with tab3:
                 </div>""", unsafe_allow_html=True)
             st.write("")
 
-            if not st.session_state["ds_files_dict"]:
-                st.markdown(f"""<div class="error-message">
-                    ❌ No data sources with tabular data have been added.
-                </div>""", unsafe_allow_html=True)
-                st.write("")              #HERE CHANGE
 
-
-        with col1:
-            view_table_option = st.radio("", ["📊 SQL Database", "🛢️ Non-SQL data"],
-                label_visibility="collapsed", horizontal=True, key="key_view_table_option")
+        if not st.session_state["db_connections_dict"]:
+            view_table_option = "🛢️ Non-SQL data"
+        elif not st.session_state["ds_files_dict"]:
+            view_table_option = "📊 SQL Database"
+        else:
+            with col1:
+                view_table_option = st.radio("", ["📊 SQL Database", "🛢️ Non-SQL data"],
+                    label_visibility="collapsed", horizontal=True, key="key_view_table_option")
 
 
         if view_table_option == "📊 SQL Database":
@@ -1069,7 +1075,9 @@ with tab3:
                             st.dataframe(df[tab_column_filter_list], hide_index=True)
 
 
-        #PURPLE HEADING - QUERY DATA
+    #PURPLE HEADING - QUERY DATA
+    if st.session_state["db_connections_dict"]:
+
         with col1:
             st.write("________")
             st.markdown("""<div class="purple-heading">
@@ -1194,119 +1202,119 @@ with tab3:
                         st.dataframe(limited_df.head(max_rows), hide_index=True)
 
 
-        #PURPLE HEADING - CONSULT SAVED QUERIES
-        if st.session_state["sql_queries_dict"]:
-            with col1:
-                st.write("________")
-                st.markdown("""<div class="purple-heading">
-                        🔍 Consult Saved SQL Queries
-                    </div>""", unsafe_allow_html=True)
-                st.write("")
+    #PURPLE HEADING - CONSULT SAVED QUERIES
+    if st.session_state["sql_queries_dict"]:
+        with col1:
+            st.write("________")
+            st.markdown("""<div class="purple-heading">
+                    🔍 Consult Saved SQL Queries
+                </div>""", unsafe_allow_html=True)
+            st.write("")
 
-            with col1:
-                col1a, col1b = st.columns(2)
+        with col1:
+            col1a, col1b = st.columns(2)
 
-            connections_w_queries_set = set()
+        connections_w_queries_set = set()
+        for query in st.session_state["sql_queries_dict"]:
+            connections_w_queries_set.add(st.session_state["sql_queries_dict"][query][0])
+        connections_w_queries_list = list(connections_w_queries_set)
+
+
+        with col1a:
+            list_to_choose = connections_w_queries_list
+            list_to_choose.insert(0, "Select a connection")
+            connection_to_consult_query = st.selectbox("🖱️ Select a connection:*", list_to_choose,
+                key="key_connection_to_consult_query")
+
+        if connection_to_consult_query != "Select a connection":
+
+            sql_queries_to_consult_list = []
             for query in st.session_state["sql_queries_dict"]:
-                connections_w_queries_set.add(st.session_state["sql_queries_dict"][query][0])
-            connections_w_queries_list = list(connections_w_queries_set)
+                if st.session_state["sql_queries_dict"][query][0] == connection_to_consult_query:
+                    sql_queries_to_consult_list.append(query)
+
+            try:
+                conn = utils.make_connection_to_db(connection_to_consult_query)
+                connection_ok_flag = True
+
+            except:
+                with col1a:
+                    st.markdown(f"""<div class="error-message">
+                        ❌ The connection <b>{connection_label}</b> is not working.
+                        Please check it in the <b>Manage Connections</b> pannel.
+                    </div>""", unsafe_allow_html=True)
+                    st.write("")
+                connection_ok_flag = False
+
+            if connection_ok_flag:
+
+                with col1b:
+                    list_to_choose = sql_queries_to_consult_list
+                    list_to_choose.insert(0, "Select query")
+                    sql_query_to_consult = st.selectbox("🖱️ Select query:*", sql_queries_to_consult_list,
+                        key="key_sql_query_to_consult")
 
 
-            with col1a:
-                list_to_choose = connections_w_queries_list
-                list_to_choose.insert(0, "Select a connection")
-                connection_to_consult_query = st.selectbox("🖱️ Select a connection:*", list_to_choose,
-                    key="key_connection_to_consult_query")
+                if sql_query_to_consult != "Select query":
 
-            if connection_to_consult_query != "Select a connection":
+                    with col1:
 
-                sql_queries_to_consult_list = []
-                for query in st.session_state["sql_queries_dict"]:
-                    if st.session_state["sql_queries_dict"][query][0] == connection_to_consult_query:
-                        sql_queries_to_consult_list.append(query)
+                        st.markdown(f"""<div class="gray-preview-message">
+                                ❔ <b style="color:#F63366;"> Query:</b>
+                                {st.session_state["sql_queries_dict"][sql_query_to_consult][1]}
+                            </div></div>""", unsafe_allow_html=True)
 
-                try:
-                    conn = utils.make_connection_to_db(connection_to_consult_query)
-                    connection_ok_flag = True
+                    cur = conn.cursor()   # create a cursor
 
-                except:
-                    with col1a:
-                        st.markdown(f"""<div class="error-message">
-                            ❌ The connection <b>{connection_label}</b> is not working.
-                            Please check it in the <b>Manage Connections</b> pannel.
-                        </div>""", unsafe_allow_html=True)
-                        st.write("")
-                    connection_ok_flag = False
+                    try:
+                        cur.execute(st.session_state["sql_queries_dict"][sql_query_to_consult][1])
+                        sql_query_ok_flag = True
 
-                if connection_ok_flag:
-
-                    with col1b:
-                        list_to_choose = sql_queries_to_consult_list
-                        list_to_choose.insert(0, "Select query")
-                        sql_query_to_consult = st.selectbox("🖱️ Select query:*", sql_queries_to_consult_list,
-                            key="key_sql_query_to_consult")
-
-
-                    if sql_query_to_consult != "Select query":
-
-                        with col1:
-
-                            st.markdown(f"""<div class="gray-preview-message">
-                                    ❔ <b style="color:#F63366;"> Query:</b>
-                                    {st.session_state["sql_queries_dict"][sql_query_to_consult][1]}
-                                </div></div>""", unsafe_allow_html=True)
-
-                        cur = conn.cursor()   # create a cursor
-
-                        try:
-                            cur.execute(st.session_state["sql_queries_dict"][sql_query_to_consult][1])
-                            sql_query_ok_flag = True
-
-                        except Exception as e:
-                            with col1:
-                                st.write("")
-                                st.markdown(f"""<div class="error-message">
-                                    ❌ <b>Invalid SQL syntax</b>. Please check your query.<br>
-                                    <small><b> Full error:</b> {e}</small>
-                                </div>""", unsafe_allow_html=True)
-                                st.write("")
-                            sql_query_ok_flag = False
-
-
-                        rows = cur.fetchall()
-                        engine = st.session_state["db_connections_dict"][connection_to_consult_query][0]
-                        if engine == "SQL Server":
-                            rows = [tuple(row) for row in rows]   # rows are of type <class 'pyodbc.Row'> -> convert to tuple
-                        columns = [desc[0] for desc in cur.description]
-                        df = pd.DataFrame(rows, columns=columns)
-
-
+                    except Exception as e:
                         with col1:
                             st.write("")
-                            max_rows = utils.get_max_length_for_display()[2]
-                            max_cols = utils.get_max_length_for_display()[3]
+                            st.markdown(f"""<div class="error-message">
+                                ❌ <b>Invalid SQL syntax</b>. Please check your query.<br>
+                                <small><b> Full error:</b> {e}</small>
+                            </div>""", unsafe_allow_html=True)
+                            st.write("")
+                        sql_query_ok_flag = False
 
-                            limited_df = df.iloc[:, :max_cols]   # limit number of columns
 
-                            # Slice rows if needed
-                            if len(df) > max_rows and df.shape[1] > max_cols:
-                                st.markdown(f"""<div class="warning-message">
-                                    ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
-                                    and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
-                                </div>""", unsafe_allow_html=True)
-                                st.write("")
-                            elif len(df) > max_rows:
-                                st.markdown(f"""<div class="warning-message">
-                                    ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
-                                </div>""", unsafe_allow_html=True)
-                                st.write("")
-                            elif df.shape[1] > max_cols:
-                                st.markdown(f"""<div class="warning-message">
-                                    ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
-                                </div>""", unsafe_allow_html=True)
-                                st.write("")
+                    rows = cur.fetchall()
+                    engine = st.session_state["db_connections_dict"][connection_to_consult_query][0]
+                    if engine == "SQL Server":
+                        rows = [tuple(row) for row in rows]   # rows are of type <class 'pyodbc.Row'> -> convert to tuple
+                    columns = [desc[0] for desc in cur.description]
+                    df = pd.DataFrame(rows, columns=columns)
 
-                            st.dataframe(limited_df.head(max_rows), hide_index=True)
+
+                    with col1:
+                        st.write("")
+                        max_rows = utils.get_max_length_for_display()[2]
+                        max_cols = utils.get_max_length_for_display()[3]
+
+                        limited_df = df.iloc[:, :max_cols]   # limit number of columns
+
+                        # Slice rows if needed
+                        if len(df) > max_rows and df.shape[1] > max_cols:
+                            st.markdown(f"""<div class="warning-message">
+                                ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
+                                and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+                            </div>""", unsafe_allow_html=True)
+                            st.write("")
+                        elif len(df) > max_rows:
+                            st.markdown(f"""<div class="warning-message">
+                                ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
+                            </div>""", unsafe_allow_html=True)
+                            st.write("")
+                        elif df.shape[1] > max_cols:
+                            st.markdown(f"""<div class="warning-message">
+                                ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+                            </div>""", unsafe_allow_html=True)
+                            st.write("")
+
+                        st.dataframe(limited_df.head(max_rows), hide_index=True)
 
 
         # with col1a:
