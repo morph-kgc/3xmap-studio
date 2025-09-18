@@ -713,7 +713,6 @@ def is_valid_iri(iri):
         iri = str(iri)
 
     if not iri.startswith(valid_iri_schemes):
-        st.write("FLAG")
         return False
 
     try:
