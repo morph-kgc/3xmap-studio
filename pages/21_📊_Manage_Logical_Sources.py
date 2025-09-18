@@ -264,15 +264,33 @@ with tab1:
             else:
                 database = st.text_input("⌨️ Enter service name:*")
 
-        with col1:
-            col1a, col1b = st.columns([2,1])
-
         if (conn_label and host and port and database
             and user and password and conn_label not in st.session_state["db_connections_dict"]):
-            with col1a:
+            with col1:
                 connection_ok_flag = utils.try_connection(db_engine, host, port, database, user, password)
                 if connection_ok_flag:
+                    if db_engine == "Oracle":
+                        jdbc_str = f"jdbc:oracle:thin:@{host}:{port}:{database}"
+                    elif db_engine == "SQL Server":
+                        jdbc_str = f"jdbc:sqlserver://{host}:{port};databaseName={database}"
+                    elif db_engine == "PostgreSQL":
+                        jdbc_str = f"jdbc:postgresql://{host}:{port}/{database}"
+                    elif db_engine == "MySQL":
+                        jdbc_str = f"jdbc:mysql://{host}:{port}/{database}"
+                    elif db_engine =="MariaDB":
+                        jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
+
+                    with col1:
+                        st.markdown(f"""<div class="success-message">
+                                ✔️ Valid connection to database:<br>
+                                <small><b>{conn_label}</b> → <b style="color:#F63366;">{jdbc_str}</b>.</small>
+                            </div>""", unsafe_allow_html=True)
+                        st.write("")
+
                     st.button("Save", key="key_save_connection_button", on_click=save_connection)
+
+
+
 
     if not st.session_state["db_connections_dict"] and st.session_state["db_connection_removed_ok_flag"]:
         with col1:
@@ -366,6 +384,20 @@ with tab1:
 
         if "Select all" in connection_labels_to_remove_list:
             connection_labels_to_remove_list = list(st.session_state["db_connections_dict"].keys())
+            # for conn in connection_labels_to_remove_list:
+            #
+            #     [engine, host, port, database, user, password] = st.session_state["db_connections_dict"][db_connection_for_ls]
+            #     if engine == "Oracle":
+            #         jdbc_str = f"jdbc:oracle:thin:@{host}:{port}:{database}"
+            #     elif engine == "SQL Server":
+            #         jdbc_str = f"jdbc:sqlserver://{host}:{port};databaseName={database}"
+            #     elif engine == "PostgreSQL":
+            #         jdbc_str = f"jdbc:postgresql://{host}:{port}/{database}"
+            #     elif engine == "MySQL":
+            #         jdbc_str = f"jdbc:mysql://{host}:{port}/{database}"
+            #     elif engine =="MariaDB":
+            #         jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
+            #
             with col1a:
                 if len(connection_labels_to_remove_list) == 1:
                     st.markdown(f"""<div class="warning-message">
