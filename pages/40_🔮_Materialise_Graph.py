@@ -75,6 +75,8 @@ if "key_mapping_uploader" not in st.session_state:
     st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
 if "additional_mapping_for_mk_saved_ok_flag" not in st.session_state:
     st.session_state["additional_mapping_for_mk_saved_ok_flag"] = False
+if "additional_mapping_removed_ok_flag" not in st.session_state:
+    st.session_state["additional_mapping_removed_ok_flag"] = False
 
 
 #define on_click functions
@@ -191,10 +193,21 @@ def remove_options_for_mk():
 def save_additional_mapping_for_mk():
     # store information________________________
     st.session_state["mk_g_mapping_dict"][uploaded_mapping_label] = uploaded_mapping
-    st.session_state["additional_mapping_for_mk_saved_ok_flag"] = True
+    st.session_state["additional_mapping_added_ok_flag"] = True
     # reset fields_______________________________
     st.session_state["key_uploaded_mapping_label"] = ""
     st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
+
+def remove_additional_mapping_for_mk():
+    # remove________________________
+    for mapping in mappings_to_remove_list:
+        del st.session_state["mk_g_mapping_dict"][mapping]
+    # store information________________________
+    st.session_state["additional_mapping_removed_ok_flag"] = True
+    # reset fields_______________________________
+    st.session_state["key_mappings_to_remove_list"] = []
+
+
 
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
@@ -775,9 +788,6 @@ with tab2:
                             on_click=save_additional_mapping_for_mk)
 
 
-
-
-
     if not st.session_state["ds_files_dict"] and st.session_state["ds_file_removed_ok_flag"]:
         with col1:
             col1a, col1b = st.columns([2,1])
@@ -795,72 +805,72 @@ with tab2:
         with col1:
             st.write("_______")
             st.markdown("""<div class="purple-heading">
-                    🗑️ Remove Files
+                    🗑️ Remove Mapping
                 </div>""", unsafe_allow_html=True)
             st.write("")
 
-        if st.session_state["ds_file_removed_ok_flag"]:
+        if st.session_state["additional_mapping_removed_ok_flag"]:
             with col1:
                 col1a, col1b = st.columns([2,1])
             with col1a:
                 st.write("")
                 st.markdown(f"""<div class="success-message-flag">
-                    ✅ The <b>data source file/s</b> have been removed!
+                    ✅ The <b>mapping/s</b> have been removed!
                 </div>""", unsafe_allow_html=True)
-            st.session_state["ds_file_removed_ok_flag"] = False
+            st.session_state["additional_mapping_removed_ok_flag"] = False
             time.sleep(st.session_state["success_display_time"])
             st.rerun()
 
         with col1:
             col1a, col1b = st.columns([2,1])
 
-        list_to_choose =  list(reversed(list(st.session_state["ds_files_dict"].keys())))
+        list_to_choose =  list(reversed(list(st.session_state["mk_g_mapping_dict"].keys())))
         if len(list_to_choose) > 1:
             list_to_choose.insert(0, "Select all")
         with col1a:
-            ds_files_to_remove_list = st.multiselect("🖱️ Select files:*",list_to_choose,
-                key="key_ds_files_to_remove_list")
+            mappings_to_remove_list = st.multiselect("🖱️ Select mappings:*",list_to_choose,
+                key="key_mappings_to_remove_list")
 
-        if "Select all" in ds_files_to_remove_list:
-            ds_files_to_remove_list = list(st.session_state["ds_files_dict"].keys())
+        if "Select all" in mappings_to_remove_list:
+            mappings_to_remove_list = list(st.session_state["mk_g_mapping_dict"].keys())
             with col1a:
-                if len(ds_files_to_remove_list) == 1:
+                if len(mappings_to_remove_list) == 1:
                     st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, the file <b style="color:#F63366;">
-                            {utils.format_list_for_markdown(ds_files_to_remove_list)}</b>
+                            ⚠️ If you continue, the mapping <b style="color:#F63366;">
+                            {utils.format_list_for_markdown(mappings_to_remove_list)}</b>
                             will be removed.
                         </div>""", unsafe_allow_html=True)
-                elif len(ds_files_to_remove_list) < 6:
+                elif len(mappings_to_remove_list) < utils.get_max_length_for_display()[5]:
                     st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, the files <b style="color:#F63366;">
-                            {utils.format_list_for_markdown(ds_files_to_remove_list)}</b>
+                            ⚠️ If you continue, the mappings <b style="color:#F63366;">
+                            {utils.format_list_for_markdown(mappings_to_remove_list)}</b>
                             will be removed.
                         </div>""", unsafe_allow_html=True)
                 else:
                     st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, <b style="color:#F63366;">all files</b>
+                            ⚠️ If you continue, <b style="color:#F63366;">all mappings</b>
                             will be removed.
                         </div>""", unsafe_allow_html=True)
                 st.write("")
 
-
-                delete_all_files_checkbox= st.checkbox(
-                ":gray-badge[⚠️ I am sure I want to delete all files]",
+                delete_all_mappings_checkbox = st.checkbox(
+                ":gray-badge[⚠️ I am sure I want to delete all mappings]",
                 key="key_delete_sm_class_checkbox")
-                if delete_all_files_checkbox:
-                    st.button("Remove", key="key_remove_file_button", on_click=remove_file)
-        elif ds_files_to_remove_list:
+                if delete_all_mappings_checkbox:
+                    st.button("Remove", key="key_remove_additional_mapping_for_mk_button", on_click=remove_additional_mapping_for_mk)
+
+        elif mappings_to_remove_list:
             with col1a:
-                if len(ds_files_to_remove_list) == 1:
+                if len(mappings_to_remove_list) == 1:
                     st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, the file <b style="color:#F63366;">
-                            {utils.format_list_for_markdown(ds_files_to_remove_list)}</b>
+                            ⚠️ If you continue, the mapping <b style="color:#F63366;">
+                            {utils.format_list_for_markdown(mappings_to_remove_list)}</b>
                             will be removed.
                         </div>""", unsafe_allow_html=True)
-                elif len(ds_files_to_remove_list) < 6:
+                elif len(mappings_to_remove_list) < utils.get_max_length_for_display()[5]:
                     st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, the files <b style="color:#F63366;">
-                            {utils.format_list_for_markdown(ds_files_to_remove_list)}</b>
+                            ⚠️ If you continue, the mappings <b style="color:#F63366;">
+                            {utils.format_list_for_markdown(mappings_to_remove_list)}</b>
                             will be removed.
                         </div>""", unsafe_allow_html=True)
                 else:
@@ -870,7 +880,11 @@ with tab2:
                         </div>""", unsafe_allow_html=True)
                 st.write("")
 
-                st.button("Remove", key="key_remove_file_button", on_click=remove_file)
+                delete_mappings_checkbox = st.checkbox(
+                ":gray-badge[⚠️ I am sure I want to delete the selected mapping/s]",
+                key="key_delete_sm_class_checkbox")
+                if delete_mappings_checkbox:
+                    st.button("Remove", key="key_remove_additional_mapping_for_mk_button", on_click=remove_additional_mapping_for_mk)
 
 
 

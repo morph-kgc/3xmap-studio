@@ -763,7 +763,7 @@ with tab2:
                             {utils.format_list_for_markdown(ds_files_to_remove_list)}</b>
                             will be removed.
                         </div>""", unsafe_allow_html=True)
-                elif len(ds_files_to_remove_list) < 6:
+                elif len(ds_files_to_remove_list) < utils.get_max_length_for_display()[5]:
                     st.markdown(f"""<div class="warning-message">
                             ⚠️ If you continue, the files <b style="color:#F63366;">
                             {utils.format_list_for_markdown(ds_files_to_remove_list)}</b>
@@ -779,7 +779,7 @@ with tab2:
 
                 delete_all_files_checkbox= st.checkbox(
                 ":gray-badge[⚠️ I am sure I want to delete all files]",
-                key="key_delete_sm_class_checkbox")
+                key="key_delete_all_files_checkbox")
                 if delete_all_files_checkbox:
                     st.button("Remove", key="key_remove_file_button", on_click=remove_file)
         elif ds_files_to_remove_list:
