@@ -56,8 +56,6 @@ if "mk_config" not in st.session_state:
     st.session_state["mk_config"] = configparser.ConfigParser()
 if "mk_db_connections_dict" not in st.session_state:
     st.session_state["mk_db_connections_dict"] = {}
-if "mk_ds_files_dict" not in st.session_state:
-    st.session_state["mk_ds_files_dict"] = {}
 if "mk_g_mapping_dict" not in st.session_state:
     st.session_state["mk_g_mapping_dict"] = {}
 if "ds_for_mk_saved_ok_flag" not in st.session_state:
@@ -86,13 +84,8 @@ if "additional_mapping_added_from_URL_ok_flag" not in st.session_state:
 # TAB1
 def save_sql_ds_for_mk():
     # add to config dict___________________
-    st.session_state["mk_config"][mk_ds_label] = {"db_url": db_url, "db_user": db_user,
-        "db_password": db_password, "db_type": db_type,
+    st.session_state["mk_config"][mk_ds_label] = {"db_url": db_url,
         "mappings": mk_mappings_str_for_sql}
-    if schema:
-        st.session_state["mk_config"][mk_ds_label]["schema"] = schema
-    if driver_class:
-        st.session_state["mk_config"][mk_ds_label]["driver_class"] = driver_class
     # store information________________________
     st.session_state["ds_for_mk_saved_ok_flag"] = True
     # reset fields__________________________
@@ -268,7 +261,6 @@ with tab1:
     with col1a:
         mk_ds_label = st.text_input("⌨️ Enter data source label:*", key="key_mk_ds_label")
 
-
     if mk_ds_label:
         excluded_characters = r"[ \t\n\r<>\"{}|\\^`\[\]%']"
         if mk_ds_label in st.session_state["mk_config"]:
@@ -298,10 +290,22 @@ with tab1:
 
         else:
 
-            with col1b:
-                st.write("")
-                mk_ds_type = st.radio("🖱️ Select an option:*", ["📊 SQL Database", "🛢️ Tabular data"],
-                    label_visibility="collapsed", key="key_mk_ds_type")
+            if not st.session_state["db_connections_dict"] and not st.session_state["ds_files_dict"]:
+                with col1a:
+                    st.markdown(f"""<div class="error-message">
+                        ❌ <b> There are no data sources available.
+                        <small>You can add them in the <b>📊 Manage Logical Sources</b> page.</small>
+                    </div>""", unsafe_allow_html=True)
+                mk_ds_type = ""
+            elif not st.session_state["ds_files_dict"]:
+                mk_ds_type = "📊 SQL Database"
+            elif not st.session_state["db_connections_dict"]:
+                mk_ds_type = "🛢️ Tabular data"
+            else:
+                with col1b:
+                    st.write("")
+                    mk_ds_type = st.radio("🖱️ Select an option:*", ["📊 SQL Database", "🛢️ Tabular data"],
+                        label_visibility="collapsed", key="key_mk_ds_type")
 
             if mk_ds_type == "📊 SQL Database":
 
@@ -314,39 +318,48 @@ with tab1:
                         key="key_mk_sql_ds")
 
                     if mk_sql_ds != "Select data source":
-                        db_url = utils.get_jdbc_str_mk(mk_sql_ds, st.session_state["db_connections_dict"])
+                        db_url = utils.get_db_url_str(mk_sql_ds)
                         db_user = st.session_state["db_connections_dict"][mk_sql_ds][4]
                         db_password = st.session_state["db_connections_dict"][mk_sql_ds][5]
                         db_type = st.session_state["db_connections_dict"][mk_sql_ds][0]
 
                 with col1b:
-                    list_to_choose = list(reversed(list(st.session_state["mk_g_mapping_dict"])))
+                    mk_g_mapping_dict_complete = st.session_state["mk_g_mapping_dict"].copy()
+                    if st.session_state["g_label"]:
+                        mk_g_mapping_dict_complete[st.session_state["g_label"]] = st.session_state["g_mapping"]
+
+                    list_to_choose = list(reversed(list(mk_g_mapping_dict_complete)))
+                    if len(list_to_choose) > 1:
+                        list_to_choose.insert(0, "Select all")
 
                     if st.session_state["g_label"]:
-                        list_to_choose.insert(0, st.session_state["g_label"])
-                        list_to_choose.insert(0, "Select all")
                         mk_mappings_list_for_sql = st.multiselect("🖱️ Select mappings:*", list_to_choose,
-                            default=[st.session_state["g_label"]], key="key_mk_mappings_for_sql")
+                            default=[st.session_state["g_label"]], key="key_mk_mappings")
                     else:
-                        list_to_choose.insert(0, "Select all")
                         mk_mappings_list_for_sql = st.multiselect("🖱️ Select mappings:*", list_to_choose,
-                            key="key_mk_mappings_for_sql")
+                            key="key_mk_mappings")
+
+                    if not mk_g_mapping_dict_complete:
+                        with col1:
+                            st.markdown(f"""<div class="error-message">
+                                ❌ <b> No mappings available. </b>
+                                <small>You can build a mapping using <b>RDFolio</b>
+                                and/or load additional mappings in the <b>Additional Mappings</b> pannel.</small>
+                            </div>""", unsafe_allow_html=True)
 
                 if "Select all" in mk_mappings_list_for_sql:
-                    mk_mappings_list_for_sql = list(reversed(list(st.session_state["mk_g_mapping_dict"])))
-                    if st.session_state["g_label"]:
-                        mk_mappings_list_for_sql.insert(0, st.session_state["g_label"])
+                    mk_mappings_list_for_sql = list(reversed(list(mk_g_mapping_dict_complete)))
 
-                st.session_state["mk_g_mapping_dict"][st.session_state["g_label"]] = os.path.join(st.session_state["g_label"] + '.ttl')
-
-                mk_mappings_paths_list_for_sql = [st.session_state["mk_g_mapping_dict"][mapping]
+                mk_mappings_paths_list_for_sql = [os.path.join(temp_folder_path, mapping + ".ttl")
                     for mapping in mk_mappings_list_for_sql]
                 mk_mappings_str_for_sql = ", ".join(mk_mappings_paths_list_for_sql)   # join into a comma-separated string for the config
 
-                with col1a:
-                    schema = st.text_input("⌨️ Enter schema (optional):")
-                with col1b:
-                    driver_class = st.text_input("⌨️ Enter driver class (optional):")
+                # with col1:
+                #     col1a, col1b = st.columns(2)
+                # with col1a:
+                #     schema = st.text_input("⌨️ Enter schema (optional):")
+                # with col1b:
+                #     driver_class = st.text_input("⌨️ Enter driver class (optional):")
 
                 if mk_sql_ds != "Select data source" and mk_mappings_list_for_sql:
                     with col1a:
@@ -357,8 +370,7 @@ with tab1:
                 with col1:
                     col1a, col1b = st.columns(2)
                 with col1a:
-                    ds_files_dict_complete = st.session_state["mk_ds_files_dict"] | st.session_state["ds_files_dict"]
-                    list_to_choose = list(reversed(ds_files_dict_complete))
+                    list_to_choose = list(reversed(st.session_state["ds_files_dict"]))
                     list_to_choose.insert(0, "Select data source")
                     mk_tab_ds_file = st.selectbox("🖱️ Select data source:*", list_to_choose,
                         key="key_mk_tab_ds_file")
@@ -367,8 +379,14 @@ with tab1:
                         file_path = os.path.join(temp_folder_path, mk_tab_ds_file)
 
                 with col1b:
-                    list_to_choose = list(reversed(list(st.session_state["mk_g_mapping_dict"])))
-                    list_to_choose.insert(0, "Select all")
+                    mk_g_mapping_dict_complete = st.session_state["mk_g_mapping_dict"].copy()
+                    if st.session_state["g_label"]:
+                        mk_g_mapping_dict_complete[st.session_state["g_label"]] = st.session_state["g_mapping"]
+
+                    list_to_choose = list(reversed(list(mk_g_mapping_dict_complete)))
+                    if len(list_to_choose) > 1:
+                        list_to_choose.insert(0, "Select all")
+
                     if st.session_state["g_label"]:
                         mk_mappings_list_for_tab = st.multiselect("🖱️ Select mappings:*", list_to_choose,
                             default=[st.session_state["g_label"]], key="key_mk_mappings")
@@ -376,8 +394,16 @@ with tab1:
                         mk_mappings_list_for_tab = st.multiselect("🖱️ Select mappings:*", list_to_choose,
                             key="key_mk_mappings")
 
-                mk_mappings_paths_list_for_tab = [st.session_state["mk_g_mapping_dict"][mapping]
-                for mapping in mk_mappings_list_for_tab]
+                    if not mk_g_mapping_dict_complete:
+                        with col1:
+                            st.markdown(f"""<div class="error-message">
+                                ❌ <b> No mappings available. </b>
+                                <small>You can build a mapping using <b>RDFolio</b>
+                                and/or load additional mappings in the <b>Additional Mappings</b> pannel.</small>
+                            </div>""", unsafe_allow_html=True)
+
+                mk_mappings_paths_list_for_tab = [os.path.join(temp_folder_path, mapping + ".ttl")
+                    for mapping in mk_mappings_list_for_tab]
                 mk_mappings_str_for_tab = ", ".join(mk_mappings_paths_list_for_tab)   # join into a comma-separated string for the config
 
                 if mk_tab_ds_file != "Select data source" and mk_mappings_list_for_tab:
@@ -914,7 +940,7 @@ with tab2:
                     st.button("Save", key="key_save_mapping_for_mk_from_url_button",
                         on_click=save_mapping_for_mk_from_url)
 
-    if not st.session_state["ds_files_dict"] and st.session_state["ds_file_removed_ok_flag"]:
+    if not st.session_state["ds_files_dict"] and st.session_state["additional_mapping_removed_ok_flag"]:
         with col1:
             col1a, col1b = st.columns([2,1])
         with col1a:
@@ -922,7 +948,7 @@ with tab2:
             st.markdown(f"""<div class="success-message-flag">
                 ✅ The <b>data source file/s</b> have been removed!
             </div>""", unsafe_allow_html=True)
-        st.session_state["ds_file_removed_ok_flag"] = False
+        st.session_state["additional_mapping_removed_ok_flag"] = False
         time.sleep(st.session_state["success_display_time"])
         st.rerun()
 

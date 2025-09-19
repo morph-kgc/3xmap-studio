@@ -1516,28 +1516,6 @@ def get_jdbc_str(conn):
 #_________________________________________________
 
 #_________________________________________________
-# Funtion to get jdbc str from connection
-def get_jdbc_str_mk(conn, dict):
-
-    [engine, host, port, database, user, password] = dict[conn]
-
-    if engine == "Oracle":
-        jdbc_str = f"jdbc:oracle:thin:@{host}:{port}:{database}"
-    elif engine == "SQL Server":
-        jdbc_str = f"jdbc:sqlserver://{host}:{port};databaseName={database}"
-    elif engine == "PostgreSQL":
-        jdbc_str = f"jdbc:postgresql://{host}:{port}/{database}"
-    elif engine == "MySQL":
-        jdbc_str = f"jdbc:mysql://{host}:{port}/{database}"
-    elif engine =="MariaDB":
-        jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
-
-    return jdbc_str
-
-#_________________________________________________
-
-
-#_________________________________________________
 # Funtion to read tabular data
 def read_tab_file(filename):
 
@@ -1627,6 +1605,26 @@ def read_tab_file_unsaved(file):
     return read_content
 #_________________________________________________
 
+#_________________________________________________
+# Funtion to get db_url string
+def get_db_url_str(conn):
+
+    [engine, host, port, database, user, password] = st.session_state["db_connections_dict"][conn]
+
+    if engine == "Oracle":
+        db_url_str = f"oracle+oracledb://{user}:{password}@{host}:{port}/{database}"
+    elif engine == "SQL Server":
+        db_url_str = f" mssql+pymssql://{user}:{password}@{host}:{port}/{database}"
+    elif engine == "PostgreSQL":
+        db_url_str = f"postgresql+psycopg://{user}:{password}@{host}:{port}/{database}"
+    elif engine == "MySQL":
+        db_url_str = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}"
+    elif engine =="MariaDB":
+        db_url_str = f"mariadb+pymysql://{user}:{password}@{host}:{port}/{database}"
+
+    return db_url_str
+
+#_________________________________________________
 # #_________________________________________________
 # # Funtion to get allowed mapping extensions for Morph-KGC
 # def get_allowed_mapping_extensions_mk():
