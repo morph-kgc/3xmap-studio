@@ -37,6 +37,12 @@ RML, RR, QL = utils.get_required_ns().values()
 temp_folder_path = os.path.join(os.getcwd(), "materialising_mapping_temp")
 
 # Initialise session state variables
+# OTHER PAGES
+if "g_label" not in st.session_state:
+    st.session_state["g_label"] = ""
+if "g_mapping" not in st.session_state:
+    st.session_state["g_mapping"] = Graph()
+
 #TAB1
 if "mk_config" not in st.session_state:
     st.session_state["mk_config"] = configparser.ConfigParser()
@@ -45,7 +51,10 @@ if "mk_db_connections_dict" not in st.session_state:
 if "mk_ds_files_dict" not in st.session_state:
     st.session_state["mk_ds_files_dict"] = {}
 if "mk_g_mapping_dict" not in st.session_state:
-    st.session_state["mk_g_mapping_dict"] = {st.session_state["g_label"]: os.path.join(temp_folder_path, st.session_state["g_label"] + ".ttl")}
+    if st.session_state["g_label"]:
+        st.session_state["mk_g_mapping_dict"] = {st.session_state["g_label"]: os.path.join(temp_folder_path, st.session_state["g_label"] + ".ttl")}
+    else:
+        st.session_state["mk_g_mapping_dict"] = {}
 if "ds_for_mk_saved_ok_flag" not in st.session_state:
     st.session_state["ds_for_mk_saved_ok_flag"] = False
 if "ds_for_mk_removed_ok_flag" not in st.session_state:
@@ -76,14 +85,6 @@ def save_tab_ds_for_mk():
     # reset values__________________________
     st.session_state["key_mk_ds_label"] = ""
 
-
-# encoding	File encoding (e.g., utf-8, latin1)
-# delimiter	For CSV files, specify the delimiter (e.g., ,, ;, \t)
-# quotechar	Character used to quote fields (e.g., ")
-# skip_rows	Number of rows to skip at the top of the file
-# sheet_name	For Excel files, specify the sheet to read
-# format	Explicit format (e.g., csv, json, xlsx) — sometimes inferred
-
 def remove_ds_for_mk():
     # remove from config dict___________________
     for ds in ds_for_mk_to_remove_list:
@@ -92,6 +93,82 @@ def remove_ds_for_mk():
     st.session_state["ds_for_mk_removed_ok_flag"] = True
     # reset values__________________________
     st.session_state["key_ds_for_mk_to_remove_list"] = []
+
+def save_options_for_mk():
+    #create section_______________
+    if not st.session_state["mk_config"].has_section("Options"):
+        st.session_state["mk_config"].add_section("Options")
+    # add to config dict___________________
+    if output_file:
+        st.session_state["mk_config"]["Options"]["output_file"] = output_file
+    else:
+        if st.session_state["mk_config"].has_option("Options", "output_file"):
+            st.session_state["mk_config"].remove_option("Options", "output_file")
+    if output_format != "Select option":
+        st.session_state["mk_config"]["Options"]["output_format"] = output_format
+    else:
+        if st.session_state["mk_config"].has_option("Options", "output_format"):
+            st.session_state["mk_config"].remove_option("Options", "output_format")
+    if log_level != "Select option":
+        st.session_state["mk_config"]["Options"]["log_level"] = log_level
+    else:
+        if st.session_state["mk_config"].has_option("Options", "log_level"):
+            st.session_state["mk_config"].remove_option("Options", "log_level")
+    if mapping_partitioning != "Select option":
+        st.session_state["mk_config"]["Options"]["mapping_partitioning"] = mapping_partitioning
+    else:
+        if st.session_state["mk_config"].has_option("Options", "mapping_partitioning"):
+            st.session_state["mk_config"].remove_option("Options", "mapping_partitioning")
+    if na_values:
+        st.session_state["mk_config"]["Options"]["na_values"] = na_values
+    else:
+        if st.session_state["mk_config"].has_option("Options", "na_values"):
+            st.session_state["mk_config"].remove_option("Options", "na_values")
+    if only_printable_chars != "Select option":
+        st.session_state["mk_config"]["Options"]["only_printable_chars"] = only_printable_chars
+    else:
+        if st.session_state["mk_config"].has_option("Options", "only_printable_chars"):
+            st.session_state["mk_config"].remove_option("Options", "only_printable_chars")
+    if safe_percent_encoding:
+        st.session_state["mk_config"]["Options"]["safe_percent_encoding"] = safe_percent_encoding
+    else:
+        if st.session_state["mk_config"].has_option("Options", "safe_percent_encoding"):
+            st.session_state["mk_config"].remove_option("Options", "safe_percent_encoding")
+    if infer_sql_datatypes != "Select option":
+        st.session_state["mk_config"]["Options"]["infer_sql_datatypes"] = infer_sql_datatypes
+    else:
+        if st.session_state["mk_config"].has_option("Options", "infer_sql_datatypes"):
+            st.session_state["mk_config"].remove_option("Options", "infer_sql_datatypes")
+    if number_of_processes:
+        st.session_state["mk_config"]["Options"]["number_of_processes"] = number_of_processes
+    else:
+        if st.session_state["mk_config"].has_option("Options", "number_of_processes"):
+            st.session_state["mk_config"].remove_option("Options", "number_of_processes")
+    if output_kafka_server:
+        st.session_state["mk_config"]["Options"]["output_kafka_server"] = output_kafka_server
+    else:
+        if st.session_state["mk_config"].has_option("Options", "output_kafka_server"):
+            st.session_state["mk_config"].remove_option("Options", "output_kafka_server")
+        if st.session_state["mk_config"].has_option("Options", "output_kafka_topic"):
+            st.session_state["mk_config"].remove_option("Options", "output_kafka_topic")
+    if output_kafka_server:
+        if output_kafka_topic:
+            st.session_state["mk_config"]["Options"]["output_kafka_topic"] = output_kafka_topic
+        else:
+            if st.session_state["mk_config"].has_option("Options", "output_kafka_topic"):
+                st.session_state["mk_config"].remove_option("Options", "output_kafka_topic")
+    # store information________________________
+    st.session_state["options_for_mk_saved_ok_flag"] = True
+    # reset values__________________________
+    st.session_state["key_configure_options_for_mk_toggle"] = "🔒 Keep options"
+
+def remove_options_for_mk():
+    # remove from config dict___________________
+    del st.session_state["mk_config"]["Options"]
+    # store information________________________
+    st.session_state["options_for_mk_removed_ok_flag"] = True
+    # reset values__________________________
+    st.session_state["key_configure_options_for_mk_toggle"] = "🚫 No options"
 
 
 
@@ -113,11 +190,12 @@ with tab1:
     with col2:
         col2a, col2b = st.columns([0.5, 2])
 
+    # Show config content
     with col2b:
         config_string = io.StringIO()
-        st.session_state["mk_config"].write(config_string)
-        # Show in Markdown
-        st.markdown(f"```ini\n{config_string.getvalue()}\n```")
+        if config_string:
+            st.session_state["mk_config"].write(config_string)
+            st.markdown(f"```ini\n{config_string.getvalue()}\n```")
 
     # PURPLE HEADING - ADD DATA SOURCE
     with col1:
@@ -187,8 +265,12 @@ with tab1:
                 with col1b:
                     list_to_choose = list(reversed(list(st.session_state["mk_g_mapping_dict"])))
                     list_to_choose.insert(0, "Select all")
-                    mk_mappings_list_for_sql = st.multiselect("🖱️ Select mappings:*", list_to_choose,
-                        default=[st.session_state["g_label"]], key="key_mk_mappings_for_sql")
+                    if st.session_state["g_label"]:
+                        mk_mappings_list_for_sql = st.multiselect("🖱️ Select mappings:*", list_to_choose,
+                            default=[st.session_state["g_label"]], key="key_mk_mappings_for_sql")
+                    else:
+                        mk_mappings_list_for_sql = st.multiselect("🖱️ Select mappings:*", list_to_choose,
+                            key="key_mk_mappings_for_sql")
 
                 mk_mappings_paths_list_for_sql = [st.session_state["mk_g_mapping_dict"][mapping]
                 for mapping in mk_mappings_list_for_sql]
@@ -220,8 +302,12 @@ with tab1:
                 with col1b:
                     list_to_choose = list(reversed(list(st.session_state["mk_g_mapping_dict"])))
                     list_to_choose.insert(0, "Select all")
-                    mk_mappings_list_for_tab = st.multiselect("🖱️ Select mappings:*", list_to_choose,
-                        default=[st.session_state["g_label"]], key="key_mk_mappings")
+                    if st.session_state["g_label"]:
+                        mk_mappings_list_for_tab = st.multiselect("🖱️ Select mappings:*", list_to_choose,
+                            default=[st.session_state["g_label"]], key="key_mk_mappings")
+                    else:
+                        mk_mappings_list_for_tab = st.multiselect("🖱️ Select mappings:*", list_to_choose,
+                            key="key_mk_mappings")
 
                 mk_mappings_paths_list_for_tab = [st.session_state["mk_g_mapping_dict"][mapping]
                 for mapping in mk_mappings_list_for_tab]
@@ -263,73 +349,93 @@ with tab1:
         st.markdown("""<div class="purple-heading">
                 ⚙️ Configure Options
             </div>""", unsafe_allow_html=True)
-        st.write("")
 
     with col1:
         col1a, col1b = st.columns(2)
     with col1:
-        configure_options_for_mk_toggle = st.toggle("⚙️ Configure options",
-            key="key_configure_options_for_mk_toggle")
+        if st.session_state["mk_config"].has_section("Options"):
+            configure_options_for_mk = st.radio("🖱️ Select an option:*",
+                ["🔒 Keep options", "✏️ Modify options", "🗑️ Remove options"],
+                horizontal=True, label_visibility="collapsed",
+                key="key_configure_options_for_mk_toggle")
+        else:
+            configure_options_for_mk = st.radio("🖱️ Select an option:*",
+                ["🚫 No options", "✏️ Add options"],
+                horizontal=True, label_visibility="collapsed",
+                key="key_configure_options_for_mk_toggle")
 
-    if configure_options_for_mk_toggle:
+    if configure_options_for_mk in ["✏️ Modify options", "✏️ Add options"]:
         with col1:
             col1a, col1b = st.columns(2)
 
         with col1a:
-            output_filename = st.text_input("⌨️ Enter output filename (optional):")
+            default_output_file = st.session_state["mk_config"].get("Options", "output_filename", fallback="")
+            default_output_filename = os.path.basename(default_output_file)
+            output_filename = st.text_input("⌨️ Enter output filename (optional):", value=default_output_filename,
+                key="key_output_filename")
             output_file = os.path.join(temp_folder_path, output_filename) if output_filename else ""
 
         with col1b:
+            default_output_format = st.session_state["mk_config"].get("Options", "output_format", fallback="Select option")
             list_to_choose = list(utils.get_g_mapping_file_formats_dict())
             list_to_choose.insert(0, "Select option")
             output_format = st.selectbox("🖱️ Select format (optional):", list_to_choose,
-                key="key_output_format")
+                index=list_to_choose.index(default_output_format), key="key_output_format")
 
         with col1:
             col1a, col1b = st.columns(2)
         with col1a:
+            default_log_level = st.session_state["mk_config"].get("Options", "log_level", fallback="Select option")
             list_to_choose = ["ERROR", "WARNING", "INFO", "DEBUG"]
             list_to_choose.insert(0, "Select option")
             log_level = st.selectbox("🖱️ Select log level (optional):", list_to_choose,
-                key="key_log_level")
+                index=list_to_choose.index(default_log_level), key="key_log_level")
 
         with col1b:
+            default_mapping_partitioning = st.session_state["mk_config"].get("Options", "mapping_partitioning", fallback="Select option")
             list_to_choose = ["MAXIMAL", "PARTIAL-AGGREGATIONS", "NONE"]
             list_to_choose.insert(0, "Select option")
             mapping_partitioning = st.selectbox("🖱️ Select mapping partitioning (optional):", list_to_choose,
-                key="key_mapping_partitioning")
+                index=list_to_choose.index(default_mapping_partitioning), key="key_mapping_partitioning")
 
         with col1:
             col1a, col1b = st.columns(2)
         with col1a:
+            default_na_values = st.session_state["mk_config"].get("Options", "na_values", fallback="")
+            default_na_values_list = default_na_values.split(",") if default_na_values else []
             list_to_choose = ["null", "NULL", "nan", "NaN", "NA", "N/A", "#N/A", "missing", '""',
                 "-", ".", "none", "None", "undefined", "#VALUE!", "#REF!", "#DIV/0!"]
-
-            na_values = st.multiselect("🖱️ Select na values (optional)", list_to_choose,
-                key="key_na_values")
+            na_values_list = st.multiselect("🖱️ Select na values (optional)", list_to_choose,
+                default=default_na_values_list, key="key_na_values")
+            na_values = ",".join(na_values_list)
 
         with col1b:
-            list_to_choose = ["Yes", "No"]
-            list_to_choose.insert(0, "Select option")
+            default_only_printable_chars = st.session_state["mk_config"].get("Options", "only_printable_chars", fallback="Select option")
+            list_to_choose = ["Select option", "Yes", "No"]
             only_printable_chars = st.selectbox("🖱️ Only printable charts (optional):", list_to_choose,
-                key="key_only_printable_chars")
+                index=list_to_choose.index(default_only_printable_chars), key="key_only_printable_chars")
 
         with col1:
             col1a, col1b = st.columns(2)
         with col1a:
-            safe_percent_encoding = st.text_input("⌨️ Enter safe percent encodings (optional):")
+            default_safe_percent_encoding = st.session_state["mk_config"].get("Options", "safe_percent_encoding", fallback="")
+            safe_percent_encoding = st.text_input("⌨️ Enter safe percent encodings (optional):",
+                value=default_safe_percent_encoding, key="key_default_safe_percent_encoding")
 
         with col1b:
-            list_to_choose = ["Yes", "No"]
-            list_to_choose.insert(0, "Select option")
+            default_infer_sql_datatypes = st.session_state["mk_config"].get("Options", "infer_sql_datatypes ", fallback="Select option")
+            list_to_choose = ["Select option", "Yes", "No"]
+            list_to_choose = ["Select option", "Yes", "No"]
             infer_sql_datatypes = st.selectbox("🖱️ Infer sql datatypes (optional):", list_to_choose,
-                key="key_infer_sql_datatypes")
+                index=list_to_choose.index(default_infer_sql_datatypes), key="key_infer_sql_datatypes")
 
         with col1:
             col1a, col1b = st.columns(2)
 
         with col1a:
-            number_of_processes = st.text_input("⌨️ Enter number of processes (optional):")
+            default_number_of_processes = st.session_state["mk_config"].get("Options", "number_of_processes", fallback="")
+            number_of_processes = st.text_input("⌨️ Enter number of processes (optional):",
+                value = default_number_of_processes, key="key_number_of_processes")
             if number_of_processes:
                 try:
                     number_of_processes_check = int(number_of_processes)
@@ -347,12 +453,16 @@ with tab1:
         with col1:
             col1a, col1b = st.columns(2)
         with col1a:
-            output_kafka_server = st.text_input("⌨️ Output Kafka server (optional):")
+            default_output_kafka_server = st.session_state["mk_config"].get("Options", "output_kafka_server", fallback="")
+            output_kafka_server = st.text_input("⌨️ Output Kafka server (optional):",
+                value=default_output_kafka_server, key="key_default_output_kafka_server")
 
         options_for_mk_ok_flag = True
         if output_kafka_server:
             with col1b:
-                output_kafka_topic = st.text_input("⌨️ Output Kafka topic (optional):")
+                default_output_kafka_topic = st.session_state["mk_config"].get("Options", "output_kafka_topic", fallback="")
+                output_kafka_topic = st.text_input("⌨️ Output Kafka topic (optional):",
+                    value=default_output_kafka_topic, key="key_optput_kafka_topic")
                 if not output_kafka_topic:
                     st.markdown(f"""<div class="error-message">
                         ❌ An <b>output Kafka topic</b> must be selected if
@@ -361,8 +471,15 @@ with tab1:
                     options_for_mk_ok_flag = False
 
         if options_for_mk_ok_flag:
-            st.button("Save") #HEREIGO
+            st.button("Save", key="key_save_options_for_mk_button", on_click=save_options_for_mk)
 
+    if configure_options_for_mk == "🗑️ Remove options":
+        with col1:
+            remove_options_for_mk_checkbox = st.checkbox(
+            ":gray-badge[⚠️ I am sure I want to remove the Options]",
+            key="key_remove_options_for_mk_checkbox")
+            if remove_options_for_mk_checkbox:
+                st.button("Remove", on_click=remove_options_for_mk)
 
 
 # output_dir	Directory where output files will be saved	./output/
