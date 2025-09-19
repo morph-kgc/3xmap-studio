@@ -1227,7 +1227,7 @@ with tab3:
                         st.markdown(f"""<div class="error-message">
                             ❌ <b> Prefix {prefix_input} is tied to a predefined namespace. </b>
                             <small>You can either choose a different prefix or bind {prefix_input}
-                            directly from the predefined namespaces option.</small
+                            directly from the predefined namespaces option.</small>
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                 elif prefix_input in default_ns_dict:

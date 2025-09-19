@@ -11,6 +11,7 @@ import configparser
 import io
 import time
 import uuid   # to handle uploader keys
+import requests
 
 # Header
 st.markdown("""<div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
@@ -77,6 +78,8 @@ if "additional_mapping_for_mk_saved_ok_flag" not in st.session_state:
     st.session_state["additional_mapping_for_mk_saved_ok_flag"] = False
 if "additional_mapping_removed_ok_flag" not in st.session_state:
     st.session_state["additional_mapping_removed_ok_flag"] = False
+if "additional_mapping_added_from_URL_ok_flag" not in st.session_state:
+    st.session_state["additional_mapping_added_from_URL_ok_flag"] = False
 
 
 #define on_click functions
@@ -190,13 +193,20 @@ def remove_options_for_mk():
     st.session_state["key_configure_options_for_mk"] = "🚫 No options"
 
 # TAB2
-def save_additional_mapping_for_mk():
+def save_mapping_for_mk():
     # store information________________________
     st.session_state["mk_g_mapping_dict"][uploaded_mapping_label] = uploaded_mapping
     st.session_state["additional_mapping_added_ok_flag"] = True
     # reset fields_______________________________
     st.session_state["key_uploaded_mapping_label"] = ""
     st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
+
+def save_mapping_for_mk_from_url():
+    # store information________________________
+    st.session_state["mk_g_mapping_dict"][url_mapping_label] = url_mapping
+    st.session_state["additional_mapping_added_from_URL_ok_flag"] = True
+    # reset fields_______________________________
+    st.session_state["key_mapping_label_url"] = ""
 
 def remove_additional_mapping_for_mk():
     # remove________________________
@@ -697,7 +707,7 @@ with tab2:
     with col1:
         st.write("")
         st.markdown("""<div class="purple-heading">
-                📁 Upload File <small>(or Update)</small>
+                📁 Upload Mapping from File
             </div>""", unsafe_allow_html=True)
         st.write("")
 
@@ -717,7 +727,14 @@ with tab2:
     with col1a:
         uploaded_mapping_label = st.text_input("⌨️ Enter mapping label:*", key="key_uploaded_mapping_label")
 
-    if uploaded_mapping_label:
+    if uploaded_mapping_label in st.session_state["mk_g_mapping_dict"]:
+        with col1a:
+            st.markdown(f"""<div class="error-message">
+                ❌ Label <b>{uploaded_mapping_label}</b> is already in use.
+                <small>Please, pick a different label.</small>
+            </div>""", unsafe_allow_html=True)
+
+    elif uploaded_mapping_label:
 
         with col1:
             col1a, col1b = st.columns([2,1])
@@ -766,10 +783,11 @@ with tab2:
                             with col1b:
                                 st.write("")
                                 st.write("")
-                                st.markdown(f"""<div class="warning-message">
-                                        ⚠️ File loaded, but <b>no RML structure found</b>.
-                                        <small>Checking your mapping content is recommended.</small>
+                                st.markdown(f"""<div class="error-message">
+                                        ❌ File loaded, but <b>no RML structure found</b>.
+                                        <small>Please, check your mapping content.</small>
                                     </div>""", unsafe_allow_html=True)
+                                uploaded_mapping_ok_flag = False
 
                     except Exception as e:
                         with col1b:
@@ -777,16 +795,124 @@ with tab2:
                             st.write("")
                             st.markdown(f"""<div class="error-message">
                                 ❌ <b> Failed to parse mapping file. </b>
-                                <small>{e}</small>
+                                <small>Complete error: {e}</small>
                             </div>""", unsafe_allow_html=True)
                             uploaded_mapping_ok_flag = False
 
                 if uploaded_mapping_ok_flag:
                     with col1a:
                         st.write("")
-                        st.button("Save", key="key_save_additional_mapping_for_mk_button",
-                            on_click=save_additional_mapping_for_mk)
+                        st.button("Save", key="key_save_mapping_for_mk_button",
+                            on_click=save_mapping_for_mk)
 
+
+    #PURPLE HEADING - ADD MAPPING FROM URL
+    with col1:
+        st.write("______")
+        st.markdown("""<div class="purple-heading">
+                🌐 Add Mapping from URL
+            </div>""", unsafe_allow_html=True)
+        st.write("")
+
+
+    with col1:
+        col1a, col1b = st.columns([1,2])
+
+    if st.session_state["additional_mapping_added_from_URL_ok_flag"]:
+        with col1:
+            st.write("")
+            st.markdown(f"""<div class="success-message-flag">
+                ✅ The <b>mapping</b> has been added!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["additional_mapping_added_from_URL_ok_flag"] = False
+        time.sleep(st.session_state["success_display_time"])
+        st.rerun()
+
+    with col1a:
+        url_mapping_label = st.text_input("⌨️ Enter mapping label:*", key="key_mapping_label_url")
+
+    if url_mapping_label in st.session_state["mk_g_mapping_dict"]:
+        with col1a:
+            st.markdown(f"""<div class="error-message">
+                ❌ Label <b>{url_mapping_label}</b> is already in use.
+                <small>Please, pick a different label.</small>
+            </div>""", unsafe_allow_html=True)
+
+    elif url_mapping_label:
+
+        with col1b:
+            mapping_url = st.text_input("⌨️ Enter mapping URL:*", key="key_mapping_url")
+
+        if mapping_url:
+
+            mapping_url_ok_flag = True
+
+            try:
+                # Fetch content
+                response = requests.get(mapping_url)
+                response.raise_for_status()
+                url_mapping = response.text
+
+                # Check extension
+                if mapping_url.endswith((".ttl", ".rml.ttl", ".r2rml.ttl", ".fnml.ttl", ".rml-star.ttl")):
+                    # Step 3a: Parse as RDF
+                    g = rdflib.Graph()
+                    g.parse(data=url_mapping, format="turtle")
+
+                    # Look for RML/R2RML predicates
+                    rml_predicates = [
+                        rdflib.URIRef("http://semweb.mmlab.be/ns/rml#logicalSource"),
+                        rdflib.URIRef("http://www.w3.org/ns/r2rml#subjectMap"),
+                        rdflib.URIRef("http://www.w3.org/ns/r2rml#predicateObjectMap")]
+
+                    found = any(p in [pred for _, pred, _ in g] for p in rml_predicates)
+
+                    if not found:
+                        with col1:
+                            st.markdown(f"""<div class="error-message">
+                                    ❌ Link working, but <b>no RML structure found</b>.
+                                    <small>Please, check your mapping content.</small>
+                                </div>""", unsafe_allow_html=True)
+                            mapping_url_ok_flag = False
+
+                elif url.endswith((".yaml", ".yml")):
+                    # Parse as YAML
+                    data = yaml.safe_load(url_mapping)
+
+                    # Step 4b: Check for YARRRML structure
+                    if not "mappings" in data and isinstance(data["mappings"], dict):
+                        with col1:
+                            st.markdown(f"""<div class="error-message">
+                                    ❌ Link working, but <b>no YARRRML structure found</b>.
+                                    <small>Please, check your mapping content.</small>
+                                </div>""", unsafe_allow_html=True)
+                            mapping_url_ok_flag = False
+
+                else:
+                    with col1:
+                        st.markdown(f"""<div class="error-message">
+                            ❌ <b>Extension is not valid</b>.
+                        </div>""", unsafe_allow_html=True)
+                        mapping_url_ok_flag = False
+
+            except Exception as e:
+                with col1:
+                    st.markdown(f"""<div class="error-message">
+                        ❌ <b>Validation failed.</b><br>
+                        <small> Complete error: {e}</small>
+                    </div>""", unsafe_allow_html=True)
+                mapping_url_ok_flag = False
+
+            if mapping_url_ok_flag:
+                with col1:
+                    st.markdown(f"""<div class="success-message">
+                            ✔️ <b>Valid RML mapping<b> detected.
+                        </div>""", unsafe_allow_html=True)
+
+                with col1:
+                    st.write("")
+                    st.button("Save", key="key_save_mapping_for_mk_from_url_button",
+                        on_click=save_mapping_for_mk_from_url)
 
     if not st.session_state["ds_files_dict"] and st.session_state["ds_file_removed_ok_flag"]:
         with col1:
