@@ -12,3 +12,4 @@ odfpy
 openpyxl
 xlrd
 sqlglot
+morph-kgc

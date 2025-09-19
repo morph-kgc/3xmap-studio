@@ -1516,6 +1516,28 @@ def get_jdbc_str(conn):
 #_________________________________________________
 
 #_________________________________________________
+# Funtion to get jdbc str from connection
+def get_jdbc_str_mk(conn, dict):
+
+    [engine, host, port, database, user, password] = dict[conn]
+
+    if engine == "Oracle":
+        jdbc_str = f"jdbc:oracle:thin:@{host}:{port}:{database}"
+    elif engine == "SQL Server":
+        jdbc_str = f"jdbc:sqlserver://{host}:{port};databaseName={database}"
+    elif engine == "PostgreSQL":
+        jdbc_str = f"jdbc:postgresql://{host}:{port}/{database}"
+    elif engine == "MySQL":
+        jdbc_str = f"jdbc:mysql://{host}:{port}/{database}"
+    elif engine =="MariaDB":
+        jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
+
+    return jdbc_str
+
+#_________________________________________________
+
+
+#_________________________________________________
 # Funtion to read tabular data
 def read_tab_file(filename):
 
@@ -1605,6 +1627,14 @@ def read_tab_file_unsaved(file):
     return read_content
 #_________________________________________________
 
+# #_________________________________________________
+# # Funtion to get allowed mapping extensions for Morph-KGC
+# def get_allowed_mapping_extensions_mk():
+#
+#     allowed_mapping_extensions = [".rml.ttl", ".r2rml.ttl", ".fnml.ttl", ".rml-star.ttl",
+#         ".yaml", ".yml"]
+#
+#     return allowed_mapping_extensions
 
 #HEREIGO
 
