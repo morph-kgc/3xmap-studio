@@ -175,7 +175,8 @@ def remove_options_for_mk():
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
 
-tab1, tab2, tab3, tab4 = st.tabs(["Materialise", "Additional SQL Data Sources", "Additional Tabular Data Sources", "Additional Mappings"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["Materialise", "Additional SQL Data Sources",
+    "Additional Tabular Data Sources", "Additional Mappings", "Check and Go"])
 
 
 #________________________________________________
@@ -193,7 +194,7 @@ with tab1:
     # Show config content
     with col2b:
         config_string = io.StringIO()
-        if config_string:
+        if not config_string.getvalue() == "":
             st.session_state["mk_config"].write(config_string)
             st.markdown(f"```ini\n{config_string.getvalue()}\n```")
 
@@ -318,7 +319,7 @@ with tab1:
                         st.button("Save", key="save_tab_ds_for_mk_button", on_click=save_tab_ds_for_mk)
 
     # PURPLE HEADING - REMOVE DATA SOURCE
-    if list(st.session_state["mk_config"].keys()) != ["DEFAULT"]:
+    if list(st.session_state["mk_config"].keys()) != ["DEFAULT"] and list(st.session_state["mk_config"].keys()) != ["DEFAULT", "Options"]:
         with col1:
             st.write("______")
             st.markdown("""<div class="purple-heading">
@@ -332,7 +333,10 @@ with tab1:
         with col1a:
             list_to_choose = list(reversed(list(st.session_state["mk_config"])))
             list_to_choose.remove("DEFAULT")
-            list_to_choose.insert(0, "Select all")
+            if "Options" in list_to_choose:
+                list_to_choose.remove("Options")
+            if len(list_to_choose) > 1:
+                list_to_choose.insert(0, "Select all")
 
             ds_for_mk_to_remove_list = st.multiselect("🖱️ Select data sources:*", list_to_choose,
                 key="key_ds_for_mk_to_remove_list")
@@ -365,6 +369,9 @@ with tab1:
                 key="key_configure_options_for_mk_toggle")
 
     if configure_options_for_mk in ["✏️ Modify options", "✏️ Add options"]:
+
+        options_for_mk_ok_flag = True
+
         with col1:
             col1a, col1b = st.columns(2)
 
@@ -373,6 +380,22 @@ with tab1:
             default_output_filename = os.path.basename(default_output_file)
             output_filename = st.text_input("⌨️ Enter output filename (optional):", value=default_output_filename,
                 key="key_output_filename")
+
+            if output_filename:
+                excluded_characters = r"[\\/:*?\"<>| ]"
+                if re.search(excluded_characters, output_filename):
+                    st.markdown(f"""<div class="error-message">
+                        ❌ <b>Forbidden character</b> in filename.
+                        <small> Please, pick a valid filename.</small>
+                    </div>""", unsafe_allow_html=True)
+                    options_for_mk_ok_flag = False
+                else:
+                    if not os.path.splitext(output_filename)[1]:
+                        st.markdown(f"""<div class="warning-message">
+                            ⚠️ <b>No extension</b> in filename.
+                            <small> Using an extension is recommended. Make sure it matched the file format (if given).</small>
+                        </div>""", unsafe_allow_html=True)
+
             output_file = os.path.join(temp_folder_path, output_filename) if output_filename else ""
 
         with col1b:
@@ -419,8 +442,13 @@ with tab1:
             col1a, col1b = st.columns(2)
         with col1a:
             default_safe_percent_encoding = st.session_state["mk_config"].get("Options", "safe_percent_encoding", fallback="")
-            safe_percent_encoding = st.text_input("⌨️ Enter safe percent encodings (optional):",
-                value=default_safe_percent_encoding, key="key_default_safe_percent_encoding")
+            default_safe_percent_encoding_list = list(default_safe_percent_encoding)
+            list_to_choose = ["Select all", "!", "#", "$", "&", "'", "(", ")", "*", "+", ",", "/", ":", ";", "=", "?", "@", "[", "]"]
+            safe_percent_encoding_list = st.multiselect("🖱️ Select safe percent encodings (optional)", list_to_choose,
+                default=default_safe_percent_encoding_list, key="key_safe_percent_encoding")
+            if "Select all" in safe_percent_encoding_list:
+                safe_percent_encoding_list = ["!", "#", "$", "&", "'", "(", ")", "*", "+", ",", "/", ":", ";", "=", "?", "@", "[", "]"]
+            safe_percent_encoding = "".join(safe_percent_encoding_list)
 
         with col1b:
             default_infer_sql_datatypes = st.session_state["mk_config"].get("Options", "infer_sql_datatypes ", fallback="Select option")
@@ -450,14 +478,14 @@ with tab1:
                     </div>""", unsafe_allow_html=True)
                     number_of_processes = ""
 
-        with col1:
-            col1a, col1b = st.columns(2)
-        with col1a:
+        with col1b:
             default_output_kafka_server = st.session_state["mk_config"].get("Options", "output_kafka_server", fallback="")
             output_kafka_server = st.text_input("⌨️ Output Kafka server (optional):",
                 value=default_output_kafka_server, key="key_default_output_kafka_server")
 
-        options_for_mk_ok_flag = True
+        with col1:
+            col1a, col1b = st.columns(2)
+
         if output_kafka_server:
             with col1b:
                 default_output_kafka_topic = st.session_state["mk_config"].get("Options", "output_kafka_topic", fallback="")
@@ -470,6 +498,13 @@ with tab1:
                     </div>""", unsafe_allow_html=True)
                     options_for_mk_ok_flag = False
 
+        if output_kafka_server and output_kafka_topic:
+            with col1b:
+                st.markdown(f"""<div class="warning-message">
+                    ⚠️ <b>No validation provided</b>.
+                    <small> Please check connectivity and provide a valid topic.</small>
+                </div>""", unsafe_allow_html=True)
+
         if options_for_mk_ok_flag:
             st.button("Save", key="key_save_options_for_mk_button", on_click=save_options_for_mk)
 
@@ -480,6 +515,41 @@ with tab1:
             key="key_remove_options_for_mk_checkbox")
             if remove_options_for_mk_checkbox:
                 st.button("Remove", on_click=remove_options_for_mk)
+
+
+#________________________________________________
+# CHECK AND GO
+with tab5:
+
+    col1, col2 = st.columns([2,1.5])
+
+    with col1:
+        col1a, col1b = st.columns([2,1])
+
+    with col2:
+        col2a, col2b = st.columns([0.5, 2])
+
+    # Show config content
+    config_string = io.StringIO()
+    if not config_string.getvalue() == "":
+        with col2b:
+            st.session_state["mk_config"].write(config_string)
+            st.markdown(f"```ini\n{config_string.getvalue()}\n```")
+
+    # PURPLE HEADING - CHECK AND GO
+    with col1:
+        st.markdown("""<div class="purple-heading">
+                ⚙️ Check and go
+            </div>""", unsafe_allow_html=True)
+
+        with col1:
+            col1a, col1b = st.columns([2,1])
+
+        if config_string.getvalue() == "":
+            with col1a:
+                st.markdown(f"""<div class="error-message">
+                    ❌ <b>Config file is empty</b>.<small> You can enter data in the <b>Materialise pannel</b>.</small>
+                </div>""", unsafe_allow_html=True)
 
 
 # output_dir	Directory where output files will be saved	./output/
