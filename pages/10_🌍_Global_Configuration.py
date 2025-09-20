@@ -94,8 +94,6 @@ if "g_ontology_discarded_ok_flag" not in st.session_state:
 #TAB3
 if "ns_dict" not in st.session_state:
     st.session_state["ns_dict"] = {}
-if "bound_ns_list" not in st.session_state:
-    st.session_state["bound_ns_list"] = []
 if "ns_bound_ok_flag" not in st.session_state:
     st.session_state["ns_bound_ok_flag"] = False
 if "structural_ns_changed_ok_flag" not in st.session_state:
@@ -276,7 +274,6 @@ def discard_ontology():
 def bind_custom_namespace():
     # bind and store information___________________________
     st.session_state["g_mapping"].bind(prefix_input, iri_input)  # bind the new namespace
-    st.session_state["bound_ns_list"] = [prefix_input]    # save the tm that has been bound for display
     st.session_state["last_added_ns_list"].insert(0, st.session_state["new_ns_prefix"])  # to display last added ns
     st.session_state["ns_bound_ok_flag"] = True   #for success message
     # reset fields_____________________________
@@ -286,9 +283,7 @@ def bind_custom_namespace():
 
 def bind_predefined_namespaces():
     # bind and store information___________________________
-    st.session_state["bound_ns_list"] = []       # save the tm that have been bound for display
     for prefix in predefined_ns_to_bind_list:
-        st.session_state["bound_ns_list"].append(prefix)
         st.session_state["g_mapping"].bind(prefix, predefined_ns_dict[prefix])  # bind the new namespace
         st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
     st.session_state["ns_bound_ok_flag"] = True    #for success message
@@ -298,10 +293,8 @@ def bind_predefined_namespaces():
 
 def bind_all_predefined_namespaces():
     # bind and store information___________________________
-    st.session_state["bound_ns_list"] = []       # save the tm that have been bound for display
     for prefix in predefined_ns_dict:
         if prefix not in mapping_ns_dict:
-            st.session_state["bound_ns_list"].append(prefix)
             st.session_state["g_mapping"].bind(prefix, predefined_ns_dict[prefix])  # bind the new namespace
             st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
     st.session_state["ns_bound_ok_flag"] = True   #for success message
@@ -310,9 +303,7 @@ def bind_all_predefined_namespaces():
 
 def bind_ontology_namespaces():
     # bind and store information___________________________
-    st.session_state["bound_ns_list"] = []       # save the tm that have been bound for display
     for prefix in ontology_ns_to_bind_list:
-        st.session_state["bound_ns_list"].append(prefix)
         st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
         st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
     st.session_state["ns_bound_ok_flag"] = True   # for success message
@@ -322,10 +313,8 @@ def bind_ontology_namespaces():
 
 def bind_all_ontology_namespaces():
     # bind and store information___________________________
-    st.session_state["bound_ns_list"] = []       # save the tm that have been bound for display
     for prefix in ontology_ns_dict:
         if prefix not in mapping_ns_dict:
-            st.session_state["bound_ns_list"].append(prefix)
             st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
             st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
     st.session_state["ns_bound_ok_flag"] = True   # for success message
@@ -825,8 +814,8 @@ with tab2:
                     st.markdown(f"""<div class="success-message">
                             ✔️ Valid ontology: <b style="color:#F63366;">
                             {st.session_state["g_ontology_from_link_candidate_label"]}</b>
-                            (parsed successfully with format
-                            <b>{st.session_state["g_ontology_from_link_candidate_fmt"]}.</b>)
+                            <small>(parsed successfully with format
+                            <b>{st.session_state["g_ontology_from_link_candidate_fmt"]}.</b>)</small>
                         </div>""", unsafe_allow_html=True)
                 with col1a:
                     st.button("Load", key="key_load_ontology_from_link_button", on_click=load_ontology_from_link)
@@ -875,8 +864,8 @@ with tab2:
                     st.markdown(f"""<div class="success-message">
                             ✔️ Valid ontology: <b style="color:#F63366;">
                             {st.session_state["g_ontology_from_file_candidate_label"]}</b>
-                            (parsed successfully with format
-                            <b>{st.session_state["g_ontology_from_file_candidate_fmt"]}</b>).
+                            <small>(parsed successfully with format
+                            <b>{st.session_state["g_ontology_from_file_candidate_fmt"]}</b>).</small>
                         </div>""", unsafe_allow_html=True)
 
                 with col1a:
@@ -932,8 +921,8 @@ with tab2:
                         st.markdown(f"""<div class="success-message-small">
                                 ✔️ Valid ontology: <b style="color:#F63366;">
                                 {st.session_state["g_ontology_from_link_candidate_label"]}</b>
-                                (parsed successfully with format
-                                <b>{st.session_state["g_ontology_from_link_candidate_fmt"]}.</b>)
+                                <small>(parsed successfully with format
+                                <b>{st.session_state["g_ontology_from_link_candidate_fmt"]}</b>).</small>
                             </div>""", unsafe_allow_html=True)
 
                     if utils.check_ontology_overlap(st.session_state["g_ontology_from_link_candidate"], st.session_state["g_ontology"]):
@@ -1151,27 +1140,10 @@ with tab3:
             with col1:
                 col1a, col1b = st.columns([2,1])
             with col1a:
-                formatted_bound_ns = ", ".join(st.session_state["bound_ns_list"][:-1]) + " and " + st.session_state["bound_ns_list"][-1]
-                if len(st.session_state["bound_ns_list"]) == 1:
-                    st.write("")
-                    st.markdown(f"""<div class="success-message-flag">
-                        ✅ The Namespace <b style="color:#F63366;">
-                        {st.session_state["bound_ns_list"][0]}</b> has been bound!
-                    </div>""", unsafe_allow_html=True)
-                elif len(st.session_state["bound_ns_list"]) < 7:
-                    st.markdown(f"""
-                    <div style="background-color:#d4edda; padding:1em;
-                    border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                        ✅ The Namespaces <b style="color:#F63366;">
-                        {formatted_bound_ns}</b> have been succesfully bound!  </div>
-                    """, unsafe_allow_html=True)
-                else:
-                    st.markdown(f"""
-                    <div style="background-color:#d4edda; padding:1em;
-                    border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                        ✅ <b style="color:#F63366;">{len(st.session_state["bound_ns_list"])} Namespaces
-                        </b> have been succesfully bound!  </div>
-                    """, unsafe_allow_html=True)
+                st.write("")
+                st.markdown(f"""<div class="success-message-flag">
+                    ✅ The <b>Namespace/s</b> have been bound!
+                </div>""", unsafe_allow_html=True)
             st.write("")
             st.write("")
             st.session_state["ns_bound_ok_flag"] = False
@@ -1528,7 +1500,7 @@ with tab3:
                 with col1:
                     col1a, col1b = st.columns([2,1])
 
-                if st.session_state["structural_ns_changed_ok_flag"] :
+                if st.session_state["structural_ns_changed_ok_flag"]:
                     with col1a:
                         st.write("")
                         st.markdown(f"""<div class="success-message-flag">

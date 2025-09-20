@@ -44,7 +44,7 @@ RML, RR, QL = utils.get_required_ns().values()
 
 
 # Initialise session state variables
-#TAB1
+# TAB1
 if "key_ds_uploader" not in st.session_state:
     st.session_state["key_ds_uploader"] = str(uuid.uuid4())
 if "last_added_tm_list" not in st.session_state:
@@ -55,10 +55,8 @@ if "tm_saved_ok_flag" not in st.session_state:
     st.session_state["tm_saved_ok_flag"] = False
 if "tm_deleted_ok_flag" not in st.session_state:
     st.session_state["tm_deleted_ok_flag"] = False
-if "removed_tm_list" not in st.session_state:
-    st.session_state["removed_tm_list"] = []
 
-#TAB2
+# TAB2
 if "key_ds_uploader_for_sm" not in st.session_state:
     st.session_state["key_ds_uploader_for_sm"] = str(uuid.uuid4())
 if "last_added_sm_list" not in st.session_state:
@@ -80,7 +78,7 @@ if "sm_unassigned_ok_flag" not in st.session_state:
 if "sm_template_prefix" not in st.session_state:
     st.session_state["sm_template_prefix"] = ""
 
-#TAB3
+# TAB3
 if "key_ds_uploader_for_pom" not in st.session_state:
     st.session_state["key_ds_uploader_for_pom"] = str(uuid.uuid4())
 if "om_template_ns_prefix" not in st.session_state:
@@ -95,6 +93,10 @@ if "last_added_pom_list" not in st.session_state:
     st.session_state["last_added_pom_list"] = []
 if "pom_deleted_ok_flag" not in st.session_state:
     st.session_state["pom_deleted_ok_flag"] = False
+
+# TAB4
+if "g_mapping_cleaned_ok_flag"  not in st.session_state:
+    st.session_state["g_mapping_cleaned_ok_flag"]  = False
 
 
 #define on_click functions
@@ -204,14 +206,9 @@ def save_tm_w_table_name():
     # reset fields_______________________
     st.session_state["key_tm_label_input"] = ""
 
-
-
-
 def delete_tm():   #function to delete a TriplesMap
     # remove triples and store information___________
-    st.session_state["removed_tm_list"] = []   # save the tm that have been deleted for display
     for tm in tm_to_remove_list:
-        st.session_state["removed_tm_list"].append(tm)
         utils.remove_triplesmap(tm)      # remove the tm
         if tm in st.session_state["last_added_tm_list"]:
             st.session_state["last_added_tm_list"].remove(tm)       # if it is in last added list, remove
@@ -225,10 +222,6 @@ def delete_tm():   #function to delete a TriplesMap
     st.session_state["key_tm_to_remove_list"] = []
 
 def delete_all_tm():   #function to delete a TriplesMap
-    # remove triples and store information___________
-    st.session_state["removed_tm_list"] = []    # save the tm that have been deleted for display
-    for tm in utils.get_tm_dict():
-        st.session_state["removed_tm_list"].append(tm)
     # remove all triples
     st.session_state["g_mapping"] = Graph()
     #store information
@@ -567,7 +560,34 @@ def delete_all_pom():           #function to delete a Predicate-Object Map
     # reset fields
     st.session_state["key_tm_to_delete_pom"] = "Select a TriplesMap"
 
+# TAB 4
+def clean_g_mapping():
+    # REMOVE TRIPLESMAPS
+    # remove triples and store information___________
+    for tm in tm_to_clean_list:
+        utils.remove_triplesmap(tm)      # remove the tm
+        if tm in st.session_state["last_added_tm_list"]:
+            st.session_state["last_added_tm_list"].remove(tm)       # if it is in last added list, remove
+    #store information________________________________
+    st.session_state["last_added_sm_list"] = [pair for pair in st.session_state["last_added_sm_list"]
+        if pair[1] in utils.get_tm_dict()]
+    st.session_state["last_added_pom_list"] = [pair for pair in st.session_state["last_added_pom_list"]
+        if pair[1] in utils.get_tm_dict()]
 
+    # REMOVE PREDICATE-OBJECT MAPS
+    for pom_iri in pom_to_clean_list:
+        om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RR.objectMap)
+        # remove triples______________________
+        st.session_state["g_mapping"].remove((pom_iri, None, None))
+        st.session_state["g_mapping"].remove((None, None, pom_iri))
+        st.session_state["g_mapping"].remove((om_to_delete, None, None))
+    # store information__________________
+    st.session_state["last_added_pom_list"] = [pair for pair in st.session_state["last_added_pom_list"]
+        if pair[0] not in pom_to_delete_iri_list]
+
+    #GENERAL
+    #store information________________________________
+    st.session_state["g_mapping_cleaned_ok_flag"] = True
 
 # START PAGE_____________________________________________________________________
 
@@ -588,7 +608,7 @@ if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
 
-tab1, tab2, tab3 = st.tabs(["Add TriplesMap", "Add Subject Map", "Add Predicate-Object Map"])
+tab1, tab2, tab3, tab4 = st.tabs(["Add TriplesMap", "Add Subject Map", "Add Predicate-Object Map", "Clean Mapping"])
 
 
 #________________________________________________
@@ -882,28 +902,11 @@ with tab1:
         with col1:
             col1a, col1b = st.columns([2,1])
         with col1a:
-            formatted_deleted_tm = utils.format_list_for_markdown(st.session_state["removed_tm_list"])
-            if len(st.session_state["removed_tm_list"]) == 1:
-                st.markdown(f"""
-                <div style="background-color:#d4edda; padding:1em;
-                border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                    ✅ The Triplesmap <b style="color:#F63366;">
-                    {st.session_state["removed_tm_list"][0]}</b> has been succesfully deleted!  </div>
-                """, unsafe_allow_html=True)
-            elif len(st.session_state["removed_tm_list"]) < 7:
-                st.markdown(f"""
-                <div style="background-color:#d4edda; padding:1em;
-                border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                    ✅ The Triplesmaps <b style="color:#F63366;">
-                    {formatted_deleted_tm}</b> have been succesfully deleted!  </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.markdown(f"""
-                <div style="background-color:#d4edda; padding:1em;
-                border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                    ✅ <b style="color:#F63366;">{len(st.session_state["removed_tm_list"])} TriplesMaps
-                    </b> have been succesfully deleted!  </div>
-                """, unsafe_allow_html=True)
+            st.markdown(f"""
+            <div style="background-color:#d4edda; padding:1em;
+            border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                ✅ The <b>Triplesmap/s</b> have been removed.
+            </div>""", unsafe_allow_html=True)
             st.write("")
         st.session_state["tm_deleted_ok_flag"] = False
         time.sleep(st.session_state["success_display_time"])
@@ -926,28 +929,11 @@ with tab1:
             with col1:
                 col1a, col1b = st.columns([2,1])
             with col1a:
-                formatted_deleted_tm = ", ".join(st.session_state["removed_tm_list"][:-1]) + " and " + st.session_state["removed_tm_list"][-1]
-                if len(st.session_state["removed_tm_list"]) == 1:
-                    st.markdown(f"""
-                    <div style="background-color:#d4edda; padding:1em;
-                    border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                        ✅ The Triplesmap <b style="color:#F63366;">
-                        {st.session_state["removed_tm_list"][0]}</b> has been succesfully deleted!  </div>
-                    """, unsafe_allow_html=True)
-                elif len(st.session_state["removed_tm_list"]) < 7:
-                    st.markdown(f"""
-                    <div style="background-color:#d4edda; padding:1em;
-                    border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                        ✅ The Triplesmaps <b style="color:#F63366;">
-                        {formatted_deleted_tm}</b> have been succesfully deleted!  </div>
-                    """, unsafe_allow_html=True)
-                else:
-                    st.markdown(f"""
-                    <div style="background-color:#d4edda; padding:1em;
-                    border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                        ✅ <b style="color:#F63366;">{len(st.session_state["removed_tm_list"])} TriplesMaps
-                        </b> have been succesfully deleted!  </div>
-                    """, unsafe_allow_html=True)
+                st.markdown(f"""
+                <div style="background-color:#d4edda; padding:1em;
+                border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                    ✅ The <b>Triplesmap/s</b> have been removed.
+                </div>""", unsafe_allow_html=True)
                 st.write("")
             st.session_state["tm_deleted_ok_flag"] = False
             time.sleep(st.session_state["success_display_time"])
@@ -3118,4 +3104,98 @@ with tab3:
                     st.dataframe(pom_of_selected_tm_df, hide_index=True)
                     st.write("")
 
+
+
 #________________________________________________
+# CLEAN MAPPING
+with tab4:
+    st.write("")
+    st.write("")
+
+    col1, col2 = st.columns([2,1.5])
+
+    with col2:
+        col2a,col2b = st.columns([1,2])
+    with col2b:
+        utils.get_corner_status_message()
+        st.write("")
+
+    #PURPLE HEADING - ADD NEW TRIPLESMAP
+    with col1:
+        st.markdown("""<div class="purple-heading">
+                🧹 Clean Mapping
+            </div>""", unsafe_allow_html=True)
+        st.write("")
+
+    with col1:
+        col1a, col1b = st.columns([2,1])
+
+    if st.session_state["g_mapping_cleaned_ok_flag"]:
+        with col1a:
+            st.write("")
+            st.markdown(f"""<div class="success-message-flag">
+                ✅ The mapping <b>{st.session_state["g_label"]}</b> has been cleaned.
+            </div>""", unsafe_allow_html=True)
+        st.session_state["g_mapping_cleaned_ok_flag"]  = False
+        time.sleep(st.session_state["success_display_time"])
+        st.rerun()
+
+    check_g_mapping = utils.check_g_mapping(st.session_state["g_mapping"])
+    if not check_g_mapping:
+        with col1a:
+            st.markdown(f"""<div class="success-message">
+                    ✔️ Mapping <b style="color:#F63366;">
+                    {st.session_state["g_label"]}</b> is complete.
+                </div>""", unsafe_allow_html=True)
+    else:
+        max_length = utils.get_max_length_for_display()[5]
+        inner_html = "⚠️" + check_g_mapping
+        with col1a:
+            st.markdown(f"""<div class="warning-message">
+                    {inner_html}
+                </div>""", unsafe_allow_html=True)
+
+        tm_dict = {}
+        for tm in st.session_state["g_mapping"].subjects(RML.logicalSource, None):
+            tm_label = split_uri(tm)[1]
+            tm_dict[tm_label] = tm
+
+        pom_dict = {}
+        for pom in st.session_state["g_mapping"].subjects(RDF.type, RR.PredicateObjectMap):
+            if isinstance(pom, URIRef):
+                pom_label = split_uri(tm)[1]
+            elif isinstance(pom, BNode):
+                pom_label = "_:" + str(pom)[:7] + "..."
+            else:
+                pom_label = str(pom)
+            pom_dict[pom_label] = pom
+
+        tm_wo_sm_list = []   # list of all tm with assigned sm
+        tm_wo_pom_list = []
+        for tm_label, tm_iri in tm_dict.items():
+            if not any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectMap, None))):
+                tm_wo_sm_list.append(tm_label)
+        for tm_label, tm_iri in tm_dict.items():
+            if not any(st.session_state["g_mapping"].triples((tm_iri, RR.predicateObjectMap, None))):
+                tm_wo_pom_list.append(tm_label)
+
+        pom_wo_om_list = []
+        pom_wo_predicate_list = []
+        for pom_label, pom_iri in st.session_state["g_mapping"].subjects(RDF.type, RR.PredicateObjectMap):
+            if not any(st.session_state["g_mapping"].triples((pom_iri, RR.objectMap, None))):
+                pom_wo_om_list.append(pom_label)
+            if not any(st.session_state["g_mapping"].triples((pom_iri, RR.predicate, None))):
+                pom_wo_predicate_list.append(pom_label)
+
+        tm_to_clean_list = list(set(tm_wo_sm_list).union(tm_wo_pom_list))
+        pom_to_clean_list = list(set(pom_wo_om_list).union(pom_wo_predicate_list))
+
+        with col1a:
+            st.write("")
+            clean_g_mapping_checkbox = st.checkbox(
+            f":gray-badge[⚠️ I am sure I want to clean the mapping {st.session_state["g_label"]}]",
+            key="key_clean_g_mapping_checkbox")
+
+        if clean_g_mapping_checkbox:
+            with col1a:
+                st.button("Clean", key="key_clean_g_mapping_button", on_click=clean_g_mapping)
