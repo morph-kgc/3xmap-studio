@@ -13,6 +13,7 @@ import time
 import uuid   # to handle uploader keys
 import requests
 from morph_kgc import materialize
+from sqlalchemy import create_engine
 
 # Header
 st.markdown("""<div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
@@ -65,12 +66,6 @@ if "configuration_for_mk_saved_ok_flag" not in st.session_state:
     st.session_state["configuration_for_mk_saved_ok_flag"] = False
 if "configuration_for_mk_removed_ok_flag" not in st.session_state:
     st.session_state["configuration_for_mk_removed_ok_flag"] = False
-if "mk_used_db_connections_dict" not in st.session_state:
-    st.session_state["mk_used_db_connections_dict"] = {}
-if "mk_used_ds_dict" not in st.session_state:
-    st.session_state["mk_used_ds_dict"] = {}
-if "mk_used_mappings_dict" not in st.session_state:
-    st.session_state["mk_used_mappings_dict"] = {}
 
 # TAB2
 if "additional_mapping_added_ok_flag" not in st.session_state:
@@ -92,19 +87,15 @@ def save_sql_ds_for_mk():
     st.session_state["mk_config"][mk_ds_label] = {"db_url": db_url,
         "mappings": mk_mappings_str_for_sql}
     # store information________________________
-    st.session_state["mk_used_db_connections_dict"][mk_sql_ds] = st.session_state["db_connections_dict"][mk_sql_ds]
-    for mapping in mk_mappings_paths_list_for_sql:
-        st.session_state["mk_used_mappings_dict"][mapping] = mapping
     st.session_state["ds_for_mk_saved_ok_flag"] = True
     # reset fields__________________________
     st.session_state["key_mk_ds_label"] = ""
 
 def save_tab_ds_for_mk():
     # add to config dict___________________
-    st.session_state["mk_config"][mk_ds_label] = {"file_path": file_path,
+    st.session_state["mk_config"][mk_ds_label] = {"file_path": mk_tab_ds_file_path,
         "mappings": mk_mappings_str_for_tab}
     # store information________________________
-    st.session_state["mk_used_ds_dict"][mk_tab_ds_file] = st.session_state["ds_files_dict"][mk_tab_ds_file]
     st.session_state["ds_for_mk_saved_ok_flag"] = True
     # reset fields__________________________
     st.session_state["key_mk_ds_label"] = ""
@@ -379,7 +370,7 @@ with tab1:
                         key="key_mk_tab_ds_file")
 
                     if mk_tab_ds_file != "Select data source":
-                        file_path = os.path.join(temp_folder_path, mk_tab_ds_file)
+                        mk_tab_ds_file_path = os.path.join(temp_folder_path, mk_tab_ds_file)
 
                 with col1b:
                     mk_g_mapping_dict_complete = st.session_state["mk_g_mappings_dict"].copy()
@@ -1093,73 +1084,180 @@ with tab3:
 
         else:
 
-            # Empty folder if it exists or create if it does not
-            if os.path.exists(temp_folder_path):
-                for filename in os.listdir(temp_folder_path):
-                    file_path = os.path.join(temp_folder_path, filename)
-                    try:
-                        if os.path.isfile(file_path) or os.path.islink(file_path):
-                            os.unlink(file_path)  # delete file or link
-                        elif os.path.isdir(file_path):
-                            shutil.rmtree(file_path)  # delete subfolder
-                    except Exception as e:
-                        st.write(f"⚠️ Failed to delete {file_path}: {e}")
-            else:
-                os.makedirs(temp_folder_path)  # Create folder if it doesn't exist
 
-            # Check g_mapping (additional mappings checked before adding)
-            g_mapping_ok_flag = True
-            if st.session_state["g_label"]:
-                inner_html = utils.check_g_mapping(st.session_state["g_mapping"])
-                if inner_html:
-                    full_html = f"""<div class="error-message">
-                            ❌ {inner_html}
-                        </div>"""
-                    g_mapping_ok_flag = False
-                else:
-                    full_html = f"""<div class="success-message">
-                            ✔️ Mapping <b>{st.session_state["g_label"]}</b> complete.
-                        </div>"""
+
+            # List of all used mappings
+            mk_used_mapping_list = []
+            for section in st.session_state["mk_config"].sections():
+                if section != "CONFIGURATION" and section != "DEFAULT":
+                    mapping_path_list_string = st.session_state["mk_config"].get(section, "mappings", fallback="")
+                    if mapping_path_list_string:
+                        for mapping_path in mapping_path_list_string.split(","):
+                            clean_path = mapping_path.strip()
+                            g_label = os.path.splitext(os.path.basename(clean_path))[0]
+                            if g_label not in mk_used_mapping_list:
+                                mk_used_mapping_list.append(g_label)
+
+            # List of all used sql databases
+            mk_used_db_conn_list = []
+            for section in st.session_state["mk_config"].sections():
+                if section != "CONFIGURATION" and section != "DEFAULT":
+                    used_db_url = st.session_state["mk_config"].get(section, "db_url", fallback="")
+                    if used_db_url and used_db_url not in mk_used_db_conn_list:
+                        mk_used_db_conn_list.append(used_db_url)
+
+            # List of all used tabular data sources
+            mk_used_tab_ds_list = []
+            for section in st.session_state["mk_config"].sections():
+                if section != "CONFIGURATION" and section != "DEFAULT":
+                    file_path = st.session_state["mk_config"].get(section, "file_path", fallback="")
+                    if file_path:
+                        filename = os.path.basename(file_path)
+                        if filename not in mk_used_tab_ds_list:
+                            mk_used_tab_ds_list.append(filename)
+
+
+            everything_ok_flag = True
+
+            # Check g_mapping if used (additional mappings checked before adding)
+            if st.session_state["g_label"] in mk_used_mapping_list:
+                g_mapping_ok_flag = True
+                if st.session_state["g_label"]:
+                    inner_html = utils.check_g_mapping(st.session_state["g_mapping"])
+                    if inner_html:
+                        full_html = f"""<div class="error-message">
+                                ❌ {inner_html}
+                            </div>"""
+                        everything_ok_flag = False
+                    else:
+                        full_html = f"""<div class="success-message">
+                                ✔️ Mapping <b>{st.session_state["g_label"]}</b> complete.
+                            </div>"""
+                    with col1a:
+                        st.markdown(full_html, unsafe_allow_html=True)
+
+            # Message on additional mappings if used
+            mk_used_additional_mapping_list = mk_used_mapping_list.copy()
+            if st.session_state["g_label"] in mk_used_additional_mapping_list:
+                mk_used_additional_mapping_list.remove(st.session_state["g_label"])
+            if mk_used_additional_mapping_list:
+                additional_mappings_list_for_display = utils.format_list_for_markdown(mk_used_additional_mapping_list)
                 with col1a:
-                    st.markdown(full_html, unsafe_allow_html=True)
+                    st.markdown(f"""<div class="success-message">
+                            ✔️ Additional mappings ok:
+                            <b><small>{additional_mappings_list_for_display}</small>
+                        </div>""", unsafe_allow_html=True)
 
-            # Download g_mapping if valid
-            if g_mapping_ok_flag:
-                # Download g_mapping to file
-                mapping_content = st.session_state["g_mapping"]
-                mapping_content_str = mapping_content.serialize(format="turtle")
-                filename = st.session_state["g_label"] + ".ttl"
+            # Check connections to db if used
+            not_working_db_conn_list = []
+            for connection_string in mk_used_db_conn_list:
+                timeout = 3
+                try:
+                    engine = create_engine(connection_string, connect_args={"connect_timeout": timeout})
+                    conn = engine.connect()
+                except Exception as e:
+                    not_working_db_conn_list.append(connection_string)
+            if not not_working_db_conn_list:
+                with col1a:
+                    formatted_list = "<br>".join(mk_used_db_conn_list)
+                    st.markdown(f"""<div class="success-message">
+                        ✔️ All <b>connections to databases</b> are working:<br>
+                        <small><b>{formatted_list}</b></small>
+                    </div>""", unsafe_allow_html=True)
+            else:
+                everything_ok_flag = False
+                with col1a:
+                    if len(not_loaded_ds_list) == 1:
+                        st.markdown(f"""<div class="error-message">
+                                ❌ The connection to database <b>{utils.format_list_for_markdown(not_working_db_conn_list)}</b>
+                                is not working.
+                                <small>Please, check it in the <b>Manage Logical Sources</b> page.</small>
+                            </div>""", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""<div class="error-message">
+                                ❌ The tabular data sources <b>{utils.format_list_for_markdown(not_working_db_conn_list)}</b>
+                                are not working.
+                                <small>Please, check them in the <b>Manage Logical Sources</b> page.</small>
+                            </div>""", unsafe_allow_html=True)
 
-                file_path = os.path.join(temp_folder_path, filename)
-                with open(file_path, "w", encoding="utf-8") as f:
-                    f.write(mapping_content_str)
+            # Check all tabular sources are loaded
+            not_loaded_ds_list = []
+            for ds_filename in mk_used_tab_ds_list:
+                if not ds_filename in st.session_state["ds_files_dict"]:
+                    not_loaded_ds_list.append(ds_filename)
 
-                # Download additional mappings to file
-                for g_label, g_mapping_file in st.session_state["mk_g_mappings_dict"].items():
-                    ext = os.path.splitext(g_mapping_file.name)[1]
-                    filename = g_label + ext
+            if not not_loaded_ds_list:
+                with col1a:
+                    st.markdown(f"""<div class="success-message">
+                            ✔️ All tabular data sources loaded:
+                            <small><b>{utils.format_list_for_markdown(mk_used_tab_ds_list)}</b></small>
+                        </div>""", unsafe_allow_html=True)
+            else:
+                everything_ok_flag = False
+                with col1a:
+                    if len(not_loaded_ds_list) == 1:
+                        st.markdown(f"""<div class="error-message">
+                                ❌ The tabular data source <b>{utils.format_list_for_markdown(not_loaded_ds_list)}</b>
+                                is not loaded.
+                                <small>Please, load it in the <b>Manage Logical Sources</b> page.</small>
+                            </div>""", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""<div class="error-message">
+                                ❌ The tabular data sources <b>{utils.format_list_for_markdown(not_loaded_ds_list)}</b>
+                                are not loaded.
+                                <small>Please, load them in the <b>Manage Logical Sources</b> page.</small>
+                            </div>""", unsafe_allow_html=True)
+
+
+            if everything_ok_flag:
+
+                with col1a:
+                    st.write("")
+                    st.button("Materialise")
+
+                # Empty folder if it exists or create if it does not
+                if os.path.exists(temp_folder_path):
+                    for filename in os.listdir(temp_folder_path):
+                        file_path = os.path.join(temp_folder_path, filename)
+                        try:
+                            if os.path.isfile(file_path) or os.path.islink(file_path):
+                                os.unlink(file_path)  # delete file or link
+                            elif os.path.isdir(file_path):
+                                shutil.rmtree(file_path)  # delete subfolder
+                        except Exception as e:
+                            st.write(f"⚠️ Failed to delete {file_path}: {e}")
+                else:
+                    os.makedirs(temp_folder_path)  # Create folder if it doesn't exist
+
+                # Download g_mapping if used
+                if st.session_state["g_label"] in mk_used_mapping_list:
+                    # Download g_mapping to file
+                    mapping_content = st.session_state["g_mapping"]
+                    mapping_content_str = mapping_content.serialize(format="turtle")
+                    filename = st.session_state["g_label"] + ".ttl"
+
                     file_path = os.path.join(temp_folder_path, filename)
-                    with open(file_path, "wb") as f:
-                        f.write(g_mapping_file.getvalue())  # write file content as bytes
+                    with open(file_path, "w", encoding="utf-8") as f:
+                        f.write(mapping_content_str)
 
-                additional_mappings_list_for_display = utils.format_list_for_markdown(list(st.session_state["mk_g_mappings_dict"]))
-                if len(st.session_state["mk_g_mappings_dict"]) == 1:
-                    st.markdown(f"""<div class="success-message">
-                            ✔️ Mapping {additional_mappings_list_for_display} ok.
-                        </div>""", unsafe_allow_html=True)
-                elif len(st.session_state["mk_g_mappings_dict"]) > 1:
-                    st.markdown(f"""<div class="success-message">
-                            ✔️ Mappings <b>{additional_mappings_list_for_display}</b> ok.
-                        </div>""", unsafe_allow_html=True)
+                # Download additional mappings to file if used
+                for g_label in mk_used_mapping_list:
+                    if g_label != st.session_state["g_label"]:
+                        g_mapping_file = st.session_state["mk_g_mappings_dict"][g_label]
+                        ext = os.path.splitext(g_mapping_file.name)[1]
+                        filename = g_label + ext
+                        file_path = os.path.join(temp_folder_path, filename)
+                        with open(file_path, "wb") as f:
+                            f.write(g_mapping_file.getvalue())  # write file content as bytes
 
                 # Download used tabular data sources
-                for ds_label, ds_file in st.session_state["mk_used_ds_dict"].items():
+                for ds_filename in mk_used_tab_ds_list:
+                    ds_file = st.session_state["ds_files_dict"][ds_filename]
                     filename = ds_file.name
                     file_path = os.path.join(temp_folder_path, filename)
                     with open(file_path, "wb") as f:
                         f.write(ds_file.getvalue())  # write file content as bytes
 
-                st.success(f"✅ Saved {len(st.session_state["mk_used_ds_dict"])} tabular data sources to: {temp_folder_path}")
 
 
                 #MATERIALISATION
@@ -1169,7 +1267,10 @@ with tab3:
                     st.session_state["mk_config"].write(f)
                 # Run Morph-KGC with the config file path to materialise
                 g = materialize(config_path)
-                st.write(f"✅ Graph materialized with {len(g)} triples.")
+                with col1a:
+                    st.markdown(f"""<div class="success-message-flag">
+                            ✅ Graph materialised with {len(g)} triples.
+                        </div>""", unsafe_allow_html=True)
 
 
 # output_dir	Directory where output files will be saved	./output/

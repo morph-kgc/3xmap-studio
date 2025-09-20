@@ -13,3 +13,4 @@ openpyxl
 xlrd
 sqlglot
 morph-kgc
+sqlalchemy
