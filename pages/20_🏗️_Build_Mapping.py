@@ -2322,28 +2322,32 @@ with tab3:
         utils.get_corner_status_message()
         st.write("")
 
-    tm_dict = utils.get_tm_dict()
-    pom_dict = utils.get_pom_dict()
+    # tm_dict = utils.get_tm_dict()
+    # pom_dict = utils.get_pom_dict()
+    #
+    # with col2b:
+    #     st.write("")
+    #     rows = [{"TriplesMap": pom_dict[pom_iri][1], "P-O Map": pom_dict[pom_iri][2],
+    #             "Predicate": pom_dict[pom_iri][4], "Object Map": pom_dict[pom_iri][5],
+    #             "Rule": pom_dict[pom_iri][6], "ID/Constant": pom_dict[pom_iri][8]}
+    #             for pom_iri, tm in st.session_state["last_added_pom_list"]]
+    #     last_added_tm_df = pd.DataFrame(rows)
+    #     last_last_added_tm_df = last_added_tm_df.head(utils.get_max_length_for_display()[1])
+    #
+    #     if st.session_state["last_added_pom_list"]:
+    #         st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
+    #                 🔎 last added Predicate-Object Maps
+    #             </div>""", unsafe_allow_html=True)
+    #         st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+    #                 (complete list in <b>Display Mapping</b> page)
+    #             </div>""", unsafe_allow_html=True)
+    #         st.dataframe(last_last_added_tm_df, hide_index=True)
+    #         st.write("")
 
     with col2b:
-        st.write("")
-        rows = [{"TriplesMap": pom_dict[pom_iri][1], "P-O Map": pom_dict[pom_iri][2],
-                "Predicate": pom_dict[pom_iri][4], "Object Map": pom_dict[pom_iri][5],
-                "Rule": pom_dict[pom_iri][6], "ID/Constant": pom_dict[pom_iri][8]}
-                for pom_iri, tm in st.session_state["last_added_pom_list"]]
-        last_added_tm_df = pd.DataFrame(rows)
-        last_last_added_tm_df = last_added_tm_df.head(utils.get_max_length_for_display()[1])
-
-        if st.session_state["last_added_pom_list"]:
-            st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
-                    🔎 last added Predicate-Object Maps
-                </div>""", unsafe_allow_html=True)
-            st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                    (complete list in <b>Display Mapping</b> page)
-                </div>""", unsafe_allow_html=True)
-            st.dataframe(last_last_added_tm_df, hide_index=True)
-            st.write("")
-
+        st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
+                To consult the added Predicate-Object Maps go to the <b>🔎 Explore Mapping</b> page.
+            </div>""", unsafe_allow_html=True)
 
     #PURPLE HEADING - ADD NEW TRIPLESMAP
     with col1:
@@ -2411,7 +2415,8 @@ with tab3:
                         break
                     sm_label_for_pom = ""
 
-
+            with col1:
+                st.write("")
             # HERE CREATE THE PREDICATE MAP
 
             col1, col2, col3 = st.columns([1.5,0.2,2])
