@@ -1881,7 +1881,7 @@ with tab4:
                     </div>""", unsafe_allow_html=True)
 
         with col1:
-            col1a, col1b = st.columns([1.5,1])
+            col1a, col1b = st.columns([2,1])
 
         export_filename_complete = export_filename + export_extension if export_filename else ""
 
@@ -1907,51 +1907,15 @@ with tab4:
                     del st.session_state[key]
                 st.rerun()   # to get to success message
 
-        # tm with sm
-        tm_dict = utils.get_tm_dict()
-        tm_wo_sm_list = []   # list of all tm with assigned sm
-        tm_wo_pom_list = []
-        for tm_label, tm_iri in tm_dict.items():
-            if not any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectMap, None))):
-                tm_wo_sm_list.append(tm_label)
-        for tm_label, tm_iri in tm_dict.items():
-            if not any(st.session_state["g_mapping"].triples((tm_iri, RR.predicateObjectMap, None))):
-                tm_wo_pom_list.append(tm_label)
-
-
-        tm_wo_pom_list_display = utils.format_list_for_markdown(tm_wo_pom_list)
-
         if st.session_state["g_label"] and export_filename:
-            if tm_wo_sm_list or tm_wo_pom_list:
+            check_g_mapping = utils.check_g_mapping(st.session_state["g_mapping"])
+            if check_g_mapping:
                 max_length = utils.get_max_length_for_display()[5]
-
-                inner_html = f"""⚠️ The mapping <b>{st.session_state["g_label"]}</b> is incomplete!
-                    <br>"""
-
-                if tm_wo_sm_list:
-                    if len(tm_wo_sm_list) < max_length:
-                        tm_wo_sm_list_display = utils.format_list_for_markdown(tm_wo_sm_list)
-                        inner_html += f"""<small>The TriplesMaps <b>{tm_wo_sm_list_display}</b> have not been assigned
-                        a Subject Map.</small><br>"""
-                    else:
-                        inner_html += f"""<small><b>{len(tm_wo_sm_list)} TriplesMaps</b> have not been assigned
-                        a Subject Map.</small><br>"""
-
-                if tm_wo_pom_list:
-                    if len(tm_wo_pom_list) < max_length:
-                        tm_wo_pom_list_display = utils.format_list_for_markdown(tm_wo_pom_list)
-                        inner_html += f"""<small>The TriplesMaps <b>{tm_wo_pom_list_display}</b> have not been assigned
-                        a Predicate-Object Map.</small><br>"""
-                    else:
-                        inner_html += f"""<small><b>{len(tm_wo_pom_list)} TriplesMaps</b> have not been assigned
-                        a Predicate-Object Map.</small><br>"""
-
-                full_html = f"""<div class="warning-message">
-                        {inner_html}
-                    </div>"""
-
-                with col1b:
-                    st.markdown(full_html, unsafe_allow_html=True)
+                inner_html = "⚠️" + check_g_mapping
+                with col1a:
+                    st.markdown(f"""<div class="warning-message">
+                            {inner_html}
+                        </div>""", unsafe_allow_html=True)
 
 
         with col1:

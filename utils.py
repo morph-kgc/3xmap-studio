@@ -1655,15 +1655,20 @@ def check_g_mapping(g):
             tm_wo_pom_list.append(tm_label)
 
     pom_wo_om_list = []
+    pom_wo_predicate_list = []
     for pom_label, pom_iri in g.subjects(RDF.type, RR.PredicateObjectMap):
         if not any(g.triples((pom_iri, RR.objectMap, None))):
             pom_wo_om_list.append(pom_label)
+        if not any(g.triples((pom_iri, RR.predicate, None))):
+            pom_wo_predicate_list.append(pom_label)
 
     tm_wo_pom_list_display = utils.format_list_for_markdown(tm_wo_pom_list)
     tm_wo_sm_list_display = utils.format_list_for_markdown(tm_wo_sm_list)
     pom_wo_om_list_display = utils.format_list_for_markdown(pom_wo_om_list)
+    pom_wo_predicate_list_display = utils.format_list_for_markdown(pom_wo_predicate_list)
 
-    if tm_wo_sm_list or tm_wo_pom_list or pom_wo_om_list:
+    if tm_wo_sm_list or tm_wo_pom_list or pom_wo_om_list or pom_wo_predicate_list_display:
+
         max_length = utils.get_max_length_for_display()[5]
 
         inner_html = f"""The mapping <b>{st.session_state["g_label"]}</b> is incomplete!
@@ -1702,16 +1707,30 @@ def check_g_mapping(g):
         if pom_wo_om_list:
             if len(pom_wo_om_list) == 1:
                 inner_html += f"""<div style="margin-left: 20px"><small>The Predicate-Object Map
-                <b>{tm_wo_sm_list_display}</b> has not been assigned
-                a Subject Map.</small><br></div>"""
+                <b>{pom_wo_om_list_display}</b> has not been assigned
+                an Object Map.</small><br></div>"""
             elif len(pom_wo_om_list) < max_length:
                 inner_html += f"""<div style="margin-left: 20px"><small>The Predicate-Object Maps
-                <b>{tm_wo_sm_list_display}</b> have not been assigned
-                a Subject Map.</small><br></div>"""
+                <b>{pom_wo_om_list_display}</b> have not been assigned
+                an Object Map.</small><br></div>"""
             else:
-                inner_html += f"""<div style="margin-left: 20px"><small><b>{len(tm_wo_sm_list)}
-                TriplesMaps</b> have not been assigned
-                a Subject Map.</small><br></div>"""
+                inner_html += f"""<div style="margin-left: 20px"><small><b>{len(pom_wo_om_list_display)}
+                Predicate-Object Maps</b> have not been assigned
+                an Object Map.</small><br></div>"""
+
+        if pom_wo_predicate_list:
+            if len(pom_wo_om_list) == 1:
+                inner_html += f"""<div style="margin-left: 20px"><small>The Predicate-Object Map
+                <b>{pom_wo_predicate_list_display}</b> has not been assigned
+                a predicate.</small><br></div>"""
+            elif len(pom_wo_om_list) < max_length:
+                inner_html += f"""<div style="margin-left: 20px"><small>The Predicate-Object Maps
+                <b>{pom_wo_predicate_list_display}</b> have not been assigned
+                a predicate.</small><br></div>"""
+            else:
+                inner_html += f"""<div style="margin-left: 20px"><small><b>{len(pom_wo_predicate_list_display)}
+                Predicate-Object Maps</b> have not been assigned
+                a predicate.</small><br></div>"""
 
         return inner_html
 
