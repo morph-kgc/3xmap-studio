@@ -101,34 +101,32 @@ with tab1:
             order_clause = st.selectbox("⌨️ Enter order (optional):", list_to_choose,
                 key="key_order_clause")
 
-            query = f"""
-            SELECT ?tm WHERE {{
-                ?tm a <http://www.w3.org/ns/r2rml#TriplesMap>
-            }}"""
+        query = f"""
+        SELECT ?tm WHERE {{
+            ?tm a <http://www.w3.org/ns/r2rml#TriplesMap>
+        }}"""
 
-            if order_clause == "Ascending":
-                query += f"ORDER BY ASC(?tm) "
-            elif order_clause == "Descending":
-                query += f"ORDER BY DESC(?tm) "
+        if order_clause == "Ascending":
+            query += f"ORDER BY ASC(?tm) "
+        elif order_clause == "Descending":
+            query += f"ORDER BY DESC(?tm) "
 
-            if limit:
-                query += f"LIMIT {limit} "
+        if limit:
+            query += f"LIMIT {limit} "
 
-            if offset:
-                query += f"OFFSET {offset}"
-
-        results = st.session_state["g_mapping"].query(query)
+        if offset:
+            query += f"OFFSET {offset}"
 
         results = st.session_state["g_mapping"].query(query)
 
-        # Build a list of rows for the DataFrame
+
+        # Create and display the DataFrame
         tm_data = []
         for row in results:
             uri = str(row.tm)
             label = uri.split("/")[-1] if "/" in uri else uri  # or use uri.split("#")[-1] if URIs use hash
             tm_data.append({"TriplesMap Label": label, "TriplesMap URI": uri})
 
-        # Create and display the DataFrame
         with col1:
             df = pd.DataFrame(tm_data)
             if not df.empty:
@@ -138,8 +136,100 @@ with tab1:
                     ⚠️ No results.
                 </div>""", unsafe_allow_html=True)
 
+    if selected_predefined_search == "Subject Map details":
 
+        with col1b:
+            tm_dict = utils.get_tm_dict()
+            list_to_choose = list(tm_dict)
+            list_to_choose.insert(0, "Select TriplesMap")
+            tm_label_for_search = st.selectbox("🖱️ Select TriplesMap:*", list_to_choose,
+                key="key_tm_label_for_search")
+            tm_iri_for_search = tm_dict[tm_label_for_search]
 
+        with col1:
+            col1a, col1b, col1c = st.columns(3)
+
+        with col1a:
+            limit = st.text_input("⌨️ Enter limit (optional):", key="key_limit")
+        with col1b:
+            offset = st.text_input("⌨️ Enter offset (optional):", key="key_offset")
+        with col1c:
+            list_to_choose = ["No order", "Ascending", "Descending"]
+            order_clause = st.selectbox("⌨️ Enter order (optional):", list_to_choose,
+                key="key_order_clause")
+
+        query = f"""
+        SELECT ?subjectMap ?template ?class ?termType ?graph WHERE {{
+          <{tm_iri_for_search}> <http://www.w3.org/ns/r2rml#subjectMap> ?subjectMap .
+          OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#template> ?template }}
+          OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#class> ?class }}
+          OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#termType> ?termType }}
+          OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#graph> ?graph }}
+        }}
+        """
+
+        if order_clause == "Ascending":
+            query += f"ORDER BY ASC(?subjectMap) "
+        elif order_clause == "Descending":
+            query += f"ORDER BY DESC(?subjectMap) "
+
+        if limit:
+            query += f"LIMIT {limit} "
+
+        if offset:
+            query += f"OFFSET {offset}"
+
+        results = st.session_state["g_mapping"].query(query)
+
+        # Create and display the DataFrames
+        tm_data_1 = []
+        tm_data_2 = []
+
+        for row in results:
+            subject_map = str(row.subjectMap) if row.subjectMap else ""
+            template = str(row.template) if row.template else ""
+            class_ = str(row["class"]) if row["class"] else ""         
+            term_type = str(row.termType) if row.termType else ""
+            term_type = split_uri(term_type)[1] if term_type else ""
+            graph = str(row.graph) if row.graph else ""
+
+            label = subject_map.split("/")[-1] if "/" in subject_map else subject_map
+
+            tm_data_1.append({"SubjectMap Label": label, "SubjectMap URI": subject_map,
+                "Template": template})
+
+            tm_data_2.append({"SubjectMap Label": label,
+                "Class": class_, "TermType": term_type, "Graph": graph})
+
+        with col1:
+            st.write("")
+
+            df1 = pd.DataFrame(tm_data_1)
+            df2 = pd.DataFrame(tm_data_2)
+
+            if not df1.empty:
+                st.markdown("""<div style="background-color:#f0f0f0; padding:4px; border-radius:5px; font-size:14px;">
+                        🧩 <b>SubjectMap Info</b>
+                        </div>""", unsafe_allow_html=True)
+                st.dataframe(df1, hide_index=True)
+
+            if not df2.empty:
+                st.markdown("""<div style="background-color:#f0f0f0; padding:4px; border-radius:5px; font-size:14px;">
+                        📦 <b>Additional Properties</b>
+                    </div>""", unsafe_allow_html=True)
+                st.dataframe(df2, hide_index=True)
+
+            if df1.empty and df2.empty:
+                st.markdown("""<div class="warning-message">⚠️ No results.</div>""", unsafe_allow_html=True)
+
+# 2. Show SubjectMap details for a TriplesMap
+# SELECT ?subjectMap ?template ?class ?termType ?graph WHERE {
+#   <TM_URI> <http://www.w3.org/ns/r2rml#subjectMap> ?subjectMap .
+#   OPTIONAL { ?subjectMap <http://www.w3.org/ns/r2rml#template> ?template }
+#   OPTIONAL { ?subjectMap <http://www.w3.org/ns/r2rml#class> ?class }
+#   OPTIONAL { ?subjectMap <http://www.w3.org/ns/r2rml#termType> ?termType }
+#   OPTIONAL { ?subjectMap <http://www.w3.org/ns/r2rml#graph> ?graph }
+# }
 
 
 
