@@ -12,6 +12,7 @@ import io
 import time
 import uuid   # to handle uploader keys
 import requests
+from morph_kgc import materialize
 
 # Header
 st.markdown("""<div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
@@ -54,10 +55,8 @@ if "ds_files_dict" not in st.session_state:
 # TAB1
 if "mk_config" not in st.session_state:
     st.session_state["mk_config"] = configparser.ConfigParser()
-if "mk_db_connections_dict" not in st.session_state:
-    st.session_state["mk_db_connections_dict"] = {}
-if "mk_g_mapping_dict" not in st.session_state:
-    st.session_state["mk_g_mapping_dict"] = {}
+if "mk_g_mappings_dict" not in st.session_state:
+    st.session_state["mk_g_mappings_dict"] = {}
 if "ds_for_mk_saved_ok_flag" not in st.session_state:
     st.session_state["ds_for_mk_saved_ok_flag"] = False
 if "ds_for_mk_removed_ok_flag" not in st.session_state:
@@ -66,6 +65,12 @@ if "configuration_for_mk_saved_ok_flag" not in st.session_state:
     st.session_state["configuration_for_mk_saved_ok_flag"] = False
 if "configuration_for_mk_removed_ok_flag" not in st.session_state:
     st.session_state["configuration_for_mk_removed_ok_flag"] = False
+if "mk_used_db_connections_dict" not in st.session_state:
+    st.session_state["mk_used_db_connections_dict"] = {}
+if "mk_used_ds_dict" not in st.session_state:
+    st.session_state["mk_used_ds_dict"] = {}
+if "mk_used_mappings_dict" not in st.session_state:
+    st.session_state["mk_used_mappings_dict"] = {}
 
 # TAB2
 if "additional_mapping_added_ok_flag" not in st.session_state:
@@ -87,6 +92,9 @@ def save_sql_ds_for_mk():
     st.session_state["mk_config"][mk_ds_label] = {"db_url": db_url,
         "mappings": mk_mappings_str_for_sql}
     # store information________________________
+    st.session_state["mk_used_db_connections_dict"][mk_sql_ds] = st.session_state["db_connections_dict"][mk_sql_ds]
+    for mapping in mk_mappings_paths_list_for_sql:
+        st.session_state["mk_used_mappings_dict"][mapping] = mapping
     st.session_state["ds_for_mk_saved_ok_flag"] = True
     # reset fields__________________________
     st.session_state["key_mk_ds_label"] = ""
@@ -96,6 +104,7 @@ def save_tab_ds_for_mk():
     st.session_state["mk_config"][mk_ds_label] = {"file_path": file_path,
         "mappings": mk_mappings_str_for_tab}
     # store information________________________
+    st.session_state["mk_used_ds_dict"][mk_tab_ds_file] = st.session_state["ds_files_dict"][mk_tab_ds_file]
     st.session_state["ds_for_mk_saved_ok_flag"] = True
     # reset fields__________________________
     st.session_state["key_mk_ds_label"] = ""
@@ -188,7 +197,7 @@ def remove_options_for_mk():
 # TAB2
 def save_mapping_for_mk():
     # store information________________________
-    st.session_state["mk_g_mapping_dict"][uploaded_mapping_label] = uploaded_mapping
+    st.session_state["mk_g_mappings_dict"][uploaded_mapping_label] = uploaded_mapping
     st.session_state["additional_mapping_added_ok_flag"] = True
     # reset fields_______________________________
     st.session_state["key_uploaded_mapping_label"] = ""
@@ -196,7 +205,7 @@ def save_mapping_for_mk():
 
 def save_mapping_for_mk_from_url():
     # store information________________________
-    st.session_state["mk_g_mapping_dict"][url_mapping_label] = url_mapping
+    st.session_state["mk_g_mappings_dict"][url_mapping_label] = url_mapping
     st.session_state["additional_mapping_added_from_URL_ok_flag"] = True
     # reset fields_______________________________
     st.session_state["key_mapping_label_url"] = ""
@@ -204,7 +213,7 @@ def save_mapping_for_mk_from_url():
 def remove_additional_mapping_for_mk():
     # remove________________________
     for mapping in mappings_to_remove_list:
-        del st.session_state["mk_g_mapping_dict"][mapping]
+        del st.session_state["mk_g_mappings_dict"][mapping]
     # store information________________________
     st.session_state["additional_mapping_removed_ok_flag"] = True
     # reset fields_______________________________
@@ -281,12 +290,6 @@ with tab1:
                     ❌ <b>"CONFIGURATION" label</b> is not allowed.
                     <small> You must pick a different label.</small>
                 </div>""", unsafe_allow_html=True)
-        elif mk_ds_label in st.session_state["mk_db_connections_dict"]:
-            with col1a:
-                st.markdown(f"""<div class="error-message">
-                    ❌ Label <b>{mk_ds_label}</b> is already in use.
-                    <small> You must pick a different label.</small>
-                </div>""", unsafe_allow_html=True)
 
         else:
 
@@ -324,7 +327,7 @@ with tab1:
                         db_type = st.session_state["db_connections_dict"][mk_sql_ds][0]
 
                 with col1b:
-                    mk_g_mapping_dict_complete = st.session_state["mk_g_mapping_dict"].copy()
+                    mk_g_mapping_dict_complete = st.session_state["mk_g_mappings_dict"].copy()
                     if st.session_state["g_label"]:
                         mk_g_mapping_dict_complete[st.session_state["g_label"]] = st.session_state["g_mapping"]
 
@@ -379,7 +382,7 @@ with tab1:
                         file_path = os.path.join(temp_folder_path, mk_tab_ds_file)
 
                 with col1b:
-                    mk_g_mapping_dict_complete = st.session_state["mk_g_mapping_dict"].copy()
+                    mk_g_mapping_dict_complete = st.session_state["mk_g_mappings_dict"].copy()
                     if st.session_state["g_label"]:
                         mk_g_mapping_dict_complete[st.session_state["g_label"]] = st.session_state["g_mapping"]
 
@@ -701,13 +704,13 @@ with tab2:
         st.write("")
         st.write("")
 
-        rows = [{"Mapping": label} for label in reversed(list(st.session_state["mk_g_mapping_dict"].keys()))]
+        rows = [{"Mapping": label} for label in reversed(list(st.session_state["mk_g_mappings_dict"].keys()))]
         mk_g_mappings_df = pd.DataFrame(rows)
         mk_g_mappings_df = mk_g_mappings_df.head(utils.get_max_length_for_display()[1])
 
         max_length = utils.get_max_length_for_display()[1]   # max number of connections to show directly
-        if st.session_state["mk_g_mapping_dict"]:
-            if len(st.session_state["db_connections_dict"]) < max_length:
+        if st.session_state["mk_g_mappings_dict"]:
+            if len(st.session_state["mk_g_mappings_dict"]) < max_length:
                 st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
                         🔎 additional mappings
                     </div>""", unsafe_allow_html=True)
@@ -753,12 +756,13 @@ with tab2:
     with col1a:
         uploaded_mapping_label = st.text_input("⌨️ Enter mapping label:*", key="key_uploaded_mapping_label")
 
-    if uploaded_mapping_label in st.session_state["mk_g_mapping_dict"]:
-        with col1a:
-            st.markdown(f"""<div class="error-message">
-                ❌ Label <b>{uploaded_mapping_label}</b> is already in use.
-                <small>Please, pick a different label.</small>
-            </div>""", unsafe_allow_html=True)
+    if uploaded_mapping_label in st.session_state["mk_g_mappings_dict"] or uploaded_mapping_label == st.session_state["g_label"]:
+        if uploaded_mapping_label:
+            with col1a:
+                st.markdown(f"""<div class="error-message">
+                    ❌ Label <b>{uploaded_mapping_label}</b> is already in use.
+                    <small>Please, pick a different label.</small>
+                </div>""", unsafe_allow_html=True)
 
     elif uploaded_mapping_label:
 
@@ -787,9 +791,7 @@ with tab2:
 
                 else:
                     try:
-
-                        g = rdflib.Graph()   # load the RDF graph
-                        g.parse(uploaded_mapping, format="turtle")
+                        g = utils.load_mapping_from_file(uploaded_mapping)
 
                         # Check for key RML predicates
                         rml_predicates = [rdflib.URIRef("http://semweb.mmlab.be/ns/rml#logicalSource"),
@@ -797,15 +799,9 @@ with tab2:
                             rdflib.URIRef("http://www.w3.org/ns/r2rml#predicateObjectMap")]
 
                         found_predicates = any(p in [pred for _, pred, _ in g] for p in rml_predicates)
+                        check_g_mapping = utils.check_g_mapping(g)
 
-                        if found_predicates:
-                            with col1b:
-                                st.write("")
-                                st.write("")
-                                st.markdown(f"""<div class="success-message">
-                                        ✔️ <b>Valid RML mapping<b> detected.
-                                    </div>""", unsafe_allow_html=True)
-                        else:
+                        if not found_predicates:
                             with col1b:
                                 st.write("")
                                 st.write("")
@@ -814,6 +810,23 @@ with tab2:
                                         <small>Please, check your mapping content.</small>
                                     </div>""", unsafe_allow_html=True)
                                 uploaded_mapping_ok_flag = False
+
+                        elif check_g_mapping:
+                            with col1b:
+                                st.write("")
+                                st.write("")
+                                st.markdown(f"""<div class="error-message">
+                                        {check_g_mapping}
+                                    </div>""", unsafe_allow_html=True)
+                                uploaded_mapping_ok_flag = False
+
+                        else:
+                            with col1b:
+                                st.write("")
+                                st.write("")
+                                st.markdown(f"""<div class="success-message">
+                                        ✔️ <b>Valid RML mapping<b> detected.
+                                    </div>""", unsafe_allow_html=True)
 
                     except Exception as e:
                         with col1b:
@@ -857,12 +870,15 @@ with tab2:
     with col1a:
         url_mapping_label = st.text_input("⌨️ Enter mapping label:*", key="key_mapping_label_url")
 
-    if url_mapping_label in st.session_state["mk_g_mapping_dict"]:
-        with col1a:
-            st.markdown(f"""<div class="error-message">
-                ❌ Label <b>{url_mapping_label}</b> is already in use.
-                <small>Please, pick a different label.</small>
-            </div>""", unsafe_allow_html=True)
+        #https://raw.githubusercontent.com/arcangelo7/rml-mapping/main/rules.rml.ttl
+
+    if url_mapping_label in st.session_state["mk_g_mappings_dict"] or url_mapping_label == st.session_state["g_label"]:
+        if url_mapping_label:
+            with col1a:
+                st.markdown(f"""<div class="error-message">
+                    ❌ Label <b>{url_mapping_label}</b> is already in use.
+                    <small>Please, pick a different label.</small>
+                </div>""", unsafe_allow_html=True)
 
     elif url_mapping_label:
 
@@ -976,7 +992,7 @@ with tab2:
         with col1:
             col1a, col1b = st.columns([2,1])
 
-        list_to_choose =  list(reversed(list(st.session_state["mk_g_mapping_dict"].keys())))
+        list_to_choose =  list(reversed(list(st.session_state["mk_g_mappings_dict"].keys())))
         if len(list_to_choose) > 1:
             list_to_choose.insert(0, "Select all")
         with col1a:
@@ -984,7 +1000,7 @@ with tab2:
                 key="key_mappings_to_remove_list")
 
         if "Select all" in mappings_to_remove_list:
-            mappings_to_remove_list = list(st.session_state["mk_g_mapping_dict"].keys())
+            mappings_to_remove_list = list(st.session_state["mk_g_mappings_dict"].keys())
             with col1a:
                 if len(mappings_to_remove_list) == 1:
                     st.markdown(f"""<div class="warning-message">
@@ -1074,6 +1090,86 @@ with tab3:
                 st.markdown(f"""<div class="error-message">
                     ❌ <b>Config file is empty</b>.<small> You can enter data in the <b>Materialise pannel</b>.</small>
                 </div>""", unsafe_allow_html=True)
+
+        else:
+
+            # Empty folder if it exists or create if it does not
+            if os.path.exists(temp_folder_path):
+                for filename in os.listdir(temp_folder_path):
+                    file_path = os.path.join(temp_folder_path, filename)
+                    try:
+                        if os.path.isfile(file_path) or os.path.islink(file_path):
+                            os.unlink(file_path)  # delete file or link
+                        elif os.path.isdir(file_path):
+                            shutil.rmtree(file_path)  # delete subfolder
+                    except Exception as e:
+                        st.write(f"⚠️ Failed to delete {file_path}: {e}")
+            else:
+                os.makedirs(temp_folder_path)  # Create folder if it doesn't exist
+
+            # Check g_mapping (additional mappings checked before adding)
+            g_mapping_ok_flag = True
+            if st.session_state["g_label"]:
+                inner_html = utils.check_g_mapping(st.session_state["g_mapping"])
+                if inner_html:
+                    full_html = f"""<div class="error-message">
+                            ❌ {inner_html}
+                        </div>"""
+                    g_mapping_ok_flag = False
+                else:
+                    full_html = f"""<div class="success-message">
+                            ✔️ Mapping <b>{st.session_state["g_label"]}</b> complete.
+                        </div>"""
+                with col1a:
+                    st.markdown(full_html, unsafe_allow_html=True)
+
+            # Download g_mapping if valid
+            if g_mapping_ok_flag:
+                # Download g_mapping to file
+                mapping_content = st.session_state["g_mapping"]
+                mapping_content_str = mapping_content.serialize(format="turtle")
+                filename = st.session_state["g_label"] + ".ttl"
+
+                file_path = os.path.join(temp_folder_path, filename)
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(mapping_content_str)
+
+                # Download additional mappings to file
+                for g_label, g_mapping_file in st.session_state["mk_g_mappings_dict"].items():
+                    ext = os.path.splitext(g_mapping_file.name)[1]
+                    filename = g_label + ext
+                    file_path = os.path.join(temp_folder_path, filename)
+                    with open(file_path, "wb") as f:
+                        f.write(g_mapping_file.getvalue())  # write file content as bytes
+
+                additional_mappings_list_for_display = utils.format_list_for_markdown(list(st.session_state["mk_g_mappings_dict"]))
+                if len(st.session_state["mk_g_mappings_dict"]) == 1:
+                    st.markdown(f"""<div class="success-message">
+                            ✔️ Mapping {additional_mappings_list_for_display} ok.
+                        </div>""", unsafe_allow_html=True)
+                elif len(st.session_state["mk_g_mappings_dict"]) > 1:
+                    st.markdown(f"""<div class="success-message">
+                            ✔️ Mappings <b>{additional_mappings_list_for_display}</b> ok.
+                        </div>""", unsafe_allow_html=True)
+
+                # Download used tabular data sources
+                for ds_label, ds_file in st.session_state["mk_used_ds_dict"].items():
+                    filename = ds_file.name
+                    file_path = os.path.join(temp_folder_path, filename)
+                    with open(file_path, "wb") as f:
+                        f.write(ds_file.getvalue())  # write file content as bytes
+
+                st.success(f"✅ Saved {len(st.session_state["mk_used_ds_dict"])} tabular data sources to: {temp_folder_path}")
+
+
+                #MATERIALISATION
+                # Write config to a file
+                config_path = os.path.join(os.getcwd(), "materialising_mapping_temp", "mk_config.ini")
+                with open(config_path, "w", encoding="utf-8") as f:
+                    st.session_state["mk_config"].write(f)
+                # Run Morph-KGC with the config file path to materialise
+                g = materialize(config_path)
+                st.write(f"✅ Graph materialized with {len(g)} triples.")
 
 
 # output_dir	Directory where output files will be saved	./output/

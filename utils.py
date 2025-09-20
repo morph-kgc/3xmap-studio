@@ -1625,6 +1625,82 @@ def get_db_url_str(conn):
     return db_url_str
 
 #_________________________________________________
+
+#_______________________________________________
+# Function to check mapping before materialisation
+def check_g_mapping(g):
+
+    tm_dict = {}
+    for tm in g.subjects(RML.logicalSource, None):
+        tm_label = split_uri(tm)[1]
+        tm_dict[tm_label] = tm
+
+    pom_dict = {}
+    for pom in g.subjects(RDF.type, RR.PredicateObjectMap):
+        if isinstance(pom, URIRef):
+            pom_label = split_uri(tm)[1]
+        elif isinstance(pom, BNode):
+            pom_label = "_:" + str(pom)[:7] + "..."
+        else:
+            pom_label = str(pom)
+        pom_dict[pom_label] = pom
+
+    tm_wo_sm_list = []   # list of all tm with assigned sm
+    tm_wo_pom_list = []
+    for tm_label, tm_iri in tm_dict.items():
+        if not any(g.triples((tm_iri, RR.subjectMap, None))):
+            tm_wo_sm_list.append(tm_label)
+    for tm_label, tm_iri in tm_dict.items():
+        if not any(g.triples((tm_iri, RR.predicateObjectMap, None))):
+            tm_wo_pom_list.append(tm_label)
+
+    pom_wo_om_list = []
+    for pom_label, pom_iri in g.subjects(RDF.type, RR.PredicateObjectMap):
+        if not any(g.triples((pom_iri, RR.objectMap, None))):
+            pom_wo_om_list.append(pom_label)
+
+    tm_wo_pom_list_display = utils.format_list_for_markdown(tm_wo_pom_list)
+    tm_wo_sm_list_display = utils.format_list_for_markdown(tm_wo_sm_list)
+    pom_wo_om_list_display = utils.format_list_for_markdown(pom_wo_om_list)
+
+    if tm_wo_sm_list or tm_wo_pom_list or pom_wo_om_list:
+        max_length = utils.get_max_length_for_display()[5]
+
+        inner_html = f"""The mapping <b>{st.session_state["g_label"]}</b> is incomplete!
+            <br>"""
+
+        if tm_wo_sm_list:
+            if len(tm_wo_sm_list) < max_length:
+                inner_html += f"""<small>The TriplesMaps <b>{tm_wo_sm_list_display}</b> have not been assigned
+                a Subject Map.</small><br>"""
+            else:
+                inner_html += f"""<small><b>{len(tm_wo_sm_list)} TriplesMaps</b> have not been assigned
+                a Subject Map.</small><br>"""
+
+        if tm_wo_pom_list:
+            if len(tm_wo_pom_list) < max_length:
+                tm_wo_pom_list_display = utils.format_list_for_markdown(tm_wo_pom_list)
+                inner_html += f"""<small>The TriplesMaps <b>{tm_wo_pom_list_display}</b> have not been assigned
+                a Predicate-Object Map.</small><br>"""
+            else:
+                inner_html += f"""<small><b>{len(tm_wo_pom_list)} TriplesMaps</b> have not been assigned
+                a Predicate-Object Map.</small><br>"""
+
+        if pom_wo_om_list:
+            if len(pom_wo_om_list) < max_length:
+                inner_html += f"""<small>The Predicate-Object Maps <b>{tm_wo_sm_list_display}</b> have not been assigned
+                a Subject Map.</small><br>"""
+            else:
+                inner_html += f"""<small><b>{len(tm_wo_sm_list)} TriplesMaps</b> have not been assigned
+                a Subject Map.</small><br>"""
+
+        return inner_html
+
+    return ""
+
+#_________________________________________________
+
+
 # #_________________________________________________
 # # Funtion to get allowed mapping extensions for Morph-KGC
 # def get_allowed_mapping_extensions_mk():

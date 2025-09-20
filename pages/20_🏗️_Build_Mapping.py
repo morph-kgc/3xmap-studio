@@ -699,10 +699,22 @@ with tab1:
 
 
             with col1b:
-                if labelled_ls_list:    # if there exist labelled logical sources
-                    ls_options_list = ["📑 Existing Logical Source", "📊 SQL Database", "🛢️ Tabular data"]
-                else:
-                    ls_options_list = ["📊 SQL Database", "🛢️ Tabular data"]
+
+                ls_options_list = []
+                if labelled_ls_list:
+                    ls_options_list.append("📑 Existing Logical Source")
+                if st.session_state["db_connections_dict"]:
+                    ls_options_list.append("📊 SQL Database")
+                if st.session_state["ds_files_dict"]:
+                    ls_options_list.append("🛢️ Tabular data")
+                if not st.session_state["db_connections_dict"] and not st.session_state["ds_files_dict"]:
+                    with col1a:
+                        st.markdown(f"""<div class="error-message">
+                            ❌ No data sources are available. <small>You can add them in the
+                            <b>Manage Logical Sources</b> page.</small>
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
+
                 ls_option = st.radio("🖱️ Choose the logical source option:*", ls_options_list, horizontal=False)
                 st.write("")
 
