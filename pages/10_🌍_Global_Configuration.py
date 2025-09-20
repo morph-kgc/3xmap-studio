@@ -1032,7 +1032,7 @@ with tab2:
         if ontologies_to_drop_list:
             with col1a:
                 reduce_ontology_checkbox = st.checkbox(
-                ":gray-badge[⚠️ I am completely sure I want to drop the selected ontologies]",
+                ":gray-badge[⚠️ I am sure I want to drop the selected ontologies]",
                 key="key_reduce_ontology_checkbox")
 
             if reduce_ontology_checkbox:
@@ -1867,7 +1867,7 @@ with tab4:
         export_format_list = list(export_extension_dict)
 
         with col1a:
-            export_format = st.selectbox("🖱️ Select format:", export_format_list, key="key_export_format_selectbox")
+            export_format = st.selectbox("🖱️ Select format:*", export_format_list, key="key_export_format_selectbox")
         export_extension = export_extension_dict[export_format]
 
         with col1b:

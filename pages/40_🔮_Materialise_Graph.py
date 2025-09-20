@@ -81,7 +81,13 @@ if "additional_mapping_added_from_URL_ok_flag" not in st.session_state:
 
 # TAB3
 if "materialised_graph" not in st.session_state:
-    st.session_state["materialised_graph"] = Graph()
+    st.session_state["materialised_g_mapping_file"] = None
+if "materialised_g_mapping" not in st.session_state:
+    st.session_state["materialised_g_mapping"] = Graph()
+if "graph_materialised_ok_flag" not in st.session_state:
+    st.session_state["graph_materialised_ok_flag"] = False
+if "materialisation_page_reset_ok_flag" not in st.session_state:
+    st.session_state["materialisation_page_reset_ok_flag"] = False
 
 #define on_click functions
 # TAB1
@@ -215,7 +221,7 @@ def remove_additional_mapping_for_mk():
 
 # TAB3
 def materialise_graph():
-    # Empty folder if it exists or create if it does not______________
+    # empty folder if it exists or create if it does not______________
     if os.path.exists(temp_folder_path):
         for filename in os.listdir(temp_folder_path):
             file_path = os.path.join(temp_folder_path, filename)
@@ -229,7 +235,7 @@ def materialise_graph():
     else:
         os.makedirs(temp_folder_path)  # Create folder if it doesn't exist
 
-    # Download g_mapping if used___________________________________________
+    # download g_mapping if used___________________________________________
     if st.session_state["g_label"] in mk_used_mapping_list:
         # Download g_mapping to file
         mapping_content = st.session_state["g_mapping"]
@@ -240,7 +246,7 @@ def materialise_graph():
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(mapping_content_str)
 
-    # Download additional mappings to file if used__________________________
+    # download additional mappings to file if used__________________________
     for g_label in mk_used_mapping_list:
         if g_label != st.session_state["g_label"]:
             g_mapping_file = st.session_state["mk_g_mappings_dict"][g_label]
@@ -250,7 +256,7 @@ def materialise_graph():
             with open(file_path, "wb") as f:
                 f.write(g_mapping_file.getvalue())  # write file content as bytes
 
-    # Download used tabular data sources___________________________________
+    # download used tabular data sources___________________________________
     for ds_filename in mk_used_tab_ds_list:
         ds_file = st.session_state["ds_files_dict"][ds_filename]
         filename = ds_file.name
@@ -258,24 +264,35 @@ def materialise_graph():
         with open(file_path, "wb") as f:
             f.write(ds_file.getvalue())  # write file content as bytes
 
-    # Write config to a file____________________________________________________
+    # write config to a file____________________________________________________
     config_path = os.path.join(os.getcwd(), "materialising_mapping_temp", "mk_config.ini")
     with open(config_path, "w", encoding="utf-8") as f:
         st.session_state["mk_config"].write(f)
 
-    # Run Morph-KGC with the config file path to materialise_______________________
-    g = materialize(config_path)
-    st.session_state["materialised_graph"] = io.BytesIO()
-    g.serialize(destination=st.session_state["materialised_graph"], format="turtle")  # or "xml", "nt", "json-ld"
-    st.session_state["materialised_graph"].seek(0)  # rewind to the beginning
+    # run Morph-KGC with the config file path to materialise_______________________
+    st.session_state["materialised_g_mapping"] = materialize(config_path)
+    st.session_state["materialised_g_mapping_file"] = io.BytesIO()
+    st.session_state["materialised_g_mapping"].serialize(destination=st.session_state["materialised_g_mapping_file"], format="turtle")  # or "xml", "nt", "json-ld"
+    st.session_state["materialised_g_mapping_file"].seek(0)  # rewind to the beginning
 
-    # Delete temporal folder
+    # delete temporal folder___________________________________________________
     for filename in os.listdir(temp_folder_path):       # delete all files inside the folder
         file_path = os.path.join(temp_folder_path, filename)
         if os.path.isfile(file_path):
             os.remove(file_path)
     os.rmdir(temp_folder_path)      # remove the empty folder
 
+    # store information________________________________________________________
+    st.session_state["graph_materialised_ok_flag"] = True
+
+def reset_materialise_page():
+    # reset variables__________________________
+    st.session_state["mk_config"] = configparser.ConfigParser()
+    st.session_state["mk_g_mappings_dict"] = {}
+    st.session_state["materialised_g_mapping_file"] = None
+    st.session_state["materialised_g_mapping"] = Graph()
+    # store information_________________________
+    st.session_state["materialisation_page_reset_ok_flag"] = True
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
 
@@ -410,7 +427,7 @@ with tab1:
 
                 mk_mappings_paths_list_for_sql = [os.path.join(temp_folder_path, mapping + ".ttl")
                     for mapping in mk_mappings_list_for_sql]
-                mk_mappings_str_for_sql = ", ".join(mk_mappings_paths_list_for_sql)   # join into a comma-separated string for the config
+                mk_mappings_str_for_sql = ",".join(mk_mappings_paths_list_for_sql)   # join into a comma-separated string for the config
 
                 # with col1:
                 #     col1a, col1b = st.columns(2)
@@ -1138,7 +1155,19 @@ with tab3:
             </div>""", unsafe_allow_html=True)
 
         with col1:
-            col1a, col1b = st.columns([2,1])
+            col1a, col1b = st.columns([2.5,1])
+
+        if st.session_state["graph_materialised_ok_flag"]:
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                st.write("")
+                st.markdown(f"""<div class="success-message-flag">
+                    ✅ <b>Graph</b> has been materialised!
+                </div>""", unsafe_allow_html=True)
+            st.session_state["graph_materialised_ok_flag"] = False
+            time.sleep(st.session_state["success_display_time"])
+            st.rerun()
 
         if config_string.getvalue() == "":
             with col1a:
@@ -1147,8 +1176,6 @@ with tab3:
                 </div>""", unsafe_allow_html=True)
 
         else:
-
-
 
             # List of all used mappings
             mk_used_mapping_list = []
@@ -1182,23 +1209,21 @@ with tab3:
 
 
             everything_ok_flag = True
+            inner_html_success = ""
+            inner_html_error = ""
 
             # Check g_mapping if used (additional mappings checked before adding)
             if st.session_state["g_label"] in mk_used_mapping_list:
                 g_mapping_ok_flag = True
                 if st.session_state["g_label"]:
-                    inner_html = utils.check_g_mapping(st.session_state["g_mapping"])
-                    if inner_html:
-                        full_html = f"""<div class="error-message">
-                                ❌ {inner_html}
-                            </div>"""
+                    check_g_mapping = utils.check_g_mapping(st.session_state["g_mapping"])
+                    if check_g_mapping:
+                        inner_html_error += "❌" + check_g_mapping
                         everything_ok_flag = False
+                        g_mapping_ok_flag = False
                     else:
-                        full_html = f"""<div class="success-message">
-                                ✔️ Mapping <b>{st.session_state["g_label"]}</b> complete.
-                            </div>"""
-                    with col1a:
-                        st.markdown(full_html, unsafe_allow_html=True)
+                        inner_html_success += f"""✔️ Mapping <b>{st.session_state["g_label"]}</b>
+                            complete.<br>"""
 
             # Message on additional mappings if used
             mk_used_additional_mapping_list = mk_used_mapping_list.copy()
@@ -1206,11 +1231,8 @@ with tab3:
                 mk_used_additional_mapping_list.remove(st.session_state["g_label"])
             if mk_used_additional_mapping_list:
                 additional_mappings_list_for_display = utils.format_list_for_markdown(mk_used_additional_mapping_list)
-                with col1a:
-                    st.markdown(f"""<div class="success-message">
-                            ✔️ Additional mappings ok:
-                            <b><small>{additional_mappings_list_for_display}</small>
-                        </div>""", unsafe_allow_html=True)
+                inner_html_success += f"""✔️ <b>Additional mappings</b> are valid:<br>
+                    <div style="margin-left: 20px"><b><small>{additional_mappings_list_for_display}</small><br></div>"""
 
             # Check connections to db if used
             not_working_db_conn_list = []
@@ -1222,27 +1244,19 @@ with tab3:
                 except Exception as e:
                     not_working_db_conn_list.append(connection_string)
             if not not_working_db_conn_list:
-                with col1a:
-                    formatted_list = "<br>".join(mk_used_db_conn_list)
-                    st.markdown(f"""<div class="success-message">
-                        ✔️ All <b>connections to databases</b> are working:<br>
-                        <small><b>{formatted_list}</b></small>
-                    </div>""", unsafe_allow_html=True)
+                formatted_list = "<br>".join(mk_used_db_conn_list)
+                inner_html_success += f"""✔️ All <b>connections to databases</b> are working:<br>
+                    <div style="margin-left: 20px"><small><b>{formatted_list}</b></small><br></div>"""
             else:
                 everything_ok_flag = False
-                with col1a:
-                    if len(not_loaded_ds_list) == 1:
-                        st.markdown(f"""<div class="error-message">
-                                ❌ The connection to database <b>{utils.format_list_for_markdown(not_working_db_conn_list)}</b>
-                                is not working.
-                                <small>Please, check it in the <b>Manage Logical Sources</b> page.</small>
-                            </div>""", unsafe_allow_html=True)
-                    else:
-                        st.markdown(f"""<div class="error-message">
-                                ❌ The tabular data sources <b>{utils.format_list_for_markdown(not_working_db_conn_list)}</b>
-                                are not working.
-                                <small>Please, check them in the <b>Manage Logical Sources</b> page.</small>
-                            </div>""", unsafe_allow_html=True)
+                if len(not_working_db_conn_list) == 1:
+                    inner_html_error += f"""❌ A connection to database is not working:<br>
+                        <div style="margin-left: 20px"><small><b>{utils.format_list_for_markdown(not_working_db_conn_list)}
+                        </b></small><br></div>"""
+                else:
+                    inner_html_error += f"""❌ Several connections to databases are not working:<br>
+                        <div style="margin-left: 20px"><small><b>
+                        {utils.format_list_for_markdown(not_working_db_conn_list)}</b></small><br></div>"""
 
             # Check all tabular sources are loaded
             not_loaded_ds_list = []
@@ -1251,26 +1265,31 @@ with tab3:
                     not_loaded_ds_list.append(ds_filename)
 
             if not not_loaded_ds_list:
-                with col1a:
-                    st.markdown(f"""<div class="success-message">
-                            ✔️ All tabular data sources loaded:
-                            <small><b>{utils.format_list_for_markdown(mk_used_tab_ds_list)}</b></small>
-                        </div>""", unsafe_allow_html=True)
+                inner_html_success += f"""✔️ All <b>tabular data sources</b> are loaded:<br>
+                    <div style="margin-left: 20px"><small>
+                    <b>{utils.format_list_for_markdown(mk_used_tab_ds_list)}</b></small><br></div>"""
             else:
                 everything_ok_flag = False
                 with col1a:
                     if len(not_loaded_ds_list) == 1:
-                        st.markdown(f"""<div class="error-message">
-                                ❌ The tabular data source <b>{utils.format_list_for_markdown(not_loaded_ds_list)}</b>
-                                is not loaded.
-                                <small>Please, load it in the <b>Manage Logical Sources</b> page.</small>
-                            </div>""", unsafe_allow_html=True)
+                        inner_html_error += f"""❌ A <b>tabular data source</b> is not loaded:
+                            <div style="margin-left: 20px"><b><small>
+                            {utils.format_list_for_markdown(not_loaded_ds_list)}</b></small><br></div>"""
                     else:
-                        st.markdown(f"""<div class="error-message">
-                                ❌ The tabular data sources <b>{utils.format_list_for_markdown(not_loaded_ds_list)}</b>
-                                are not loaded.
-                                <small>Please, load them in the <b>Manage Logical Sources</b> page.</small>
-                            </div>""", unsafe_allow_html=True)
+                        inner_html_error += f"""❌ Several <b>tabular data sources</b>
+                            <div style="margin-left: 20px"><small><b>
+                            {utils.format_list_for_markdown(not_loaded_ds_list)}</b></small>
+                            <br></div>"""
+
+            with col1a:
+                if inner_html_success:
+                    st.markdown(f"""<div class="success-message">
+                            {inner_html_success}
+                        </div>""", unsafe_allow_html=True)
+                if inner_html_error:
+                    st.markdown(f"""<div class="error-message">
+                            {inner_html_error}
+                        </div>""", unsafe_allow_html=True)
 
 
             if everything_ok_flag:
@@ -1279,30 +1298,110 @@ with tab3:
                     st.write("")
                     st.button("Materialise", key="key_materialise_graph_button", on_click=materialise_graph)
 
-            if st.session_state["materialised_graph"]:
-                with col1a:
-                    st.markdown(f"""<div class="success-message-flag">
-                            ✅ Graph materialised with {len(g)} triples.
+                with col1b:
+                    st.markdown(f"""<div class="info-message-blue">
+                            ℹ️ Graph materialised with <b>{len(st.session_state["materialised_g_mapping"])} triples</b>.
                         </div>""", unsafe_allow_html=True)
-                st.download_button(
-                    label="📥 Download RDF Mapping",
-                    data=st.session_state["materialised_graph"],
-                    file_name="mapping_output.ttl",
-                    mime="text/turtle"
-                )
+            else:
+                with col1b:
+                    if st.session_state["g_label"] and not g_mapping_ok_flag:
+                        st.markdown(f"""<div class="info-message-blue">
+                                <small>ℹ️ You can fix mapping <b>{st.session_state["g_label"]}</b>
+                                it in the <b>Build Mapping</b> page.</small>
+                            </div>""", unsafe_allow_html=True)
+                    if not_working_db_conn_list:
+                        st.markdown(f"""<div class="info-message-blue">
+                                <small>ℹ️ You can check the <b>connections to databases</b> in the
+                                <b>Manage Logical Sources</b> page.</small>
+                            </div>""", unsafe_allow_html=True)
+                    if not_loaded_ds_list:
+                        st.markdown(f"""<div class="info-message-blue">
+                                <small>ℹ️ You can load the <b>tabular data sources</b> in the
+                                <b>Manage Logical Sources</b> page.</small>
+                            </div>""", unsafe_allow_html=True)
 
+            if st.session_state["materialised_g_mapping_file"]:
+                with col1:
+                    st.write("")
+                    st.markdown("""<div class="gray-heading">
+                            📥 Download graph
+                        </div>""", unsafe_allow_html=True)
+                    st.write("")
 
-# output_dir	Directory where output files will be saved	./output/
-# udfs	Path to Python file with user-defined functions	./functions/my_udfs.py
-# logging_file	Path to save logs (default is stdout)	./logs/morph.log
+                with col1:
+                    col1a, col1b = st.columns([1,2])
 
-# log_level	Logging verbosity level	INFO, DEBUG, ERROR
-# mapping_partitioning	Strategy for partitioning mappings	MAXIMAL, PARTIAL-AGGREGATIONS
-# na_values	Comma-separated values treated as NULL	null,NULL,nan     HERE
-# only_printable_chars	Whether to filter out non-printable characters	yes, no
-# literal_escaping_chars	Characters to preserve in percent encoding	/:
-# infer_sql_datatypes	Whether to infer SQL datatypes	yes, no
-# number_of_processes	Number of parallel processes to use	4
+                download_extension_dict = utils.get_g_mapping_file_formats_dict()
+                download_format_list = list(download_extension_dict)
 
-# output_kafka_server	Kafka server address (if using Kafka output)	localhost:9092
-# output_kafka_topic	Kafka topic name (if using Kafka output)	rdf-triples
+                with col1a:
+                    download_format = st.selectbox("🖱️ Select format:*", download_format_list, key="key_download_format_selectbox")
+                download_extension = download_extension_dict[download_format]
+
+                with col1b:
+                    download_filename = st.text_input("⌨️ Enter filename (without extension):*", key="key_download_filename_selectbox")
+
+                if "." in download_filename:
+                    with col1b:
+                        st.markdown(f"""<div class="warning-message">
+                                ⚠️ The filename <b style="color:#cc9a06;">{download_filename}</b>
+                                seems to include an extension.
+                            </div>""", unsafe_allow_html=True)
+
+                with col1:
+                    col1a, col1b = st.columns([1.5,1])
+
+                if download_filename:
+                    download_filename_complete = download_filename + download_extension if download_filename else ""
+                    if download_format == "turtle":
+                        mime_option = "text/turtle"
+                    elif download_format == "ntriples":
+                        mime_option = "application/n-triples"
+                    elif download_format == "trig":
+                        mime_option = "application/trig"
+                    elif download_format == "jsonld":
+                        mime_option = "application/ld+json"
+                    with col1a:
+                        st.write("")
+                        st.download_button(label="Download",
+                            data=st.session_state["materialised_g_mapping_file"],
+                            file_name=download_filename_complete,
+                            mime=mime_option)
+
+    # PURPLE HEADING - RESET
+    if config_string.getvalue() != "":
+        with col1:
+            st.write("_______")
+            st.markdown("""<div class="purple-heading">
+                    🔄 Reset
+                </div>""", unsafe_allow_html=True)
+
+        with col1:
+            col1a, col1b = st.columns([2,1])
+
+        if st.session_state["materialisation_page_reset_ok_flag"]:
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                st.write("")
+                st.markdown(f"""<div class="success-message-flag">
+                    ✅ <b>Materialisation page</b> has been reset!
+                </div>""", unsafe_allow_html=True)
+            st.session_state["materialisation_page_reset_ok_flag"] = False
+            time.sleep(st.session_state["success_display_time"])
+            st.rerun()
+
+        with col1a:
+            st.write("")
+            reset_materialise_page_checkbox = st.checkbox(
+            ":gray-badge[⚠️ I am sure I want to reset this page]",
+            key="key_reset_materialise_page_checkbox")
+
+        if reset_materialise_page_checkbox:
+            with col1a:
+                st.markdown(f"""<div class="warning-message">
+                    ⚠️ If you continue, <b>everything entered in this page will be deleted</b>
+                    (Data Sources, Configuration and Additional Mappings).
+                    <small>Make sure you want to go ahead.</small>
+                </div>""", unsafe_allow_html=True)
+                st.button("Reset", key="key_reset_materialise_page_button", on_click=reset_materialise_page)

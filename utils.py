@@ -1670,29 +1670,48 @@ def check_g_mapping(g):
             <br>"""
 
         if tm_wo_sm_list:
-            if len(tm_wo_sm_list) < max_length:
-                inner_html += f"""<small>The TriplesMaps <b>{tm_wo_sm_list_display}</b> have not been assigned
-                a Subject Map.</small><br>"""
+            if len(tm_wo_sm_list) == 1:
+                inner_html += f"""<div style="margin-left: 20px"><small>The TriplesMap <b>
+                {tm_wo_sm_list_display}</b> has not been assigned
+                a Subject Map.</small><br></div>"""
+            elif len(tm_wo_sm_list) < max_length:
+                inner_html += f"""<div style="margin-left: 20px"><small>The TriplesMaps
+                <b>{tm_wo_sm_list_display}</b> have not been assigned
+                a Subject Map.</small><br></div>"""
             else:
-                inner_html += f"""<small><b>{len(tm_wo_sm_list)} TriplesMaps</b> have not been assigned
-                a Subject Map.</small><br>"""
+                inner_html += f"""<div style="margin-left: 20px"><small><b>{len(tm_wo_sm_list)}
+                TriplesMaps</b> have not been assigned
+                a Subject Map.</small><br></div>"""
 
         if tm_wo_pom_list:
-            if len(tm_wo_pom_list) < max_length:
+            if len(tm_wo_pom_list) == 1:
                 tm_wo_pom_list_display = utils.format_list_for_markdown(tm_wo_pom_list)
-                inner_html += f"""<small>The TriplesMaps <b>{tm_wo_pom_list_display}</b> have not been assigned
-                a Predicate-Object Map.</small><br>"""
+                inner_html += f"""<div style="margin-left: 20px"><small>The TriplesMap
+                <b>{tm_wo_pom_list_display}</b> has not been assigned
+                a Predicate-Object Map.</small><br></div>"""
+            elif len(tm_wo_pom_list) < max_length:
+                tm_wo_pom_list_display = utils.format_list_for_markdown(tm_wo_pom_list)
+                inner_html += f"""<div style="margin-left: 20px"><small>The TriplesMaps
+                <b>{tm_wo_pom_list_display}</b> have not been assigned
+                a Predicate-Object Map.</small><br></div>"""
             else:
-                inner_html += f"""<small><b>{len(tm_wo_pom_list)} TriplesMaps</b> have not been assigned
-                a Predicate-Object Map.</small><br>"""
+                inner_html += f"""<div style="margin-left: 20px"><small><b>{len(tm_wo_pom_list)}
+                TriplesMaps</b> have not been assigned
+                a Predicate-Object Map.</small><br></div>"""
 
         if pom_wo_om_list:
-            if len(pom_wo_om_list) < max_length:
-                inner_html += f"""<small>The Predicate-Object Maps <b>{tm_wo_sm_list_display}</b> have not been assigned
-                a Subject Map.</small><br>"""
+            if len(pom_wo_om_list) == 1:
+                inner_html += f"""<div style="margin-left: 20px"><small>The Predicate-Object Map
+                <b>{tm_wo_sm_list_display}</b> has not been assigned
+                a Subject Map.</small><br></div>"""
+            elif len(pom_wo_om_list) < max_length:
+                inner_html += f"""<div style="margin-left: 20px"><small>The Predicate-Object Maps
+                <b>{tm_wo_sm_list_display}</b> have not been assigned
+                a Subject Map.</small><br></div>"""
             else:
-                inner_html += f"""<small><b>{len(tm_wo_sm_list)} TriplesMaps</b> have not been assigned
-                a Subject Map.</small><br>"""
+                inner_html += f"""<div style="margin-left: 20px"><small><b>{len(tm_wo_sm_list)}
+                TriplesMaps</b> have not been assigned
+                a Subject Map.</small><br></div>"""
 
         return inner_html
 
