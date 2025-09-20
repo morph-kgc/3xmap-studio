@@ -123,8 +123,8 @@ with tab1:
         # Create and display the DataFrame
         tm_data = []
         for row in results:
-            uri = str(row.tm)
-            label = uri.split("/")[-1] if "/" in uri else uri  # or use uri.split("#")[-1] if URIs use hash
+            uri = row.tm
+            label = split_uri(uri)[1] if isinstance(uri, URIRef) else str(uri)  # or use uri.split("#")[-1] if URIs use hash
             tm_data.append({"TriplesMap Label": label, "TriplesMap IRI": uri})
 
         with col1:
@@ -188,14 +188,14 @@ with tab1:
             tm_data_2 = []
 
             for row in results:
-                subject_map = str(row.subjectMap) if row.subjectMap else ""
+                subject_map = row.subjectMap if row.subjectMap else ""
                 template = str(row.template) if row.template else ""
                 class_ = str(row["class"]) if row["class"] else ""
                 term_type = str(row.termType) if row.termType else ""
                 term_type = split_uri(term_type)[1] if term_type else ""
                 graph = str(row.graph) if row.graph else ""
 
-                label = subject_map.split("/")[-1] if "/" in subject_map else subject_map
+                label = split_uri(subject_map)[1] if isinstance(subject_map, URIRef) else str(subject_map)
 
                 tm_data_1.append({"SubjectMap Label": label, "SubjectMap IRI": subject_map,
                     "Template": template})
@@ -272,11 +272,16 @@ with tab1:
 
             tm_data = []
             for row in results:
-                pom = str(row.pom) if row.pom else ""
+                pom = row.pom if row.pom else ""
                 predicate = str(row.predicate) if row.predicate else ""
                 object_map = str(row.objectMap) if row.objectMap else ""
 
-                label = pom.split("/")[-1].split("#")[-1]  # Extract readable label
+                if isinstance(pom, URIRef):
+                    label = split_uri(pom)[1]
+                elif isinstance(pom, BNode):
+                    label = "_:" + str(pom)[:7] + "..."
+                else:
+                    label = str(pom)
 
                 tm_data.append({"PredicateObjectMap Label": label,
                     "PredicateObjectMap IRI": pom, "Predicate": predicate,
@@ -294,13 +299,6 @@ with tab1:
 
 
 
-# 3. Show Predicate-ObjectMaps for a TriplesMap
-# SELECT ?pom ?predicate ?objectMap WHERE {
-#   <TM_URI> <http://www.w3.org/ns/r2rml#predicateObjectMap> ?pom .
-#   OPTIONAL { ?pom <http://www.w3.org/ns/r2rml#predicate> ?predicate }
-#   OPTIONAL { ?pom <http://www.w3.org/ns/r2rml#objectMap> ?objectMap }
-# }
-#
 # 4. Show ObjectMap details for a PredicateObjectMap
 # SELECT ?objectMap ?column ?template ?constant ?termType ?datatype WHERE {
 #   <POM_URI> <http://www.w3.org/ns/r2rml#objectMap> ?objectMap .
