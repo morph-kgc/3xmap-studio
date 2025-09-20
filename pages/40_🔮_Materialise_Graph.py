@@ -1243,11 +1243,11 @@ with tab3:
                     conn = engine.connect()
                 except Exception as e:
                     not_working_db_conn_list.append(connection_string)
-            if not not_working_db_conn_list:
+            if not not_working_db_conn_list and mk_used_db_conn_list:
                 formatted_list = "<br>".join(mk_used_db_conn_list)
                 inner_html_success += f"""✔️ All <b>connections to databases</b> are working:<br>
                     <div style="margin-left: 20px"><small><b>{formatted_list}</b></small><br></div>"""
-            else:
+            elif not_working_db_conn_list:
                 everything_ok_flag = False
                 if len(not_working_db_conn_list) == 1:
                     inner_html_error += f"""❌ A connection to database is not working:<br>
@@ -1298,10 +1298,6 @@ with tab3:
                     st.write("")
                     st.button("Materialise", key="key_materialise_graph_button", on_click=materialise_graph)
 
-                with col1b:
-                    st.markdown(f"""<div class="info-message-blue">
-                            ℹ️ Graph materialised with <b>{len(st.session_state["materialised_g_mapping"])} triples</b>.
-                        </div>""", unsafe_allow_html=True)
             else:
                 with col1b:
                     if st.session_state["g_label"] and not g_mapping_ok_flag:
@@ -1320,7 +1316,13 @@ with tab3:
                                 <b>Manage Logical Sources</b> page.</small>
                             </div>""", unsafe_allow_html=True)
 
-            if st.session_state["materialised_g_mapping_file"]:
+            if st.session_state["materialised_g_mapping"]:
+
+                with col1b:
+                    st.markdown(f"""<div class="info-message-blue">
+                            ℹ️ Graph materialised with <b>{len(st.session_state["materialised_g_mapping"])} triples</b>.
+                        </div>""", unsafe_allow_html=True)
+
                 with col1:
                     st.write("")
                     st.markdown("""<div class="gray-heading">

@@ -9,6 +9,7 @@ import pymysql    # another option mysql-connector-python
 import oracledb
 import pyodbc
 import uuid   # to handle uploader keys
+import io
 
 # Header
 st.markdown("""<div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
@@ -49,6 +50,8 @@ if "key_ds_uploader" not in st.session_state:
     st.session_state["key_ds_uploader"] = str(uuid.uuid4())
 if "ds_files_dict" not in st.session_state:
     st.session_state["ds_files_dict"] = {}
+if "large_ds_files_dict" not in st.session_state:
+    st.session_state["large_ds_files_dict"] = {}
 if "ds_file_saved_ok_flag" not in st.session_state:
     st.session_state["ds_file_saved_ok_flag"] = False
 if "ds_file_removed_ok_flag" not in st.session_state:
@@ -111,8 +114,12 @@ def save_ds_file():
     st.session_state["key_ds_uploader"] = str(uuid.uuid4())
 
 def save_large_ds_file():
-    # save file
+    # save file________________________________
+    # ds_file_bytes = open(ds_file_path, "rb").read()
+    # ds_file_like = io.BytesIO(ds_file_bytes)
+    # ds_file_like.name = ds_large_filename  # manually set name
     st.session_state["ds_files_dict"][ds_large_filename] = ds_file
+    # st.session_state["large_ds_files_dict"][ds_large_filename] = ds_file_like
     # store information_________________
     st.session_state["ds_file_saved_ok_flag"] = True
     # reset fields_______________________

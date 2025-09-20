@@ -44,6 +44,10 @@ RML, RR, QL = utils.get_required_ns().values()
 
 
 # Initialise session state variables
+# OTHER PAGES
+if "ds_files_dict" not in st.session_state:
+    st.session_state["ds_files_dict"] = {}
+
 # TAB1
 if "key_ds_uploader" not in st.session_state:
     st.session_state["key_ds_uploader"] = str(uuid.uuid4())
@@ -2502,11 +2506,9 @@ with tab3:
                         🏗️ Create the Object Map</div><br>
                     """,unsafe_allow_html=True)
 
-
             with col3:
                 col3a, col3b = st.columns([2,1])
             with col3a:
-                st.write("")
                 om_label = st.text_input("⌨️ Enter Object Map label (optional):", key= "key_om_label")
             NS = st.session_state["structural_ns_dict"]["Object Map"][1]
             om_iri = BNode() if not om_label else NS[om_label]
