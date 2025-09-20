@@ -79,6 +79,9 @@ if "additional_mapping_removed_ok_flag" not in st.session_state:
 if "additional_mapping_added_from_URL_ok_flag" not in st.session_state:
     st.session_state["additional_mapping_added_from_URL_ok_flag"] = False
 
+# TAB3
+if "materialised_graph" not in st.session_state:
+    st.session_state["materialised_graph"] = Graph()
 
 #define on_click functions
 # TAB1
@@ -210,7 +213,68 @@ def remove_additional_mapping_for_mk():
     # reset fields_______________________________
     st.session_state["key_mappings_to_remove_list"] = []
 
+# TAB3
+def materialise_graph():
+    # Empty folder if it exists or create if it does not______________
+    if os.path.exists(temp_folder_path):
+        for filename in os.listdir(temp_folder_path):
+            file_path = os.path.join(temp_folder_path, filename)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)  # delete file or link
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)  # delete subfolder
+            except Exception as e:
+                st.write(f"⚠️ Failed to delete {file_path}: {e}")
+    else:
+        os.makedirs(temp_folder_path)  # Create folder if it doesn't exist
 
+    # Download g_mapping if used___________________________________________
+    if st.session_state["g_label"] in mk_used_mapping_list:
+        # Download g_mapping to file
+        mapping_content = st.session_state["g_mapping"]
+        mapping_content_str = mapping_content.serialize(format="turtle")
+        filename = st.session_state["g_label"] + ".ttl"
+
+        file_path = os.path.join(temp_folder_path, filename)
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(mapping_content_str)
+
+    # Download additional mappings to file if used__________________________
+    for g_label in mk_used_mapping_list:
+        if g_label != st.session_state["g_label"]:
+            g_mapping_file = st.session_state["mk_g_mappings_dict"][g_label]
+            ext = os.path.splitext(g_mapping_file.name)[1]
+            filename = g_label + ext
+            file_path = os.path.join(temp_folder_path, filename)
+            with open(file_path, "wb") as f:
+                f.write(g_mapping_file.getvalue())  # write file content as bytes
+
+    # Download used tabular data sources___________________________________
+    for ds_filename in mk_used_tab_ds_list:
+        ds_file = st.session_state["ds_files_dict"][ds_filename]
+        filename = ds_file.name
+        file_path = os.path.join(temp_folder_path, filename)
+        with open(file_path, "wb") as f:
+            f.write(ds_file.getvalue())  # write file content as bytes
+
+    # Write config to a file____________________________________________________
+    config_path = os.path.join(os.getcwd(), "materialising_mapping_temp", "mk_config.ini")
+    with open(config_path, "w", encoding="utf-8") as f:
+        st.session_state["mk_config"].write(f)
+
+    # Run Morph-KGC with the config file path to materialise_______________________
+    g = materialize(config_path)
+    st.session_state["materialised_graph"] = io.BytesIO()
+    g.serialize(destination=st.session_state["materialised_graph"], format="turtle")  # or "xml", "nt", "json-ld"
+    st.session_state["materialised_graph"].seek(0)  # rewind to the beginning
+
+    # Delete temporal folder
+    for filename in os.listdir(temp_folder_path):       # delete all files inside the folder
+        file_path = os.path.join(temp_folder_path, filename)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+    os.rmdir(temp_folder_path)      # remove the empty folder
 
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
@@ -1213,64 +1277,19 @@ with tab3:
 
                 with col1a:
                     st.write("")
-                    st.button("Materialise")
+                    st.button("Materialise", key="key_materialise_graph_button", on_click=materialise_graph)
 
-                # Empty folder if it exists or create if it does not
-                if os.path.exists(temp_folder_path):
-                    for filename in os.listdir(temp_folder_path):
-                        file_path = os.path.join(temp_folder_path, filename)
-                        try:
-                            if os.path.isfile(file_path) or os.path.islink(file_path):
-                                os.unlink(file_path)  # delete file or link
-                            elif os.path.isdir(file_path):
-                                shutil.rmtree(file_path)  # delete subfolder
-                        except Exception as e:
-                            st.write(f"⚠️ Failed to delete {file_path}: {e}")
-                else:
-                    os.makedirs(temp_folder_path)  # Create folder if it doesn't exist
-
-                # Download g_mapping if used
-                if st.session_state["g_label"] in mk_used_mapping_list:
-                    # Download g_mapping to file
-                    mapping_content = st.session_state["g_mapping"]
-                    mapping_content_str = mapping_content.serialize(format="turtle")
-                    filename = st.session_state["g_label"] + ".ttl"
-
-                    file_path = os.path.join(temp_folder_path, filename)
-                    with open(file_path, "w", encoding="utf-8") as f:
-                        f.write(mapping_content_str)
-
-                # Download additional mappings to file if used
-                for g_label in mk_used_mapping_list:
-                    if g_label != st.session_state["g_label"]:
-                        g_mapping_file = st.session_state["mk_g_mappings_dict"][g_label]
-                        ext = os.path.splitext(g_mapping_file.name)[1]
-                        filename = g_label + ext
-                        file_path = os.path.join(temp_folder_path, filename)
-                        with open(file_path, "wb") as f:
-                            f.write(g_mapping_file.getvalue())  # write file content as bytes
-
-                # Download used tabular data sources
-                for ds_filename in mk_used_tab_ds_list:
-                    ds_file = st.session_state["ds_files_dict"][ds_filename]
-                    filename = ds_file.name
-                    file_path = os.path.join(temp_folder_path, filename)
-                    with open(file_path, "wb") as f:
-                        f.write(ds_file.getvalue())  # write file content as bytes
-
-
-
-                #MATERIALISATION
-                # Write config to a file
-                config_path = os.path.join(os.getcwd(), "materialising_mapping_temp", "mk_config.ini")
-                with open(config_path, "w", encoding="utf-8") as f:
-                    st.session_state["mk_config"].write(f)
-                # Run Morph-KGC with the config file path to materialise
-                g = materialize(config_path)
+            if st.session_state["materialised_graph"]:
                 with col1a:
                     st.markdown(f"""<div class="success-message-flag">
                             ✅ Graph materialised with {len(g)} triples.
                         </div>""", unsafe_allow_html=True)
+                st.download_button(
+                    label="📥 Download RDF Mapping",
+                    data=st.session_state["materialised_graph"],
+                    file_name="mapping_output.ttl",
+                    mime="text/turtle"
+                )
 
 
 # output_dir	Directory where output files will be saved	./output/
