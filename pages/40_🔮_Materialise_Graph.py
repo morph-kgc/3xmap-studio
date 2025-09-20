@@ -259,10 +259,18 @@ def materialise_graph():
     # download used tabular data sources___________________________________
     for ds_filename in mk_used_tab_ds_list:
         ds_file = st.session_state["ds_files_dict"][ds_filename]
-        filename = ds_file.name
-        file_path = os.path.join(temp_folder_path, filename)
+
+        if hasattr(ds_file, "getvalue"):  # large files (elephant upload) - BytesIO or similar
+            file_bytes = ds_file.getvalue()
+        elif hasattr(ds_file, "read"):  # uploaded file object
+            ds_file.seek(0)
+            file_bytes = ds_file.read()
+
+        file_path = os.path.join(temp_folder_path, ds_filename)  # write to temp folder
         with open(file_path, "wb") as f:
-            f.write(ds_file.getvalue())  # write file content as bytes
+            f.write(file_bytes)
+
+
 
     # write config to a file____________________________________________________
     config_path = os.path.join(os.getcwd(), "materialising_mapping_temp", "mk_config.ini")

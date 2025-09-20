@@ -115,11 +115,7 @@ def save_ds_file():
 
 def save_large_ds_file():
     # save file________________________________
-    # ds_file_bytes = open(ds_file_path, "rb").read()
-    # ds_file_like = io.BytesIO(ds_file_bytes)
-    # ds_file_like.name = ds_large_filename  # manually set name
     st.session_state["ds_files_dict"][ds_large_filename] = ds_file
-    # st.session_state["large_ds_files_dict"][ds_large_filename] = ds_file_like
     # store information_________________
     st.session_state["ds_file_saved_ok_flag"] = True
     # reset fields_______________________
