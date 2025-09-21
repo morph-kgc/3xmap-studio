@@ -81,7 +81,7 @@ with tab1:
         col1a, col1b = st.columns([2,1])
 
     predefined_searches_list = ["Select search", "TriplesMaps and Logical Sources", "Subject Maps", "Predicate-Object Maps",
-        "Used Classes", "Incomplete Nodes", "Orphaned Nodes"]
+        "Used Classes", "Orphaned Nodes", "Incomplete Nodes"]
 
     with col1a:
         selected_predefined_search = st.selectbox("🖱️ Select search:*", predefined_searches_list,
@@ -186,7 +186,7 @@ with tab1:
             list_to_choose = list(reversed(list(tm_dict)))
             if len(list_to_choose) > 1:
                 selected_tm_for_display_list = st.multiselect("🖱️ Filter TriplesMaps (optional):", list_to_choose,
-                    key="key_selected_tm_for_display_list_1")
+                    key="key_selected_tm_for_display_list_2")
             else:
                 selected_tm_for_display_list = []
 
@@ -277,7 +277,7 @@ with tab1:
                     list_to_choose.append(pom)
                 if len(list_to_choose) > 1:
                     selected_pom_for_display_list = st.multiselect("🖱️ Filter Predicate-Object Maps (optional):", list_to_choose,
-                        key="key_selected_tm_for_display_list_1")
+                        key="key_selected_pom_for_display_list")
                 else:
                     selected_pom_for_display_list = []
 
@@ -369,7 +369,7 @@ with tab1:
             list_to_choose_classes = list(classes_set)
             if len(list_to_choose_classes) > 1:
                 selected_classes_for_display_list = st.multiselect("🖱️ Filter Classes (optional):", list_to_choose_classes,
-                    key="key_selected_tm_for_display_list_1")
+                    key="key_selected_classes_for_display_list")
             else:
                 selected_classes_for_display_list = []
 
@@ -435,18 +435,99 @@ with tab1:
                     ⚠️ No results.
                 </div>""", unsafe_allow_html=True)
 
+    if selected_predefined_search == "Orphaned Nodes":
+
+        with col1b:
+            list_to_choose = ["Select node type", "Subject Maps", "Predicate-Object Maps", "Object Maps"]
+            selected_orphaned_node_type = st.selectbox("🖱️ Select node type:*", list_to_choose,
+                key="key_selected_orphaned_node_type")
+
+        with col1:
+            col1a, col1b, col1c = st.columns(3)
+
+        with col1a:
+            limit = st.text_input("⌨️ Enter limit (optional):", key="key_limit")
+        with col1b:
+            offset = st.text_input("⌨️ Enter offset (optional):", key="key_offset")
+        with col1c:
+            list_to_choose = ["No order", "Ascending", "Descending"]
+            order_clause = st.selectbox("⌨️ Enter order (optional):", list_to_choose,
+                key="key_order_clause")
+
+        if selected_orphaned_node_type == "Subject Maps":
+            query = """SELECT DISTINCT ?sm WHERE {
+              {?sm <http://www.w3.org/ns/r2rml#template> ?template .}
+              UNION
+              {?sm <http://www.w3.org/ns/r2rml#class> ?class .}
+              FILTER NOT EXISTS {
+                ?tm <http://www.w3.org/ns/r2rml#subjectMap> ?sm . }}"""
+
+            if order_clause == "Ascending":
+                query += f"ORDER BY ASC(?tm) "
+            elif order_clause == "Descending":
+                query += f"ORDER BY DESC(?tm) "
+
+            if limit:
+                query += f"LIMIT {limit} "
+
+            if offset:
+                query += f"OFFSET {offset}"
+
+            results = st.session_state["g_mapping"].query(query)
+
+            df_data = []
+
+            for row in results:
+                sm = row.sm if hasattr(row, "sm") and row.sm else ""
+                sm_label = utils.get_node_label(sm)
+
+                # Try to extract class if present
+                rdf_class = row["class"] if "class" in row and row["class"] else ""
+                class_label = utils.get_node_label(rdf_class) if rdf_class else ""
+
+                df_data.append({
+                    "Subject Map": sm_label,
+                    "Subject Map (complete)": sm,
+                    "Class": class_label,
+                    "Class (complete)": rdf_class
+                })
+
+            df = pd.DataFrame(df_data)
+
+            with col1:
+                if not df.empty:
+                    st.markdown(f"""<div class="info-message-blue">
+                        <b>RESULTS ({len(df)}):</b>
+                    </div>""", unsafe_allow_html=True)
+                    st.dataframe(df, hide_index=True)
+                else:
+                    st.markdown(f"""<div class="warning-message">
+                        ⚠️ No results.
+                    </div>""", unsafe_allow_html=True)
 
 
 
 
-
+# 🧩 2. Orphaned PredicateObjectMaps
+# PredicateObjectMaps that aren't referenced by any TriplesMap via rr:predicateObjectMap:
 #
-# 7. Detect orphaned SubjectMaps or ObjectMaps
-# SELECT ?map WHERE {
-#   ?map <http://www.w3.org/ns/r2rml#template> ?template .
-#   FILTER NOT EXISTS { ?tm <http://www.w3.org/ns/r2rml#subjectMap> ?map }
+# sparql
+# SELECT DISTINCT ?pom WHERE {
+#   ?pom a <http://www.w3.org/ns/r2rml#PredicateObjectMap> .
+#   FILTER NOT EXISTS {
+#     ?tm <http://www.w3.org/ns/r2rml#predicateObjectMap> ?pom .
+#   }
 # }
-
+# 🧩 3. Orphaned ObjectMaps
+# ObjectMaps that aren't used in any PredicateObjectMap via rr:objectMap:
+#
+# sparql
+# SELECT DISTINCT ?om WHERE {
+#   ?om a <http://www.w3.org/ns/r2rml#ObjectMap> .
+#   FILTER NOT EXISTS {
+#     ?pom <http://www.w3.org/ns/r2rml#objectMap> ?om .
+#   }
+# }
 #________________________________________________
 # SPARQL
 with tab2:
