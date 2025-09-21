@@ -1171,12 +1171,12 @@ def get_ontology_defined_p():
 # Funtion to get list of datatypes
 def get_datatypes_dict():
 
-    # datatype_list = ["Select datatype", "Natural language text", "xsd:string",
+    # datatype_list = ["Select datatype", "Natural language tag", "xsd:string",
     #     "xsd:integer", "xsd:decimal", "xsd:float", "xsd:double",
     #     "xsd:boolean", "xsd:date", "xsd:dateTime", "xsd:time",
     #     "xsd:anyURI", "rdf:XMLLiteral", "rdf:HTML", "rdf:JSON"]
 
-    datatype_dict = {"Select datatype" : "", "Natural language text": "",
+    datatype_dict = {"Select datatype" : "", "Natural language tag": "",
         "xsd:string": XSD.string, "xsd:integer": XSD.integer,
         "xsd:decimal": XSD.decimal, "xsd:float": XSD.float,
         "xsd:double": XSD. double, "xsd:boolean": XSD.boolean,

@@ -451,7 +451,7 @@ def save_pom_template():
             datatype_dict = utils.get_datatypes_dict()
             st.session_state["g_mapping"].add((om_iri, RR.datatype, datatype_dict[om_datatype]))
         elif om_datatype == "Natural language tag":
-            st.session_state["g_mapping"].add((om_iri, RR.language, om_language_tag))
+            st.session_state["g_mapping"].add((om_iri, RR.language, Literal(om_language_tag)))
     elif om_term_type_template == "🌐 IRI":
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.IRI))
     elif om_term_type_template == "👻 BNode":
@@ -491,7 +491,7 @@ def save_pom_constant():
             datatype_dict = utils.get_datatypes_dict()
             st.session_state["g_mapping"].add((om_iri, RR.datatype, datatype_dict[om_datatype]))
         elif om_datatype == "Natural language tag":
-            st.session_state["g_mapping"].add((om_iri, RR.language, om_language_tag))
+            st.session_state["g_mapping"].add((om_iri, RR.language, Literal(om_language_tag)))
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
     st.session_state["last_added_pom_list"].insert(0, [st.session_state["pom_iri_to_create"], st.session_state["tm_iri_for_pom"]])
@@ -518,7 +518,7 @@ def save_pom_reference():
             datatype_dict = utils.get_datatypes_dict()
             st.session_state["g_mapping"].add((om_iri, RR.datatype, datatype_dict[om_datatype_reference]))
         elif om_datatype_reference == "Natural language tag":
-            st.session_state["g_mapping"].add((om_iri, RR.language, om_language_tag))
+            st.session_state["g_mapping"].add((om_iri, RR.language, Literal(om_language_tag)))
     elif om_term_type_reference == "🌐 IRI":
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.IRI))
     elif om_term_type_reference == "👻 BNode":
@@ -1585,7 +1585,7 @@ with tab2:
 
                         if sm_column_name != "Select a column" and sm_term_type_reference == "📘 Literal":
                             inner_html += f"""<tr><td><b>Datatype</b></td><td>{sm_datatype}</td></tr>"""
-                            if sm_datatype == "Natural language text":
+                            if sm_datatype == "Natural language tag":
                                 sm_complete_flag == "✔️ Yes" if sm_language_tag else "❌ No"
                                 inner_html += f"""<tr><td><b>Language tag*</b></td><td>{language_tag}</td></tr>"""
 
@@ -2647,11 +2647,10 @@ with tab3:
                         om_datatype = st.selectbox("🖱️ Select datatype (optional):", rdf_datatypes,
                             key="key_om_datatype")
 
-                    if om_datatype == "Natural language text":
+                    if om_datatype == "Natural language tag":
                         language_tags = utils.get_language_tags_list()
 
                         with col3b:
-                            st.write("")
                             om_language_tag = st.selectbox("🖱️ Select language tag:*", language_tags,
                                 key="key_om_language_tag")
 
@@ -2695,7 +2694,7 @@ with tab3:
                         om_datatype = st.selectbox("🖱️ Select datatype (optional):", rdf_datatypes,
                             key="key_om_datatype")
 
-                    if om_datatype == "Natural language text":
+                    if om_datatype == "Natural language tag":
                         language_tags = utils.get_language_tags_list()
 
                         with col3b:
@@ -2755,7 +2754,7 @@ with tab3:
                         om_datatype_reference = st.selectbox("🖱️ Select datatype (optional):", rdf_datatypes,
                         key="key_om_datatype_reference")
 
-                    if om_datatype_reference == "Natural language text":
+                    if om_datatype_reference == "Natural language tag":
                         language_tags = utils.get_language_tags_list()
 
                         with col3b:
@@ -2862,7 +2861,7 @@ with tab3:
                 if om_template and om_term_type_template == "📘 Literal":
                     om_datatype_display = om_datatype if om_datatype != "Select datatype" else ""
                     inner_html += f"""<tr><td><b>Datatype</b></td><td>{om_datatype_display}</td></tr>"""
-                    if om_datatype == "Natural language text":
+                    if om_datatype == "Natural language tag":
                         om_language_tag_display = om_language_tag if om_language_tag != "Select language tag" else ""
                         inner_html += f"""<tr><td><b>Language tag*</b></td><td>{om_language_tag_display}</td></tr>"""
                         om_complete_flag = "❌ No" if om_language_tag == "Select language tag" else om_complete_flag
@@ -2897,7 +2896,7 @@ with tab3:
                 if om_term_type_constant == "📘 Literal":
                     om_datatype_display = om_datatype if om_datatype != "Select datatype" else ""
                     inner_html += f"""<tr><td><b>Datatype</b></td><td>{om_datatype_display}</td></tr>"""
-                    if om_datatype == "Natural language text":
+                    if om_datatype == "Natural language tag":
                         om_language_tag_display = om_language_tag if om_language_tag != "Select language tag" else ""
                         inner_html += f"""<tr><td><b>Language tag*</b></td><td>{om_language_tag_display}</td></tr>"""
                         om_complete_flag = "❌ No" if om_language_tag == "Select language tag" else om_complete_flag
@@ -2942,7 +2941,7 @@ with tab3:
                 if om_term_type_reference == "📘 Literal":
                     om_datatype_reference_display = om_datatype_reference if om_datatype_reference != "Select datatype" else ""
                     inner_html += f"""<tr><td><b>Datatype</b></td><td>{om_datatype_reference_display}</td></tr>"""
-                    if om_datatype_reference == "Natural language text":
+                    if om_datatype_reference == "Natural language tag":
                         om_language_tag_reference_display = om_language_tag_reference if om_language_tag_reference != "Select language tag" else ""
                         om_complete_flag = "❌ No" if om_language_tag_reference == "Select language tag" else om_complete_flag
                         inner_html += f"""<tr><td><b>Language tag*</b></td><td>{om_language_tag_reference_display}</td></tr>"""
