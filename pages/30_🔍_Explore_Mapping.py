@@ -81,13 +81,19 @@ with tab1:
         col1a, col1b = st.columns([2,1])
 
     predefined_searches_list = ["Select search", "All TriplesMaps", "Subject Map details", "Predicate-Object Maps",
-        "Predicate-Object Map details", "All Logical Tables", "Used Classes", "Incomplete Nodes", "Orphaned Nodes"]
+        "Predicate-Object Map details", "All Logical Sources", "Used Classes", "Incomplete Nodes", "Orphaned Nodes"]
 
     with col1a:
         selected_predefined_search = st.selectbox("🖱️ Select search:*", predefined_searches_list,
             key="key_selected_predefined_search")
 
     if selected_predefined_search == "All TriplesMaps":
+
+        with col1b:
+            tm_dict = utils.get_tm_dict()
+            list_to_choose = list(tm_dict)
+            selected_tm_for_display_list = st.multiselect("🖱️ Select TriplesMaps: (optional)", list_to_choose,
+                key="key_selected_tm_for_display_list_1")
 
         with col1:
             col1a, col1b, col1c = st.columns(3)
@@ -123,7 +129,9 @@ with tab1:
         for row in results:
             uri = row.tm
             label = split_uri(uri)[1] if isinstance(uri, URIRef) else str(uri)  # or use uri.split("#")[-1] if URIs use hash
-            df_data.append({"TriplesMap Label": label, "TriplesMap IRI": uri})
+            selected_tm_for_display_list = list(tm_dict) if not selected_tm_for_display_list else selected_tm_for_display_list
+            if label in selected_tm_for_display_list:
+                df_data.append({"TriplesMap Label": label, "TriplesMap IRI": uri})
 
         with col1:
             df = pd.DataFrame(df_data)
@@ -142,90 +150,89 @@ with tab1:
         with col1b:
             tm_dict = utils.get_tm_dict()
             list_to_choose = list(tm_dict)
-            list_to_choose.insert(0, "Select TriplesMap")
-            tm_label_for_search = st.selectbox("🖱️ Select TriplesMap:*", list_to_choose,
-                key="key_tm_label_for_search")
+            selected_tm_for_display_list = st.multiselect("🖱️ Select TriplesMaps: (optional)", list_to_choose,
+                key="key_selected_tm_for_display_list_1")
 
-        if tm_label_for_search != "Select TriplesMap":
-            tm_iri_for_search = tm_dict[tm_label_for_search]
+        with col1:
+            col1a, col1b, col1c = st.columns(3)
 
-            with col1:
-                col1a, col1b, col1c = st.columns(3)
+        with col1a:
+            limit = st.text_input("⌨️ Enter limit (optional):", key="key_limit")
+        with col1b:
+            offset = st.text_input("⌨️ Enter offset (optional):", key="key_offset")
+        with col1c:
+            list_to_choose = ["No order", "Ascending", "Descending"]
+            order_clause = st.selectbox("⌨️ Enter order (optional):", list_to_choose,
+                key="key_order_clause")
 
-            with col1a:
-                limit = st.text_input("⌨️ Enter limit (optional):", key="key_limit")
-            with col1b:
-                offset = st.text_input("⌨️ Enter offset (optional):", key="key_offset")
-            with col1c:
-                list_to_choose = ["No order", "Ascending", "Descending"]
-                order_clause = st.selectbox("⌨️ Enter order (optional):", list_to_choose,
-                    key="key_order_clause")
-
-            query = f"""SELECT ?subjectMap ?template ?class ?termType ?graph WHERE {{
-              <{tm_iri_for_search}> <http://www.w3.org/ns/r2rml#subjectMap> ?subjectMap .
+        query = f"""SELECT ?tm ?subjectMap ?template ?class ?termType ?graph WHERE {{
+              ?tm a <http://www.w3.org/ns/r2rml#TriplesMap> ;
+                  <http://www.w3.org/ns/r2rml#subjectMap> ?subjectMap .
               OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#template> ?template }}
               OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#class> ?class }}
               OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#termType> ?termType }}
               OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#graph> ?graph }}
             }}
-            """
+        """
 
-            if order_clause == "Ascending":
-                query += f"ORDER BY ASC(?subjectMap) "
-            elif order_clause == "Descending":
-                query += f"ORDER BY DESC(?subjectMap) "
+        if order_clause == "Ascending":
+            query += f"ORDER BY ASC(?subjectMap) "
+        elif order_clause == "Descending":
+            query += f"ORDER BY DESC(?subjectMap) "
 
-            if limit:
-                query += f"LIMIT {limit} "
+        if limit:
+            query += f"LIMIT {limit} "
 
-            if offset:
-                query += f"OFFSET {offset}"
+        if offset:
+            query += f"OFFSET {offset}"
 
-            results = st.session_state["g_mapping"].query(query)
+        results = st.session_state["g_mapping"].query(query)
 
-            # Create and display the DataFrames
-            df_data_1 = []
-            df_data_2 = []
+        df_data = []
 
-            for row in results:
-                subject_map = row.subjectMap if row.subjectMap else ""
-                template = str(row.template) if row.template else ""
-                class_ = str(row["class"]) if row["class"] else ""
-                term_type = str(row.termType) if row.termType else ""
-                term_type = split_uri(term_type)[1] if term_type else ""
-                graph = str(row.graph) if row.graph else ""
+        for row in results:
+            tm = row.tm if row.tm else ""
+            subject_map = row.subjectMap if row.subjectMap else ""
+            template = str(row.template) if row.template else ""
+            class_ = str(row["class"]) if row["class"] else ""
+            term_type = str(row.termType) if row.termType else ""
+            term_type = split_uri(term_type)[1] if term_type else ""
+            graph = str(row.graph) if row.graph else ""
 
-                label = split_uri(subject_map)[1] if isinstance(subject_map, URIRef) else str(subject_map)
+            # TriplesMap label
+            if isinstance(tm, URIRef):
+                tm_label = split_uri(tm)[1]
+            elif isinstance(tm, BNode):
+                tm_label = "_:" + str(tm)[:7] + "..."
+            else:
+                tm_label = str(tm)
 
-                df_data_1.append({"SubjectMap Label": label, "SubjectMap IRI": subject_map,
-                    "Template": template})
+            # SubjectMap label
+            if isinstance(subject_map, URIRef):
+                sm_label = split_uri(subject_map)[1]
+            elif isinstance(subject_map, BNode):
+                sm_label = "_:" + str(subject_map)[:7] + "..."
+            else:
+                sm_label = str(subject_map)
 
-                df_data_2.append({"SubjectMap Label": label,
-                    "Class": class_, "TermType": term_type, "Graph": graph})
+            selected_tm_for_display_list = list(tm_dict) if not selected_tm_for_display_list else selected_tm_for_display_list
+            if tm_label in selected_tm_for_display_list:
+                df_data.append({"TriplesMap Label": tm_label,
+                    "SubjectMap Label": sm_label,
+                    "Template": template, "Class": class_, "TermType": term_type,
+                    "Graph": graph, "SubjectMap IRI": subject_map})
 
-            with col1:
-                st.write("")
+        with col1:
+            st.write("")
+            df = pd.DataFrame(df_data)
 
-                df1 = pd.DataFrame(df_data_1)
-                df2 = pd.DataFrame(df_data_2)
-
-                if not df1.empty:
-                    st.markdown(f"""<div class="info-message-blue">
-                        <b>RESULTS:</b>
-                    </div>""", unsafe_allow_html=True)
-                    st.markdown("""<div style="background-color:#f0f0f0; padding:4px; border-radius:5px; font-size:14px;">
-                            ℹ️ <b>SubjectMap Info</b>
-                            </div>""", unsafe_allow_html=True)
-                    st.dataframe(df1, hide_index=True)
-
-                if not df2.empty:
-                    st.markdown("""<div style="background-color:#f0f0f0; padding:4px; border-radius:5px; font-size:14px;">
-                            ℹ️ <b>Additional Properties</b>
-                        </div>""", unsafe_allow_html=True)
-                    st.dataframe(df2, hide_index=True)
-
-                if df1.empty and df2.empty:
-                    st.markdown("""<div class="warning-message">⚠️ No results.</div>""", unsafe_allow_html=True)
+            if not df.empty:
+                st.markdown(f"""<div class="info-message-blue">
+                    <b>RESULTS ({len(df)}):</b>
+                </div>""", unsafe_allow_html=True)
+                st.dataframe(df, hide_index=True)
+            else:
+                st.markdown("""<div class="warning-message">⚠️ No results.</div>""", unsafe_allow_html=True)
 
     if selected_predefined_search == "Predicate-Object Maps":
 
@@ -341,63 +348,33 @@ with tab1:
                     order_clause = st.selectbox("⌨️ Enter order (optional):", list_to_choose,
                         key="key_order_clause")
 
+                query = """
+                SELECT ?predicate ?predicateTemplate ?predicateConstant ?objectMap ?column ?template ?constant ?termType ?datatype ?language WHERE {
+                  ?pom <http://www.w3.org/ns/r2rml#predicate> ?predicate .
+                  OPTIONAL { ?pom <http://www.w3.org/ns/r2rml#predicateTemplate> ?predicateTemplate }
+                  OPTIONAL { ?pom <http://www.w3.org/ns/r2rml#predicateConstant> ?predicateConstant }
+                  OPTIONAL { ?pom <http://www.w3.org/ns/r2rml#objectMap> ?objectMap }
+                  OPTIONAL { ?objectMap <http://www.w3.org/ns/r2rml#template> ?template }
+                  OPTIONAL { ?objectMap <http://www.w3.org/ns/r2rml#constant> ?constant }
+                  OPTIONAL { ?objectMap <http://www.w3.org/ns/r2rml#reference> ?column }
+                  OPTIONAL { ?objectMap <http://www.w3.org/ns/r2rml#termType> ?termType }
+                  OPTIONAL { ?objectMap <http://www.w3.org/ns/r2rml#datatype> ?datatype }
+                  OPTIONAL { ?objectMap <http://www.w3.org/ns/r2rml#language> ?language }
+                }
+                """
 
-                if isinstance(pom_iri_for_search, URIRef):
+                if order_clause == "Ascending":
+                    query += f"ORDER BY ASC(?subjectMap) "
+                elif order_clause == "Descending":
+                    query += f"ORDER BY DESC(?subjectMap) "
 
-                    query = f"""
-                    SELECT ?predicate ?predicateTemplate ?predicateConstant ?objectMap ?column ?template ?constant ?termType ?datatype ?language WHERE {{
-                      <{pom_iri_for_search}> <http://www.w3.org/ns/r2rml#predicate> ?predicate .
-                      OPTIONAL {{ <{pom_iri_for_search}> <http://www.w3.org/ns/r2rml#objectMap> ?objectMap }}
-                      OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#template> ?template }}
-                      OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#constant> ?constant }}
-                      OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#reference> ?column }}
-                      OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#termType> ?termType }}
-                      OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#datatype> ?datatype }}
-                      OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#language> ?language }}
-                    }}
-                    """
+                if limit:
+                    query += f"LIMIT {limit} "
 
-                    if order_clause == "Ascending":
-                        query += f"ORDER BY ASC(?subjectMap) "
-                    elif order_clause == "Descending":
-                        query += f"ORDER BY DESC(?subjectMap) "
+                if offset:
+                    query += f"OFFSET {offset}"
 
-                    if limit:
-                        query += f"LIMIT {limit} "
-
-                    if offset:
-                        query += f"OFFSET {offset}"
-
-                    results = st.session_state["g_mapping"].query(query)
-
-                else:
-                    query = """
-                    SELECT ?predicate ?predicateTemplate ?predicateConstant ?objectMap ?column ?template ?constant ?termType ?datatype ?language WHERE {
-                      ?pom <http://www.w3.org/ns/r2rml#predicate> ?predicate .
-                      OPTIONAL { ?pom <http://www.w3.org/ns/r2rml#predicateTemplate> ?predicateTemplate }
-                      OPTIONAL { ?pom <http://www.w3.org/ns/r2rml#predicateConstant> ?predicateConstant }
-                      OPTIONAL { ?pom <http://www.w3.org/ns/r2rml#objectMap> ?objectMap }
-                      OPTIONAL { ?objectMap <http://www.w3.org/ns/r2rml#template> ?template }
-                      OPTIONAL { ?objectMap <http://www.w3.org/ns/r2rml#constant> ?constant }
-                      OPTIONAL { ?objectMap <http://www.w3.org/ns/r2rml#reference> ?column }
-                      OPTIONAL { ?objectMap <http://www.w3.org/ns/r2rml#termType> ?termType }
-                      OPTIONAL { ?objectMap <http://www.w3.org/ns/r2rml#datatype> ?datatype }
-                      OPTIONAL { ?objectMap <http://www.w3.org/ns/r2rml#language> ?language }
-                    }
-                    """
-
-                    if order_clause == "Ascending":
-                        query += f"ORDER BY ASC(?subjectMap) "
-                    elif order_clause == "Descending":
-                        query += f"ORDER BY DESC(?subjectMap) "
-
-                    if limit:
-                        query += f"LIMIT {limit} "
-
-                    if offset:
-                        query += f"OFFSET {offset}"
-
-                    results = st.session_state["g_mapping"].query(query, initBindings={"pom": pom_iri_for_search})
+                results = st.session_state["g_mapping"].query(query, initBindings={"pom": pom_iri_for_search})
 
                 # Create and display the DataFrame
                 df_data_1 = []
@@ -405,7 +382,7 @@ with tab1:
 
                 for row in results:
                     predicate = str(row.predicate) if row.predicate else ""
-                    object_map = str(row.objectMap) if row.objectMap else ""
+                    object_map = row.objectMap if row.objectMap else ""
                     template = str(row.template) if row.template else ""
                     constant = str(row.constant) if row.constant else ""
                     column = str(row.column) if row.column else ""
@@ -453,24 +430,119 @@ with tab1:
                                     </div>""", unsafe_allow_html=True)
                             st.dataframe(df1, hide_index=True)
 
-                        if not df1.empty:
+                        if not df2.empty:
                             st.markdown("""<div style="background-color:#f0f0f0; padding:4px; border-radius:5px; font-size:14px;">
                                     ℹ️ <b>Object Map</b>
                                     </div>""", unsafe_allow_html=True)
-                            st.dataframe(df1, hide_index=True)
+                            st.dataframe(df2, hide_index=True)
 
                         if df1.empty and df2.empty:
                             st.markdown("""<div class="warning-message">⚠️ No results.</div>""", unsafe_allow_html=True)
 
+    if selected_predefined_search == "All Logical Sources":
+
+        with col1b:
+            tm_dict = utils.get_tm_dict()
+            list_to_choose = list(tm_dict)
+            list_to_choose.insert(0, "Select TriplesMap")
+            tm_label_for_search = st.selectbox("🖱️ Select TriplesMap:*", list_to_choose,
+                key="key_tm_label_for_search")
 
 
-# 5. List all logical tables and their sources
-# SELECT ?tm ?logicalTable ?tableName ?sqlQuery WHERE {
-#   ?tm a <http://www.w3.org/ns/r2rml#TriplesMap> ;
-#       <http://www.w3.org/ns/r2rml#logicalTable> ?logicalTable .
-#   OPTIONAL { ?logicalTable <http://www.w3.org/ns/r2rml#tableName> ?tableName }
-#   OPTIONAL { ?logicalTable <http://www.w3.org/ns/r2rml#sqlQuery> ?sqlQuery }
-# }
+        if tm_label_for_search != "Select TriplesMap":
+            tm_iri_for_search = tm_dict[tm_label_for_search]
+
+            with col1:
+                col1a, col1b, col1c = st.columns(3)
+
+            with col1a:
+                limit = st.text_input("⌨️ Enter limit (optional):", key="key_limit")
+            with col1b:
+                offset = st.text_input("⌨️ Enter offset (optional):", key="key_offset")
+            with col1c:
+                list_to_choose = ["No order", "Ascending", "Descending"]
+                order_clause = st.selectbox("⌨️ Enter order (optional):", list_to_choose,
+                    key="key_order_clause")
+
+            query = """
+            SELECT ?tm ?logicalTable ?tableName ?sqlQuery ?logicalSource ?source ?referenceFormulation ?iterator WHERE {
+              {
+                ?tm a <http://www.w3.org/ns/r2rml#TriplesMap> ;
+                    <http://www.w3.org/ns/r2rml#logicalTable> ?logicalTable .
+                OPTIONAL { ?logicalTable <http://www.w3.org/ns/r2rml#tableName> ?tableName }
+                OPTIONAL { ?logicalTable <http://www.w3.org/ns/r2rml#sqlQuery> ?sqlQuery }
+              }
+              UNION
+              {
+                ?tm a <http://www.w3.org/ns/r2rml#TriplesMap> ;
+                    <http://semweb.mmlab.be/ns/rml#logicalSource> ?logicalSource .
+                OPTIONAL { ?logicalSource <http://semweb.mmlab.be/ns/rml#source> ?source }
+                OPTIONAL { ?logicalSource <http://semweb.mmlab.be/ns/rml#referenceFormulation> ?referenceFormulation }
+              }
+            }
+            """
+
+            if order_clause == "Ascending":
+                query += f"ORDER BY ASC(?pom) "
+            elif order_clause == "Descending":
+                query += f"ORDER BY DESC(?pom) "
+
+            if limit:
+                query += f"LIMIT {limit} "
+
+            if offset:
+                query += f"OFFSET {offset}"
+
+            results = st.session_state["g_mapping"].query(query)
+
+            df_data = []
+
+            for row in results:
+                tm = row.tm if row.tm else ""
+                logical_table = row.logicalTable if hasattr(row, "logicalTable") and row.logicalTable else ""
+                logical_source = row.logicalSource if hasattr(row, "logicalSource") and row.logicalSource else ""
+                table_name = str(row.tableName) if hasattr(row, "tableName") and row.tableName else ""
+                sql_query = str(row.sqlQuery) if hasattr(row, "sqlQuery") and row.sqlQuery else ""
+                source = str(row.source) if hasattr(row, "source") and row.source else ""
+                reference_formulation = str(row.referenceFormulation) if hasattr(row, "referenceFormulation") and row.referenceFormulation else ""
+
+                # Label for TriplesMap
+                if isinstance(tm, URIRef):
+                    label = split_uri(tm)[1]
+                elif isinstance(tm, BNode):
+                    label = "_:" + str(tm)[:7] + "..."
+                else:
+                    label = str(tm)
+
+                if isinstance(logical_source, URIRef):
+                    ls_label = split_uri(logical_source)[1]
+                elif isinstance(logical_source, BNode):
+                    ls_label = "_:" + str(logical_source)[:7] + "..."
+                else:
+                    ls_label = str(logical_source)
+
+                df_data.append({"TriplesMap Label": label, "Logical Table": logical_table,
+                    "Table Name": table_name, "SQL Query": sql_query,
+                    "Source": source, "Reference Formulation": reference_formulation,
+                    "Logical Source label": ls_label, "Logical Source": logical_source, })
+
+            df = pd.DataFrame(df_data)
+
+            with col1:
+                if not df.empty:
+                    st.markdown(f"""<div class="info-message-blue">
+                        <b>RESULTS ({len(df)}):</b>
+                    </div>""", unsafe_allow_html=True)
+                    st.dataframe(df, hide_index=True)
+
+                else:
+                    st.markdown(f"""<div class="warning-message">
+                        ⚠️ No results.
+                    </div>""", unsafe_allow_html=True)
+
+
+
+
 #
 # 6. Find all classes used in SubjectMaps
 # SELECT DISTINCT ?class WHERE {
