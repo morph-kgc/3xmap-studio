@@ -1738,15 +1738,24 @@ def check_g_mapping(g):
 
 #_________________________________________________
 
+#_________________________________________________
+# Funtion to get label of a node
+def get_node_label(node):
 
-# #_________________________________________________
-# # Funtion to get allowed mapping extensions for Morph-KGC
-# def get_allowed_mapping_extensions_mk():
-#
-#     allowed_mapping_extensions = [".rml.ttl", ".r2rml.ttl", ".fnml.ttl", ".rml-star.ttl",
-#         ".yaml", ".yml"]
-#
-#     return allowed_mapping_extensions
+    if isinstance(node, URIRef):
+        label = split_uri(node)[1]
+    elif isinstance(node, BNode):
+        label = "_:" + str(node)[:7] + "..."
+    elif node:
+        label = str(node)
+    else:
+        label = ""
+
+    return label
+
+#_________________________________________________
+
+
 
 #HEREIGO
 
