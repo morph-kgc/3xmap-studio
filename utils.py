@@ -266,11 +266,9 @@ def import_st_aesthetics():
 #_______________________________________________________
 # Function to get error message to indicate a g_mapping must be loaded
 def get_missing_g_mapping_error_message():
-    st.markdown(f"""
-    <div style="background-color:#f8d7da; padding:1em;
-                border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-        ❗ You need to create or load a mapping in the
-        <b style="color:#a94442;">Select mapping option</b>."
+    st.markdown(f"""<div class="error-message">
+        ❌ You need to create or load a mapping in the
+        <b style="color:#a94442;">Select mapping option</b>.
     </div>
     """, unsafe_allow_html=True)
 #_______________________________________________________

@@ -540,8 +540,11 @@ with tab1:
 
     # OPTION: Retrieve session--------------------------------------
     folder_name = "saved_sessions"
-    folder_path = os.path.join(os.getcwd(), folder_name)
-    pkl_files_list = [f for f in os.listdir(folder_path) if f.endswith(".pkl")]
+    if os.path.isdir(folder_name):   # create if it does not exist
+        folder_path = os.path.join(os.getcwd(), folder_name)
+        pkl_files_list = [f for f in os.listdir(folder_path) if f.endswith(".pkl")]
+    else:
+        pkl_files_list = []
 
     if pkl_files_list:
         with col1:
