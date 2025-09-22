@@ -13,6 +13,8 @@ import io
 from io import IOBase
 import sqlglot
 
+st.set_page_config(layout="wide")
+
 # Header
 st.markdown("""
 <div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
@@ -36,8 +38,12 @@ st.markdown("""
 #PRELIMINARY
 
 # Import style
-utils.import_st_aesthetics()
+if "dark_mode_flag" not in st.session_state or st.session_state["dark_mode_flag"]:
+    utils.import_st_aesthetics()
+else:
+    utils.import_st_aesthetics_dark_mode()
 st.write("")
+
 
 # Namespaces
 RML, RR, QL = utils.get_required_ns().values()
@@ -1384,7 +1390,7 @@ with tab2:
                                 st.markdown(f"""
                                     <div class="gray-preview-message" style="word-wrap:break-word; overflow-wrap:anywhere;">
                                         📐 <b>Your <b style="color:#F63366;">template</b> so far:</b><br>
-                                    <div style="margin-top:0.2em; font-size:15px; color:#333;">
+                                    <div style="margin-top:0.2em; font-size:15px;">
                                             {sm_template}
                                     </div></div>""", unsafe_allow_html=True)
                                 st.write("")
@@ -1392,7 +1398,7 @@ with tab2:
                                 st.write("")
                                 st.markdown(f"""<div class="gray-preview-message">
                                         📐 <b> Build your <b style="color:#F63366;">template</b> and preview it here.</b> <br>
-                                    <div style="font-size:13px; color:#666666; margin-top:0.2em;">
+                                    <div style="font-size:13px; margin-top:0.2em;">
                                         🛈 You can add as many parts as you need.
                                     </div></div>""", unsafe_allow_html=True)
                                 st.write("")
@@ -2126,10 +2132,6 @@ with tab2:
                 inner_html += f"""<div style="margin-bottom:1px;">
                     <small>🔖 ... (+{len(sm_to_remove_iri_list[:max_length])})</small>
                 </div>"""
-
-            # wrap it all in a single info box
-            full_html = f"""<div class="info-message-small">
-                {inner_html}</div>"""
 
             with col1:
                 col1a, col1b = st.columns([2,1])

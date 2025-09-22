@@ -12,6 +12,8 @@ import uuid   # to handle uploader keys
 import io
 from io import IOBase
 
+st.set_page_config(layout="wide")
+
 # Header-----------------------------------
 st.markdown("""
 <div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
@@ -33,7 +35,12 @@ st.markdown("""
 # https://www.clipartmax.com/png/middle/139-1393405_file-gear-icon-svg-wikimedia-commons-gear-icon.png
 
 # Import style-----------------------------
-utils.import_st_aesthetics()
+if "dark_mode_flag" not in st.session_state or st.session_state["dark_mode_flag"]:
+    utils.import_st_aesthetics()
+else:
+    utils.import_st_aesthetics_dark_mode()
+st.write("")
+
 
 # Directories----------------------------------------
 save_mappings_folder = os.path.join(os.getcwd(), "saved_mappings")  # folder to save mappings (before overwriting)
@@ -41,7 +48,7 @@ if not os.path.isdir(save_mappings_folder):   # create if it does not exist
     os.makedirs(save_mappings_folder)
 
 # Initialise session state variables----------------------------------------
-#TAB1
+# TAB1
 if "g_mapping" not in st.session_state:
     st.session_state["g_mapping"] = Graph()
 if "g_label" not in st.session_state:
@@ -67,7 +74,7 @@ if "cached_mapping_retrieved_ok_flag" not in st.session_state:
 if "g_label_changed_ok_flag" not in st.session_state:
     st.session_state["g_label_changed_ok_flag"] = False
 
-#TAB2
+# TAB2
 if "g_ontology" not in st.session_state:
     st.session_state["g_ontology"] = Graph()
 if "g_ontology_label" not in st.session_state:
@@ -91,7 +98,7 @@ if "g_ontology_reduced_ok_flag" not in st.session_state:
 if "g_ontology_discarded_ok_flag" not in st.session_state:
     st.session_state["g_ontology_discarded_ok_flag"] = False
 
-#TAB3
+# TAB3
 if "ns_dict" not in st.session_state:
     st.session_state["ns_dict"] = {}
 if "ns_bound_ok_flag" not in st.session_state:
@@ -103,7 +110,7 @@ if "ns_unbound_ok_flag" not in st.session_state:
 if "last_added_ns_list" not in st.session_state:
     st.session_state["last_added_ns_list"] = []
 
-#TAB4
+# TAB4
 if "progress_saved_ok_flag" not in st.session_state:
     st.session_state["progress_saved_ok_flag"] = False
 if "mapping_downloaded_ok_flag" not in st.session_state:
@@ -668,7 +675,7 @@ with tab1:
                     "🗃️ Retrieve cached mapping",
                     key="key_retrieve_cached_mapping_checkbox")
                 if retrieve_cached_mapping_checkbox:
-                    st.markdown(f"""<div class="info-message-small">
+                    st.markdown(f"""<div class="info-message-blue">
                             ℹ️ Mapping <b style="color:#F63366;">
                             {cached_mapping_name}</b> will be loaded, together
                             with any loaded ontologies and data sources.
@@ -688,7 +695,7 @@ with tab1:
                 g_label_candidate = st.text_input("⌨️ Enter new mapping label:*")
 
                 if g_label_candidate:
-                    st.markdown(f"""<div class="info-message-small">
+                    st.markdown(f"""<div class="info-message-blue">
                             ℹ️ Mapping label will be changed to <b style="color:#F63366;">
                             {g_label_candidate}</b> (currently <b>{st.session_state["g_label"]}</b>).
                         </span></div>""", unsafe_allow_html=True)
@@ -815,7 +822,7 @@ with tab2:
                 with col1b:
                     st.write("")
                     st.markdown(f"""<div class="success-message">
-                            ✔️ Valid ontology: <b style="color:#F63366;">
+                            ✔️ <b>Valid ontology:</b> <b style="color:#F63366;">
                             {st.session_state["g_ontology_from_link_candidate_label"]}</b>
                             <small>(parsed successfully with format
                             <b>{st.session_state["g_ontology_from_link_candidate_fmt"]}.</b>)</small>
@@ -865,7 +872,7 @@ with tab2:
                     st.write("")
                     st.write("")
                     st.markdown(f"""<div class="success-message">
-                            ✔️ Valid ontology: <b style="color:#F63366;">
+                            ✔️ <b>Valid ontology:</b> <b style="color:#F63366;">
                             {st.session_state["g_ontology_from_file_candidate_label"]}</b>
                             <small>(parsed successfully with format
                             <b>{st.session_state["g_ontology_from_file_candidate_fmt"]}</b>).</small>
@@ -922,7 +929,7 @@ with tab2:
                     with col1b:
                         st.write("")
                         st.markdown(f"""<div class="success-message-small">
-                                ✔️ Valid ontology: <b style="color:#F63366;">
+                                ✔️ <b>Valid ontology:</b> <b style="color:#F63366;">
                                 {st.session_state["g_ontology_from_link_candidate_label"]}</b>
                                 <small>(parsed successfully with format
                                 <b>{st.session_state["g_ontology_from_link_candidate_fmt"]}</b>).</small>
@@ -1622,7 +1629,7 @@ with tab3:
                         if valid_iri_input and valid_prefix_input:
                             with col1a:
                                 st.write("")
-                                st.markdown(f"""<div class="info-message-small">
+                                st.markdown(f"""<div class="info-message-blue">
                                         <b>🔗 {structural_ns_prefix_candidate}</b> → {structural_ns_iri_candidate}
                                     </div>""", unsafe_allow_html=True)
                                 st.write("")
@@ -1788,7 +1795,7 @@ with tab4:
                 "💾 Save progress",
                 key="key_save_progress_checkbox")
             if save_progress_checkbox:
-                st.markdown(f"""<div class="info-message-small">
+                st.markdown(f"""<div class="info-message-blue">
                         ℹ️ Current project state will be temporarily saved (mapping <b style="color:#F63366;">
                         {st.session_state["g_label"]}</b>,
                         loaded ontologies and data sources).
@@ -1862,7 +1869,7 @@ with tab4:
 
         if export_filename_complete:
             with col1a:
-                st.markdown(f"""<div class="info-message-small">
+                st.markdown(f"""<div class="info-message-blue">
                         ℹ️ Current state of mapping <b>
                         {st.session_state["g_label"]}</b> will exported
                         to file <b style="color:#F63366;">{export_filename_complete}</b>.
@@ -1952,12 +1959,28 @@ with tab4:
 # SET STYLE OPTION
 with tab5:
 
-    col1, col2 = st.columns([2,1])
-    with col1:
-        st.write("")
-        st.write("")
-        st.markdown(f"""<div class="error-message">
-            ❌ Panel <b>not ready</b> yet.
-        </div>""", unsafe_allow_html=True)
+    st.write("")
+    st.write("")
 
+    col1,col2 = st.columns([2,1.5])
+
+    with col2:
+        col2a,col2b = st.columns([1,2])
+
+    with col1:
+        st.markdown("""<div class="purple-heading">
+                🎨 Style Configuration
+            </div>""", unsafe_allow_html=True)
+        st.write("")
+
+    with col1:
+        col1a, col1b = st.columns([2,1])
+
+    with col1a:
+        dark_mode_flag_toggle = st.toggle(
+            "Dark mode ON",
+            value=st.session_state.get("dark_mode_flag", False),
+            key="key_dark_mode_flag_toggle"
+        )
+        st.session_state["dark_mode_flag"] = dark_mode_flag_toggle
 #_____________________________________________

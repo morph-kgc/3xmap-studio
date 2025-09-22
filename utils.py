@@ -112,30 +112,15 @@ def import_st_aesthetics():
                 border-radius:5px; padding:6px; margin-bottom:8px;
                 font-size:1rem; font-weight:600; color:#333333;}
 
-
-
-
-
     /* GRAY PREVIEW MESSAGE */
             .gray-preview-message {background-color:#f9f9f9; padding:0.7em; border-radius:5px;
             color:#333333; border:1px solid #e0e0e0; font-size: 0.92em;}
-
-    /* BLUE PREVIEW MESSAGE */
-            .blue-preview-message {background-color:#eaf4ff; padding:0.7em; border-radius:5px;
-            color:#0c5460; border:1px solid #0c5460; font-size: 0.92em;}
 
     /* BLUE STATUS MESSAGE */
             .blue-status-message {background-color: #eaf4ff; padding: 0.8em;
             border-radius: 5px; color: #0c5460; border-left: 4px solid #0c5460;}
 
             .blue-status-message b {color: #0c5460;}
-
-    /* BLUE STATUS MESSAGE SMALL */
-        .blue-status-message-small {background-color: #eaf4ff; padding: 0.8em;
-          border-radius: 5px; color: #0c5460; border-left: 4px solid #0c5460;
-          line-height: 1.1;}
-
-        .blue-status-message-small b {color: #0c5460;}
 
     /* GRAY STATUS MESSAGE */
             .gray-status-message {background-color:#f5f5f5; padding:1em;
@@ -199,26 +184,6 @@ def import_st_aesthetics():
     .info-message-blue b {
         color: #003366; font-weight:600;}
 
-
-
-
-    /* INFO MESSAGE SMALL */
-    .info-message-small {background-color: #eaf4ff; padding: 0.5em;
-        border-radius: 5px; color: #0c5460; font-size: 0.92em;
-        justify-content: center; align-items: center; word-break: break-word;
-        overflow-wrap: anywhere; white-space: normal;}
-
-    .info-message-small b {color: #003366;}
-
-    /* INFO MESSAGE SMALL GRAY */
-    .info-message-small-gray {background-color: #f5f5f5; padding: 0.5em;
-        border-radius: 5px; color: #4d4d4d; font-size: 0.92em;
-        justify-content: center; align-items: center; word-break: break-word;
-        overflow-wrap: anywhere; white-space: normal;}
-
-    .info-message-small-gray b {color: #333333;}
-
-
     /* INFO TABLE GRAY */
     .info-table-gray {border-collapse: collapse; width: 100%;
         background-color: #f5f5f5; border-radius: 5px; table-layout: auto;
@@ -233,35 +198,194 @@ def import_st_aesthetics():
         padding-bottom: 6px;}
 
     </style>""", unsafe_allow_html=True)
-
-
-# st.markdown("""<div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-#     <span style="font-size:0.95rem;">
-#         🚧 Working without an ontology could result in structural inconsistencies.
-#     <small>
-#         This is especially discouraged when building Predicate-Object Maps.
-#     </small></span>""", unsafe_allow_html=True)
-
-    # CUSTOM WARNING SUBTLE WITH BORDER
-    # .custom-warning-subtle {border-left: 4px solid #e0c36d;
-    #     border-top: 1px solid #f3e6b0; border-right: 1px solid #f3e6b0;
-    #     border-bottom: 1px solid #f3e6b0; padding: 0.4em 0.6em;
-    #     color: #6c5e2e; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
-    #     margin: 0.5em 0; background-color: transparent; border-radius: 4px;
-    #     box-sizing: border-box;}
-    #
-    # .custom-warning-subtle b {color: #b48a00; font-weight: 600;}
-
-    # CUSTOM WARNING SUBTLE WITHOUT BORDER
-    # .custom-warning-subtle {background-color: #fdfdfd; padding: 0.4em;
-    #     border-left: 3px solid #e0c36d; color: #6c5e2e; font-size: 0.85em;
-    #     font-family: "Source Sans Pro", sans-serif; margin: 0.5em 0;}
-    #
-    # .custom-warning-subtle b {color: #b48a00; font-weight: 600;}
-
-
-
 #_______________________________________________________
+
+#________________________________________________
+# Function to import style
+def import_st_aesthetics_dark_mode():
+
+    #TIME FOR MESSAGES
+    st.session_state["success_display_time"] = 2
+
+    st.markdown("""<style>
+
+    /* TABS */
+        /* Style tab buttons inside stTabs */
+        div[data-testid="stTabs"] button[data-baseweb="tab"] {flex: 1 1 auto;
+            background-color: #555555; color: white; font-size: 25px;
+            padding: 1.2em; border-radius: 5px; border: none;
+            margin: 6px;}
+
+        /* Hover effect for tab buttons */
+        div[data-testid="stTabs"] button[data-baseweb="tab"]:hover {
+            background-color: #7a4c8f;}
+
+        /* Style tab label text */
+        div[data-testid="stTabs"] button[data-baseweb="tab"] > div > span {
+            font-size: 36px !important;}
+
+        /* Style selected tab */
+        div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] {
+            background-color: #9871b5; color: white; font-weight: bold;
+            box-shadow: 0 0 10px #9871b5;}
+
+    /* MAIN BUTTONS (AND DOWNLOAD BUTTON) */
+        div.stButton > button,
+        div.stDownloadButton > button {background-color: #555555; color: white;
+            height: 2.4em; width: auto; border-radius: 6px;
+            border: 1px solid #333333; font-size: 16px;
+            padding: 0.4em 1em; transition: background-color 0.2s ease;}
+
+        div.stButton > button:hover,
+        div.stDownloadButton > button:hover {background-color: #FF4B4B;
+            color: white;}
+
+    /* SELECTBOX - Dark Mode */
+        div[data-baseweb="select"] {background-color: #1c1c1c !important;
+          border-radius: 5px; border: 1px solid #444 !important;
+          color: #ddd !important;}
+
+        /* Dropdown arrow and text */
+        div[data-baseweb="select"] div {color: #ddd !important;}
+
+        /* Selected option */
+        div[data-baseweb="select"] > div {background-color: #1c1c1c !important;
+          color: #ddd !important;}
+
+        /* Options in dropdown */
+        ul[role="listbox"] {background-color: #2a2a2a !important;
+          color: #eee !important;}
+
+        /* Individual option hover */
+        li[role="option"]:hover {background-color: #444 !important;
+          color: #fff !important;}
+
+    /* MULTISELECT */
+        div[data-baseweb="select"] > div {color: black !important;}
+
+        div[data-baseweb="select"] span {background-color: #d3d3d3 !important;
+        color: black !important;}
+
+     /* FILE UPLOADER */
+        div[data-testid="stFileUploader"] > div {
+        flex-wrap: wrap; justify-content: space-between;}
+
+        div[data-testid="stFileUploader"] button {flex: 0 0 auto;
+        background-color: #555555; color: white; height: 2.4em; font-size: 15px;
+        padding: 1.2em; border-radius: 5px; border: none;margin: 4px;}
+
+        div[data-testid="stFileUploader"] button div span {font-size: 30px !important;}
+
+        div[data-testid="stFileUploader"] button:hover {background-color: #FF4B4B; color: white}
+
+        div[data-testid="stFileUploader"] button[aria-selected="true"] {
+            background-color: #9871b5; color: white; font-weight: bold;
+            box-shadow: 0 0 10px #9871b5;}
+
+        /* Uploaded file info */
+        div[data-testid="stFileUploader"] ul {font-size: 14px !important;}
+
+        /* x button size */
+        div[data-testid="stFileUploader"] ul button {
+        padding: 1px 5px !important; height: 22px !important;
+        line-height: 1 !important; min-height: 0 !important;}
+
+        /* x button icon */
+        div[data-testid="stFileUploader"] ul button svg {width: 14px !important;
+            height: 14px !important;}
+
+    /* PURPLE HEADINGS — Dark Mode */
+        .purple-heading {background-color: #1a1125; border-bottom: 4px solid #d8c3f0;
+          border-radius: 5px; padding: 10px; margin-bottom: 8px;
+          font-size: 1.1rem; font-weight: 600; color: #d8c3f0;}
+
+    /* GRAY HEADINGS — Dark Mode */
+        .gray-heading {background-color: #1e1e1e; border-bottom: 4px solid #999999;
+          border-radius: 5px;   padding: 6px; margin-bottom: 8px; font-size: 1rem;
+          font-weight: 600; color: #dddddd;}
+
+    /* GRAY PREVIEW MESSAGE — Dark Mode */
+        .gray-preview-message {background-color: #1c1c1c; padding: 0.7em;
+          border-radius: 5px; color: #dddddd; border: 1px solid #444444; font-size: 0.92em;}
+
+
+    /* BLUE STATUS MESSAGE — Dark Mode */
+        .blue-status-message {background-color: #0b1c2d; padding: 0.8em;
+            border-radius: 5px; color: #b3d9ff; border-left: 4px solid #b3d9ff;}
+
+        .blue-status-message b {color: #dceeff;}
+
+    /* GRAY STATUS MESSAGE — Dark Mode */
+        .gray-status-message {background-color: #1e1e1e;
+            padding: 1em; border-radius: 5px; color: #dddddd;
+            border-left: 4px solid #999999;}
+
+    /* GRAY STATUS MESSAGE SMALL — Dark Mode */
+        .gray-status-message-small {background-color: #1e1e1e; padding: 0.8em;
+            border-radius: 5px; color: #dddddd; border-left: 4px solid #999999; line-height: 1.1;}
+
+    /* SUCCESS MESSAGE FLAG — Dark Mode */
+        .success-message-flag {background-color: #1e2e24; padding: 1em;
+          border-radius: 5px; color: #b2e3c7;}
+
+        .success-message-flag b {color: #7fc89e;}
+
+    /* SUCCESS MESSAGE — Dark Mode */
+    .success-message {border-left: 4px solid #b2e3c7; padding: 0.4em 0.6em;
+      color: #b2e3c7; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
+      margin: 0.5em 0; background-color: #1e2e24; border-radius: 4px;
+      box-sizing: border-box;}
+
+    .success-message b {color: #c6edd4; font-weight: 600;}
+
+    /* WARNING MESSAGE — Dark Mode */
+        .warning-message {border-left: 4px solid #e0c36d; padding: 0.4em 0.6em;
+          color: #e0c36d; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
+          margin: 0.5em 0; background-color: #2f2a1e; border-radius: 4px;
+          box-sizing: border-box;}
+
+    .warning-message b {color: #c6edd4; font-weight: 600;}
+
+    /* ERROR MESSAGE — Dark Mode */
+        .error-message {border-left: 4px solid #e89ca0; padding: 0.4em 0.6em;
+          color: #e89ca0; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
+          margin: 0.5em 0; background-color: #2d1e1f; border-radius: 4px;
+          box-sizing: border-box;}
+
+        .error-message b {color: #f2b6b9; font-weight: 600;}
+
+    /* INFO MESSAGE GRAY — Dark Mode */
+        .info-message-gray {border-left: 4px solid #999999; padding: 0.4em 0.6em;
+          color: #cccccc; font-size: 0.85em;font-family: "Source Sans Pro", sans-serif;
+          margin: 0.5em 0; background-color: #1e1e1e; border-radius: 4px;
+          box-sizing: border-box;}
+
+        .info-message-gray b {color: #eeeeee; font-weight: 600;}
+
+    /* INFO MESSAGE BLUE — Dark Mode */
+        .info-message-blue {border-left: 4px solid #6ea6c9;
+          padding: 0.4em 0.6em; color: #b3d9ff; font-size: 0.85em;
+          font-family: "Source Sans Pro", sans-serif; margin: 0.5em 0;
+          background-color: #0b1c2d; border-radius: 4px;
+          box-sizing: border-box;}
+
+        .info-message-blue b {color: #dceeff; font-weight: 600;}
+
+    /* INFO TABLE GRAY — Dark Mode */
+        .info-table-gray {border-collapse: collapse; width: 100%;
+          background-color: #1e1e1e; border-radius: 5px;
+          table-layout: auto; max-width: 100%; word-break: break-word;}
+
+        .info-table-gray td {padding: 4px 8px; vertical-align: top;
+          font-size: 0.85rem; word-wrap: break-word; white-space: normal;
+          overflow-wrap: anywhere; color: #dddddd;}
+
+    /* TITLE ROW */
+    .title-row td {font-size: 0.9rem; font-weight: bold; text-align: center;
+        padding-bottom: 6px;}
+
+    </style>""", unsafe_allow_html=True)
+
 
 #_______________________________________________________
 # Function to get error message to indicate a g_mapping must be loaded
@@ -907,7 +1031,7 @@ def get_column_list_and_give_info(tm_iri):
         df = utils.read_tab_file(ds)
         column_list = df.columns.tolist()
 
-        st.markdown(f"""<div class="info-message-small">
+        st.markdown(f"""<div class="info-message-blue">
                 🛢️ The data source is <b>{ds}</b>.
             </div>""", unsafe_allow_html=True)
         st.write("")

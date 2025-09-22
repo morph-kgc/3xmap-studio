@@ -15,6 +15,8 @@ import requests
 from morph_kgc import materialize
 from sqlalchemy import create_engine
 
+st.set_page_config(layout="wide")
+
 # Header
 st.markdown("""<div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
     border-radius:8px; margin-bottom:16px;">
@@ -33,8 +35,12 @@ st.markdown("""<div style="display:flex; align-items:center; background-color:#f
 #PRELIMINARY
 
 # Import style
-utils.import_st_aesthetics()
+if "dark_mode_flag" not in st.session_state or st.session_state["dark_mode_flag"]:
+    utils.import_st_aesthetics()
+else:
+    utils.import_st_aesthetics_dark_mode()
 st.write("")
+
 
 # Namespaces
 RML, RR, QL = utils.get_required_ns().values()

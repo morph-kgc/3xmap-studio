@@ -11,6 +11,8 @@ import pyodbc
 import uuid   # to handle uploader keys
 import io
 
+st.set_page_config(layout="wide")
+
 # Header
 st.markdown("""<div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
     border-radius:8px; margin-bottom:16px;">
@@ -30,8 +32,13 @@ st.markdown("""<div style="display:flex; align-items:center; background-color:#f
 #PRELIMINARY
 
 # Import style
-utils.import_st_aesthetics()
+if "dark_mode_flag" not in st.session_state or st.session_state["dark_mode_flag"]:
+    utils.import_st_aesthetics()
+else:
+    utils.import_st_aesthetics_dark_mode()
 st.write("")
+
+
 
 
 # Initialise session state variables
@@ -655,7 +662,7 @@ with tab2:
             folder_name = "data_sources"
 
             with col1a:
-                st.markdown(f"""<div class="info-message-small">
+                st.markdown(f"""<div class="info-message-blue">
                         ℹ️ Please add your file to the <b style="color:#F63366;">
                         {folder_name}</b> folder inside the main folder. Then, select it
                         from list below <small><b>(do not use uploader)</b></small>.
