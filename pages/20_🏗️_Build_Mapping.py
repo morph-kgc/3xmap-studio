@@ -442,6 +442,7 @@ def save_pom_template():
     st.session_state["g_mapping"].add((st.session_state["tm_iri_for_pom"], RR.predicateObjectMap, st.session_state["pom_iri_to_create"]))
     st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RR.predicate, selected_p_iri))
     st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RR.objectMap, om_iri))
+    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RDF.type, RR.PredicateObjectMap))
     # add triples om________________________
     st.session_state["g_mapping"].add((om_iri, RDF.type, RR.ObjectMap))
     st.session_state["g_mapping"].add((om_iri, RR.template, Literal(om_template)))
@@ -476,6 +477,7 @@ def save_pom_constant():
     st.session_state["g_mapping"].add((st.session_state["tm_iri_for_pom"], RR.predicateObjectMap, st.session_state["pom_iri_to_create"]))
     st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RR.predicate, selected_p_iri))
     st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RR.objectMap, om_iri))
+    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RDF.type, RR.PredicateObjectMap))
     # add triples om________________________
     st.session_state["g_mapping"].add((om_iri, RDF.type, RR.ObjectMap))
     if om_term_type_constant == "🌐 IRI":
@@ -509,6 +511,7 @@ def save_pom_reference():
     st.session_state["g_mapping"].add((st.session_state["tm_iri_for_pom"], RR.predicateObjectMap, st.session_state["pom_iri_to_create"]))
     st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RR.predicate, selected_p_iri))
     st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RR.objectMap, om_iri))
+    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RDF.type, RR.PredicateObjectMap))
     # add triples om________________________
     st.session_state["g_mapping"].add((om_iri, RDF.type, RR.ObjectMap))
     st.session_state["g_mapping"].add((om_iri, RR.reference, Literal(om_column_name)))    #HERE change to RR.column in R2RML

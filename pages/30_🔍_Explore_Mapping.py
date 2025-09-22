@@ -55,7 +55,7 @@ if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
 
-tab1, tab2 = st.tabs(["Predefined Searched", "SPARQL"])
+tab1, tab2 = st.tabs(["Predefined Searches", "SPARQL"])
 
 #________________________________________________
 # PREDEFINED SEARCHES
