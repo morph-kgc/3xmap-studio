@@ -10,29 +10,48 @@ from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL, XSD
 st.set_page_config(layout="wide")
 
 # Header
-st.markdown("""
-<div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
-            border-radius:8px; margin-bottom:16px;">
-    <span style="font-size:1.7rem; margin-right:18px;">🔎</span>
-    <div>
-        <h3 style="margin:0; font-size:1.75rem;">
-            <span style="color:#511D66; font-weight:bold; margin-right:12px;">◽◽◽◽◽</span>
-            Display Mapping
-            <span style="color:#511D66; font-weight:bold; margin-left:12px;">◽◽◽◽◽</span>
-        </h3>
-        <p style="margin:0; font-size:0.95rem; color:#555;">
-            <b>Explore</b> your mapping and <b>query</b> it using <b>SPARQL</b>.
-        </p>
+if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
+    st.markdown("""
+    <div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
+                border-radius:8px; margin-bottom:16px;">
+        <span style="font-size:1.7rem; margin-right:18px;">🔎</span>
+        <div>
+            <h3 style="margin:0; font-size:1.75rem;">
+                <span style="color:#511D66; font-weight:bold; margin-right:12px;">◽◽◽◽◽</span>
+                Display Mapping
+                <span style="color:#511D66; font-weight:bold; margin-left:12px;">◽◽◽◽◽</span>
+            </h3>
+            <p style="margin:0; font-size:0.95rem; color:#555;">
+                <b>Explore</b> your mapping and <b>query</b> it using <b>SPARQL</b>.
+            </p>
+        </div>
     </div>
-</div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+
+else:
+    st.markdown("""
+    <div style="display:flex; align-items:center; background-color:#1e1e1e; padding:12px 18px;
+                border-radius:8px; margin-bottom:16px; border-left:4px solid #999999;">
+        <span style="font-size:1.7rem; margin-right:18px; color:#dddddd;">🔎</span>
+        <div>
+            <h3 style="margin:0; font-size:1.75rem; color:#dddddd;">
+                <span style="color:#bbbbbb; font-weight:bold; margin-right:12px;">◽◽◽◽◽</span>
+                Display Mapping
+                <span style="color:#bbbbbb; font-weight:bold; margin-left:12px;">◽◽◽◽◽</span>
+            </h3>
+            <p style="margin:0; font-size:0.95rem; color:#cccccc;">
+                <b>Explore</b> your mapping and <b>query</b> it using <b>SPARQL</b>.
+            </p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 
 #____________________________________________
 #PRELIMINARY
 
 # Import style
-if "dark_mode_flag" not in st.session_state or st.session_state["dark_mode_flag"]:
+if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
     utils.import_st_aesthetics()
 else:
     utils.import_st_aesthetics_dark_mode()

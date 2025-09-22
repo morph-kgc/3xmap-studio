@@ -15,27 +15,45 @@ from io import IOBase
 st.set_page_config(layout="wide")
 
 # Header-----------------------------------
-st.markdown("""
-<div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
-            border-radius:8px; margin-bottom:16px;">
-    <span style="font-size:1.7rem; margin-right:18px;">🌍</span>
-    <div>
-        <h3 style="margin:0; font-size:1.75rem;">
-            <span style="color:#511D66; font-weight:bold; margin-right:12px;">◽◽◽◽◽</span>
-            Global Configuration
-            <span style="color:#511D66; font-weight:bold; margin-left:12px;">◽◽◽◽◽</span>
-        </h3>
-        <p style="margin:0; font-size:0.95rem; color:#555;">
-            System-wide settings: Load <b>mapping</b> and <b>ontology</b>, and <b>save work</b>.
-        </p>
+if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
+    st.markdown("""
+    <div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
+                border-radius:8px; margin-bottom:16px;">
+        <span style="font-size:1.7rem; margin-right:18px;">🌍</span>
+        <div>
+            <h3 style="margin:0; font-size:1.75rem;">
+                <span style="color:#511D66; font-weight:bold; margin-right:12px;">◽◽◽◽◽</span>
+                Global Configuration
+                <span style="color:#511D66; font-weight:bold; margin-left:12px;">◽◽◽◽◽</span>
+            </h3>
+            <p style="margin:0; font-size:0.95rem; color:#555;">
+                System-wide settings: Load <b>mapping</b> and <b>ontology</b>, and <b>save work</b>.
+            </p>
+        </div>
     </div>
-</div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+else:
+    st.markdown("""
+    <div style="display:flex; align-items:center; background-color:#1e1e1e; padding:12px 18px;
+                border-radius:8px; margin-bottom:16px; border-left:4px solid #999999;">
+        <span style="font-size:1.7rem; margin-right:18px; color:#dddddd;">🌍</span>
+        <div>
+            <h3 style="margin:0; font-size:1.75rem; color:#dddddd;">
+                <span style="color:#bbbbbb; font-weight:bold; margin-right:12px;">◽◽◽◽◽</span>
+                Global Configuration
+                <span style="color:#bbbbbb; font-weight:bold; margin-left:12px;">◽◽◽◽◽</span>
+            </h3>
+            <p style="margin:0; font-size:0.95rem; color:#cccccc;">
+                System-wide settings: Load <b style="color:#eeeeee;">mapping</b> and <b style="color:#eeeeee;">ontology</b>, and <b style="color:#eeeeee;">save work</b>.
+            </p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 # another option for the icon:
 # https://www.clipartmax.com/png/middle/139-1393405_file-gear-icon-svg-wikimedia-commons-gear-icon.png
 
 # Import style-----------------------------
-if "dark_mode_flag" not in st.session_state or st.session_state["dark_mode_flag"]:
+if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
     utils.import_st_aesthetics()
 else:
     utils.import_st_aesthetics_dark_mode()
@@ -397,7 +415,12 @@ def save_session():
     # reset fields_____________________
     st.session_state["key_pkl_filename"] = ""
 
+# TAB 5
+def activate_dark_mode():
+    st.session_state["dark_mode_flag"] = True
 
+def deactivate_dark_mode():
+    st.session_state["dark_mode_flag"] = False
 
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
@@ -1977,10 +2000,19 @@ with tab5:
         col1a, col1b = st.columns([2,1])
 
     with col1a:
-        dark_mode_flag_toggle = st.toggle(
-            "Dark mode ON",
-            value=st.session_state.get("dark_mode_flag", False),
-            key="key_dark_mode_flag_toggle"
-        )
-        st.session_state["dark_mode_flag"] = dark_mode_flag_toggle
+        if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
+            st.markdown(f"""<div class="gray-preview-message">
+                    🔒 <b>Dark mode OFF</b>.
+                    <small>Click button to activate.</small>
+                </div>""", unsafe_allow_html=True)
+            st.write("")
+            st.button("Activate Dark Mode", on_click=activate_dark_mode)
+        else:
+            st.markdown(f"""<div class="gray-preview-message">
+                    🔒 <b>Dark mode ON</b>.
+                    <small>Click button to deactivate.</small>
+                </div>""", unsafe_allow_html=True)
+            st.write("")
+            st.button("Dectivate Dark Mode", on_click=deactivate_dark_mode)
+
 #_____________________________________________
