@@ -951,7 +951,7 @@ with tab2:
                 else:
                     with col1b:
                         st.write("")
-                        st.markdown(f"""<div class="success-message-small">
+                        st.markdown(f"""<div class="success-message">
                                 ✔️ <b>Valid ontology:</b> <b style="color:#F63366;">
                                 {st.session_state["g_ontology_from_link_candidate_label"]}</b>
                                 <small>(parsed successfully with format
@@ -960,7 +960,7 @@ with tab2:
 
                     if utils.check_ontology_overlap(st.session_state["g_ontology_from_link_candidate"], st.session_state["g_ontology"]):
                         with col1a:
-                            st.markdown(f"""<div class="custom-warning">
+                            st.markdown(f"""<div class="warning-message">
                                     ⚠️ <b>Ontologies overlap</b>. <small>Check your ontologies
                                     externally to make sure they are aligned and compatible.</small>
                                 </div>""", unsafe_allow_html=True)
@@ -1818,20 +1818,19 @@ with tab4:
                 "💾 Save progress",
                 key="key_save_progress_checkbox")
             if save_progress_checkbox:
+                st.button("Save", key="key_save_progress_button", on_click=save_progress)
                 st.markdown(f"""<div class="info-message-blue">
                         ℹ️ Current project state will be temporarily saved (mapping <b style="color:#F63366;">
                         {st.session_state["g_label"]}</b>,
                         loaded ontologies and data sources).
                         To retrieve cached work go to the <b>Select Mapping</b> panel.
                     </span></div>""", unsafe_allow_html=True)
-                st.write("")
                 existing_pkl_file_list = [f for f in os.listdir() if f.endswith("_cache__.pkl")]
                 if existing_pkl_file_list:
                     st.markdown(f"""<div class="warning-message">
                             ⚠️ Any previously cached mapping will be deleted.
                         </div>""", unsafe_allow_html=True)
-                st.write("")
-                st.button("Save", key="key_save_progress_button", on_click=save_progress)
+
 
         if st.session_state["progress_saved_ok_flag"]:
             with col1:
