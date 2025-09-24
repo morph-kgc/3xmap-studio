@@ -273,6 +273,8 @@ def add_ns_to_sm_template():
     # update template and store information_________
     if not st.session_state["sm_template_prefix"]:    # no ns added yet
         st.session_state["sm_template_list"].insert(0, sm_template_ns)
+    elif not st.session_state["sm_template_list"]:
+        st.session_state["sm_template_list"] = [sm_template_ns]
     else:   # a ns was added (replace)
         st.session_state["sm_template_list"][0] = sm_template_ns
     # reset fields_____________
@@ -285,6 +287,7 @@ def save_sm_template_fixed_part():
     st.session_state["sm_template_list"].append(sm_template_fixed_part)
     # reset fields_____________
     st.session_state["key_build_template_action_sm"] = "📈 Add variable part"
+    st.session_state["sm_template_list"] = []
 
 def save_sm_template_variable_part():
     # update template_____________
@@ -539,7 +542,7 @@ def save_pom_reference():
     st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RDF.type, RR.PredicateObjectMap))
     # add triples om________________________
     st.session_state["g_mapping"].add((om_iri, RDF.type, RR.ObjectMap))
-    st.session_state["g_mapping"].add((om_iri, RR.reference, Literal(om_column_name)))    #HERE change to RR.column in R2RML
+    st.session_state["g_mapping"].add((om_iri, RML.reference, Literal(om_column_name)))    #HERE change to RR.column in R2RML
     if om_term_type_reference == "📘 Literal":
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.Literal))
         if om_datatype_reference != "Select datatype" and om_datatype_reference != "Natural language tag":
@@ -1138,7 +1141,7 @@ with tab2:
 
         last_added_sm_df = pd.DataFrame([
             {"Subject Map": sm_dict[subject_map][0], "Assigned to": triples_map,  # Use directly or format if needed
-            "Rule": sm_dict[subject_map][1], "ID/Constant": sm_dict[subject_map][3]}
+            "Rule": sm_dict[subject_map][1], "Term": sm_dict[subject_map][2]}
             for subject_map, triples_map in st.session_state["last_added_sm_list"]
             if subject_map in sm_dict])
 
@@ -1373,7 +1376,7 @@ with tab2:
                         elif build_template_action_sm == "🏷️ Add Namespace*":
                             with col1b:
                                 mapping_ns_dict = utils.get_mapping_ns_dict()
-                                list_to_choose = list(mapping_ns_dict.keys())
+                                list_to_choose = list(reversed(list(mapping_ns_dict.keys())))
                                 list_to_choose.insert(0, "Select a namespace")
                                 sm_template_ns_prefix = st.selectbox("🖱️ Select a namespace for the template:", list_to_choose, key="key_sm_template_ns_prefix")
                                 if not mapping_ns_dict:
@@ -1895,14 +1898,12 @@ with tab2:
 
                         if st.session_state["g_ontology"] and not ontology_classes_dict: #there is an ontology but it has no classes
                             with col1b:
-                                st.write("")
                                 st.markdown(f"""<div class="warning-message">
                                           ⚠️ Your <b>ontology</b> does not define any classes.
                                           <small>Using an ontology with predefined classes is recommended.</small>
                                     </div>""", unsafe_allow_html=True)
                         elif st.session_state["g_ontology"]:   #there exists an ontology and it has classes
                             with col1b:
-                                st.write("")
                                 st.markdown(f"""<div class="warning-message">
                                           ⚠️ The option <b>Class outside ontology</b> lacks ontology alignment.
                                           <small>An ontology-driven approach is recommended.</small>
@@ -1922,7 +1923,7 @@ with tab2:
 
                         subject_class_prefix_list = list(mapping_ns_dict.keys())
                         with col1a:
-                            subject_class_prefix_list = list(mapping_ns_dict.keys())
+                            subject_class_prefix_list = list_to_choose = list(reversed(list(mapping_ns_dict.keys())))
                             subject_class_prefix_list.insert(0,"Select a namespace")
                             subject_class_prefix = st.selectbox("🖱️ Select a namespace:*", subject_class_prefix_list,
                                 key="key_subject_class_prefix")
@@ -1994,7 +1995,7 @@ with tab2:
 
                     with col1a:
                         mapping_ns_dict = utils.get_mapping_ns_dict()
-                        subject_graph_prefix_list = list(mapping_ns_dict.keys())
+                        subject_graph_prefix_list = list(reversed(list(mapping_ns_dict.keys())))
                         subject_graph_prefix_list.insert(0,"Select a namespace")
                         subject_graph_prefix = st.selectbox("🖱️ Select a namespace:*", subject_graph_prefix_list,
                             key="key_subject_graph_prefix")
@@ -2367,9 +2368,13 @@ with tab3:
     #         st.write("")
 
     with col2b:
-        st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
+        st.markdown("""<div class='info-message-gray'>
                 To consult the added Predicate-Object Maps go to the <b>🔎 Explore Mapping</b> page.
             </div>""", unsafe_allow_html=True)
+        # st.markdown("""<div class='text-align: right; font-size: 14px; color: grey;'>
+        #         To consult the added Predicate-Object Maps go to the <b>🔎 Explore Mapping</b> page.
+        #     </div>""", unsafe_allow_html=True)
+        st.write("")
 
     #PURPLE HEADING - ADD NEW TRIPLESMAP
     with col1:
@@ -2507,7 +2512,7 @@ with tab3:
                     col1a, col1b = st.columns([1,1.5])
 
                 with col1a:
-                    list_to_choose = list(mapping_ns_dict.keys())
+                    list_to_choose = list(reversed(list(mapping_ns_dict.keys())))
                     list_to_choose.insert(0, "Select a namespace")
                     manual_p_ns_prefix = st.selectbox("🖱️ Select a namespace:*", list_to_choose, key="key_manual_p_ns_prefix")
 
@@ -2518,7 +2523,7 @@ with tab3:
                     NS = Namespace(mapping_ns_dict[manual_p_ns_prefix])
                     selected_p_iri = NS[manual_p_label]
 
-            if not st.session_state["g_ontology_label"]:
+            if not st.session_state["g_ontology_components_dict"]:
                 with col1:
                     st.markdown("""<div class="warning-message">
                             ⚠️ <b>Working without an ontology</b> could result in structural inconsistencies.
@@ -2601,7 +2606,7 @@ with tab3:
                 elif build_template_action_om == "🏷️ Add Namespace":
                     with col3b:
                         mapping_ns_dict = utils.get_mapping_ns_dict()
-                        list_to_choose = list(mapping_ns_dict.keys())
+                        list_to_choose = list(reversed(list(mapping_ns_dict.keys())))
                         list_to_choose.insert(0, "Select a namespace")
                         om_template_ns_prefix = st.selectbox("🖱️ Select a namespace for the template:", list_to_choose, key="key_om_template_ns_prefix")
                         if not mapping_ns_dict:
@@ -2784,7 +2789,7 @@ with tab3:
                                 key="key_om_language_tag_reference")
 
                 elif om_column_name != "Select a column" and om_term_type_reference == "🌐 IRI":
-                    with col3b:
+                    with col3c:
                         st.markdown(f"""<div class="warning-message">
                                 ⚠️ Term type is <b>🌐 IRI</b>.
                                 <small>Make sure that the values in the referenced column
@@ -2976,16 +2981,6 @@ with tab3:
                 with col2:
                     st.markdown(full_html, unsafe_allow_html=True)
 
-
-            # INFO AND SAVE BUTTON____________________________________
-            # if not st.session_state["g_ontology_label"]:
-            #     with col4:
-            #         st.markdown("""<div style="border:1px dashed #511D66; padding:10px; border-radius:5px; margin-bottom:8px;">
-            #             <span style="font-size:0.95rem;">
-            #                 🚧 Working without an ontology could result in structural inconsistencies.
-            #             <small>
-            #                 This is especially discouraged when building Predicate-Object Maps.
-            #             </small></span>""", unsafe_allow_html=True)
 
             if pom_complete_flag == "✔️ Yes" and om_complete_flag == "✔️ Yes":
                 with col4:
@@ -3209,7 +3204,8 @@ with tab4:
 
         pom_wo_om_list = []
         pom_wo_predicate_list = []
-        for pom_label, pom_iri in st.session_state["g_mapping"].subjects(RDF.type, RR.PredicateObjectMap):
+        for pom_iri in st.session_state["g_mapping"].subjects(RDF.type, RR.PredicateObjectMap):
+            pom_label = utils.get_node_label(pom_iri)
             if not any(st.session_state["g_mapping"].triples((pom_iri, RR.objectMap, None))):
                 pom_wo_om_list.append(pom_label)
             if not any(st.session_state["g_mapping"].triples((pom_iri, RR.predicate, None))):

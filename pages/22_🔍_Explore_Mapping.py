@@ -366,7 +366,7 @@ with tab1:
                         "Predicate": predicate, "Object Map": om_label,
                         "Template": template, "Constant": constant, "Reference": column,
                         "TermType": term_type, "Datatype": datatype, "Language": language,
-                        "Predicate ObjectMap (complete)": pom, "Object Map (complete)": object_map})
+                        "Predicate-Object Map (complete)": pom, "Object Map (complete)": object_map})
 
             df = pd.DataFrame(df_data)
             with col1:

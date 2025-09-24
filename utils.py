@@ -824,8 +824,9 @@ def get_mapping_ns_dict():
 
     default_ns_dict = get_default_ns_dict()
     all_mapping_ns_dict = dict(st.session_state["g_mapping"].namespace_manager.namespaces())
-    mapping_ns_dict = {k: Namespace(v) for k, v in all_mapping_ns_dict.items() if (k not in default_ns_dict and v != URIRef("None"))}
+    # mapping_ns_dict = {k: Namespace(v) for k, v in all_mapping_ns_dict.items() if (k not in default_ns_dict and v != URIRef("None"))}   # without default ns
     # last condition added so that it will not show unbound namespaces
+    mapping_ns_dict = all_mapping_ns_dict | default_ns_dict
 
     return mapping_ns_dict
 #_________________________________________________________
@@ -895,6 +896,7 @@ def save_project_state():
 def retrieve_project_state(project_state_list):
 
     st.session_state["g_mapping"] = project_state_list[0][1]
+    st.session_state["g_label"] = project_state_list[0][0]
     st.session_state["g_ontology_components_dict"] = project_state_list[1]
     st.session_state["structural_ns_dict"] = project_state_list[2]
     st.session_state["db_connections_dict"] = project_state_list[3]
@@ -1268,23 +1270,20 @@ def get_ontology_identifier(ns):
 #________________________________________________________
 # Funtion to get the predicates defined by the ontology
 def get_ontology_defined_p():
-
     ontology_base_iri_list = get_ontology_base_iri()
     p_types_list = [RDF.Property, OWL.ObjectProperty, OWL.DatatypeProperty]
     p_exclusion_list = [RDFS.label, RDFS.comment, OWL.versionInfo, OWL.deprecated, RDF.type]
 
     p_set = set()
 
-    if ontology_base_iri_list:
-        for s, p, o in st.session_state["g_ontology"].triples((None, RDF.type, None)):
-            if o in p_types_list and str(s).startswith(tuple(ontology_base_iri_list)):
+    for s, p, o in st.session_state["g_ontology"].triples((None, RDF.type, None)):
+        if o in p_types_list:
+            if ontology_base_iri_list:
+                if str(s).startswith(tuple(ontology_base_iri_list)) and s not in p_exclusion_list:
+                    p_set.add(s)
+            else:
                 if s not in p_exclusion_list:
                     p_set.add(s)
-
-    else:   # if no ontology base iri, don't filter by namespace
-        if o in p_types_list:
-            if s not in p_exclusion_list:
-                p_set.add(s)
 
     return sorted(list(p_set))
 #______________________________________________
@@ -1757,16 +1756,6 @@ def check_g_mapping(g):
         tm_label = split_uri(tm)[1]
         tm_dict[tm_label] = tm
 
-    pom_dict = {}
-    for pom in g.subjects(RDF.type, RR.PredicateObjectMap):
-        if isinstance(pom, URIRef):
-            pom_label = split_uri(tm)[1]
-        elif isinstance(pom, BNode):
-            pom_label = "_:" + str(pom)[:7] + "..."
-        else:
-            pom_label = str(pom)
-        pom_dict[pom_label] = pom
-
     tm_wo_sm_list = []   # list of all tm with assigned sm
     tm_wo_pom_list = []
     for tm_label, tm_iri in tm_dict.items():
@@ -1778,7 +1767,8 @@ def check_g_mapping(g):
 
     pom_wo_om_list = []
     pom_wo_predicate_list = []
-    for pom_label, pom_iri in g.subjects(RDF.type, RR.PredicateObjectMap):
+    for pom_iri in g.subjects(RDF.type, RR.PredicateObjectMap):
+        pom_label = get_node_label(pom_iri)
         if not any(g.triples((pom_iri, RR.objectMap, None))):
             pom_wo_om_list.append(pom_label)
         if not any(g.triples((pom_iri, RR.predicate, None))):

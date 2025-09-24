@@ -1903,13 +1903,14 @@ with tab4:
                 st.session_state["mapping_downloaded_ok_flag"] = st.download_button(label="Export", data=serialised_data,
                     file_name=export_filename_complete, mime="text/plain")
 
-            if st.session_state["mapping_downloaded_ok_flag"]:    # delete cache file if any and rerun
-                for file in os.listdir():
-                    if file.endswith("_cache__.pkl") and os.path.isfile(file):
-                        os.remove(file)
-                for key in list(st.session_state.keys()):   # clean session state
-                    del st.session_state[key]
-                st.rerun()   # to get to success message
+            # THIS IS TO DELETE EVERYTHING AFTER SAVING
+            # if st.session_state["mapping_downloaded_ok_flag"]:    # delete cache file if any and rerun
+            #     for file in os.listdir():
+            #         if file.endswith("_cache__.pkl") and os.path.isfile(file):
+            #             os.remove(file)
+            #     for key in list(st.session_state.keys()):   # clean session state
+            #         del st.session_state[key]
+            #     st.rerun()   # to get to success message
 
         if st.session_state["g_label"] and export_filename:
             check_g_mapping = utils.check_g_mapping(st.session_state["g_mapping"])

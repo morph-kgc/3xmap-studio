@@ -105,7 +105,7 @@ if "additional_mapping_added_from_URL_ok_flag" not in st.session_state:
     st.session_state["additional_mapping_added_from_URL_ok_flag"] = False
 
 # TAB3
-if "materialised_graph" not in st.session_state:
+if "materialised_g_mapping_file" not in st.session_state:
     st.session_state["materialised_g_mapping_file"] = None
 if "materialised_g_mapping" not in st.session_state:
     st.session_state["materialised_g_mapping"] = Graph()
@@ -317,6 +317,7 @@ def materialise_graph():
 
     # store information________________________________________________________
     st.session_state["graph_materialised_ok_flag"] = True
+
 
 def reset_materialise_page():
     # reset variables__________________________
@@ -1324,7 +1325,6 @@ with tab3:
                             {inner_html_error}
                         </div>""", unsafe_allow_html=True)
 
-
             if everything_ok_flag:
 
                 with col1a:
@@ -1396,6 +1396,7 @@ with tab3:
                         mime_option = "application/trig"
                     elif download_format == "jsonld":
                         mime_option = "application/ld+json"
+
                     with col1a:
                         st.write("")
                         st.download_button(label="Download",
