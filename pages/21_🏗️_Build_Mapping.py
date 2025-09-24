@@ -287,7 +287,6 @@ def save_sm_template_fixed_part():
     st.session_state["sm_template_list"].append(sm_template_fixed_part)
     # reset fields_____________
     st.session_state["key_build_template_action_sm"] = "📈 Add variable part"
-    st.session_state["sm_template_list"] = []
 
 def save_sm_template_variable_part():
     # update template_____________
