@@ -19,7 +19,7 @@ st.set_page_config(layout="wide")
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
     st.markdown("""
     <div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
-                border-radius:8px; margin-bottom:16px;">
+                border-radius:8px;">
         <span style="font-size:1.7rem; margin-right:18px;">🏗️</span>
         <div>
             <h3 style="margin:0; font-size:1.75rem;">
@@ -37,7 +37,7 @@ if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_f
 else:
     st.markdown("""
     <div style="display:flex; align-items:center; background-color:#1e1e1e; padding:12px 18px;
-                border-radius:8px; margin-bottom:16px; border-left:4px solid #999999;">
+                border-radius:8px; border-left:4px solid #999999;">
         <span style="font-size:1.7rem; margin-right:18px; color:#dddddd;">🏗️</span>
         <div>
             <h3 style="margin:0; font-size:1.75rem; color:#dddddd;">
@@ -57,11 +57,11 @@ else:
 #PRELIMINARY
 
 # Import style
+style_container = st.empty()
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
-    utils.import_st_aesthetics()
+    style_container.markdown(utils.import_st_aesthetics(), unsafe_allow_html=True)
 else:
-    utils.import_st_aesthetics_dark_mode()
-st.write("")
+    style_container.markdown(utils.import_st_aesthetics_dark_mode(), unsafe_allow_html=True)
 
 
 # Namespaces
@@ -532,6 +532,7 @@ def save_pom_constant():
     st.session_state["key_om_constant"] = ""
     st.session_state["om_term_type_constant"] = "📘 Literal"
     st.session_state["key_om_label"] = ""
+    st.session_state["key_om_datatype_constant"] = "Select datatype"
 
 def save_pom_reference():
     # add triples pom________________________
@@ -561,9 +562,10 @@ def save_pom_reference():
     st.session_state["key_manual_p_ns_prefix"] = "Select a namespace"
     st.session_state["key_manual_p_label"] = ""
     st.session_state["key_pom_label"] = ""
-    st.session_state["key_om_column_name"] = "Select a column"
+    st.session_state["key_om_column_name"] = "Select a reference"
     st.session_state["om_term_type_reference"] = "📘 Literal"
     st.session_state["key_om_label"] = ""
+    st.session_state["key_om_datatype_reference"] = "Select datatype"
 
 def delete_pom():           #function to delete a Predicate-Object Map
     for pom_iri in pom_to_delete_iri_list:
@@ -1360,7 +1362,7 @@ with tab2:
                                         st.button("Add", key="save_sm_template_variable_part_button", on_click=save_sm_template_variable_part)
                                 else:  # data source is available
                                     list_to_choose = column_list.copy()
-                                    list_to_choose.insert(0, "Select a column")
+                                    list_to_choose.insert(0, "Select a reference")
                                     sm_template_variable_part = st.selectbox("🖱️ Select the column of the data source:", list_to_choose, key="key_sm_template_variable_part")
                                     if st.session_state["sm_template_list"] and st.session_state["sm_template_list"][-1].endswith("}"):
                                         st.markdown(f"""<div class="warning-message">
@@ -1368,7 +1370,7 @@ with tab2:
                                                 <small><b>Best practice:</b> Add a separator between variables to improve clarity.</small>
                                             </div>""", unsafe_allow_html=True)
                                         st.write("")
-                                    if sm_template_variable_part != "Select a column":
+                                    if sm_template_variable_part != "Select a reference":
                                         st.button("Add", key="save_sm_template_variable_part_button", on_click=save_sm_template_variable_part)
 
 
@@ -1481,7 +1483,7 @@ with tab2:
                             col1a, col1b = st.columns([1,1.2])
                         with col1a:
                             list_to_choose = column_list.copy()
-                            list_to_choose.insert(0, "Select a column")
+                            list_to_choose.insert(0, "Select a reference")
 
                         with col1b:
                             sm_term_type_reference = st.radio(label="🖱️ Select term type:*", options=["🌐 IRI", "👻 BNode"],
@@ -1505,10 +1507,10 @@ with tab2:
 
                         else:
                             with col1a:
-                                sm_column_name = st.selectbox(f"""🖱️ Select the column of the data source:*""", list_to_choose,
+                                sm_column_name = st.selectbox(f"""🖱️ Select the reference of the data source:*""", list_to_choose,
                                     key="key_sm_column_name")
 
-                            if sm_column_name != "Select a column" and sm_term_type_reference == "🌐 IRI":
+                            if sm_column_name != "Select a reference" and sm_term_type_reference == "🌐 IRI":
                                 with col1b:
                                     st.markdown(f"""<div class="warning-message">
                                             ⚠️ Term type is <b>🌐 IRI</b>.
@@ -1592,10 +1594,10 @@ with tab2:
 
                     if sm_generation_rule == "Reference 📊":
                         if column_list:
-                            sm_complete_flag = "✔️ Yes" if sm_column_name != "Select a column" else "❌ No"
+                            sm_complete_flag = "✔️ Yes" if sm_column_name != "Select a reference" else "❌ No"
                         else:
                             sm_complete_flag = "✔️ Yes" if sm_column_name else "❌ No"
-                        sm_column_name_display = sm_column_name if sm_column_name != "Select a column" else ""
+                        sm_column_name_display = sm_column_name if sm_column_name != "Select a reference" else ""
 
                         inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Subject Map</td></tr>"""
 
@@ -1611,7 +1613,7 @@ with tab2:
                         <tr><td><b>Term type*</b></td><td>{sm_term_type_reference}</td></tr>"""
 
 
-                        if sm_column_name != "Select a column" and sm_term_type_reference == "📘 Literal":
+                        if sm_column_name != "Select a reference" and sm_term_type_reference == "📘 Literal":
                             inner_html += f"""<tr><td><b>Datatype</b></td><td>{sm_datatype}</td></tr>"""
                             if sm_datatype == "Natural language tag":
                                 sm_complete_flag == "✔️ Yes" if sm_language_tag else "❌ No"
@@ -1684,12 +1686,14 @@ with tab2:
             col1a, col1b = st.columns([1,1])
         # if there is a cached tm use as default (and give option to select sm instead)
         if st.session_state["last_added_tm_list"] and st.session_state["last_added_tm_list"][0] in tm_w_sm_list:
-            tm_w_sm_list.append("Select a labelled Subject Map")
+            list_to_choose = list(reversed(tm_w_sm_list))
+            list_to_choose.insert(0, "Select a labelled Subject Map")
+            list_to_choose.insert(0, "Select a TriplesMap")
             with col1a:
-                tm_label_for_config = st.selectbox("🖱️ Select a TriplesMap:*", reversed(tm_w_sm_list),
-                    index=list(reversed(tm_w_sm_list)).index(st.session_state["last_added_tm_list"][0]),
+                tm_label_for_config = st.selectbox("🖱️ Select a TriplesMap:*", list_to_choose,
+                    index=list_to_choose.index(st.session_state["last_added_tm_list"][0]),
                     key="key_tm_label_for_config")
-            tm_iri_for_config = tm_dict[tm_label_for_config] if tm_label_for_config != "Select a labelled Subject Map" else "Select a labelled Subject Map12323"
+            tm_iri_for_config = tm_dict[tm_label_for_config] if tm_label_for_config not in ["Select a TriplesMap", "Select a labelled Subject Map"] else ""
             sm_iri_for_config = next((o for s, p, o in st.session_state["g_mapping"].triples((tm_iri_for_config, RR.subjectMap, None))), None)
         else:    # if there is no cached tm, just selectbox without default
             tm_w_sm_list.append("Select a TriplesMap")
@@ -1700,8 +1704,7 @@ with tab2:
             sm_iri_for_config = next((o for s, p, o in st.session_state["g_mapping"].triples((tm_iri_for_config, RR.subjectMap, None))), None)
 
         # option to select a labelled sm (instead of a tm) - only if there exist labelled sm
-        if (tm_label_for_config == "Select a TriplesMap"
-            or tm_label_for_config == "Select a labelled Subject Map" and labelled_sm_list):
+        if (tm_label_for_config == "Select a labelled Subject Map" and labelled_sm_list):
             labelled_sm_list.append("Select a Subject Map")
             with col1b:
                 sm_label_for_config = st.selectbox("🖱️ or select a labelled Subject Map:", reversed(labelled_sm_list))
@@ -2449,7 +2452,7 @@ with tab3:
 
             with col1:
                 st.markdown("""<div class="gray-heading">
-                        🏗️ Create the Predicate Map</dic><br>
+                        🏗️ Create the Predicate-Object Map</dic><br>
                     """,unsafe_allow_html=True)
                 st.write("")
 
@@ -2522,14 +2525,19 @@ with tab3:
                     NS = Namespace(mapping_ns_dict[manual_p_ns_prefix])
                     selected_p_iri = NS[manual_p_label]
 
-            if not st.session_state["g_ontology_components_dict"]:
-                with col1:
-                    st.markdown("""<div class="warning-message">
-                            ⚠️ <b>Working without an ontology</b> could result in structural inconsistencies.
-                        <small>
-                            This is especially discouraged when building Predicate-Object Maps.
-                        </small></span>""", unsafe_allow_html=True)
-
+                if not st.session_state["g_ontology_components_dict"]:
+                    with col1:
+                        st.markdown("""<div class="warning-message">
+                                ⚠️ <b>Working without an ontology</b> could result in structural inconsistencies.
+                            <small>
+                                This is especially discouraged when building Predicate-Object Maps.
+                            </small></span>""", unsafe_allow_html=True)
+                else:
+                    with col1:
+                        st.markdown("""<div class="warning-message">
+                                ⚠️ <b>Working outside the ontology</b> could result in structural inconsistencies.
+                            <small> An ontology-driven approach is recommended.
+                            </small></span>""", unsafe_allow_html=True)
 
             # BUILD OBJECT MAP_______________________________________________
             with col3:
@@ -2590,7 +2598,7 @@ with tab3:
 
                         else:  # data source is available
                             list_to_choose = column_list.copy()
-                            list_to_choose.insert(0, "Select a column")
+                            list_to_choose.insert(0, "Select a reference")
                             om_template_variable_part = st.selectbox("🖱️ Select the column of the data source:", list_to_choose, key="key_om_template_variable_part")
                             if st.session_state["om_template_list"] and st.session_state["om_template_list"][-1].endswith("}"):
                                 st.markdown(f"""<div class="warning-message">
@@ -2598,7 +2606,7 @@ with tab3:
                                         <small><b>Best practice:</b> Add a separator between variables to improve clarity.</small>
                                     </div>""", unsafe_allow_html=True)
                                 st.write("")
-                            if om_template_variable_part != "Select a column":
+                            if om_template_variable_part != "Select a reference":
                                 save_om_template_variable_part_button = st.button("Add", key="save_om_template_variable_part_button", on_click=save_om_template_variable_part)
 
 
@@ -2718,7 +2726,7 @@ with tab3:
                         col3a, col3b = st.columns(2)
                     with col3a:
                         om_datatype = st.selectbox("🖱️ Select datatype (optional):", rdf_datatypes,
-                            key="key_om_datatype")
+                            key="key_om_datatype_constant")
 
                     if om_datatype == "Natural language tag":
                         language_tags = utils.get_language_tags_list()
@@ -2747,8 +2755,8 @@ with tab3:
                 else:
                     with col3a:
                         list_to_choose = column_list.copy()
-                        list_to_choose.insert(0, "Select a column")
-                        om_column_name = st.selectbox(f"""🖱️ Select the column of the data source:*""", list_to_choose,
+                        list_to_choose.insert(0, "Select a reference")
+                        om_column_name = st.selectbox(f"""🖱️ Select the reference of the data source:*""", list_to_choose,
                             key="key_om_column_name")
 
                 # if not column_list:   #data source is not available (load)
@@ -2787,7 +2795,7 @@ with tab3:
                             om_language_tag_reference = st.selectbox("🖱️ Select language tag*", language_tags,
                                 key="key_om_language_tag_reference")
 
-                elif om_column_name != "Select a column" and om_term_type_reference == "🌐 IRI":
+                elif om_column_name != "Select a reference" and om_term_type_reference == "🌐 IRI":
                     with col3c:
                         st.markdown(f"""<div class="warning-message">
                                 ⚠️ Term type is <b>🌐 IRI</b>.
@@ -2945,10 +2953,10 @@ with tab3:
             if om_generation_rule == "Reference 📊":
 
                 if column_list:
-                    om_complete_flag = "✔️ Yes" if om_column_name != "Select a column" else "❌ No"
+                    om_complete_flag = "✔️ Yes" if om_column_name != "Select a reference" else "❌ No"
                 else:
                     om_complete_flag = "✔️ Yes" if om_column_name else "❌ No"
-                om_column_name_display = om_column_name if om_column_name != "Select a column" else ""
+                om_column_name_display = om_column_name if om_column_name != "Select a reference" else ""
 
                 inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>"""
 

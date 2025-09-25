@@ -35,7 +35,7 @@ def import_st_aesthetics():
     #TIME FOR MESSAGES
     st.session_state["success_display_time"] = 2
 
-    st.markdown("""<style>
+    return """<style>
 
     /* TABS */
         /* Style tab buttons inside stTabs */
@@ -197,7 +197,7 @@ def import_st_aesthetics():
     .title-row td {font-size: 0.9rem; font-weight: bold; text-align: center;
         padding-bottom: 6px;}
 
-    </style>""", unsafe_allow_html=True)
+    </style>"""
 #_______________________________________________________
 
 #________________________________________________
@@ -486,34 +486,28 @@ def get_rdfolio_base_iri():
     return "http://rdfolio.org/mapping/"
 #________________________________________________________
 
+# #_________________________________________________________
+# # Function to get the default base iri for the structural components
+# def get_default_structural_ns_dict():
+#
+#     base_iri = get_rdfolio_base_iri()
+#
+#     return {
+#             "tmap": Namespace(base_iri + "triplesmap/"),
+#             "smap": Namespace(base_iri + "subjectmap/"),
+#             "pomap": Namespace(base_iri + "predicateobjectmap/"),
+#             "omap": Namespace(base_iri + "objectmap/"),
+#             "ls": Namespace(base_iri + "logicalsource/"),
+#             "lt": Namespace(base_iri + "logicaltable/")}
+# #________________________________________________________
+
 #_________________________________________________________
 # Function to get the default base iri for the structural components
-def get_default_structural_ns_dict():
+def get_default_structural_ns():
 
-    base_iri = get_rdfolio_base_iri()
+    default_structural_ns = utils.get_rdfolio_base_iri()
 
-    return {
-            "tmap": Namespace(base_iri + "triplesmap/"),
-            "smap": Namespace(base_iri + "subjectmap/"),
-            "pomap": Namespace(base_iri + "predicateobjectmap/"),
-            "omap": Namespace(base_iri + "objectmap/"),
-            "ls": Namespace(base_iri + "logicalsource/"),
-            "lt": Namespace(base_iri + "logicaltable/")}
-#________________________________________________________
-
-#_________________________________________________________
-# Function to get the default base iri for the structural components
-def get_default_structural_ns_session_state():
-
-    default_structural_ns_dict = utils.get_default_structural_ns_dict()
-
-    return {
-        "TriplesMap": ["tmap", default_structural_ns_dict["tmap"]],
-        "Subject Map": ["smap", default_structural_ns_dict["smap"]],
-        "Predicate-Object Map": ["pomap", default_structural_ns_dict["pomap"]],
-        "Object Map": ["omap", default_structural_ns_dict["omap"]],
-        "Logical Source": ["ls", default_structural_ns_dict["ls"]],
-        "Logical Table": ["lt", default_structural_ns_dict["lt"]]}
+    return ["rdfolio", Namespace(default_structural_ns)]
 #________________________________________________________
 
 #_________________________________________________________
@@ -824,12 +818,13 @@ def get_mapping_ns_dict():
 
     default_ns_dict = get_default_ns_dict()
     all_mapping_ns_dict = dict(st.session_state["g_mapping"].namespace_manager.namespaces())
-    # mapping_ns_dict = {k: Namespace(v) for k, v in all_mapping_ns_dict.items() if (k not in default_ns_dict and v != URIRef("None"))}   # without default ns
+    mapping_ns_dict = {k: Namespace(v) for k, v in all_mapping_ns_dict.items() if (k not in default_ns_dict and v != URIRef("None"))}   # without default ns
     # last condition added so that it will not show unbound namespaces
-    mapping_ns_dict = all_mapping_ns_dict | default_ns_dict
+    # mapping_ns_dict = mapping_ns_dict | default_ns_dict
 
     return mapping_ns_dict
 #_________________________________________________________
+
 
 #_________________________________________________
 #Function to check whether an IRI is valid

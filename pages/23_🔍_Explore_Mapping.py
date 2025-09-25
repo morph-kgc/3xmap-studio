@@ -31,7 +31,7 @@ if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_f
 else:
     st.markdown("""
     <div style="display:flex; align-items:center; background-color:#1e1e1e; padding:12px 18px;
-                border-radius:8px; margin-bottom:16px; border-left:4px solid #999999;">
+                border-radius:8px; border-left:4px solid #999999; margin-bottom:16px;">
         <span style="font-size:1.7rem; margin-right:18px; color:#dddddd;">🔎</span>
         <div>
             <h3 style="margin:0; font-size:1.75rem; color:#dddddd;">
@@ -51,11 +51,11 @@ else:
 #PRELIMINARY
 
 # Import style
+style_container = st.empty()
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
-    utils.import_st_aesthetics()
+    style_container.markdown(utils.import_st_aesthetics(), unsafe_allow_html=True)
 else:
-    utils.import_st_aesthetics_dark_mode()
-st.write("")
+    style_container.markdown(utils.import_st_aesthetics_dark_mode(), unsafe_allow_html=True)
 
 
 # Namespaces

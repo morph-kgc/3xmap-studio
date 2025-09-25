@@ -18,7 +18,7 @@ st.set_page_config(layout="wide")
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
     st.markdown("""
     <div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
-                border-radius:8px; margin-bottom:16px;">
+                border-radius:8px;">
         <span style="font-size:1.7rem; margin-right:18px;">🌍</span>
         <div>
             <h3 style="margin:0; font-size:1.75rem;">
@@ -36,7 +36,7 @@ else:
     st.markdown("""
     <div style="display:flex; align-items:center; background-color:#1e1e1e; padding:12px 18px;
                 border-radius:8px; margin-bottom:16px; border-left:4px solid #999999;">
-        <span style="font-size:1.7rem; margin-right:18px; color:#dddddd;">🌍</span>
+        <span style="font-size:1.7rem; color:#dddddd;">🌍</span>
         <div>
             <h3 style="margin:0; font-size:1.75rem; color:#dddddd;">
                 <span style="color:#bbbbbb; font-weight:bold; margin-right:12px;">◽◽◽◽◽</span>
@@ -53,17 +53,18 @@ else:
 # https://www.clipartmax.com/png/middle/139-1393405_file-gear-icon-svg-wikimedia-commons-gear-icon.png
 
 # Import style-----------------------------
+style_container = st.empty()
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
-    utils.import_st_aesthetics()
+    style_container.markdown(utils.import_st_aesthetics(), unsafe_allow_html=True)
 else:
-    utils.import_st_aesthetics_dark_mode()
-st.write("")
+    style_container.markdown(utils.import_st_aesthetics_dark_mode(), unsafe_allow_html=True)
 
 
 # Directories----------------------------------------
 save_mappings_folder = os.path.join(os.getcwd(), "saved_mappings")  # folder to save mappings (before overwriting)
 if not os.path.isdir(save_mappings_folder):   # create if it does not exist
     os.makedirs(save_mappings_folder)
+
 
 # Initialise session state variables----------------------------------------
 # TAB1
@@ -93,30 +94,6 @@ if "g_label_changed_ok_flag" not in st.session_state:
     st.session_state["g_label_changed_ok_flag"] = False
 
 # TAB2
-if "g_ontology" not in st.session_state:
-    st.session_state["g_ontology"] = Graph()
-if "g_ontology_label" not in st.session_state:
-    st.session_state["g_ontology_label"] = ""
-if "g_ontology_loaded_ok_flag" not in st.session_state:
-    st.session_state["g_ontology_loaded_ok_flag"] = False
-if "ontology_link" not in st.session_state:
-    st.session_state["ontology_link"] = ""
-if "key_ontology_uploader" not in st.session_state:
-    st.session_state["key_ontology_uploader"] = None
-if "ontology_file" not in st.session_state:
-    st.session_state["ontology_file"] = None
-if "g_ontology_from_file_candidate" not in st.session_state:
-    st.session_state["g_ontology_from_file_candidate"] = Graph()
-if "g_ontology_from_link_candidate" not in st.session_state:
-    st.session_state["g_ontology_from_link_candidate"] = Graph()
-if "g_ontology_components_dict" not in st.session_state:
-    st.session_state["g_ontology_components_dict"] = {}
-if "g_ontology_reduced_ok_flag" not in st.session_state:
-    st.session_state["g_ontology_reduced_ok_flag"] = False
-if "g_ontology_discarded_ok_flag" not in st.session_state:
-    st.session_state["g_ontology_discarded_ok_flag"] = False
-
-# TAB3
 if "ns_dict" not in st.session_state:
     st.session_state["ns_dict"] = {}
 if "ns_bound_ok_flag" not in st.session_state:
@@ -128,7 +105,7 @@ if "ns_unbound_ok_flag" not in st.session_state:
 if "last_added_ns_list" not in st.session_state:
     st.session_state["last_added_ns_list"] = []
 
-# TAB4
+# TAB3
 if "progress_saved_ok_flag" not in st.session_state:
     st.session_state["progress_saved_ok_flag"] = False
 if "mapping_downloaded_ok_flag" not in st.session_state:
@@ -143,20 +120,21 @@ if "db_connection_status_dict" not in st.session_state:
     st.session_state["db_connection_status_dict"] = {}
 if "sql_queries_dict" not in st.session_state:
     st.session_state["sql_queries_dict"] = {}
+if "ds_files_dict" not in st.session_state:
+    st.session_state["ds_files_dict"] = {}
+if "g_ontology_components_dict" not in st.session_state:
+    st.session_state["g_ontology_components_dict"] = {}
+if "g_ontology" not in st.session_state:
+    st.session_state["g_ontology"] = Graph()
 
 
 # Namespaces-----------------------------------
 RML, RR, QL = utils.get_required_ns().values()
 
-if "structural_ns_dict" not in st.session_state:
-    st.session_state["structural_ns_dict"] = utils.get_default_structural_ns_session_state()
-
-if st.session_state["g_mapping"]:   # bind the default ns for the structural components
-    for component, [prefix,ns] in st.session_state["structural_ns_dict"].items():
-        st.session_state["g_mapping"].bind(prefix, ns)
-
-
-
+if "structural_ns" not in st.session_state and st.session_state["g_label"]:
+    st.session_state["structural_ns"] = utils.get_default_structural_ns()
+    prefix, ns = utils.get_default_structural_ns()   # bind the default ns for the structural components
+    st.session_state["g_mapping"].bind(prefix, ns)
 
 # Define on_click functions-------------------------------------------------
 #TAB1
@@ -224,78 +202,7 @@ def change_g_label():
     # reset fields___________________________
     st.session_state["key_change_mapping_label_checkbox"] = False
 
-
-#TAB2
-def load_ontology_from_link():
-    st.session_state["g_ontology"] = st.session_state["g_ontology_from_link_candidate"]  # consolidate ontology graph
-    st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_link=st.session_state["key_ontology_link"])
-    #store information___________________________
-    st.session_state["g_ontology_loaded_ok_flag"] = True
-    st.session_state["g_ontology_components_dict"][st.session_state["g_ontology_label"]]=st.session_state["g_ontology"]
-    # reset fields___________________________
-    st.session_state["key_ontology_link"] = ""
-    st.session_state["ontology_link"] = ""
-
-def load_ontology_from_file():
-    st.session_state["g_ontology"] = st.session_state["g_ontology_from_file_candidate"]  # consolidate ontology graph
-    st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_file=st.session_state["ontology_file"])
-    #store information___________________________
-    st.session_state["g_ontology_loaded_ok_flag"] = True
-    st.session_state["g_ontology_components_dict"][st.session_state["g_ontology_label"]]=st.session_state["g_ontology"]
-    # reset fields___________________________
-    st.session_state["key_ontology_uploader"] = str(uuid.uuid4())
-    st.session_state["ontology_file"] = None
-
-def extend_ontology_from_link():
-    g_ontology_new_part = st.session_state["g_ontology_from_link_candidate"]
-    g_ontology_new_part_label = utils.get_ontology_human_readable_name(g_ontology_new_part, source_link=st.session_state["key_ontology_link"])
-    #store information___________________________
-    st.session_state["g_ontology_loaded_ok_flag"] = True
-    st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
-    # merge both ontologies___________________
-    for triple in g_ontology_new_part:
-        st.session_state["g_ontology"].add(triple)
-    for prefix, namespace in g_ontology_new_part.namespaces():
-        st.session_state["g_ontology"].bind(prefix, namespace)
-    # reset fields___________________________
-    st.session_state["key_ontology_link"] = ""
-    st.session_state["ontology_link"] = ""
-    st.session_state["key_extend_ontology_selected_option"] = "🌐 URL"
-
-def extend_ontology_from_file():
-    g_ontology_new_part = st.session_state["g_ontology_from_file_candidate"]
-    g_ontology_new_part_label = utils.get_ontology_human_readable_name(g_ontology_new_part, source_file=st.session_state["ontology_file"])
-    #store information___________________________
-    st.session_state["g_ontology_loaded_ok_flag"] = True
-    st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
-    # merge both ontologies___________________
-    for triple in g_ontology_new_part:
-        st.session_state["g_ontology"].add(triple)
-    for prefix, namespace in g_ontology_new_part.namespaces():
-        st.session_state["g_ontology"].bind(prefix, namespace)
-    # reset fields___________________________
-    st.session_state["key_ontology_uploader"] = str(uuid.uuid4())
-    st.session_state["ontology_file"] = None
-    st.session_state["key_extend_ontology_selected_option"] = "📁 File"
-
-def reduce_ontology():
-    st.session_state["g_ontology_reduced_ok_flag"] = True
-    #store information___________________________
-    # (drop the given ontology components from the dictionary)
-    st.session_state["g_ontology_components_dict"] = {label: ont for label, ont in st.session_state["g_ontology_components_dict"].items() if label not in ontologies_to_drop_list}
-    # merge remaining ontology components
-    st.session_state["g_ontology"] = Graph()
-    for label, ont in st.session_state["g_ontology_components_dict"].items():
-        st.session_state["g_ontology"] += ont  # merge the graphs using RDFLib's += operator
-
-def discard_ontology():
-    st.session_state["g_ontology"] = Graph()
-    st.session_state["g_ontology_label"] = ""
-    #store information___________________________
-    st.session_state["g_ontology_discarded_ok_flag"] = True
-    st.session_state["g_ontology_components_dict"] = {}
-
-#TAB3
+# TAB2
 def bind_custom_namespace():
     # bind and store information___________________________
     st.session_state["g_mapping"].bind(prefix_input, iri_input)  # bind the new namespace
@@ -347,15 +254,18 @@ def bind_all_ontology_namespaces():
     st.session_state["key_add_ns_radio"] = "✏️ Custom"
 
 def change_structural_ns():
-    #store information________________________
-    prefix = st.session_state["structural_ns_dict"][selected_structural_component][0]
+    # unbind original namespace________________________
+    prefix = st.session_state["structural_ns"][0]
     st.session_state["g_mapping"].namespace_manager.bind(prefix, None, replace=True)
-    st.session_state["structural_ns_dict"][selected_structural_component] = [structural_ns_prefix_candidate, Namespace(structural_ns_iri_candidate)]
+    # bind new namespace and store________________________
+    st.session_state["structural_ns"] = [structural_ns_prefix_candidate, Namespace(structural_ns_iri_candidate)]
+    st.session_state["g_mapping"].bind(structural_ns_prefix_candidate, Namespace(structural_ns_iri_candidate))
+    #store information________________________
     st.session_state["structural_ns_changed_ok_flag"] = True
     # reset fields_____________________________
-    st.session_state["key_selected_structural_component"] = "Select a component"
     st.session_state["key_structural_ns_prefix_candidate"] = ""
     st.session_state["key_structural_ns_iri_candidate"] = ""
+    st.session_state["key_add_ns_radio"] = "🏛️ Base"
 
 def unbind_namespaces():
     # unbind and store information___________________________
@@ -382,7 +292,7 @@ def unbind_all_namespaces():
     st.session_state["key_unbind_multiselect"] = []
 
 
-#TAB4
+#TAB3
 def save_progress():
     # name of temporary file_____________
     pkl_cache_filename = "__" + st.session_state["g_label"] + "_cache__.pkl"
@@ -425,8 +335,8 @@ def deactivate_dark_mode():
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["Select Mapping",
-    "Load Ontology", "Configure Namespaces", "Save Mapping", "Set Style"])
+tab1, tab2, tab3, tab4 = st.tabs(["Select Mapping",
+    "Configure Namespaces", "Save Mapping", "Set Style"])
 
 #____________________________________________________________
 # PANEL: "SELECT MAPPING"
@@ -459,7 +369,7 @@ with tab1:
         key="key_g_label_temp_new")
 
     # A mapping has not been loaded yet__________
-    if not st.session_state["g_mapping"]:   #a mapping has not been loaded yet (or loaded mapping is empty)
+    if not st.session_state["g_label"]:   #a mapping has not been loaded yet
 
         if st.session_state["g_label_temp_new"]:  #after a new label has been given
             with col1a:
@@ -533,7 +443,7 @@ with tab1:
 
 
     # A mapping has not been loaded yet__________
-    if not st.session_state["g_mapping"]:   # a mapping has not been loaded yet (or loaded mapping is empty)
+    if not st.session_state["g_label"]:   # a mapping has not been loaded yet
         with col1:
             col1a, col1b = st.columns([2,1])
 
@@ -608,7 +518,7 @@ with tab1:
 
         if selected_pkl_file_w_extension:
 
-            if st.session_state["g_mapping"]:
+            if st.session_state["g_label"]:
                 with col1a:
                     overwrite_g_mapping_checkbox_retrieve = st.checkbox(
                     f""":gray-badge[⚠️ I am completely sure I want to overwrite mapping {st.session_state["g_label"]}]""",
@@ -729,381 +639,9 @@ with tab1:
 #_______________________________________________________
 
 #________________________________________________
-# PANEL: "LOAD ONTOLOGY"
-with tab2:
-
-    col1, col2 = st.columns([2,1.5])
-
-    if st.session_state["g_ontology_loaded_ok_flag"]:
-        with col1:
-            col1a, col1b = st.columns([2,1])
-        with col1a:
-            st.write("")
-            st.markdown(f"""<div class="success-message-flag">
-                ✅ The ontology <b>{st.session_state["g_ontology_label"]}</b> has been loaded!
-            </div>""", unsafe_allow_html=True)
-        st.session_state["g_ontology_loaded_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
-        st.rerun()
-
-    if st.session_state["g_ontology_reduced_ok_flag"]:
-        with col1:
-            col1a, col1b = st.columns([2,1])
-        with col1a:
-            st.write("")
-            st.markdown(f"""<div class="success-message-flag">
-                ✅ The <b>ontology</b> has been reduced!
-            </div>""", unsafe_allow_html=True)
-        st.session_state["g_ontology_reduced_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
-        st.rerun()
-
-    if st.session_state["g_ontology_discarded_ok_flag"]:
-        with col1:
-            col1a, col1b = st.columns([2,1])
-        with col1a:
-            st.write("")
-            st.markdown(f"""<div class="success-message-flag">
-                ✅ The <b>ontology</b> has been discarded!
-            </div>""", unsafe_allow_html=True)
-        st.session_state["g_ontology_discarded_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
-        st.rerun()
-
-    with col2:
-        col2a,col2b = st.columns([1,2])
-        with col2b:
-            st.write("")
-            st.write("")
-
-            if st.session_state["g_ontology"]:
-                if len(st.session_state["g_ontology_components_dict"]) > 1:
-                    ontology_items = '\n'.join([f"""<li><b>{ont}</b></li>""" for ont in st.session_state["g_ontology_components_dict"]])
-                    st.markdown(f"""<div class="blue-status-message">
-                            🧩 Your <b>ontology</b> is the merger of:
-                        <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
-                            {ontology_items}
-                        </ul></div>""", unsafe_allow_html=True)
-                else:
-                    st.markdown(f"""<div class="blue-status-message">
-                            🧩 The ontology <b>
-                            {next(iter(st.session_state["g_ontology_components_dict"]))}</b>
-                            is loaded.
-                        </div>""", unsafe_allow_html=True)
-            else:
-                st.markdown(f"""<div class="gray-status-message">
-                        🚫 <b>No ontology</b> is loaded.
-                    </div>
-                """, unsafe_allow_html=True)
-
-    with col2:
-        col2a,col2b = st.columns([2,1.5])
-    with col2b:
-        st.write("")
-        st.markdown("""<div class="info-message-gray">
-        🐢 Certain options in this panel can be a bit slow, some patience may be required.
-            </div>""", unsafe_allow_html=True)
-
-
-    #LOAD ONTOLOGY FROM URL___________________________________
-    if not st.session_state["g_ontology"]:   #no ontology is loaded yet
-        with col1:
-            st.write("")
-            st.write("")
-            st.markdown("""<div class="purple-heading">
-                    🌐 Load Ontology from URL
-                </div>""", unsafe_allow_html=True)
-            st.write("")
-
-        with col1:
-            col1a,col1b = st.columns([2,1])
-
-        with col1a:
-            ontology_link = st.text_input("⌨️ Enter link to ontology:*", key="key_ontology_link")
-        st.session_state["ontology_link"] = ontology_link if ontology_link else ""
-
-        if ontology_link:
-
-            #http://purl.org/ontology/bibo/
-            #http://xmlns.com/foaf/0.1/
-
-            g_candidate, fmt_candidate = utils.parse_ontology(st.session_state["ontology_link"])
-            st.session_state["g_ontology_from_link_candidate"] = g_candidate
-            st.session_state["g_ontology_from_link_candidate_fmt"] = fmt_candidate
-            st.session_state["g_ontology_from_link_candidate_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_from_link_candidate"], source_link=st.session_state["ontology_link"])
-
-            if not utils.is_valid_ontology(g_candidate):
-                with col1b:
-                    st.write("")
-                    st.markdown(f"""<div class="error-message">
-                        ❌ <b>URL does not link to a valid ontology.</b>
-                    </div>""", unsafe_allow_html=True)
-                    st.write("")
-
-            else:
-
-                with col1b:
-                    st.write("")
-                    st.markdown(f"""<div class="success-message">
-                            ✔️ <b>Valid ontology:</b> <b style="color:#F63366;">
-                            {st.session_state["g_ontology_from_link_candidate_label"]}</b>
-                            <small>(parsed successfully with format
-                            <b>{st.session_state["g_ontology_from_link_candidate_fmt"]}.</b>)</small>
-                        </div>""", unsafe_allow_html=True)
-                with col1a:
-                    st.button("Load", key="key_load_ontology_from_link_button", on_click=load_ontology_from_link)
-
-        with col1:
-            st.write("______")
-
-    #LOAD ONTOLOGY FROM FILE___________________________________
-    if not st.session_state["g_ontology"]:   #no ontology is loaded yet
-        with col1:
-            st.markdown("""<div class="purple-heading">
-                    📁 Load Ontology from File
-                </div>    """, unsafe_allow_html=True)
-            st.write("")
-
-        ontology_extension_dict = utils.get_g_ontology_file_formats_dict()   #ontology allowed formats
-        ontology_format_list = list(ontology_extension_dict)
-
-        with col1:
-            col1a, col1b = st.columns([2,1])
-        with col1a:
-            st.session_state["ontology_file"] = st.file_uploader(f"""🖱️
-                Upload ontology file:*""", type=ontology_format_list, key=st.session_state["key_ontology_uploader"])
-
-        if st.session_state["ontology_file"]:
-
-            g_candidate, fmt_candidate = utils.parse_ontology(st.session_state["ontology_file"])
-            st.session_state["g_ontology_from_file_candidate"] = g_candidate
-            st.session_state["g_ontology_from_file_candidate_fmt"] = fmt_candidate
-            st.session_state["g_ontology_from_file_candidate_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_from_file_candidate"], source_file=st.session_state["ontology_file"])
-
-
-            if not utils.is_valid_ontology(g_candidate):
-                with col1b:
-                    st.write("")
-                    st.write("")
-                    st.markdown(f"""<div class="error-message">
-                        ❌ <b>File does not contain a valid ontology</b>.
-                    </div>""", unsafe_allow_html=True)
-                    st.write("")
-
-            else:
-                with col1b:
-                    st.write("")
-                    st.write("")
-                    st.markdown(f"""<div class="success-message">
-                            ✔️ <b>Valid ontology:</b> <b style="color:#F63366;">
-                            {st.session_state["g_ontology_from_file_candidate_label"]}</b>
-                            <small>(parsed successfully with format
-                            <b>{st.session_state["g_ontology_from_file_candidate_fmt"]}</b>).</small>
-                        </div>""", unsafe_allow_html=True)
-
-                with col1a:
-                    st.button("Load", key="key_load_ontology_from_file_button", on_click=load_ontology_from_file)
-
-
-    #EXTEND ONTOLOGY___________________________________
-    if st.session_state["g_ontology"]:   #ontology loaded
-        with col1:
-            st.write("")
-            st.write("")
-            st.markdown("""<div class="purple-heading">
-                    ➕ Extend Current Ontology
-                </div>""", unsafe_allow_html=True)
-            st.write("")
-
-        with col1:
-            col1a,col1b = st.columns([2,1])
-        with col1b:
-            extend_ontology_selected_option = st.radio("Load ontology from:", ["🌐 URL", "📁 File"], horizontal=True, key="key_extend_ontology_selected_option")
-
-        if extend_ontology_selected_option == "🌐 URL":
-            with col1a:
-                ontology_link = st.text_input("⌨️ Enter link to ontology:*", key="key_ontology_link")
-            st.session_state["ontology_link"] = ontology_link if ontology_link else ""
-
-            if ontology_link:
-
-                g_candidate, fmt_candidate = utils.parse_ontology(st.session_state["ontology_link"])
-                st.session_state["g_ontology_from_link_candidate"] = g_candidate
-                st.session_state["g_ontology_from_link_candidate_fmt"] = fmt_candidate
-                st.session_state["g_ontology_from_link_candidate_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_from_link_candidate"], source_link=st.session_state["ontology_link"])
-
-                if not utils.is_valid_ontology(g_candidate):
-                    with col1b:
-                        st.write("")
-                        st.markdown(f"""<div class="error-message">
-                            ❌ <b>URL does not link to a valid ontology.</b>
-                        </div>""", unsafe_allow_html=True)
-                        st.write("")
-
-                elif st.session_state["g_ontology_from_link_candidate_label"] in st.session_state["g_ontology_components_dict"]:
-                    with col1b:
-                        st.markdown(f"""<div class="custom-warning">
-                                ⚠️ The ontology <b style="color:#F63366;">
-                                {st.session_state["g_ontology_from_link_candidate_label"]}</b>
-                                is already loaded.
-                            </div>""", unsafe_allow_html=True)
-
-                else:
-                    with col1b:
-                        st.write("")
-                        st.markdown(f"""<div class="success-message">
-                                ✔️ <b>Valid ontology:</b> <b style="color:#F63366;">
-                                {st.session_state["g_ontology_from_link_candidate_label"]}</b>
-                                <small>(parsed successfully with format
-                                <b>{st.session_state["g_ontology_from_link_candidate_fmt"]}</b>).</small>
-                            </div>""", unsafe_allow_html=True)
-
-                    if utils.check_ontology_overlap(st.session_state["g_ontology_from_link_candidate"], st.session_state["g_ontology"]):
-                        with col1a:
-                            st.markdown(f"""<div class="warning-message">
-                                    ⚠️ <b>Ontologies overlap</b>. <small>Check your ontologies
-                                    externally to make sure they are aligned and compatible.</small>
-                                </div>""", unsafe_allow_html=True)
-                            st.write("")
-                    with col1a:
-                        st.button("Add", key="key_extend_ontology_from_link_button", on_click=extend_ontology_from_link)
-
-
-
-        if extend_ontology_selected_option == "📁 File":
-
-            ontology_extension_dict = utils.get_g_ontology_file_formats_dict()   #ontology allowed formats
-            ontology_format_list = list(ontology_extension_dict)
-
-            with col1a:
-                st.session_state["ontology_file"] = st.file_uploader(f"""🖱️
-                    Upload ontology file:*""", type=ontology_format_list, key=st.session_state["key_ontology_uploader"])
-
-            if st.session_state["ontology_file"]:
-
-                g_candidate, fmt_candidate = utils.parse_ontology(st.session_state["ontology_file"])
-                st.session_state["g_ontology_from_file_candidate"] = g_candidate
-                st.session_state["g_ontology_from_file_candidate_fmt"] = fmt_candidate
-                st.session_state["g_ontology_from_file_candidate_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_from_file_candidate"], source_file=st.session_state["ontology_file"])
-
-                if not utils.is_valid_ontology(g_candidate):
-                    with col1b:
-                        st.write("")
-                        st.write("")
-                        st.markdown(f"""<div class="error-message">
-                            ❌ <b>File does not contain a valid ontology</b>.
-                        </div>""", unsafe_allow_html=True)
-                        st.write("")
-
-                elif st.session_state["g_ontology_from_file_candidate_label"] in st.session_state["g_ontology_components_dict"]:
-                    with col1b:
-                        st.markdown(f"""<div class="error-message">
-                                ⚠️ The ontology <b>
-                                {st.session_state["g_ontology_from_file_candidate_label"]}</b>
-                                is already loaded.
-                            </div>""", unsafe_allow_html=True)
-
-                else:
-                    with col1a:
-                        st.button("Add", key="key_extend_ontology_from_file_button", on_click=extend_ontology_from_file)
-                    with col1b:
-                        st.write("")
-                        st.markdown(f"""<div class="success-message">
-                                ✔️ Valid ontology <b>
-                                {st.session_state["g_ontology_from_file_candidate_label"]}</b><br>
-                                <small>(parsed successfully with format
-                                <b>{st.session_state["g_ontology_from_file_candidate_fmt"]}</b>).</small>
-                            </div>""", unsafe_allow_html=True)
-
-                    if utils.check_ontology_overlap(st.session_state["g_ontology_from_file_candidate"], st.session_state["g_ontology"]):
-                        with col1b:
-                            st.write("")
-                            st.markdown(f"""<div class="warning-message">
-                                    ⚠️ <b>Ontologies overlap</b>. <small>Check your ontologies
-                                    externally to make sure they are aligned and compatible.</small>
-                                </div>""", unsafe_allow_html=True)
-                            st.write("")
-
-        with col1:
-            st.write("________")
-
-    #REDUCE ONTOLOGY___________________________________
-    if st.session_state["g_ontology"] and len(st.session_state["g_ontology_components_dict"]) != 1:   #ontology loaded and more than 1 component
-        with col1:
-            st.markdown("""<div class="purple-heading">
-                    ➖ Reduce Current Ontology
-                </div>""", unsafe_allow_html=True)
-            st.write("")
-
-        with col1:
-            col1a, col1b = st.columns([2,1])
-        with col1a:
-            ontology_components_list = list(st.session_state["g_ontology_components_dict"].keys())
-            ontologies_to_drop_list = st.multiselect("Select ontologies to be dropped:", ontology_components_list)
-
-        # if ontologies_to_drop_list:
-        #     ontologies_to_drop_itemise = '\n'.join([f"""<li><b>{ont}</b></li>""" for ont in ontologies_to_drop_list])
-        #     with col1b:
-        #         st.write("")
-        #         st.markdown(f"""<div class="custom-info-subtle">
-        #                 👆 You selected:
-        #                 <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
-        #                 {ontologies_to_drop_itemise}
-        #             </ul></div>""", unsafe_allow_html=True)
-
-        if ontologies_to_drop_list:
-            with col1a:
-                reduce_ontology_checkbox = st.checkbox(
-                ":gray-badge[⚠️ I am sure I want to drop the selected ontologies]",
-                key="key_reduce_ontology_checkbox")
-
-            if reduce_ontology_checkbox:
-                with col1a:
-                    st.button("Drop", key="key_reduce_ontology_button", on_click=reduce_ontology)
-
-
-        with col1:
-            st.write("________")
-
-    #DISCARD ONTOLOGY___________________________________
-    if st.session_state["g_ontology"]:   #ontology loaded
-        with col1:
-            st.markdown("""<div class="purple-heading">
-                    🗑️ Discard Current Ontology
-                </div>""", unsafe_allow_html=True)
-
-        with col1:
-            col1a,col1b = st.columns([2,1])
-        with col1a:
-            st.write("")
-            if len(st.session_state["g_ontology_components_dict"]) == 1:
-                st.markdown(f"""<div class="gray-preview-message">
-                        🔒 Current ontology:
-                        <b style="color:#F63366;">{next(iter(st.session_state["g_ontology_components_dict"]))}</b>
-                    </div>""",unsafe_allow_html=True)
-            else:
-                st.markdown(f"""<div class="gray-preview-message">
-                        🔒 Current ontology is the <b style="color:#F63366;">merger of
-                        {len(st.session_state["g_ontology_components_dict"])} sub-ontologies</b>.
-                    </div>""",unsafe_allow_html=True)
-        with col1a:
-            st.write("")
-            discard_ontology_checkbox = st.checkbox(
-            ":gray-badge[⚠️ I am completely sure I want to discard the ontology]",
-            key="key_discard_ontology_checkbox")
-            if discard_ontology_checkbox:
-                st.button("Discard", key="key_discard_ontology_button", on_click=discard_ontology)
-
-
-#_____________________________________________
-
-
-
-
-#________________________________________________
 #ADD NAMESPACE
 # Here we bind the namespaces
-with tab3:
+with tab2:
     st.write("")
     st.write("")
 
@@ -1168,7 +706,6 @@ with tab3:
                 </div>""", unsafe_allow_html=True)
             st.write("")
 
-
         if st.session_state["ns_bound_ok_flag"]:
             with col1:
                 col1a, col1b = st.columns([2,1])
@@ -1184,22 +721,35 @@ with tab3:
             st.rerun()
 
 
-        if st.session_state["g_ontology"]:
+        if st.session_state["structural_ns_changed_ok_flag"]:
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                st.write("")
+                st.markdown(f"""<div class="success-message-flag">
+                    ✅ The <b>base namespace</b> has been changed!
+                </div>""", unsafe_allow_html=True)
+            st.session_state["structural_ns_changed_ok_flag"]  = False
+            time.sleep(st.session_state["success_display_time"])
+            st.rerun()
+
+
+        if st.session_state["g_ontology_components_dict"]:
             ontology_ns_dict = utils.get_ontology_ns_dict()
             mapping_ns_dict = utils.get_mapping_ns_dict()
             ontology_ns_list = [key for key in ontology_ns_dict if key not in mapping_ns_dict]
-            add_ns_options = ["🧩 Ontology", "✏️ Custom", "📋 Predefined"]
+            add_ns_options = ["✏️ Custom", "🧩 Ontology", "📋 Predefined", "🏛️ Base"]
         else:
-            add_ns_options = ["✏️ Custom", "📋 Predefined"]
+            add_ns_options = ["✏️ Custom", "📋 Predefined", "🏛️ Base"]
+
+        with col1:
+            add_ns_selected_option = st.radio("🖱️ Select an option:*", add_ns_options, key="key_add_ns_radio", horizontal=True)
 
         with col1:
             col1a, col1b = st.columns([2,1])
-        with col1a:
-            add_ns_selected_option = st.radio("", add_ns_options, label_visibility="collapsed", key="key_add_ns_radio", horizontal=True)
-
         predefined_ns_dict = utils.get_predefined_ns_dict()
         default_ns_dict = utils.get_default_ns_dict()
-        default_structural_ns_dict = utils.get_default_structural_ns_dict()
+        default_structural_ns = utils.get_default_structural_ns()
         ontology_ns_dict = utils.get_ontology_ns_dict()
         mapping_ns_dict = utils.get_mapping_ns_dict()
 
@@ -1242,7 +792,7 @@ with tab3:
                             <small>You must choose a different prefix.</small>
                         </div>""", unsafe_allow_html=True)
                         st.write("")
-                elif prefix_input in default_structural_ns_dict:
+                elif prefix_input == default_structural_ns[0]:
                     with col1a:
                         st.markdown(f"""<div class="error-message">
                             ❌ <b> Prefix {prefix_input} is tied to a default structural namespace. </b>
@@ -1284,7 +834,7 @@ with tab3:
                             <small>You must choose a different IRI.</small>
                         </div>""", unsafe_allow_html=True)
                         st.write("")
-                elif iri_input in default_structural_ns_dict.values():
+                elif iri_input == default_structural_ns[1]:
                     with col1a:
                         st.markdown(f"""<div class="error-message">
                             ❌ <b> IRI matches a default structural namespace. </b>
@@ -1320,90 +870,7 @@ with tab3:
                             </div>""", unsafe_allow_html=True)
                         st.write("")
                         st.button("Bind", key="key_bind_custom_ns_button", on_click=bind_custom_namespace)
-
-
-        if add_ns_selected_option == "📋 Predefined":
-
-            there_are_predefined_ns_unbound_flag = False
-            for prefix in predefined_ns_dict:
-                if not prefix in mapping_ns_dict:
-                    there_are_predefined_ns_unbound_flag = True
-                    continue
-
-            if not there_are_predefined_ns_unbound_flag:
-                with col1a:
-                    st.markdown(f"""<div class="info-message-gray">
-                        🔒 All <b>predefined namespaces<b> are already bound.
-                    </div>""", unsafe_allow_html=True)
-                    st.write("")
-            else:
-
-                with col1a:
-                    predefined_ns_list = [key for key in predefined_ns_dict if key not in mapping_ns_dict]
-                    if len(predefined_ns_list) > 1:
-                        predefined_ns_list.insert(0, "Select all")
-                    predefined_ns_to_bind_list = st.multiselect("🖱️ Select predefined namespaces:*", predefined_ns_list, key="key_predefined_ns_to_bind_multiselect")
-
-                # Information messages
-                if predefined_ns_to_bind_list and "Select all" not in predefined_ns_to_bind_list:
-                    # create a single info message
-                    inner_html = ""
-                    max_length = utils.get_max_length_for_display()[4]
-                    for prefix in predefined_ns_to_bind_list[:max_length]:
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            <b>🔗 {prefix}</b> → {predefined_ns_dict[prefix]}
-                        </div>"""
-
-                    if len(predefined_ns_to_bind_list) > max_length:   # many sm to remove
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            🔗 ... <b>(+{len(predefined_ns_to_bind_list[max_length:])})</b>
-                        </div>"""
-                    # wrap it all in a single info box
-                    full_html = f"""<div class="info-message-gray">
-                        {inner_html}</div>"""
-                    # render
-                    with col1a:
-                        st.markdown(full_html, unsafe_allow_html=True)
-                        st.write("")
-
-                elif predefined_ns_to_bind_list:
-                    # create a single info message
-                    inner_html = ""
-                    max_length = utils.get_max_length_for_display()[4]
-                    for prefix in list(predefined_ns_dict)[:max_length]:
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            <b>🔗 {prefix}</b> → {predefined_ns_dict[prefix]}
-                        </div>"""
-
-
-                    if len(predefined_ns_dict) > max_length:   # many sm to remove
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            🔗 ... <b>(+{len(list(predefined_ns_dict)[max_length:])})</b>
-                        </div>"""
-
-                    # wrap it all in a single info box
-                    full_html = f"""<div class="info-message-gray">
-                        {inner_html}</div>"""
-                    # render
-                    with col1a:
-                        st.markdown(full_html, unsafe_allow_html=True)
-                        st.write("")
-
-
-                if predefined_ns_to_bind_list:
-                    if "Select all" not in predefined_ns_to_bind_list:   # "Select all" not selected
-                        with col1a:
-                            st.button("Bind", key="key_bind_predefined_ns_button", on_click=bind_predefined_namespaces)
-                    else:
-                        with col1a:
-                            bind_all_predefined_ns_button_checkbox = st.checkbox(
-                            ":gray-badge[⚠️ I want to bind all predefined namespaces]",
-                            key="key_bind_all_predefined_ns_button_checkbox")
-                            if bind_all_predefined_ns_button_checkbox:
-                                st.button("Bind", key="key_bind_all_predefined_ns_button", on_click=bind_all_predefined_namespaces)
-
-
-        if add_ns_selected_option == "🧩 Ontology":
+        elif add_ns_selected_option == "🧩 Ontology":
 
             there_are_ontology_ns_unbound_flag = False
             ontology_ns_dict = utils.get_ontology_ns_dict()
@@ -1487,6 +954,209 @@ with tab3:
                                 st.button("Bind", key="key_bind_all_ontology_ns_button", on_click=bind_all_ontology_namespaces)
 
 
+
+        elif add_ns_selected_option == "📋 Predefined":
+
+            there_are_predefined_ns_unbound_flag = False
+            for prefix in predefined_ns_dict:
+                if not prefix in mapping_ns_dict:
+                    there_are_predefined_ns_unbound_flag = True
+                    continue
+
+            if not there_are_predefined_ns_unbound_flag:
+                with col1a:
+                    st.markdown(f"""<div class="info-message-gray">
+                        🔒 All <b>predefined namespaces<b> are already bound.
+                    </div>""", unsafe_allow_html=True)
+                    st.write("")
+            else:
+
+                with col1a:
+                    predefined_ns_list = [key for key in predefined_ns_dict if key not in mapping_ns_dict]
+                    if len(predefined_ns_list) > 1:
+                        predefined_ns_list.insert(0, "Select all")
+                    predefined_ns_to_bind_list = st.multiselect("🖱️ Select predefined namespaces:*", predefined_ns_list, key="key_predefined_ns_to_bind_multiselect")
+
+                # Information messages
+                if predefined_ns_to_bind_list and "Select all" not in predefined_ns_to_bind_list:
+                    # create a single info message
+                    inner_html = ""
+                    max_length = utils.get_max_length_for_display()[4]
+                    for prefix in predefined_ns_to_bind_list[:max_length]:
+                        inner_html += f"""<div style="margin-bottom:6px;">
+                            <b>🔗 {prefix}</b> → {predefined_ns_dict[prefix]}
+                        </div>"""
+
+                    if len(predefined_ns_to_bind_list) > max_length:   # many sm to remove
+                        inner_html += f"""<div style="margin-bottom:6px;">
+                            🔗 ... <b>(+{len(predefined_ns_to_bind_list[max_length:])})</b>
+                        </div>"""
+                    # wrap it all in a single info box
+                    full_html = f"""<div class="info-message-gray">
+                        {inner_html}</div>"""
+                    # render
+                    with col1a:
+                        st.markdown(full_html, unsafe_allow_html=True)
+                        st.write("")
+
+                elif predefined_ns_to_bind_list:
+                    # create a single info message
+                    inner_html = ""
+                    max_length = utils.get_max_length_for_display()[4]
+                    for prefix in list(predefined_ns_dict)[:max_length]:
+                        inner_html += f"""<div style="margin-bottom:6px;">
+                            <b>🔗 {prefix}</b> → {predefined_ns_dict[prefix]}
+                        </div>"""
+
+
+                    if len(predefined_ns_dict) > max_length:   # many sm to remove
+                        inner_html += f"""<div style="margin-bottom:6px;">
+                            🔗 ... <b>(+{len(list(predefined_ns_dict)[max_length:])})</b>
+                        </div>"""
+
+                    # wrap it all in a single info box
+                    full_html = f"""<div class="info-message-gray">
+                        {inner_html}</div>"""
+                    # render
+                    with col1a:
+                        st.markdown(full_html, unsafe_allow_html=True)
+                        st.write("")
+
+
+                if predefined_ns_to_bind_list:
+                    if "Select all" not in predefined_ns_to_bind_list:   # "Select all" not selected
+                        with col1a:
+                            st.button("Bind", key="key_bind_predefined_ns_button", on_click=bind_predefined_namespaces)
+                    else:
+                        with col1a:
+                            bind_all_predefined_ns_button_checkbox = st.checkbox(
+                            ":gray-badge[⚠️ I want to bind all predefined namespaces]",
+                            key="key_bind_all_predefined_ns_button_checkbox")
+                            if bind_all_predefined_ns_button_checkbox:
+                                st.button("Bind", key="key_bind_all_predefined_ns_button", on_click=bind_all_predefined_namespaces)
+
+
+        if add_ns_selected_option == "🏛️ Base":
+
+            with col1:
+                st.markdown(f"""<div class="gray-preview-message">
+                        🔒 Base IRI:
+                        <span style="font-size:0.92em;"><b>
+                        🔗 {st.session_state["structural_ns"][0]}</b> →
+                        <b style="color:#F63366;">{st.session_state["structural_ns"][1]}
+                        </span></b><br>
+                        <small>To change it, enter another option below.</small>
+                    </div>""", unsafe_allow_html=True)
+                st.write("")
+            with col1:
+                col1a, col1b = st.columns([1,2])
+            with col1a:
+                structural_ns_prefix_candidate = st.text_input("⌨️ Enter prefix:", key="key_structural_ns_prefix_candidate")
+            with col1b:
+                structural_ns_iri_candidate = st.text_input("⌨️ Enter base IRI:", key="key_structural_ns_iri_candidate")
+
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                if structural_ns_prefix_candidate:
+                    valid_prefix_input = False
+                    if structural_ns_prefix_candidate in ontology_ns_dict:
+                        with col1a:
+                            st.markdown(f"""<div class="error-message">
+                                ❌ <b> Prefix {structural_ns_prefix_candidate} is contained in the ontology. </b>
+                                <small>You must choose a different prefix.</small>
+                            </div>""", unsafe_allow_html=True)
+                            st.write("")
+                    elif structural_ns_prefix_candidate in predefined_ns_dict:
+                        with col1a:
+                            st.markdown(f"""<div class="error-message">
+                                ❌ <b> Prefix {structural_ns_prefix_candidate} is tied to a predefined namespace. </b>
+                                <small>You must choose a different prefix.</small>
+                            </div>""", unsafe_allow_html=True)
+                            st.write("")
+                    elif structural_ns_prefix_candidate in default_ns_dict:
+                        with col1a:
+                            st.markdown(f"""<div class="error-message">
+                                ❌ <b> Prefix {structural_ns_prefix_candidate} is tied to a default namespace. </b>
+                                <small>You must choose a different prefix.</small>
+                            </div>""", unsafe_allow_html=True)
+                            st.write("")
+                    elif structural_ns_prefix_candidate in mapping_ns_dict:
+                        with col1a:
+                            st.markdown(f"""<div class="error-message">
+                                ❌ <b> Prefix {prefix_input} is already in use. </b>
+                                <small>You can either choose a different prefix or unbind
+                                {structural_ns_prefix_candidate} to reassing it.</small>
+                            </div>""", unsafe_allow_html=True)
+                            st.write("")
+                    else:
+                        valid_prefix_input = True
+
+                    if structural_ns_iri_candidate:
+                        valid_iri_input = False
+                        if structural_ns_iri_candidate in ontology_ns_dict.values():
+                            with col1a:
+                                st.markdown(f"""<div class="error-message">
+                                    ❌ <b> Namespace is contained in the ontology. </b>
+                                    <small>You must choose a different IRI.</small>
+                                </div>""", unsafe_allow_html=True)
+                                st.write("")
+                        elif structural_ns_iri_candidate in predefined_ns_dict.values():
+                            with col1a:
+                                st.markdown(f"""<div class="error-message">
+                                    ❌ <b> IRI matches a predefined namespace. </b>
+                                    <small>You must choose a different IRI.</small>
+                                </div>""", unsafe_allow_html=True)
+                                st.write("")
+                        elif structural_ns_iri_candidate in default_ns_dict.values():
+                            with col1a:
+                                st.markdown(f"""<div class="error-message">
+                                    ❌ <b> IRI matches a default namespace. </b>
+                                    <small>You must choose a different IRI.</small>
+                                </div>""", unsafe_allow_html=True)
+                                st.write("")
+                        elif structural_ns_iri_candidate in mapping_ns_dict.values():
+                            with col1a:
+                                st.markdown(f"""<div class="error-message">
+                                    ❌ <b> Namespace is already in use. </b>
+                                    <small>You can either choose a different IRI or unbind
+                                    {structural_ns_iri_candidate} to reassing it.</small>
+                                </div>""", unsafe_allow_html=True)
+                                st.write("")
+                        elif not utils.is_valid_iri(structural_ns_iri_candidate):
+                            with col1a:
+                                st.markdown(f"""<div class="error-message">
+                                    ❌ <b> Invalid IRI. </b>
+                                    <small>Please make sure it starts with a valid scheme (e.g., http, https),
+                                    includes no illegal characters
+                                    and ends with a delimiter (/, # or :).</small>
+                                </div>""", unsafe_allow_html=True)
+                                st.write("")
+                        else:
+                            valid_iri_input = True
+
+
+                if structural_ns_iri_candidate and structural_ns_prefix_candidate:
+                    if valid_iri_input and valid_prefix_input:
+                        with col1a:
+                            st.write("")
+                            st.markdown(f"""<div class="info-message-gray">
+                                    <b>🔗 {structural_ns_prefix_candidate}</b> → {structural_ns_iri_candidate}
+                                </div>""", unsafe_allow_html=True)
+                            st.write("")
+                            st.button("Confirm", key="key_change_structural_ns_button", on_click=change_structural_ns)
+
+                if not structural_ns_iri_candidate and not structural_ns_prefix_candidate:
+                    if st.session_state["structural_ns"] != utils.get_default_structural_ns():
+                        with col1a:
+                            default_structural_ns = utils.get_default_structural_ns()
+                            structural_ns_prefix_candidate = default_structural_ns[0]
+                            structural_ns_iri_candidate = default_structural_ns[1]
+                            st.button("Set to default", key="key_structural_ns_set_to_default_button", on_click=change_structural_ns)
+
+
+
+
         # unbind ns success message - show here if "Unbind" purple heading is not going to be shown
         mapping_ns_dict = utils.get_mapping_ns_dict()
 
@@ -1521,153 +1191,8 @@ with tab3:
             time.sleep(st.session_state["success_display_time"])
             st.rerun()
 
-
-        if mapping_ns_dict:   #only if there are namespaces
-            with col1:
-                st.write("______")
-                st.markdown("""<div class="purple-heading">
-                        🏛️ Define Structural Namespaces
-                    </div>""", unsafe_allow_html=True)
-                st.markdown("")
-
-                with col1:
-                    col1a, col1b = st.columns([2,1])
-
-                if st.session_state["structural_ns_changed_ok_flag"]:
-                    with col1a:
-                        st.write("")
-                        st.markdown(f"""<div class="success-message-flag">
-                            ✅ The <b>structural namespace</b> has been changed!
-                        </div>""", unsafe_allow_html=True)
-                    st.session_state["structural_ns_changed_ok_flag"]  = False
-                    time.sleep(st.session_state["success_display_time"])
-                    st.rerun()
-
-                structural_components_list = ["Select a component", "TriplesMap", "Subject Map", "Predicate-Object Map",
-                    "Object Map", "Logical Source", "Logical Table"]
-                with col1a:
-                    selected_structural_component = st.selectbox("🖱️ Select a structural component:", structural_components_list,
-                        key="key_selected_structural_component")
-
-                if selected_structural_component != "Select a component":
-                    with col1:
-                        st.markdown(f"""<div class="gray-preview-message">
-                                🔒 {selected_structural_component} base IRI:<br>
-                                <span style="font-size:0.92em;"><b>
-                                🔗 {st.session_state["structural_ns_dict"][selected_structural_component][0]}</b> →
-                                <b style="color:#F63366;">{st.session_state["structural_ns_dict"][selected_structural_component][1]}
-                                </span></b><br>
-                                <small>To change it, enter another option below.</small>
-                            </div>""", unsafe_allow_html=True)
-                        st.write("")
-                    with col1:
-                        col1a, col1b = st.columns([1,2])
-                    with col1a:
-                        structural_ns_prefix_candidate = st.text_input("⌨️ Enter prefix:", key="key_structural_ns_prefix_candidate")
-                    with col1b:
-                        structural_ns_iri_candidate = st.text_input("⌨️ Enter base IRI:", key="key_structural_ns_iri_candidate")
-
-                    with col1:
-                        col1a, col1b = st.columns([2,1])
-                    with col1a:
-                        if structural_ns_prefix_candidate:
-                            valid_prefix_input = False
-                            if structural_ns_prefix_candidate in ontology_ns_dict:
-                                with col1a:
-                                    st.markdown(f"""<div class="error-message">
-                                        ❌ <b> Prefix {structural_ns_prefix_candidate} is contained in the ontology. </b>
-                                        <small>You must choose a different prefix.</small>
-                                    </div>""", unsafe_allow_html=True)
-                                    st.write("")
-                            elif structural_ns_prefix_candidate in predefined_ns_dict:
-                                with col1a:
-                                    st.markdown(f"""<div class="error-message">
-                                        ❌ <b> Prefix {structural_ns_prefix_candidate} is tied to a predefined namespace. </b>
-                                        <small>You must choose a different prefix.</small>
-                                    </div>""", unsafe_allow_html=True)
-                                    st.write("")
-                            elif structural_ns_prefix_candidate in default_ns_dict:
-                                with col1a:
-                                    st.markdown(f"""<div class="error-message">
-                                        ❌ <b> Prefix {structural_ns_prefix_candidate} is tied to a default namespace. </b>
-                                        <small>You must choose a different prefix.</small>
-                                    </div>""", unsafe_allow_html=True)
-                                    st.write("")
-                            elif structural_ns_prefix_candidate in mapping_ns_dict:
-                                with col1a:
-                                    st.markdown(f"""<div class="error-message">
-                                        ❌ <b> Prefix {prefix_input} is already in use. </b>
-                                        <small>You can either choose a different prefix or unbind
-                                        {structural_ns_prefix_candidate} to reassing it.</small>
-                                    </div>""", unsafe_allow_html=True)
-                                    st.write("")
-                            else:
-                                valid_prefix_input = True
-
-                        if structural_ns_iri_candidate:
-                            valid_iri_input = False
-                            if structural_ns_iri_candidate in ontology_ns_dict.values():
-                                with col1a:
-                                    st.markdown(f"""<div class="error-message">
-                                        ❌ <b> Namespace is contained in the ontology. </b>
-                                        <small>You must choose a different IRI.</small>
-                                    </div>""", unsafe_allow_html=True)
-                                    st.write("")
-                            elif structural_ns_iri_candidate in predefined_ns_dict.values():
-                                with col1a:
-                                    st.markdown(f"""<div class="error-message">
-                                        ❌ <b> IRI matches a predefined namespace. </b>
-                                        <small>You must choose a different IRI.</small>
-                                    </div>""", unsafe_allow_html=True)
-                                    st.write("")
-                            elif structural_ns_iri_candidate in default_ns_dict.values():
-                                with col1a:
-                                    st.markdown(f"""<div class="error-message">
-                                        ❌ <b> IRI matches a default namespace. </b>
-                                        <small>You must choose a different IRI.</small>
-                                    </div>""", unsafe_allow_html=True)
-                                    st.write("")
-                            elif URIRef(iri_input) in mapping_ns_dict.values():
-                                with col1a:
-                                    st.markdown(f"""<div class="error-message">
-                                        ❌ <b> Namespace is already in use. </b>
-                                        <small>You can either choose a different IRI or unbind
-                                        {structural_ns_iri_candidate} to reassing it.</small>
-                                    </div>""", unsafe_allow_html=True)
-                                    st.write("")
-                            elif not utils.is_valid_iri(structural_ns_iri_candidate):
-                                with col1a:
-                                    st.markdown(f"""<div class="error-message">
-                                        ❌ <b> Invalid IRI. </b>
-                                        <small>Please make sure it statrs with a valid scheme (e.g., http, https),
-                                        includes no illegal characters
-                                        and ends with a delimiter (/, # or :).</small>
-                                    </div>""", unsafe_allow_html=True)
-                                    st.write("")
-                            else:
-                                valid_iri_input = True
-
-
-                    if structural_ns_iri_candidate and structural_ns_prefix_candidate:
-                        if valid_iri_input and valid_prefix_input:
-                            with col1a:
-                                st.write("")
-                                st.markdown(f"""<div class="info-message-blue">
-                                        <b>🔗 {structural_ns_prefix_candidate}</b> → {structural_ns_iri_candidate}
-                                    </div>""", unsafe_allow_html=True)
-                                st.write("")
-                                st.button("Confirm", key="key_change_structural_ns_button", on_click=change_structural_ns)
-
-                    if not structural_ns_iri_candidate and not structural_ns_prefix_candidate:
-                        if st.session_state["structural_ns_dict"][selected_structural_component] != utils.get_default_structural_ns_session_state()[selected_structural_component]:
-                            with col1a:
-                                default_structural_ns_session_state = utils.get_default_structural_ns_session_state()
-                                structural_ns_prefix_candidate = default_structural_ns_session_state[selected_structural_component][0]
-                                structural_ns_iri_candidate = default_structural_ns_session_state[selected_structural_component][1]
-                                st.button("Set to default", key="key_structural_ns_set_to_default_button", on_click=change_structural_ns)
-
-
-
+        # PURPLE HEADING - UNBIND NS (if there are bound ns)
+        if mapping_ns_dict:
             with col1:
                 st.write("______")
                 st.markdown("""<div class="purple-heading">
@@ -1795,7 +1320,7 @@ with tab3:
 
 #________________________________________________
 # SAVE MAPPING OPTION
-with tab4:
+with tab3:
     st.write("")
     st.write("")
 
@@ -1980,7 +1505,7 @@ with tab4:
 
 #________________________________________________
 # SET STYLE OPTION
-with tab5:
+with tab4:
 
     st.write("")
     st.write("")
