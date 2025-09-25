@@ -791,6 +791,7 @@ with tab1:
                         key="key_db_connection_for_ls")
 
                     if db_connection_for_ls != "Select a connection":
+                        connection_ok_flag = True
                         try:
                             conn = utils.make_connection_to_db(db_connection_for_ls)
 
@@ -800,42 +801,148 @@ with tab1:
                                 ❌ Connection <b>{db_connection_for_ls}</b> is not working. Please go to the <b>
                                 Manage Logical Sources</b> page to manage the connections to Databases.
                             </div>""", unsafe_allow_html=True)
+                            connection_ok_flag = False
 
-                        query_for_selected_db_list = []   # list of queries of the selected connection
-                        for query_label, [connection_label, query] in st.session_state["sql_queries_dict"].items():
-                            if connection_label == db_connection_for_ls:
-                                query_for_selected_db_list.insert(0, query_label)   # only include queries of the selected connection
+                        if connection_ok_flag:
 
-                        with col1:
-                            col1a, col1b = st.columns([1,2])
-                        with col1b:
-                            list_to_choose = ["🖼️ View", "🔖 Table name"] if query_for_selected_db_list else ["🔖 Table name"]
-                            query_option = st.radio("🖱️ Select option:*", list_to_choose,
-                                horizontal=True, key="key_query_option_radio")
+                            query_for_selected_db_list = []   # list of queries of the selected connection
+                            for query_label, [connection_label, query] in st.session_state["sql_queries_dict"].items():
+                                if connection_label == db_connection_for_ls:
+                                    query_for_selected_db_list.insert(0, query_label)   # only include queries of the selected connection
 
-                        if query_option == "🖼️ View" and db_connection_for_ls != "Select a connection" and conn:
+                            with col1:
+                                col1a, col1b = st.columns([1,2])
+                            with col1b:
+                                list_to_choose = ["🖼️ View", "🔖 Table name"] if query_for_selected_db_list else ["🔖 Table name"]
+                                query_option = st.radio("🖱️ Select option:*", list_to_choose,
+                                    horizontal=True, key="key_query_option_radio")
 
-                            with col1a:
-                                list_to_choose = query_for_selected_db_list
-                                list_to_choose.insert(0, "Select view")
-                                selected_query_for_ls = st.selectbox("🖱️ Select view:*", list_to_choose,
-                                    key="key_selected_query_for_ls")
+                            if query_option == "🖼️ View" and db_connection_for_ls != "Select a connection" and conn:
 
-                            if selected_query_for_ls != "Select view":
-                                sql_query = st.session_state["sql_queries_dict"][selected_query_for_ls][1]
-                                try:
-                                    cur = conn.cursor()
-                                    cur.execute(sql_query)
-                                    sql_query_ok_flag = True
-                                except:
-                                    with col1a:
-                                        st.markdown(f"""<div class="error-message">
-                                            ❌ <b>Invalid SQL syntax</b>. Please check your view.<br>
-                                        </div>""", unsafe_allow_html=True)
-                                        st.write("")
-                                    sql_query_ok_flag = False
+                                with col1a:
+                                    list_to_choose = query_for_selected_db_list
+                                    list_to_choose.insert(0, "Select view")
+                                    selected_query_for_ls = st.selectbox("🖱️ Select view:*", list_to_choose,
+                                        key="key_selected_query_for_ls")
 
-                                if sql_query_ok_flag:
+                                if selected_query_for_ls != "Select view":
+                                    sql_query = st.session_state["sql_queries_dict"][selected_query_for_ls][1]
+                                    try:
+                                        cur = conn.cursor()
+                                        cur.execute(sql_query)
+                                        sql_query_ok_flag = True
+                                    except:
+                                        with col1a:
+                                            st.markdown(f"""<div class="error-message">
+                                                ❌ <b>Invalid SQL syntax</b>. Please check your view.<br>
+                                            </div>""", unsafe_allow_html=True)
+                                            st.write("")
+                                        sql_query_ok_flag = False
+
+                                    if sql_query_ok_flag:
+
+                                        with col1:
+                                            col1a, col1b = st.columns([1.5, 1])
+                                        with col1b:
+                                            st.write("")
+                                            st.write("")
+                                            label_ls_checkbox = st.checkbox(
+                                            ":gray-badge[♻️ I want to reuse the Logical Source]",
+                                            key="key_label_ls_checkbox")
+
+                                        if label_ls_checkbox:
+                                            with col1a:
+                                                ls_label = st.text_input("⌨️ Enter label for the Logical Source:*")
+                                                if ls_label in labelled_ls_list:
+                                                    with col1b:
+                                                        st.markdown(f"""<div class="warning-message">
+                                                                ⚠️ The logical source label <b>{ls_label}</b>
+                                                                is already in use. Please, pick a different label.
+                                                            </div>""", unsafe_allow_html=True)
+                                                        st.write("")
+                                        else:
+                                            ls_label = ""
+
+                                        if (label_ls_checkbox and ls_label) or not label_ls_checkbox:
+                                            with col1a:
+                                                st.button("Save", key="key_save_tm_w_saved_query", on_click=save_tm_w_query)
+
+                                        with col1:
+
+                                            st.markdown(f"""<div class="info-message-blue">
+                                                    🖼️ <b style="color:#F63366;"> View previsualisation</b>
+                                                    <small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<b>Query:</b>
+                                                    {st.session_state["sql_queries_dict"][selected_query_for_ls][1]})</small>
+                                                </div></div>""", unsafe_allow_html=True)
+
+                                        cur = conn.cursor()   # create a cursor
+
+                                        try:
+                                            cur.execute(st.session_state["sql_queries_dict"][selected_query_for_ls][1])
+                                            sql_query_ok_flag = True
+
+                                        except Exception as e:
+                                            with col1:
+                                                st.write("")
+                                                st.markdown(f"""<div class="error-message">
+                                                    ❌ <b>Invalid SQL syntax</b>. Please check your query.<br>
+                                                    <small><b> Full error:</b> {e}</small>
+                                                </div>""", unsafe_allow_html=True)
+                                                st.write("")
+                                            sql_query_ok_flag = False
+
+
+                                        rows = cur.fetchall()
+                                        engine = st.session_state["db_connections_dict"][db_connection_for_ls][0]
+                                        if engine == "SQL Server":
+                                            rows = [tuple(row) for row in rows]   # rows are of type <class 'pyodbc.Row'> -> convert to tuple
+                                        columns = [desc[0] for desc in cur.description]
+                                        df = pd.DataFrame(rows, columns=columns)
+
+
+                                        with col1:
+                                            st.write("")
+                                            max_rows = utils.get_max_length_for_display()[2]
+                                            max_cols = utils.get_max_length_for_display()[3]
+
+                                            limited_df = df.iloc[:, :max_cols]   # limit number of columns
+
+                                            # Slice rows if needed
+                                            if len(df) > max_rows and df.shape[1] > max_cols:
+                                                st.markdown(f"""<div class="warning-message">
+                                                    ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
+                                                    and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+                                                </div>""", unsafe_allow_html=True)
+                                                st.write("")
+                                            elif len(df) > max_rows:
+                                                st.markdown(f"""<div class="warning-message">
+                                                    ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
+                                                </div>""", unsafe_allow_html=True)
+                                                st.write("")
+                                            elif df.shape[1] > max_cols:
+                                                st.markdown(f"""<div class="warning-message">
+                                                    ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+                                                </div>""", unsafe_allow_html=True)
+                                                st.write("")
+
+                                            st.dataframe(limited_df.head(max_rows), hide_index=True)
+
+
+                            if query_option == "🔖 Table name" and db_connection_for_ls != "Select a connection" and conn:
+                                cur = conn.cursor()   # create a cursor
+                                engine = st.session_state["db_connections_dict"][db_connection_for_ls][0]
+                                database = st.session_state["db_connections_dict"][db_connection_for_ls][3]
+                                utils.get_tables_from_db(engine, cur, database)
+                                db_tables = [row[0] for row in cur.fetchall()]
+
+                                with col1a:
+                                    list_to_choose = db_tables
+                                    list_to_choose.insert(0, "Select a table")
+                                    selected_table_for_ls = st.selectbox("🖱️ Choose a table:*", list_to_choose,
+                                        key="key_selected_table_for_ls")
+
+                                if selected_table_for_ls != "Select a table":
+
                                     with col1:
                                         col1a, col1b = st.columns([1.5, 1])
                                     with col1b:
@@ -858,26 +965,10 @@ with tab1:
                                     else:
                                         ls_label = ""
 
-                                    if (label_ls_checkbox and ls_label) or not label_ls_checkbox:
-                                        with col1a:
-                                            st.button("Save", key="key_save_tm_w_saved_query", on_click=save_tm_w_query)
-
-                        if query_option == "🔖 Table name" and db_connection_for_ls != "Select a connection" and conn:
-                            cur = conn.cursor()   # create a cursor
-                            engine = st.session_state["db_connections_dict"][db_connection_for_ls][0]
-                            database = st.session_state["db_connections_dict"][db_connection_for_ls][3]
-                            utils.get_tables_from_db(engine, cur, database)
-                            db_tables = [row[0] for row in cur.fetchall()]
-
-                            with col1a:
-                                list_to_choose = db_tables
-                                list_to_choose.insert(0, "Select a table")
-                                selected_table_for_ls = st.selectbox("🖱️ Choose a table:*", list_to_choose,
-                                    key="key_selected_table_for_ls")
-
-                                if selected_table_for_ls != "Select a table":
-                                    if (label_ls_checkbox and ls_label) or not label_ls_checkbox:
-                                        st.button("Save", key="key_save_tm_w_table_name", on_click=save_tm_w_table_name)
+                                    if selected_table_for_ls != "Select a table":
+                                        if (label_ls_checkbox and ls_label) or not label_ls_checkbox:
+                                            with col1a:
+                                                st.button("Save", key="key_save_tm_w_table_name", on_click=save_tm_w_table_name)
 
             if ls_option == "🛢️ Tabular data":
 

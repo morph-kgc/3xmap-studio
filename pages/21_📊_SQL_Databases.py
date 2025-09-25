@@ -865,6 +865,7 @@ with tab3:
                             st.button("Save", key="key_save_view_button",
                                 on_click=save_view)
 
+
                     rows = cur.fetchall()
                     engine = st.session_state["db_connections_dict"][connection_for_query][0]
                     if engine == "SQL Server":
@@ -874,6 +875,9 @@ with tab3:
 
 
                     with col1:
+                        st.markdown(f"""<div class="info-message-blue">
+                                🖼️ <b style="color:#F63366;"> View previsualisation</b><br>
+                            </div></div>""", unsafe_allow_html=True)
                         max_rows = utils.get_max_length_for_display()[2]
                         max_cols = utils.get_max_length_for_display()[3]
 
@@ -1021,9 +1025,10 @@ with tab3:
 
                     with col1:
 
-                        st.markdown(f"""<div class="gray-preview-message">
-                                ❔ <b style="color:#F63366;"> Query:</b>
-                                {st.session_state["sql_queries_dict"][sql_query_to_consult][1]}
+                        st.markdown(f"""<div class="info-message-blue">
+                                🖼️ <b style="color:#F63366;"> View</b>
+                                <small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<b>Query:</b>
+                                {st.session_state["sql_queries_dict"][sql_query_to_consult][1]})</small>
                             </div></div>""", unsafe_allow_html=True)
 
                     cur = conn.cursor()   # create a cursor
