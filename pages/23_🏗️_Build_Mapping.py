@@ -1276,7 +1276,6 @@ with tab2:
         st.markdown("""<div class="purple-heading">
                 🧱 Add New Subject Map
             </div>""", unsafe_allow_html=True)
-        st.write("")
 
     if st.session_state["sm_saved_ok_flag"]:
         with col1:
@@ -1339,7 +1338,7 @@ with tab2:
         existing_sm_list = list(existing_sm_dict.keys())
 
         with col1:
-            col1a, col1b = st.columns(2)
+            col1a, col1b = st.columns([2,1])
         if st.session_state["last_added_tm_list"] and st.session_state["last_added_tm_list"][0] in tm_wo_sm_list:
             with col1a:
                 list_to_choose = list(reversed(tm_wo_sm_list))
@@ -1377,21 +1376,18 @@ with tab2:
 
             elif sm_option == "🆕 Create new Subject Map":
 
-
                 if tm_label_for_sm != "Select a TriplesMap":   #TriplesMap selected
                     tm_iri_for_sm = tm_dict[tm_label_for_sm]
                     ls_iri_for_sm = next(st.session_state["g_mapping"].objects(tm_iri_for_sm, RML.logicalSource), None)
                     ds_for_sm = str(next(st.session_state["g_mapping"].objects(ls_iri_for_sm, RML.source), None))
 
-                    with col1b:
-                        st.write("")
+                    with col1a:
                         column_list = utils.get_column_list_and_give_info(tm_iri_for_sm)
 
-                    with col1:
-                        st.write("________")
+                    with col1b:
                         sm_generation_rule_list = ["Template 📐", "Constant 🔒", "Reference 📊"]
                         sm_generation_rule = st.radio("🖱️ Define the Subject Map generation rule:*",
-                            sm_generation_rule_list, horizontal=True, key="key_sm_generation_rule_radio")
+                            sm_generation_rule_list, key="key_sm_generation_rule_radio")
 
 
                     #_______________________________________________
@@ -1491,39 +1487,20 @@ with tab2:
                                 st.write("")
 
 
-
-                        with col1b:
-                            st.write("")
-                            sm_term_type_template = st.radio(label="🖱️ Select term type:*", options=["🌐 IRI", "👻 BNode"],
-                                key="sm_term_type_template")
-
-                        if sm_term_type_template == "🌐 IRI" and not st.session_state["sm_template_prefix"] and sm_template:
-                            with col1a:
-
-                                st.markdown(f"""<div class="error-message">
-                                    ❌ Term type is <b>🌐 IRI</b>. <small>You must <b>add a namespace</b>.</small>
-                                </div>""", unsafe_allow_html=True)
-                                st.write("")
-
-
                     #_______________________________________________
                     # SUBJECT MAP - CONSTANT-VALUED
                     if sm_generation_rule == "Constant 🔒":
 
                         with col1:
-                            col1a, col1b = st.columns(2)
-                        with col1a:
-                            sm_constant = st.text_input("⌨️ Enter constant:*", key="key_sm_constant")
-
+                            col1a, col1b = st.columns([1,2])
                         with col1b:
-                            sm_term_type_constant = st.radio(label="🖱️ Select term type:*", options=["🌐 IRI"], horizontal=True,
-                                key="sm_term_type_constant")
+                            sm_constant = st.text_input("⌨️ Enter constant:*", key="key_sm_constant")
 
                         mapping_ns_dict = utils.get_mapping_ns_dict()
                         list_to_choose = list(mapping_ns_dict.keys())
                         list_to_choose.insert(0, "Select a namespace")
                         with col1a:
-                            sm_constant_ns_prefix = st.selectbox("🖱️ Select a namespace for the constant:*", list_to_choose,
+                            sm_constant_ns_prefix = st.selectbox("🖱️ Select a namespace:*", list_to_choose,
                                 key="key_sm_constant_ns")
 
                             if not mapping_ns_dict:
@@ -1546,14 +1523,10 @@ with tab2:
 
 
                         with col1:
-                            col1a, col1b = st.columns([1,1.2])
+                            col1a, col1b = st.columns([2,1])
                         with col1a:
                             list_to_choose = column_list.copy()
                             list_to_choose.insert(0, "Select a reference")
-
-                        with col1b:
-                            sm_term_type_reference = st.radio(label="🖱️ Select term type:*", options=["🌐 IRI", "👻 BNode"],
-                                horizontal=True, key="sm_term_type_reference")
 
                         if not column_list:   #data source is not available (load)
                             with col1a:
@@ -1562,37 +1535,29 @@ with tab2:
                                     ⚠️ discouraged
                                 </div>""", unsafe_allow_html=True)
 
-                            if sm_column_name and sm_term_type_reference == "🌐 IRI":
-                                with col1b:
-                                    st.markdown(f"""<div class="warning-message">
-                                            ⚠️ Term type is <b>🌐 IRI</b>.
-                                            <small>Make sure that the values in the referenced column
-                                            are valid IRIs.</small>
-                                        </div>""", unsafe_allow_html=True)
-                                    st.write("")
-
                         else:
                             with col1a:
-                                sm_column_name = st.selectbox(f"""🖱️ Select the reference of the data source:*""", list_to_choose,
+                                sm_column_name = st.selectbox(f"""🖱️ Select the reference of the Logical Source:*""", list_to_choose,
                                     key="key_sm_column_name")
-
-                            if sm_column_name != "Select a reference" and sm_term_type_reference == "🌐 IRI":
-                                with col1b:
-                                    st.markdown(f"""<div class="warning-message">
-                                            ⚠️ Term type is <b>🌐 IRI</b>.
-                                            <small>Make sure that the values in the referenced column
-                                            are valid IRIs.</small>
-                                        </div>""", unsafe_allow_html=True)
-                                    st.write("")
 
 
                     with col1:
-                        st.write("________")
-                        col1a, col1b = st.columns([1,2])
-                    with col1a:
-                        sm_class_toggle = st.toggle("🏷️ Subject class", key="key_sm_class_toggle")
+                        selected_additional_info_list = st.multiselect("🖱️ Additional choices (optional):",
+                            ["🏷️ Subject class", "🗺️️ Graph map", "🆔 Term type", "♻️ Reuse Subject Map"], key="key_additional_info_list")
 
-                    if sm_class_toggle:
+                    sm_term_type = "🌐 IRI"  # default unless changed
+
+                    if "🏷️ Subject class" in selected_additional_info_list:
+                        with col1:
+                            col1a, col1b = st.columns([3,0.5])
+                        with col1a:
+                            st.markdown(f"""<div class="subsection">
+                                    🏷️ Subject class
+                                </div>""",unsafe_allow_html=True)
+                            st.write("")
+                        with col1:
+                            col1a, col1b, col1c = st.columns([2,1,0.5])
+
                         # WE ORGANISE THE ONTOLOGY CLASSES IN DIFFERENT DICTIONARIES
                         # dictionary for simple classes
                         ontology_classes_dict = {}
@@ -1613,15 +1578,12 @@ with tab2:
 
                         # ONLY SHOW OPTIONS IF THE ONTOLOGY HAS THEM
                         if ontology_classes_dict:   # if the ontology includes at least one class
-                            class_type_option_list = ["🧩 Ontology class", "🚫 Class outside ontology"]
                             with col1b:
-                                class_type = st.radio("🖱️ Select an option:*", class_type_option_list,
-                                    horizontal=True, label_visibility="collapsed", key="key_class_type_radio")
+                                class_type = st.radio("🖱️ Select an option:*", ["🧩 Ontology class", "🚫 Class outside ontology"],
+                                    key="key_class_type_radio")
                         else:
                             class_type = "🚫 Class outside ontology"
 
-                        with col1:
-                            col1a, col1b = st.columns(2)
                         #ONTOLOGY CLASS
                         if class_type == "🧩 Ontology class":
 
@@ -1640,13 +1602,13 @@ with tab2:
                                         classes_in_superclass_dict[split_uri(s)[1]] = s
                                     class_list = list(classes_in_superclass_dict.keys())
                                     class_list.insert(0, "Select a class")
-                                    with col1b:
+                                    with col1a:
                                         subject_class = st.selectbox("🖱️ Select a class:*", class_list,
                                             key="key_subject_class")   #class label
                                 else:  #no superclass selected (list all classes)
                                     class_list = list(ontology_classes_dict.keys())
                                     class_list.insert(0, "Select a class")
-                                    with col1b:
+                                    with col1a:
                                         subject_class = st.selectbox("🖱️ Select a class:*", class_list,
                                             key="key_subject_class")   #class label
 
@@ -1679,43 +1641,45 @@ with tab2:
                             else:
                                 if subject_class_prefix != "Select a namespace":
                                     NS = Namespace(mapping_ns_dict[subject_class_prefix])
-                                with col1b:
+                                with col1a:
                                     subject_class_input = st.text_input("⌨️ Enter subject class:*", key="key_subject_class_input")
                                 if subject_class_input and subject_class_prefix != "Select a namespace":
                                     subject_class = NS[subject_class_input]
 
+                            with col1:
+                                col1a, col1b = st.columns([3,0.5])
                             if st.session_state["g_ontology"] and not ontology_classes_dict: #there is an ontology but it has no classes
-                                with col1:
+                                with col1a:
                                     st.markdown(f"""<div class="warning-message">
                                               ⚠️ Your <b>ontology</b> does not define any classes.
                                               <small>Using an ontology with predefined classes is recommended.</small>
                                         </div>""", unsafe_allow_html=True)
                             elif st.session_state["g_ontology"]:   #there exists an ontology and it has classes
-                                with col1:
+                                with col1a:
                                     st.markdown(f"""<div class="warning-message">
                                               ⚠️ The option <b>Class outside ontology</b> lacks ontology alignment.
                                               <small>An ontology-driven approach is recommended.</small>
                                         </div>""", unsafe_allow_html=True)
                             else:
-                                with col1:
+                                with col1a:
                                     st.write("")
                                     st.markdown(f"""<div class="warning-message">
                                             ⚠️ You are working <b>without an ontology</b>. <small>Loading an ontology
                                             from the <b> Global Configuration</b> page is encouraged.</small>
                                         </div>""", unsafe_allow_html=True)
 
-                            with col1:
-                                st.write("________")
 
                     #GRAPH - If not given, default graph    HERE condider if rr:graphMap option (dynamic) is worth it
-                    with col1:
-                        col1a, col1b = st.columns([1,2])
-                    with col1a:
-                        sm_graph_map_toggle = st.toggle("🗺️️ Graph map", key="key_sm_graph_map_toggle")
-
-                    if sm_graph_map_toggle:
+                    if "🗺️️ Graph map" in selected_additional_info_list:
                         with col1:
-                            col1a, col1b = st.columns(2)
+                            col1a, col1b = st.columns([3,0.5])
+                        with col1a:
+                            st.markdown(f"""<div class="subsection">
+                                    🗺️️ Graph map
+                                </div>""",unsafe_allow_html=True)
+                            st.write("")
+                        with col1:
+                            col1a, col1b, col1c = st.columns([1,2,0.5])
 
                         with col1a:
                             mapping_ns_dict = utils.get_mapping_ns_dict()
@@ -1736,19 +1700,65 @@ with tab2:
                                 if subject_graph_prefix != "Select a namespace":
                                     NS = Namespace(mapping_ns_dict[subject_graph_prefix])
 
-                            with col1:
-                                st.write("________")
 
-                    with col1:
-                        col1a, col1b = st.columns([2,1])
-                    with col1b:
-                        st.write("")
-                        st.write("")
-                        label_sm_checkbox = st.checkbox(
-                        ":gray-badge[♻️ I want to reuse the Subject Map]",
-                        key="key_label_sm_checkbox")
+                    if "🆔 Term type" in selected_additional_info_list:
+                        with col1:
+                            col1a, col1b = st.columns([3,0.5])
+                        with col1a:
+                            st.markdown(f"""<div class="subsection">
+                                    🆔 Term type
+                                </div>""",unsafe_allow_html=True)
+                        with col1:
+                            col1a, col1b, col1c = st.columns([1.5,1.5,0.5])
 
-                    if label_sm_checkbox:
+
+                        if sm_generation_rule ==  "Template 📐":
+                            with col1a:
+                                st.write("")
+                                sm_term_type = st.radio(label="🖱️ Select term type:*", options=["🌐 IRI", "👻 BNode"],
+                                    label_visibility="collapsed", key="sm_term_type")
+
+                            if sm_term_type == "🌐 IRI" and not st.session_state["sm_template_prefix"] and sm_template:
+                                with col1b:
+                                    st.write("")
+                                    st.markdown(f"""<div class="error-message">
+                                        ❌ Term type is <b>🌐 IRI</b>. <small>You must <b>add a namespace to the template</b>.</small>
+                                    </div>""", unsafe_allow_html=True)
+
+                        if sm_generation_rule ==  "Constant 🔒":
+                            with col1a:
+                                st.write("")
+                                sm_term_type = st.radio(label="🖱️ Select term type:*", options=["🌐 IRI"],
+                                    label_visibility="collapsed", key="sm_term_type")
+
+
+                        if sm_generation_rule ==  "Reference 📊":
+                            with col1a:
+                                st.write("")
+                                sm_term_type = st.radio(label="🖱️ Select term type:*", options=["🌐 IRI", "👻 BNode"],
+                                    label_visibility="collapsed", key="sm_term_type")
+
+                            if sm_column_name and sm_term_type == "🌐 IRI":
+                                with col1b:
+                                    st.write("")
+                                    st.markdown(f"""<div class="warning-message">
+                                            ⚠️ Term type is <b>🌐 IRI</b>.
+                                            <small>Make sure that the values in the referenced column
+                                            are valid IRIs.</small>
+                                        </div>""", unsafe_allow_html=True)
+
+
+                    if "♻️ Reuse Subject Map" in selected_additional_info_list:
+                        with col1:
+                            col1a, col1b = st.columns([3,0.5])
+                        with col1a:
+                            st.markdown(f"""<div class="subsection">
+                                    ♻️ Reuse Subject Map
+                                </div>""",unsafe_allow_html=True)
+                            st.write("")
+                        with col1:
+                            col1a, col1b = st.columns([2,1])
+
                         with col1a:
                             sm_label = st.text_input("⌨️ Enter Subject Map label:*", key="key_sm_label_new")
                         NS = st.session_state["structural_ns"][1]
@@ -1765,42 +1775,45 @@ with tab2:
 
 
 
-
-
                     # CHECK EVERYTHING IS READY________________________________
-                    if sm_generation_rule == "Template 📐":
-                        sm_complete_flag = "✔️ Yes" if sm_template else "❌ No"
+                    with col1:
+                        col1a, col1b = st.columns([3,0.5])
+                    with col1a:
+                        st.write("")
+                        st.markdown(f"""<div class="subsection">
+                                🧐 Check and save
+                            </div>""",unsafe_allow_html=True)
+                        st.write("")
+                    sm_complete_flag = True
 
-                        if sm_template and sm_term_type_template == "🌐 IRI":   # if term type is IRI the NS is compulsory
-                            sm_complete_flag = "✔️ Yes" if st.session_state["sm_template_prefix"] else "❌ No"
+                    if sm_generation_rule == "Template 📐":
+                        sm_complete_flag = False if not sm_template else sm_complete_flag
+
+                        if sm_template and sm_term_type == "🌐 IRI":   # if term type is IRI the NS is compulsory
+                            sm_complete_flag = False if not st.session_state["sm_template_prefix"] else sm_complete_flag
 
                     if sm_generation_rule == "Constant 🔒":
-
-                        sm_complete_flag = "✔️ Yes" if (sm_constant_ns_prefix != "Select a namespace" and sm_constant) else "❌ No"
-
+                        sm_complete_flag = False if not (sm_constant_ns_prefix != "Select a namespace" and sm_constant) else sm_complete_flag
 
                     if sm_generation_rule == "Reference 📊":
                         if column_list:
-                            sm_complete_flag = "✔️ Yes" if sm_column_name != "Select a reference" else "❌ No"
+                            sm_complete_flag = False if sm_column_name == "Select a reference" else sm_complete_flag
                         else:
-                            sm_complete_flag = "✔️ Yes" if sm_column_name else "❌ No"
-
-                        if sm_column_name != "Select a reference" and sm_term_type_reference == "📘 Literal":
-                            if sm_datatype == "Natural language tag":
-                                sm_complete_flag == "✔️ Yes" if sm_language_tag else "❌ No"
+                            sm_complete_flag = False if not sm_column_name else sm_complete_flag
 
                     if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):  # label already in use
-                        sm_complete_flag = "❌ No"
+                        sm_complete_flag = False
 
 
                     # INFO AND SAVE BUTTON____________________________________
-                    if sm_complete_flag == "✔️ Yes":
+                    with col1:
+                        col1a, col1b = st.columns([2,1])
+                    if sm_complete_flag == True:
                         with col1a:
                             st.markdown(f"""<div class="success-message">
-                                🧐  All <b>required fields (*)</b> are complete.
+                                ✔️ All <b>required fields (*)</b> are complete.
                                 <small>Double-check the information before saving.</smalL> </div>
                             """, unsafe_allow_html=True)
-                            st.write("")
                             if sm_generation_rule == "Template 📐":
                                 save_sm_template_button = st.button("Save", on_click=save_sm_template, key="key_save_sm_template_button")
                             elif sm_generation_rule == "Constant 🔒":
@@ -2105,11 +2118,6 @@ with tab2:
                                 NS = Namespace(mapping_ns_dict[subject_class_prefix])
                             with col1b:
                                 subject_class_input = st.text_input("⌨️ Enter subject class:*", key="key_subject_class_input")
-                            if subject_class_input and subject_class_prefix != "Select a namespace":
-                                subject_class = NS[subject_class_input]
-                                with col1a:
-                                    st.button("Save", on_click=save_external_subject_class)
-
 
             #GRAPH - If not given, default graph    HERE condider if rr:graphMap option (dynamic) is worth it
             if sm_config_selected_option == "🗺️️ Graph map":
@@ -2992,7 +3000,7 @@ with tab3:
                 <tr><td><b>Subject Map</b></td><td>{sm_label_for_pom}</td></tr>"""
 
             if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectMap, pom_iri)), None):
-                pom_complete_flag = "❌ No"
+                pom_complete_flag = False
                 inner_html += f"""<tr><td><b>Predicate-Object Map label</b></td>
                 <td>{pom_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
             else:
@@ -3000,7 +3008,7 @@ with tab3:
 
             if p_type == "🧩 Ontology predicate":
 
-                pom_complete_flag = "✔️ Yes" if selected_p_label != "Select a predicate" else "❌ No"
+                pom_complete_flag = True if selected_p_label != "Select a predicate" else False
                 selected_p_label_display = selected_p_label if selected_p_label != "Select a predicate" else ""
                 if selected_p_label != "Select a predicate":
                     p_ont = utils.get_ontology_identifier(selected_p_iri)
@@ -3010,7 +3018,7 @@ with tab3:
 
             elif p_type == "🚫 Predicate outside ontology":
 
-                pom_complete_flag = "✔️ Yes" if (manual_p_label and manual_p_ns_prefix != "Select a namespace") else "❌ No"
+                pom_complete_flag = True if (manual_p_label and manual_p_ns_prefix != "Select a namespace") else False
                 manual_p_ns_prefix_display = manual_p_ns_prefix if manual_p_ns_prefix != "Select a namespace" else ""
 
                 inner_html += f"""<tr><td><b>Predicate Namespace*</b></td><td>{manual_p_ns_prefix_display}</td></tr>
@@ -3034,12 +3042,12 @@ with tab3:
             # OBJECT MAP - TEMPLATE______________________________________________________-
             if om_generation_rule == "Template 📐":
 
-                om_complete_flag = "✔️ Yes" if om_template else "❌ No"
+                om_complete_flag = True if om_template else False
 
                 inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>"""
 
                 if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
-                    om_complete_flag = "❌ No"
+                    om_complete_flag = False
                     inner_html += f"""<tr><td><b>Object Map label</b></td>
                     <td>{om_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
                 else:
@@ -3053,7 +3061,7 @@ with tab3:
                 if om_term_type_template == "🌐 IRI":
                     om_template_ns_prefix_display = st.session_state["om_template_ns_prefix"] if st.session_state["template_om_is_iri_flag"] else ""
                     inner_html += f"""<tr><td><b>Template namespace*</b></td><td>{om_template_ns_prefix_display}</td></tr>"""
-                    om_complete_flag = "❌ No" if not st.session_state["template_om_is_iri_flag"] else om_complete_flag
+                    om_complete_flag = False if not st.session_state["template_om_is_iri_flag"] else om_complete_flag
 
                 if om_template and om_term_type_template == "📘 Literal":
                     om_datatype_display = om_datatype if om_datatype != "Select datatype" else ""
@@ -3061,7 +3069,7 @@ with tab3:
                     if om_datatype == "Natural language tag":
                         om_language_tag_display = om_language_tag if om_language_tag != "Select language tag" else ""
                         inner_html += f"""<tr><td><b>Language tag*</b></td><td>{om_language_tag_display}</td></tr>"""
-                        om_complete_flag = "❌ No" if om_language_tag == "Select language tag" else om_complete_flag
+                        om_complete_flag = False if om_language_tag == "Select language tag" else om_complete_flag
 
                 inner_html += f"""<tr><td><b>Required fields complete</b></td><td> {om_complete_flag} </td></tr>"""
 
@@ -3075,12 +3083,12 @@ with tab3:
             # OBJECT MAP - CONSTANT____________________________________________
             if om_generation_rule == "Constant 🔒":   #HEREIGO
 
-                om_complete_flag = "✔️ Yes" if om_constant else "❌ No"
+                om_complete_flag = True if om_constant else False
 
                 inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>"""
 
                 if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
-                    om_complete_flag = "❌ No"
+                    om_complete_flag = False
                     inner_html += f"""<tr><td><b>Object Map label</b></td>
                     <td>{om_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
                 else:
@@ -3096,10 +3104,10 @@ with tab3:
                     if om_datatype == "Natural language tag":
                         om_language_tag_display = om_language_tag if om_language_tag != "Select language tag" else ""
                         inner_html += f"""<tr><td><b>Language tag*</b></td><td>{om_language_tag_display}</td></tr>"""
-                        om_complete_flag = "❌ No" if om_language_tag == "Select language tag" else om_complete_flag
+                        om_complete_flag = False if om_language_tag == "Select language tag" else om_complete_flag
 
                 elif om_term_type_constant == "🌐 IRI":
-                    om_complete_flag = "✔️ Yes" if (om_constant_ns_prefix != "Select a namespace" and om_constant) else "❌ No"
+                    om_complete_flag = True if (om_constant_ns_prefix != "Select a namespace" and om_constant) else False
                     om_constant_ns_prefix_display = om_constant_ns_prefix if om_constant_ns_prefix != "Select a namespace" else ""
                     inner_html += f"""<tr><td><b>Constant namespace*</b></td><td>{om_constant_ns_prefix_display}</td></tr>"""
 
@@ -3116,15 +3124,15 @@ with tab3:
             if om_generation_rule == "Reference 📊":
 
                 if column_list:
-                    om_complete_flag = "✔️ Yes" if om_column_name != "Select a reference" else "❌ No"
+                    om_complete_flag = True if om_column_name != "Select a reference" else False
                 else:
-                    om_complete_flag = "✔️ Yes" if om_column_name else "❌ No"
+                    om_complete_flag = True if om_column_name else False
                 om_column_name_display = om_column_name if om_column_name != "Select a reference" else ""
 
                 inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>"""
 
                 if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
-                    om_complete_flag = "❌ No"
+                    om_complete_flag = False
                     inner_html += f"""<tr><td><b>Object Map label</b></td>
                     <td>{om_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
                 else:
@@ -3140,7 +3148,7 @@ with tab3:
                     inner_html += f"""<tr><td><b>Datatype</b></td><td>{om_datatype_reference_display}</td></tr>"""
                     if om_datatype_reference == "Natural language tag":
                         om_language_tag_reference_display = om_language_tag_reference if om_language_tag_reference != "Select language tag" else ""
-                        om_complete_flag = "❌ No" if om_language_tag_reference == "Select language tag" else om_complete_flag
+                        om_complete_flag = False if om_language_tag_reference == "Select language tag" else om_complete_flag
                         inner_html += f"""<tr><td><b>Language tag*</b></td><td>{om_language_tag_reference_display}</td></tr>"""
 
                 inner_html += f"""<tr><td><b>Required fields complete</b></td><td> {om_complete_flag} </td></tr>"""
@@ -3152,7 +3160,7 @@ with tab3:
                     st.markdown(full_html, unsafe_allow_html=True)
 
 
-            if pom_complete_flag == "✔️ Yes" and om_complete_flag == "✔️ Yes":
+            if pom_complete_flag == True and om_complete_flag == True:
                 with col4:
                     st.markdown(f"""<div class="success-message">
                         🧐  All <b>required fields (*)</b> are complete.

@@ -116,6 +116,12 @@ def import_st_aesthetics():
             .gray-preview-message {background-color:#f9f9f9; padding:0.7em; border-radius:5px;
             color:#333333; border:1px solid #e0e0e0; font-size: 0.92em;}
 
+    /* SUBSECTION */
+        .subsection {background-color: #dcdcdc;
+            border: 1px solid #e0e0e0; border-radius: 5px;
+            font-size: 0.9rem; padding: 2px 6px;
+            margin-top: 2px; margin-bottom: 2px;}
+
     /* BLUE STATUS MESSAGE */
             .blue-status-message {background-color: #eaf4ff; padding: 0.8em;
             border-radius: 5px; color: #0c5460; border-left: 4px solid #0c5460;}
