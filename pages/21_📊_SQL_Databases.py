@@ -381,7 +381,7 @@ with tab1:
                 st.write("")
 
             with col1a:
-                delete_all_connections_checkbox= st.checkbox(
+                delete_all_connections_checkbox = st.checkbox(
                 ":gray-badge[⚠️ I am sure I want to delete all connections]",
                 key="key_delete_all_connections_checkbox")
                 if delete_all_connections_checkbox:
