@@ -1718,13 +1718,6 @@ with tab2:
                                 sm_term_type = st.radio(label="🖱️ Select term type:*", options=["🌐 IRI", "👻 BNode"],
                                     label_visibility="collapsed", key="sm_term_type")
 
-                            if sm_term_type == "🌐 IRI" and not st.session_state["sm_template_prefix"] and sm_template:
-                                with col1b:
-                                    st.write("")
-                                    st.markdown(f"""<div class="error-message">
-                                        ❌ Term type is <b>🌐 IRI</b>. <small>You must <b>add a namespace to the template</b>.</small>
-                                    </div>""", unsafe_allow_html=True)
-
                         if sm_generation_rule ==  "Constant 🔒":
                             with col1a:
                                 st.write("")
@@ -1784,22 +1777,56 @@ with tab2:
                                 🧐 Check and save
                             </div>""",unsafe_allow_html=True)
                         st.write("")
+                    with col1:
+                        col1a, col1b = st.columns([2,1])
+
                     sm_complete_flag = True
+                    inner_html = ""
+
 
                     if sm_generation_rule == "Template 📐":
-                        sm_complete_flag = False if not sm_template else sm_complete_flag
-
-                        if sm_template and sm_term_type == "🌐 IRI":   # if term type is IRI the NS is compulsory
-                            sm_complete_flag = False if not st.session_state["sm_template_prefix"] else sm_complete_flag
+                        if not sm_template:
+                            sm_complete_flag = False
+                            inner_html += "⚠️ The <b>template</b> is empty.<br>"
 
                     if sm_generation_rule == "Constant 🔒":
-                        sm_complete_flag = False if not (sm_constant_ns_prefix != "Select a namespace" and sm_constant) else sm_complete_flag
+                        if not (sm_constant_ns_prefix != "Select a namespace" and sm_constant):
+                            sm_complete_flag = False
+                            inner_html += "⚠️ <b>The constant</b> (and/or its namespace) is not given.<br>"
+
 
                     if sm_generation_rule == "Reference 📊":
                         if column_list:
-                            sm_complete_flag = False if sm_column_name == "Select a reference" else sm_complete_flag
+                            if sm_column_name == "Select a reference":
+                                sm_complete_flag = False
+                                inner_html += "⚠️ The <b>reference</b> has not been selected.<br>"
                         else:
-                            sm_complete_flag = False if not sm_column_name else sm_complete_flag
+                            if not sm_column_name:
+                                sm_complete_flag = False
+                                inner_html += "⚠️ The <b>reference</b> has not been selected.<br>"
+
+                    if sm_generation_rule == "Template 📐":
+                        if sm_template and sm_term_type == "🌐 IRI":   # if term type is IRI the NS is compulsory
+                            sm_complete_flag = False if not st.session_state["sm_template_prefix"] else sm_complete_flag
+                            inner_html += """⚠️ Term type is <b>🌐 IRI</b>. <small>You must <b>add a namespace</b>
+                                to the template</small>.<br>"""
+
+
+                    if "🏷️ Subject class" in selected_additional_info_list:
+                        if class_type == "🧩 Ontology class":
+                            if subject_class == "Select a class":
+                                sm_complete_flag = False
+                                inner_html += "⚠️ The <b>Subject class</b> has not been selected.<br>"
+                        if class_type == "🚫 Class outside ontology":
+                            if subject_class_prefix == "Select a namespace" or not subject_class_input:
+                                sm_complete_flag = False
+                                inner_html += """⚠️ The <b>Subject class</b> (and/or its namespace)
+                                    has not been selected.<br>"""
+
+                    with col1a:
+                        st.markdown(f"""<div class="warning-message">
+                            {inner_html}
+                        </div>""", unsafe_allow_html=True)
 
                     if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):  # label already in use
                         sm_complete_flag = False
@@ -1821,12 +1848,12 @@ with tab2:
                             if sm_generation_rule == "Reference 📊":
                                 save_sm_reference_button = st.button("Save", on_click=save_sm_reference, key="key_save_sm_reference_button")
 
-                    else:
-                        with col1a:
-                            st.markdown(f"""<div class="warning-message">
-                                    ⚠️ All <b>required fields (*)</b> must be filled in order to save the Subject Map.
-                                </div>""", unsafe_allow_html=True)
-                            st.write("")
+                    # else:
+                    #     with col1a:
+                    #         st.markdown(f"""<div class="warning-message">
+                    #                 ⚠️ All <b>required fields (*)</b> must be filled in order to save the Subject Map.
+                    #             </div>""", unsafe_allow_html=True)
+                    #         st.write("")
 
 
 
