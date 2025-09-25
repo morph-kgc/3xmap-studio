@@ -313,9 +313,13 @@ def save_sm_template():   #function to save subject map (template option)
     st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, sm_iri))
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RR.SubjectMap))
     st.session_state["g_mapping"].add((sm_iri, RR.template, Literal(sm_template)))
-    if sm_term_type_template == "🌐 IRI":
+    if add_subject_class_option != "No Class" and subject_class:
+        st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
+    if add_sm_graph_map_option == "Add Graph Map" and subject_graph:
+        st.session_state["g_mapping"].add((sm_iri, RR["graph"], subject_graph))
+    if sm_term_type == "🌐 IRI":
         st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.IRI))
-    elif sm_term_type_template == "👻 BNode":
+    elif sm_term_type == "👻 BNode":
         st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.BlankNode))
     # store information__________________
     st.session_state["last_added_sm_list"].insert(0, [sm_iri, tm_label_for_sm])
@@ -339,6 +343,10 @@ def save_sm_constant():   #function to save subject map (constant option)
     NS = Namespace(sm_constant_ns)
     sm_constant_iri = NS[sm_constant]
     st.session_state["g_mapping"].add((sm_iri, RR.constant, sm_constant_iri))
+    if add_subject_class_option != "No Class" and subject_class:
+        st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
+    if add_sm_graph_map_option == "Add Graph Map" and subject_graph:
+        st.session_state["g_mapping"].add((sm_iri, RR["graph"], subject_graph))
     st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.IRI))
     # store information____________________
     st.session_state["last_added_sm_list"].insert(0, [sm_iri, tm_label_for_sm])
@@ -358,9 +366,13 @@ def save_sm_reference():   #function to save subject map (reference option)
     st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, sm_iri))
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RR.SubjectMap))
     st.session_state["g_mapping"].add((sm_iri, RR.reference, Literal(sm_column_name)))    #HERE change to RR.column in R2RML
-    if sm_term_type_reference == "🌐 IRI":
+    if add_subject_class_option != "No Class" and subject_class:
+        st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
+    if add_sm_graph_map_option == "Add Graph Map" and subject_graph:
+        st.session_state["g_mapping"].add((sm_iri, RR["graph"], subject_graph))
+    if sm_term_type == "🌐 IRI":
         st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.IRI))
-    elif sm_term_type_reference == "👻 BNode":
+    elif sm_term_type == "👻 BNode":
         st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.BlankNode))
     # store information__________________
     st.session_state["last_added_sm_list"].insert(0, [sm_iri, tm_label_for_sm])
@@ -368,36 +380,6 @@ def save_sm_reference():   #function to save subject map (reference option)
     # reset fields____________________
     st.session_state["sm_template_list"] = []   # in case it is not empty
     st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
-
-def change_term_type_to_BNode():
-    # add triples______________________
-    st.session_state["g_mapping"].remove((sm_iri_for_config, RR["termType"], RR.IRI))
-    st.session_state["g_mapping"].add((sm_iri_for_config, RR["termType"], RR.BlankNode))
-
-def change_term_type_to_IRI():
-    # add triples______________________
-    st.session_state["g_mapping"].remove((sm_iri_for_config, RR["termType"], RR.BlankNode))
-    st.session_state["g_mapping"].add((sm_iri_for_config, RR["termType"], RR.IRI))
-
-def save_ontology_subject_class():
-    # add triples______________________
-    st.session_state["g_mapping"].add((sm_iri_for_config, RR["class"], subject_class))
-
-def save_external_subject_class():
-    # add triples______________________
-    st.session_state["g_mapping"].add((sm_iri_for_config, RR["class"], subject_class))
-
-def delete_subject_class():
-    # remove triples______________________
-    st.session_state["g_mapping"].remove((sm_iri_for_config, RR["class"], None))
-
-def save_subject_graph():
-    # add triples______________________
-    st.session_state["g_mapping"].add((sm_iri_for_config, RR["graph"], subject_graph))
-
-def delete_subject_graph():
-    # remove triples______________________
-    st.session_state["g_mapping"].remove((sm_iri_for_config, RR["graph"], None))
 
 def delete_labelled_sm():   #function to delete a labelled Subject Map
     # remove triples______________________
@@ -1587,6 +1569,7 @@ with tab2:
                                 with col1a:
                                     subject_class = st.selectbox("🖱️ Select a class:*", class_list,
                                         key="key_subject_class")   #class label
+
                             else:  #no superclass selected (list all classes)
                                 class_list = list(ontology_classes_dict.keys())
                                 class_list.insert(0, "Select a class")
@@ -1600,6 +1583,12 @@ with tab2:
                             with col1a:
                                 subject_class = st.selectbox("🖱️ Select a class:*", class_list,
                                     key="key_subject_class")   #class label
+
+                        if subject_class != "Select a class":
+                            subject_class_iri = ontology_classes_dict[subject_class] #we get the superclass iri
+                        else:
+                            subject_class_iri = ""
+
 
                     #CLASS OUTSIDE ONTOLOGY
                     if add_subject_class_option == "Class outside Ontology":
@@ -1626,7 +1615,9 @@ with tab2:
                             with col1a:
                                 subject_class_input = st.text_input("⌨️ Enter subject class:*", key="key_subject_class_input")
                             if subject_class_input and subject_class_prefix != "Select a namespace":
-                                subject_class = NS[subject_class_input]
+                                subject_class_iri = NS[subject_class_input]
+                            else:
+                                subject_class_iri = ""
 
                     # GRAPH MAP
                     with col1b:
@@ -1656,6 +1647,12 @@ with tab2:
                                 if subject_graph_prefix != "Select a namespace":
                                     NS = Namespace(mapping_ns_dict[subject_graph_prefix])
 
+                            if subject_graph_input and subject_graph_prefix != "Select a namespace":
+                                subject_graph = NS[subject_graph_input]
+
+                            else:
+                                subject_graph = ""
+
 
                     # TERM TYPE
                     with col1c:
@@ -1670,7 +1667,7 @@ with tab2:
                         st.write("")
                         st.write("")
                         label_sm_option_checkbox = st.checkbox(
-                        ":gray-badge[♻️ I want to reuse the Logical Source]",
+                        ":gray-badge[♻️ I want to reuse the Subject Map]",
                         key="key_label_sm_option_checkbox")
 
                         # list_to_choose = ["No", "Yes"]
@@ -1770,7 +1767,7 @@ with tab2:
 
 
                     # INFO AND SAVE BUTTON____________________________________
-                    with col1:
+                    with col1a:
                         if inner_html_warning:
                             st.markdown(f"""<div class="warning-message">
                                 {inner_html_warning}
@@ -1793,370 +1790,6 @@ with tab2:
                                 save_sm_constant_button = st.button("Save", on_click=save_sm_constant, key="key_save_sm_constant_button")
                             if sm_generation_rule == "Reference 📊":
                                 save_sm_reference_button = st.button("Save", on_click=save_sm_reference, key="key_save_sm_reference_button")
-
-
-
-
-
-    # PURPLE HEADING - SUBJECT MAP CONFIGURATION
-    sm_list = list(st.session_state["g_mapping"].objects(predicate=RR.subjectMap))
-    if sm_list:    # only show option if there are sm to configure
-        with col1:
-            st.write("______________")
-            st.markdown("""<div class="purple-heading">
-                    ➕ Subject Map Configuration
-                </div>""", unsafe_allow_html=True)
-            st.write("")
-
-
-        # select the sm via a tm to which it is assigned
-        tm_dict = utils.get_tm_dict()
-        tm_w_sm_list = []   # list of all tm with assigned sm
-        for tm_label, tm_iri in tm_dict.items():
-            if any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectMap, None))):
-                tm_w_sm_list.append(tm_label)
-
-        # select the sm directly (must be labelled)
-        labelled_sm_list = []
-        for tm_label, tm_iri in tm_dict.items():
-            sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RR.subjectMap)
-            if isinstance(sm_iri, URIRef) and sm_iri not in labelled_sm_list:
-                if split_uri(sm_iri)[1] not in labelled_sm_list:
-                    labelled_sm_list.append(split_uri(sm_iri)[1])
-
-
-        with col1:
-            col1a, col1b = st.columns([1,1])
-        # if there is a cached tm use as default (and give option to select sm instead)
-        if st.session_state["last_added_tm_list"] and st.session_state["last_added_tm_list"][0] in tm_w_sm_list:
-            list_to_choose = list(reversed(tm_w_sm_list))
-            list_to_choose.insert(0, "Select a labelled Subject Map")
-            list_to_choose.insert(0, "Select a TriplesMap")
-            with col1a:
-                tm_label_for_config = st.selectbox("🖱️ Select a TriplesMap:*", list_to_choose,
-                    index=list_to_choose.index(st.session_state["last_added_tm_list"][0]),
-                    key="key_tm_label_for_config")
-            tm_iri_for_config = tm_dict[tm_label_for_config] if tm_label_for_config not in ["Select a TriplesMap", "Select a labelled Subject Map"] else ""
-            sm_iri_for_config = next((o for s, p, o in st.session_state["g_mapping"].triples((tm_iri_for_config, RR.subjectMap, None))), None)
-        else:    # if there is no cached tm, just selectbox without default
-            tm_w_sm_list.append("Select a TriplesMap")
-            with col1a:
-                tm_label_for_config = st.selectbox("🖱️ Select a TriplesMap:*", reversed(tm_w_sm_list),
-                    key="key_tm_label_for_config")
-            tm_iri_for_config = tm_dict[tm_label_for_config] if tm_label_for_config != "Select a TriplesMap" else "Select a TriplesMap123123"
-            sm_iri_for_config = next((o for s, p, o in st.session_state["g_mapping"].triples((tm_iri_for_config, RR.subjectMap, None))), None)
-
-        # option to select a labelled sm (instead of a tm) - only if there exist labelled sm
-        if (tm_label_for_config == "Select a labelled Subject Map" and labelled_sm_list):
-            labelled_sm_list.append("Select a Subject Map")
-            with col1b:
-                sm_label_for_config = st.selectbox("🖱️ or select a labelled Subject Map:", reversed(labelled_sm_list))
-            if sm_label_for_config != "Select a Subject Map":
-                NS = st.session_state["structural_ns"][1]
-                sm_iri_for_config = NS[sm_label_for_config]
-
-        if sm_iri_for_config:    # only if the sm has been selected (either way)
-            with col1a:
-                sm_dict = utils.get_sm_dict()
-
-
-            sm_label_for_config = sm_dict[sm_iri_for_config][0]
-            sm_type = sm_dict[sm_iri_for_config][1]
-            sm_id_iri = sm_dict[sm_iri_for_config][2]
-            sm_id_label = sm_dict[sm_iri_for_config][3]
-            corresponding_tm_list = sm_dict[sm_iri_for_config][4]
-
-            with col1:
-                col1a, col1b = st.columns([2,1])
-            with col1b:
-                if len(corresponding_tm_list) > 1:
-                    formatted_corresponding_tm = ", ".join(corresponding_tm_list[:-1]) + " and " + corresponding_tm_list[-1]
-                    st.markdown(f"""<div class="info-message-blue">
-                            🔖 The Subject Map <b>{sm_label_for_config}</b> is assigned to the TriplesMaps <b>{formatted_corresponding_tm}</b>.
-                        </div>""", unsafe_allow_html=True)
-                elif len(corresponding_tm_list) == 1:
-                    st.markdown(f"""<div class="info-message-blue">
-                            🔖 The Subject Map <b>{sm_label_for_config}</b> is assigned to the TriplesMap <b>{corresponding_tm_list[0]}</b>.
-                        </div>""", unsafe_allow_html=True)
-                else:
-                    st.markdown(f"""<div class="error-message">
-                            ❌ The Subject Map <b>{sm_label_for_config}</b> is not assigned to any TriplesMap. Please check your mapping.
-                        </div>""", unsafe_allow_html=True)
-
-            sm_config_options_list = ["🆔 Term type", "🏷️ Subject class", "🗺️️ Graph map"]
-            with col1a:
-                sm_config_selected_option = st.radio("🖱️ Select an option:*", sm_config_options_list,
-                    horizontal=True)
-
-            #TERM TYPE - IRI by default, but can be changed to BNode
-            if sm_config_selected_option == "🆔 Term type":
-
-                with col1:
-                    col1a, col1b = st.columns([2,1])
-                # with col1b:
-                #     st.markdown(f"""<div class="info-message-gray">
-                #             <b> 🆔 Term type </b>: <br>
-                #              Indicates the target graph for the subject map triples.
-                #         </div>""", unsafe_allow_html=True)
-
-
-                if not st.session_state["g_mapping"].value(sm_iri_for_config, RR["termType"]):   # if termType not indicated yet, make it IRI (default)
-                    st.session_state["g_mapping"].add((sm_iri_for_config, RR["termType"], RR.IRI))
-                sm_term_type = st.session_state["g_mapping"].value(sm_iri_for_config, RR["termType"])
-
-
-                if split_uri(sm_term_type)[1] == "IRI":
-                    with col1a:
-                        st.markdown(f"""<div class="gray-preview-message">
-                                🔒 Subject term type: <b style="color:#F63366;">IRI</b><br>
-                                <small>Click button to change to BNode.</small>
-                            </div>""", unsafe_allow_html=True)
-                        st.write("")
-                        st.button("Change to BNode", on_click=change_term_type_to_BNode)
-                else:
-                    with col1a:
-                        st.markdown(f"""<div class="gray-preview-message">
-                                🔒 Subject term type: <b style="color:#F63366;">BNode</b><br>
-                                <small>Click button to change to IRI.</small>
-                            </div>""", unsafe_allow_html=True)
-                        st.write("")
-                        st.button("Change to IRI", on_click=change_term_type_to_IRI)
-
-
-            #SUBJECT CLASS (ontology-based)
-            if sm_config_selected_option == "🏷️ Subject class":
-
-                # with col1b:
-                #     st.markdown(f"""<div class="info-message-gray">
-                #             <b> 🏷️ Subject class </b>: <br>
-                #              Declares the ontology-based class of the generated subjects.
-                #         </div>""", unsafe_allow_html=True)
-
-
-                #Check whether the subject map already has a class
-                sm_class = st.session_state["g_mapping"].value(sm_iri_for_config, RR["class"])
-
-                if sm_class:   # sm class already exists
-                    with col1a:
-                        if isinstance(sm_class, URIRef):
-                            st.markdown(f"""<div class="gray-preview-message">
-                                    🔒 Subject class:
-                                    <b style="color:#F63366;">{split_uri(sm_class)[1]}</b><br>
-                                    <small>Delete it to assign a different subject class.</small>
-                                </div>""", unsafe_allow_html=True)
-                        elif isinstance(sm_class, BNode):
-                            st.markdown(f"""<div class="gray-preview-message">
-                                    🔒 Subject class:
-                                    <b style="color:#F63366;">BNode</b><br> ({sm_class})<br>
-                                    <small>Delete it to assign a different subject class.</small>
-                                </div>""", unsafe_allow_html=True)
-                        st.write("")
-
-                        delete_subject_class_checkbox= st.checkbox(
-                        ":gray-badge[⚠️ I am completely sure I want to delete the subject class]",
-                        key="key_delete_sm_class_checkbox")
-                        if delete_subject_class_checkbox:
-                            st.button("Delete", on_click=delete_subject_class)
-
-
-                else:        # subject class does not exist yet
-                    with col1a:
-                        st.markdown(f"""<div class="gray-preview-message">
-                                🔓 Subject class:
-                                <b style="color:#F63366;">not given</b><br>
-                                <small>Enter below.</small>
-                            </div>""", unsafe_allow_html=True)
-                        st.write("")
-
-                    # WE ORGANISE THE ONTOLOGY CLASSES IN DIFFERENT DICTIONARIES
-                    # dictionary for simple classes
-                    ontology_classes_dict = {}
-                    class_triples = set()
-                    class_triples |= set(st.session_state["g_ontology"].triples((None, RDF.type, OWL.Class)))   #collect owl:Class definitions
-                    class_triples |= set(st.session_state["g_ontology"].triples((None, RDF.type, RDFS.Class)))    # collect rdfs:Class definitions
-                    for s, p, o in class_triples:   #we add to dictionary removing the BNodes
-                        if not isinstance(s, BNode):
-                            ontology_classes_dict[split_uri(s)[1]] = s
-
-                    # dictionary for superclasses
-                    # superclass_dict = utils.get_ontology_superclass_dict()   # HERE MOVE TO UTILS
-                    superclass_dict = {}
-                    for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, None)))):
-                        if not isinstance(o, BNode) and o not in superclass_dict.values():
-                            superclass_dict[o.split("/")[-1].split("#")[-1]] = o
-
-
-                    # ONLY SHOW OPTIONS IF THE ONTOLOGY HAS THEM
-                    if ontology_classes_dict:   # if the ontology includes at least one class
-                        class_type_option_list = ["🧩 Ontology class", "🚫 Class outside ontology"]
-                        with col1a:
-                            class_type = st.radio("Select an option:", class_type_option_list,
-                                label_visibility="collapsed", key="key_class_type_radio")
-                    else:
-                        class_type = "🚫 Class outside ontology"
-
-                    #ONTOLOGY CLASS
-                    if class_type == "🧩 Ontology class":
-
-                        with col1:
-                            col1a, col1b = st.columns(2)
-
-                        # Class selection
-                        if superclass_dict:   # there exists at least one superclass (show superclass filter)
-                            classes_in_superclass_dict = {}
-                            with col1a:
-                                superclass_list = list(superclass_dict.keys())
-                                superclass_list.insert(0, "Select a superclass")
-                                superclass = st.selectbox("🖱️ Select a superclass to filter classes (optional):", superclass_list,
-                                    key="key_superclass")   #superclass label
-                            if superclass != "Select a superclass":   # a superclass has been selected (filter)
-                                classes_in_superclass_dict[superclass] = superclass_dict[superclass]
-                                superclass = superclass_dict[superclass] #we get the superclass iri
-                                for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, superclass)))):
-                                    classes_in_superclass_dict[split_uri(s)[1]] = s
-                                class_list = list(classes_in_superclass_dict.keys())
-                                class_list.insert(0, "Select a class")
-                                with col1b:
-                                    subject_class = st.selectbox("🖱️ Select a class:*", class_list,
-                                        key="key_subject_class")   #class label
-                            else:  #no superclass selected (list all classes)
-                                class_list = list(ontology_classes_dict.keys())
-                                class_list.insert(0, "Select a class")
-                                with col1b:
-                                    subject_class = st.selectbox("🖱️ Select a class:*", class_list,
-                                        key="key_subject_class")   #class label
-
-                        else:     #no superclasses exist (no superclass filter)
-                            class_list = list(ontology_classes_dict.keys())
-                            class_list.insert(0, "Select a class")
-                            with col1a:
-                                subject_class = st.selectbox("🖱️ Select a class:*", class_list,
-                                    key="key_subject_class")   #class label
-
-                        if subject_class != "Select a class":
-                            subject_class = ontology_classes_dict[subject_class] #we get the superclass iri
-                            with col1a:
-                                st.button("Save", key="save_subject_class", on_click=save_ontology_subject_class)
-
-                    #CLASS OUTSIDE ONTOLOGY
-                    if class_type == "🚫 Class outside ontology":
-
-                        if st.session_state["g_ontology"] and not ontology_classes_dict: #there is an ontology but it has no classes
-                            with col1b:
-                                st.markdown(f"""<div class="warning-message">
-                                          ⚠️ Your <b>ontology</b> does not define any classes.
-                                          <small>Using an ontology with predefined classes is recommended.</small>
-                                    </div>""", unsafe_allow_html=True)
-                        elif st.session_state["g_ontology"]:   #there exists an ontology and it has classes
-                            with col1b:
-                                st.markdown(f"""<div class="warning-message">
-                                          ⚠️ The option <b>Class outside ontology</b> lacks ontology alignment.
-                                          <small>An ontology-driven approach is recommended.</small>
-                                    </div>""", unsafe_allow_html=True)
-                        else:
-                            with col1b:
-                                st.write("")
-                                st.markdown(f"""<div class="warning-message">
-                                        ⚠️ You are working <b>without an ontology</b>. <small>Loading an ontology
-                                        from the <b> Global Configuration</b> page is encouraged.</small>
-                                    </div>""", unsafe_allow_html=True)
-
-                        mapping_ns_dict = utils.get_mapping_ns_dict()
-
-                        with col1:
-                            col1a, col1b = st.columns(2)
-
-                        subject_class_prefix_list = list(mapping_ns_dict.keys())
-                        with col1a:
-                            subject_class_prefix_list = list_to_choose = list(reversed(list(mapping_ns_dict.keys())))
-                            subject_class_prefix_list.insert(0,"Select a namespace")
-                            subject_class_prefix = st.selectbox("🖱️ Select a namespace:*", subject_class_prefix_list,
-                                key="key_subject_class_prefix")
-
-                        if not mapping_ns_dict:
-                            with col1a:
-                                st.write("")
-                                st.markdown(f"""<div class="error-message">
-                                        ❌ No namespaces available. You can add namespaces in the
-                                         <b>Global Configuration</b> page.
-                                    </div>""", unsafe_allow_html=True)
-                        else:
-                            if subject_class_prefix != "Select a namespace":
-                                NS = Namespace(mapping_ns_dict[subject_class_prefix])
-                            with col1b:
-                                subject_class_input = st.text_input("⌨️ Enter subject class:*", key="key_subject_class_input")
-
-            #GRAPH - If not given, default graph    HERE condider if rr:graphMap option (dynamic) is worth it
-            if sm_config_selected_option == "🗺️️ Graph map":
-
-                with col1:
-                    col1a, col1b = st.columns([2,1])
-                # with col1b:
-                #     st.markdown(f"""<div class="info-message-gray">
-                #             <b> 🗺️️ Graph map </b>: <br>
-                #              Indicates the target graph for the subject map triples.
-                #         </div>""", unsafe_allow_html=True)
-                #     st.write("")
-
-
-                subject_graph = st.session_state["g_mapping"].value(sm_iri_for_config, RR["graph"])
-
-                if subject_graph:    #subject graph already given
-                    with col1a:
-                        st.markdown(f"""<div class="gray-preview-message">
-                                🔒 Subject graph:
-                                <b style="color:#F63366;">{split_uri(subject_graph)[1]}</b><br>
-                                <small>Delete it to assign a different subject graph.</small>
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-                        st.write("")
-
-                    with col1a:
-                        delete_subject_graph_checkbox = st.checkbox(
-                        ":gray-badge[⚠️ I am completely sure I want to delete the subject graph]",
-                        key="key_delete_subject_graph_checkbox")
-                    if delete_subject_graph_checkbox:
-                        with col1a:
-                            st.button("Delete", on_click=delete_subject_graph)
-
-                else:       #subject graph not given
-                    with col1a:
-                        st.markdown(f"""<div class="gray-preview-message">
-                                🔓 Subject graph:
-                                <b style="color:#F63366;">not given</b><br>
-                                <small>Enter below. If no graph map is given, the default graph will be used.
-                            </small></div>""", unsafe_allow_html=True)
-                        st.write("")
-
-                    with col1:
-                        col1a, col1b = st.columns(2)
-
-                    with col1a:
-                        mapping_ns_dict = utils.get_mapping_ns_dict()
-                        subject_graph_prefix_list = list(reversed(list(mapping_ns_dict.keys())))
-                        subject_graph_prefix_list.insert(0,"Select a namespace")
-                        subject_graph_prefix = st.selectbox("🖱️ Select a namespace:*", subject_graph_prefix_list,
-                            key="key_subject_graph_prefix")
-
-                        if not mapping_ns_dict:
-                            st.write("")
-                            st.markdown(f"""<div class="error-message">
-                                    ❌ No namespaces available. You can add namespaces in the
-                                     <b>Global Configuration</b> page.
-                                </div>""", unsafe_allow_html=True)
-                        else:
-                            with col1b:
-                                subject_graph_input = st.text_input("🖱️ Enter subject graph:*", key="key_subject_graph_input")
-                            if subject_graph_prefix != "Select a namespace":
-                                NS = Namespace(mapping_ns_dict[subject_graph_prefix])
-
-                            if subject_graph_input and subject_graph_prefix != "Select a namespace":
-                                subject_graph = NS[subject_graph_input]
-                                with col1a:
-                                    st.button("Save", on_click=save_subject_graph, key="key_save_subject_graph_button")
-
 
 
 
