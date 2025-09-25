@@ -1338,7 +1338,7 @@ with tab2:
         existing_sm_list = list(existing_sm_dict.keys())
 
         with col1:
-            col1a, col1b = st.columns([2,1])
+            col1a, col1b = st.columns([1.5,1])
         if st.session_state["last_added_tm_list"] and st.session_state["last_added_tm_list"][0] in tm_wo_sm_list:
             with col1a:
                 list_to_choose = list(reversed(tm_wo_sm_list))
@@ -1351,16 +1351,25 @@ with tab2:
                 list_to_choose.insert(0, "Select a TriplesMap")
                 tm_label_for_sm = st.selectbox("🖱️ Select a TriplesMap:*", list_to_choose, key="key_tm_label_input_for_sm")
 
-        if tm_label_for_sm != "Select a TriplesMap":
-            if existing_sm_list:  # if there exist labelled subject maps
-                with col1b:
-                    sm_options_list = ["🆕 Create new Subject Map", "📑 Select existing Subject Map"]
-                    sm_option = st.radio("🖱️ Select an option:*", sm_options_list)
+        if tm_label_for_sm != "Select a TriplesMap":   #TriplesMap selected
+            tm_iri_for_sm = tm_dict[tm_label_for_sm]
+            ls_iri_for_sm = next(st.session_state["g_mapping"].objects(tm_iri_for_sm, RML.logicalSource), None)
+            ds_for_sm = str(next(st.session_state["g_mapping"].objects(ls_iri_for_sm, RML.source), None))
 
-            else:
-                    sm_option = "🆕 Create new Subject Map"
+            with col1a:
+                column_list = utils.get_column_list_and_give_info(tm_iri_for_sm)
 
-            if sm_option == "📑 Select existing Subject Map":
+            with col1b:
+                st.write("")
+                if existing_sm_list:
+                    list_to_choose = ["Template 📐", "Constant 🔒", "Reference 📊", "Existing Subject Map 📑"]
+                else:
+                    list_to_choose = ["Template 📐", "Constant 🔒", "Reference 📊"]
+                sm_generation_rule = st.radio("🖱️ Define the Subject Map generation rule:*",
+                    list_to_choose, label_visibility="collapsed", horizontal=True, key="key_sm_generation_rule_radio")
+
+
+            if sm_generation_rule == "Existing Subject Map 📑":
 
                 with col1a:
                     existing_sm_list.append("Select a Subject Map")
@@ -1374,22 +1383,7 @@ with tab2:
                         st.button("Save", key="key_save_existing_sm_button", on_click=save_sm_existing)
 
 
-            elif sm_option == "🆕 Create new Subject Map":
-
-                if tm_label_for_sm != "Select a TriplesMap":   #TriplesMap selected
-                    tm_iri_for_sm = tm_dict[tm_label_for_sm]
-                    ls_iri_for_sm = next(st.session_state["g_mapping"].objects(tm_iri_for_sm, RML.logicalSource), None)
-                    ds_for_sm = str(next(st.session_state["g_mapping"].objects(ls_iri_for_sm, RML.source), None))
-
-                    with col1a:
-                        column_list = utils.get_column_list_and_give_info(tm_iri_for_sm)
-
-                    with col1a:
-                        sm_generation_rule_list = ["Template 📐", "Constant 🔒", "Reference 📊"]
-                        sm_generation_rule = st.radio("🖱️ Define the Subject Map generation rule:*",
-                            sm_generation_rule_list, key="key_sm_generation_rule_radio")
-
-
+            else:
                     #_______________________________________________
                     # SUBJECT MAP - TEMPLATE-VALUED
                     if sm_generation_rule == "Template 📐":
@@ -1666,32 +1660,33 @@ with tab2:
                     # TERM TYPE
                     with col1c:
                         list_to_choose = ["🌐 IRI", "👻 BNode"] if sm_generation_rule !=  "Constant 🔒" else ["🌐 IRI"]
-                        sm_term_type = st.radio("🆔 Select term type:*", list_to_choose, key="key_sm_term_type")
+                        sm_term_type = st.radio("🆔 Select term type:*", list_to_choose,
+                            key="key_sm_term_type")
 
-                    #
-                    # if "♻️ Reuse Subject Map" in selected_additional_info_list:
-                    #     with col1:
-                    #         col1a, col1b = st.columns([3,0.5])
-                    #     with col1a:
-                    #         st.markdown(f"""<div class="subsection">
-                    #                 ♻️ Reuse Subject Map
-                    #             </div>""",unsafe_allow_html=True)
-                    #         st.write("")
-                    #     with col1:
-                    #         col1a, col1b = st.columns([2,1])
-                    #
-                    #     with col1a:
-                    #         sm_label = st.text_input("⌨️ Enter Subject Map label:*", key="key_sm_label_new")
-                    # else:
-                    #     sm_label = ""
-                    #     sm_iri = BNode()
+                    # REUSE SM
+                    with col1:
+                        col1a, col1b = st.columns([2,1])
+                    with col1b:
+                        st.write("")
+                        st.write("")
+                        label_sm_option_checkbox = st.checkbox(
+                        ":gray-badge[♻️ I want to reuse the Logical Source]",
+                        key="key_label_sm_option_checkbox")
+
+                        # list_to_choose = ["No", "Yes"]
+                        # label_sm_option_radio = st.radio("♻️ Reuse Subject Map:*", list_to_choose,
+                        #     horizontal=True, key="key_label_sm_option_radio")
+
+                    if label_sm_option_checkbox:
+                        with col1a:
+                            sm_label = st.text_input("⌨️ Enter Subject Map label:*", key="key_sm_label_new")
+                    else:
+                        sm_label = ""
+                        sm_iri = BNode()
 
 
 
                     # CHECK EVERYTHING IS READY________________________________
-                    with col1:
-                        col1a, col1b = st.columns([2,1])
-
                     sm_complete_flag = True
                     inner_html_error = ""
                     inner_html_warning = ""
@@ -1700,29 +1695,30 @@ with tab2:
                     if sm_generation_rule == "Template 📐":
                         if not sm_template:
                             sm_complete_flag = False
-                            inner_html_error += "⚠️ The <b>template</b> is empty.<br>"
+                            inner_html_error += "❌ The <b>template</b> is empty.<br>"
 
                     if sm_generation_rule == "Constant 🔒":
                         if not (sm_constant_ns_prefix != "Select a namespace" and sm_constant):
                             sm_complete_flag = False
-                            inner_html_error += "⚠️ <b>The constant</b> (and/or its namespace) is not given.<br>"
+                            inner_html_error += "❌ <b>The constant</b> (and/or its namespace) is not given.<br>"
 
 
                     if sm_generation_rule == "Reference 📊":
                         if column_list:
                             if sm_column_name == "Select a reference":
                                 sm_complete_flag = False
-                                inner_html_error += "⚠️ The <b>reference</b> has not been selected.<br>"
+                                inner_html_error += "❌ The <b>reference</b> has not been selected.<br>"
                         else:
                             if not sm_column_name:
                                 sm_complete_flag = False
-                                inner_html_error += "⚠️ The <b>reference</b> has not been selected.<br>"
+                                inner_html_error += "❌ The <b>reference</b> has not been selected.<br>"
 
                     if sm_generation_rule == "Template 📐":
                         if sm_template and sm_term_type == "🌐 IRI":   # if term type is IRI the NS is compulsory
-                            sm_complete_flag = False if not st.session_state["sm_template_prefix"] else sm_complete_flag
-                            inner_html_error += """⚠️ Term type is <b>🌐 IRI</b>. <small>You must <b>add a namespace</b>
-                                to the template or change term type</small>.<br>"""
+                            if not st.session_state["sm_template_prefix"]:
+                                sm_complete_flag = False
+                                inner_html_error += """⚠️ Term type is <b>🌐 IRI</b>. <small>You must <b>add a namespace</b>
+                                    to the template or change the term type</small>.<br>"""
 
                     if sm_generation_rule == "Reference 📊":
                         if sm_column_name and sm_term_type == "🌐 IRI":
@@ -1734,55 +1730,62 @@ with tab2:
                     if add_subject_class_option == "Ontology Class":
                         if subject_class == "Select a class":
                             sm_complete_flag = False
-                            inner_html_error += "⚠️ The <b>Subject class</b> has not been selected.<br>"
+                            inner_html_error += "❌ The <b>Subject class</b> has not been selected.<br>"
                     if add_subject_class_option == "Class outside Ontology":
                         if subject_class_prefix == "Select a namespace" or not subject_class_input:
                             sm_complete_flag = False
-                            inner_html_error += """⚠️ The <b>Subject class</b> (and/or its namespace)
+                            inner_html_error += """❌ The <b>Subject class</b> (and/or its namespace)
                                 has not been given.<br>"""
 
                     if add_sm_graph_map_option == "Add Graph Map":
                         if subject_graph_prefix == "Select a namespace" or not subject_graph_input:
                             sm_complete_flag = False
-                            inner_html_error += """⚠️ The <b>Graph Map</b> (and/or its namespace)
+                            inner_html_error += """❌ The <b>Graph Map</b> (and/or its namespace)
                                 has not been given.<br>"""
 
                     if add_subject_class_option == "Class outside Ontology":
                         if st.session_state["g_ontology"] and not ontology_classes_dict: #there is an ontology but it has no classes
-                            inner_html_warning += """
-                                          ⚠️ Your <b>ontology</b> does not define any classes.
+                            inner_html_warning += """⚠️ Your <b>ontology</b> does not define any classes.
                                           <small>Using an ontology with predefined classes is recommended.</small><br>"""
                         elif st.session_state["g_ontology"]:   #there exists an ontology and it has classes
-                            inner_html_warning += """
-                                          ⚠️ The option <b>Class outside ontology</b> lacks ontology alignment.
+                            inner_html_warning += """⚠️ The option <b>Class outside ontology</b> lacks ontology alignment.
                                           <small>An ontology-driven approach is recommended.</small><br>"""
                         else:
-                            inner_html_warning += """
-                                        ⚠️ You are working <b>without an ontology</b>. <small>Loading an ontology
+                            inner_html_warning += """⚠️ You are working <b>without an ontology</b>. <small>Loading an ontology
                                         from the <b> Global Configuration</b> page is encouraged.</small><br>"""
 
-                    # if "♻️ Reuse Subject Map" in selected_additional_info_list:
-                    #     if not sm_label:
-                    #         inner_html_error += """⚠️ The <b>Subject Map label</b>
-                    #             has not been given.<br>"""
-                    #     else:
-                    #         NS = st.session_state["structural_ns"][1]
-                    #         sm_iri = BNode() if not sm_label else NS[sm_label]
-                    #         if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):
-                    #             inner_html_error += """That <b>Subject Map label</b> is already in use.
-                    #                 <small>Please pick a different label.</small><br>"""
 
-
-
-                    # if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):  # label already in use
-                    #     sm_complete_flag = False
+                    if label_sm_option_checkbox:
+                        if not sm_label:
+                            sm_complete_flag = False
+                            inner_html_error += """⚠️ The <b>Subject Map label</b>
+                                has not been given.<br>"""
+                        else:
+                            NS = st.session_state["structural_ns"][1]
+                            sm_iri = BNode() if not sm_label else NS[sm_label]
+                            if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):
+                                sm_complete_flag = False
+                                inner_html_error += """That <b>Subject Map label</b> is already in use.
+                                    <small>Please pick a different label.</small><br>"""
 
 
                     # INFO AND SAVE BUTTON____________________________________
                     with col1:
-                        col1a, col1b = st.columns([2,1])
-                    if sm_complete_flag == True:
-                        with col1b:
+                        if inner_html_warning:
+                            st.markdown(f"""<div class="warning-message">
+                                {inner_html_warning}
+                            </div>""", unsafe_allow_html=True)
+
+                        if inner_html_error:
+                            st.markdown(f"""<div class="error-message">
+                                {inner_html_error}
+                            </div>""", unsafe_allow_html=True)
+
+                        if sm_complete_flag:
+                            st.markdown(f"""<div class="success-message">
+                                ✔️ All <b>required fields (*)</b> are complete.
+                                <small>Double-check the information before saving.</smalL> </div>
+                            """, unsafe_allow_html=True)
                             st.write("")
                             if sm_generation_rule == "Template 📐":
                                 save_sm_template_button = st.button("Save", on_click=save_sm_template, key="key_save_sm_template_button")
@@ -1790,29 +1793,7 @@ with tab2:
                                 save_sm_constant_button = st.button("Save", on_click=save_sm_constant, key="key_save_sm_constant_button")
                             if sm_generation_rule == "Reference 📊":
                                 save_sm_reference_button = st.button("Save", on_click=save_sm_reference, key="key_save_sm_reference_button")
-                        with col1a:
-                            st.markdown(f"""<div class="success-message">
-                                ✔️ All <b>required fields (*)</b> are complete.
-                                <small>Double-check the information before saving.</smalL> </div>
-                            """, unsafe_allow_html=True)
 
-                    if inner_html_warning:
-                        with col1a:
-                            st.markdown(f"""<div class="warning-message">
-                                {inner_html_warning}
-                            </div>""", unsafe_allow_html=True)
-
-                    if inner_html_error:
-                        with col1a:
-                            st.markdown(f"""<div class="error-message">
-                                {inner_html_error}
-                            </div>""", unsafe_allow_html=True)
-                    # else:
-                    #     with col1a:
-                    #         st.markdown(f"""<div class="warning-message">
-                    #                 ⚠️ All <b>required fields (*)</b> must be filled in order to save the Subject Map.
-                    #             </div>""", unsafe_allow_html=True)
-                    #         st.write("")
 
 
 
