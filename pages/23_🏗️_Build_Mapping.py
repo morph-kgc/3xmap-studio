@@ -1384,7 +1384,7 @@ with tab2:
                     with col1a:
                         column_list = utils.get_column_list_and_give_info(tm_iri_for_sm)
 
-                    with col1b:
+                    with col1a:
                         sm_generation_rule_list = ["Template 📐", "Constant 🔒", "Reference 📊"]
                         sm_generation_rule = st.radio("🖱️ Define the Subject Map generation rule:*",
                             sm_generation_rule_list, key="key_sm_generation_rule_radio")
@@ -1696,7 +1696,7 @@ with tab2:
                                     </div>""", unsafe_allow_html=True)
                             else:
                                 with col1b:
-                                    subject_graph_input = st.text_input("🖱️ Enter subject graph:*", key="key_subject_graph_input")
+                                    subject_graph_input = st.text_input("🖱️ Enter Subject graph:*", key="key_subject_graph_input")
                                 if subject_graph_prefix != "Select a namespace":
                                     NS = Namespace(mapping_ns_dict[subject_graph_prefix])
 
@@ -1754,14 +1754,6 @@ with tab2:
 
                         with col1a:
                             sm_label = st.text_input("⌨️ Enter Subject Map label:*", key="key_sm_label_new")
-                        NS = st.session_state["structural_ns"][1]
-                        sm_iri = BNode() if not sm_label else NS[sm_label]
-                        if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):
-                            with col1a:
-                                st.markdown(f"""<div class="error-message">
-                                    ❌ That <b>Subject Map label</b> is already in use. Please pick another label or leave blank.
-                                </div>""", unsafe_allow_html=True)
-                                st.write("")
                     else:
                         sm_label = ""
                         sm_iri = BNode()
@@ -1769,14 +1761,14 @@ with tab2:
 
 
                     # CHECK EVERYTHING IS READY________________________________
-                    with col1:
-                        col1a, col1b = st.columns([3,0.5])
-                    with col1a:
-                        st.write("")
-                        st.markdown(f"""<div class="subsection">
-                                🧐 Check and save
-                            </div>""",unsafe_allow_html=True)
-                        st.write("")
+                    # with col1:
+                    #     col1a, col1b = st.columns([3,0.5])
+                    # with col1a:
+                    #     st.write("")
+                    #     st.markdown(f"""<div class="subsection">
+                    #             🧐 Check and save
+                    #         </div>""",unsafe_allow_html=True)
+                    #     st.write("")
                     with col1:
                         col1a, col1b = st.columns([2,1])
 
@@ -1809,7 +1801,7 @@ with tab2:
                         if sm_template and sm_term_type == "🌐 IRI":   # if term type is IRI the NS is compulsory
                             sm_complete_flag = False if not st.session_state["sm_template_prefix"] else sm_complete_flag
                             inner_html += """⚠️ Term type is <b>🌐 IRI</b>. <small>You must <b>add a namespace</b>
-                                to the template</small>.<br>"""
+                                to the template or change term type</small>.<br>"""
 
 
                     if "🏷️ Subject class" in selected_additional_info_list:
@@ -1821,12 +1813,30 @@ with tab2:
                             if subject_class_prefix == "Select a namespace" or not subject_class_input:
                                 sm_complete_flag = False
                                 inner_html += """⚠️ The <b>Subject class</b> (and/or its namespace)
-                                    has not been selected.<br>"""
+                                    has not been given.<br>"""
 
-                    with col1a:
-                        st.markdown(f"""<div class="warning-message">
-                            {inner_html}
-                        </div>""", unsafe_allow_html=True)
+                    if "🗺️️ Graph map" in selected_additional_info_list:
+                        if subject_graph_prefix == "Select a namespace" or not subject_graph_input:
+                            sm_complete_flag = False
+                            inner_html += """⚠️ The <b>Graph Map</b> (and/or its namespace)
+                                has not been given.<br>"""
+
+                    if "♻️ Reuse Subject Map" in selected_additional_info_list:
+                        if not sm_label:
+                            inner_html += """⚠️ The <b>Subject Map label</b>
+                                has not been given.<br>"""
+                        else:
+                            NS = st.session_state["structural_ns"][1]
+                            sm_iri = BNode() if not sm_label else NS[sm_label]
+                            if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):
+                                inner_html += """That <b>Subject Map label</b> is already in use.
+                                    <small>Please pick a different label.</small><br>"""
+
+                    if inner_html:
+                        with col1a:
+                            st.markdown(f"""<div class="warning-message">
+                                {inner_html}
+                            </div>""", unsafe_allow_html=True)
 
                     if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):  # label already in use
                         sm_complete_flag = False
