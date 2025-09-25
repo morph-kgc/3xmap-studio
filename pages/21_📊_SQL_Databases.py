@@ -76,7 +76,8 @@ if "sql_queries_dict" not in st.session_state:
     st.session_state["sql_queries_dict"] = {}
 if "sql_query_saved_ok_flag" not in st.session_state:
     st.session_state["sql_query_saved_ok_flag"] = False
-
+if "sql_query_removed_ok_flag" not in st.session_state:
+    st.session_state["sql_query_removed_ok_flag"] = False
 
 #define on_click functions
 # TAB1
@@ -144,13 +145,20 @@ def remove_file():
     st.session_state["key_ds_files_to_remove_list"] = []
 
 # TAB3
-def save_sql_query():
+def save_view():
     # store information________________
     st.session_state["sql_query_saved_ok_flag"] = True  # for success message
     st.session_state["sql_queries_dict"][sql_query_label] = [connection_for_query, sql_query]
     # reset fields_____________________
     st.session_state["key_sql_query"] = ""
     st.session_state["key_sql_query_label"] = ""
+
+def remove_views():
+    # delete queries________________
+    for query in queries_to_drop_list:
+        del st.session_state["sql_queries_dict"][query]
+    # store information____________________
+    st.session_state["sql_query_removed_ok_flag"] = True
 
 
 # START PAGE_____________________________________________________________________
@@ -328,7 +336,7 @@ with tab1:
         with col1a:
             list_to_choose = list(reversed(list(st.session_state["db_connections_dict"].keys())))
             list_to_choose.insert(0, "Select all ❌")
-            if len(list_to_choose) > 1:
+            if len(list_to_choose) > 2:
                 list_to_choose.insert(0, "Select all")
             connection_labels_to_remove_list = st.multiselect("🖱️ Select connections:*", list_to_choose,
                 key="key_connection_labels_to_remove_list")
@@ -455,13 +463,12 @@ with tab1:
             # render
             with col1a:
                 st.markdown(full_html, unsafe_allow_html=True)
-
-            delete_connections_checkbox= st.checkbox(
-            ":gray-badge[⚠️ I am sure I want to delete the connections]",
-            key="key_delete_connections_checkbox")
-            if delete_connections_checkbox:
-                st.write("")
-                st.button("Remove", key="key_remove_connection_button", on_click=remove_connection)
+                delete_connections_checkbox= st.checkbox(
+                ":gray-badge[⚠️ I am sure I want to delete the connections]",
+                key="key_delete_connections_checkbox")
+                if delete_connections_checkbox:
+                    st.write("")
+                    st.button("Remove", key="key_remove_connection_button", on_click=remove_connection)
 
     # PURPLE HEADING - CONSULT CONNECTION
     if st.session_state["db_connections_dict"]:
@@ -769,7 +776,6 @@ with tab3:
 
     #PURPLE HEADING - QUERY DATA
     if st.session_state["db_connections_dict"]:
-
         with col1:
             st.markdown("""<div class="purple-heading">
                     🖼️ Create View
@@ -782,7 +788,7 @@ with tab3:
             with col1a:
                 st.write("")
                 st.markdown(f"""<div class="success-message-flag">
-                    ✅ The <b>SQL query</b> has been saved!
+                    ✅ The <b>view</b> has been saved!
                 </div>""", unsafe_allow_html=True)
             st.session_state["sql_query_saved_ok_flag"] = False
             time.sleep(st.session_state["success_display_time"])
@@ -856,8 +862,8 @@ with tab3:
 
                     if sql_query_label_ok_flag:
                         with col1:
-                            st.button("Save", key="key_save_sql_query_button",
-                                on_click=save_sql_query)
+                            st.button("Save", key="key_save_view_button",
+                                on_click=save_view)
 
                     rows = cur.fetchall()
                     engine = st.session_state["db_connections_dict"][connection_for_query][0]
@@ -892,8 +898,73 @@ with tab3:
                             st.write("")
                         st.dataframe(limited_df.head(max_rows), hide_index=True)
 
+    if not st.session_state["sql_queries_dict"] and st.session_state["sql_query_removed_ok_flag"]:
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.write("")
+            st.markdown(f"""<div class="success-message-flag">
+                ✅ The <b>view/s</b> have been removed!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["sql_query_removed_ok_flag"] = False
+        time.sleep(st.session_state["success_display_time"])
+        st.rerun()
 
-    #PURPLE HEADING - CONSULT SAVED QUERIES
+
+    #PURPLE HEADING - REMOVE VIEW
+    if st.session_state["sql_queries_dict"]:
+        with col1:
+            st.write("_________")
+            st.markdown("""<div class="purple-heading">
+                    🗑️Remove View
+                </div>""", unsafe_allow_html=True)
+            st.write("")
+
+        if st.session_state["sql_query_removed_ok_flag"]:
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                st.write("")
+                st.markdown(f"""<div class="success-message-flag">
+                    ✅ The <b>view</b> has been removed!
+                </div>""", unsafe_allow_html=True)
+            st.session_state["sql_query_removed_ok_flag"] = False
+            time.sleep(st.session_state["success_display_time"])
+            st.rerun()
+
+        with col1:
+            col1a, col1b = st.columns(2)
+
+        with col1a:
+            list_to_choose = list(reversed(st.session_state["sql_queries_dict"]))
+            if len(list_to_choose) > 1:
+                list_to_choose.insert(0, "Select all")
+            queries_to_drop_list = st.multiselect("🖱️ Select views:*", list_to_choose,
+                key="key_queries_to_drop_list")
+
+        if queries_to_drop_list:
+            with col1a:
+                if "Select all" in queries_to_drop_list:
+                    st.markdown(f"""<div class="warning-message">
+                        ⚠️ You are deleting <b>all views ({len(st.session_state["sql_queries_dict"])})</b>.
+                        <small>Make sure you want to go ahead.</small>
+                    </div>""", unsafe_allow_html=True)
+                    st.write("")
+                    remove_views_checkbox = st.checkbox(
+                    ":gray-badge[⚠️ I am sure I want to delete all views]",
+                    key="key_remove_views_checkbox")
+                    queries_to_drop_list = list(st.session_state["sql_queries_dict"].keys())
+                else:
+                    remove_views_checkbox = st.checkbox(
+                    ":gray-badge[⚠️ I am sure I want to delete the selected views]",
+                    key="key_remove_views_checkbox")
+
+            if remove_views_checkbox:
+                with col1a:
+                    st.button("Remove", key="key_remove_views_button", on_click=remove_views)
+
+
+    #PURPLE HEADING - CONSULT SAVED VIEWS
     if st.session_state["sql_queries_dict"]:
         with col1:
             st.write("________")
@@ -1006,10 +1077,3 @@ with tab3:
                             st.write("")
 
                         st.dataframe(limited_df.head(max_rows), hide_index=True)
-
-
-        # with col1a:
-        #     list_to_choose = list(reversed(list(st.session_state["sql_queries_dict"].keys())))
-        #     list_to_choose.insert(0, "Select query")
-        #     sql_query_to_consult = st.selectbox("🖱️ Select query:*", list_to_choose,
-        #         key="key_sql_query_to_consult")

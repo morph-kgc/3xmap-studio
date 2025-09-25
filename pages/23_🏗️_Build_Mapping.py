@@ -132,9 +132,9 @@ if "g_mapping_cleaned_ok_flag"  not in st.session_state:
 # TAB1
 def save_tm_w_existing_ls():
     # add triples___________________
-    NS = st.session_state["structural_ns_dict"]["TriplesMap"][1]
+    NS = st.session_state["structural_ns"][1]
     tm_iri = NS[f"{st.session_state["tm_label"]}"]  # change so that is can be defined by user
-    NS = st.session_state["structural_ns_dict"]["Logical Source"][1]
+    NS = st.session_state["structural_ns"][1]
     ls_iri =  NS[f"{existing_ls}"]   # idem ns
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    #bind to logical source
     st.session_state["g_mapping"].add((tm_iri, RDF.type, RR.TriplesMap))
@@ -146,12 +146,12 @@ def save_tm_w_existing_ls():
 
 def save_tm_w_non_relational_ls():
     # add triples__________________
-    NS = st.session_state["structural_ns_dict"]["TriplesMap"][1]
+    NS = st.session_state["structural_ns"][1]
     tm_iri = NS[f"{st.session_state["tm_label"]}"]
     ds_filename = ds_file.name
-    if logical_source_label:
-        NS = st.session_state["structural_ns_dict"]["Logical Source"][1]
-        ls_iri = NS[f"{logical_source_label}"]
+    if ls_label:
+        NS = st.session_state["structural_ns"][1]
+        ls_iri = NS[f"{ls_label}"]
     else:
         ls_iri = BNode()
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    #bind to logical source
@@ -171,7 +171,6 @@ def save_tm_w_non_relational_ls():
     st.session_state["last_added_tm_list"].insert(0, st.session_state["tm_label"])    # to display last added tm
     # reset fields_______________________
     st.session_state["key_tm_label_input"] = ""
-    st.session_state["key_ds_uploader"] = str(uuid.uuid4())
 
 def save_tm_w_query():
     [engine, host, port, database, user, password] = st.session_state["db_connections_dict"][db_connection_for_ls]
@@ -186,11 +185,11 @@ def save_tm_w_query():
     elif engine =="MariaDB":
         jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
     # add triples__________________
-    NS = st.session_state["structural_ns_dict"]["TriplesMap"][1]
+    NS = st.session_state["structural_ns"][1]
     tm_iri = NS[f"{st.session_state["tm_label"]}"]
-    if logical_source_label:
-        NS = st.session_state["structural_ns_dict"]["Logical Source"][1]
-        ls_iri = NS[f"{logical_source_label}"]
+    if ls_label:
+        NS = st.session_state["structural_ns"][1]
+        ls_iri = NS[f"{ls_label}"]
     else:
         ls_iri = BNode()
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    #bind to logical source
@@ -217,11 +216,11 @@ def save_tm_w_table_name():
     elif engine =="MariaDB":
         jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
     # add triples__________________
-    NS = st.session_state["structural_ns_dict"]["TriplesMap"][1]
+    NS = st.session_state["structural_ns"][1]
     tm_iri = NS[f"{st.session_state["tm_label"]}"]
-    if logical_source_label:
-        NS = st.session_state["structural_ns_dict"]["Logical Source"][1]
-        ls_iri = NS[f"{logical_source_label}"]
+    if ls_label:
+        NS = st.session_state["structural_ns"][1]
+        ls_iri = NS[f"{ls_label}"]
     else:
         ls_iri = BNode()
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    #bind to logical source
@@ -309,7 +308,7 @@ def save_sm_template():   #function to save subject map (template option)
         sm_iri = BNode()
         st.session_state["sm_label"] = "_:" + str(sm_iri)[:7] + "..."   # to be displayed
     else:
-        NS = st.session_state["structural_ns_dict"]["Subject Map"][1]
+        NS = st.session_state["structural_ns"][1]
         sm_iri = NS[sm_label]
     st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, sm_iri))
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RR.SubjectMap))
@@ -332,7 +331,7 @@ def save_sm_constant():   #function to save subject map (constant option)
         sm_iri = BNode()
         st.session_state["sm_label"] = "_:" + str(sm_iri)[:7] + "..."   # to be displayed
     else:
-        NS = st.session_state["structural_ns_dict"]["Subject Map"][1]
+        NS = st.session_state["structural_ns"][1]
         sm_iri = NS[sm_label]
     st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, sm_iri))
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RR.SubjectMap))
@@ -354,7 +353,7 @@ def save_sm_reference():   #function to save subject map (reference option)
         sm_iri = BNode()
         st.session_state["sm_label"] = "_:" + str(sm_iri)[:7] + "..."   # to be displayed
     else:
-        NS = st.session_state["structural_ns_dict"]["Subject Map"][1]
+        NS = st.session_state["structural_ns"][1]
         sm_iri = NS[sm_label]
     st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, sm_iri))
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RR.SubjectMap))
@@ -751,29 +750,28 @@ with tab1:
 
         else:    #if label is valid
 
+            ls_options_list = []
+            if labelled_ls_list:
+                ls_options_list.append("📑 Existing Logical Source")
+            if st.session_state["db_connections_dict"]:
+                ls_options_list.append("📊 SQL Database")
+            if st.session_state["ds_files_dict"]:
+                ls_options_list.append("🛢️ Tabular data")
+            if not st.session_state["db_connections_dict"] and not st.session_state["ds_files_dict"]:
+                with col1a:
+                    st.markdown(f"""<div class="error-message">
+                        ❌ No data sources are available. <small>You can add them in the
+                        <b>Manage Logical Sources</b> page.</small>
+                    </div>""", unsafe_allow_html=True)
+                    st.write("")
 
-            with col1b:
-
-                ls_options_list = []
-                if labelled_ls_list:
-                    ls_options_list.append("📑 Existing Logical Source")
-                if st.session_state["db_connections_dict"]:
-                    ls_options_list.append("📊 SQL Database")
-                if st.session_state["ds_files_dict"]:
-                    ls_options_list.append("🛢️ Tabular data")
-                if not st.session_state["db_connections_dict"] and not st.session_state["ds_files_dict"]:
-                    with col1a:
-                        st.markdown(f"""<div class="error-message">
-                            ❌ No data sources are available. <small>You can add them in the
-                            <b>Manage Logical Sources</b> page.</small>
-                        </div>""", unsafe_allow_html=True)
-                        st.write("")
-
-                ls_option = st.radio("🖱️ Choose the logical source option:*", ls_options_list, horizontal=False)
-                st.write("")
+            if ls_options_list:
+                with col1b:
+                    ls_option = st.radio("🖱️ Choose the logical source option:*", ls_options_list, horizontal=False)
+            else:
+                ls_option = None
 
             if ls_option == "📑 Existing Logical Source":
-
 
                 labelled_ls_list.insert(0, "Select a Logical Source")
                 with col1a:
@@ -785,86 +783,45 @@ with tab1:
 
 
             if ls_option == "📊 SQL Database":
+
                 with col1a:
-                    logical_source_label = st.text_input("⌨️ Enter label for the logical source (optional):")
-                    if logical_source_label in labelled_ls_list:
+                    list_to_choose = list(reversed(st.session_state["db_connections_dict"].keys()))
+                    list_to_choose.insert(0, "Select a connection")
+                    db_connection_for_ls = st.selectbox("🖱️ Select connection to Database:*", list_to_choose,
+                        key="key_db_connection_for_ls")
+
+                    if db_connection_for_ls != "Select a connection":
+                        try:
+                            conn = utils.make_connection_to_db(db_connection_for_ls)
+
+                        except Exception as e:
+                            conn = ""
+                            st.markdown(f"""<div class="error-message">
+                                ❌ Connection <b>{db_connection_for_ls}</b> is not working. Please go to the <b>
+                                Manage Logical Sources</b> page to manage the connections to Databases.
+                            </div>""", unsafe_allow_html=True)
+
+                        query_for_selected_db_list = []   # list of queries of the selected connection
+                        for query_label, [connection_label, query] in st.session_state["sql_queries_dict"].items():
+                            if connection_label == db_connection_for_ls:
+                                query_for_selected_db_list.insert(0, query_label)   # only include queries of the selected connection
+
+                        with col1:
+                            col1a, col1b = st.columns([1,2])
                         with col1b:
-                            st.markdown(f"""<div class="warning-message">
-                                    ⚠️ The logical source label <b>{logical_source_label}</b>
-                                    is already in use. Please, pick a different label or leave blank.
-                                </div>""", unsafe_allow_html=True)
-                            st.write("")
+                            list_to_choose = ["🖼️ View", "🔖 Table name"] if query_for_selected_db_list else ["🔖 Table name"]
+                            query_option = st.radio("🖱️ Select option:*", list_to_choose,
+                                horizontal=True, key="key_query_option_radio")
 
-                with col1:
-                    col1a, col1b = st.columns(2)
-                with col1a:
-                    if not st.session_state["db_connections_dict"]:
-                        st.markdown(f"""<div class="error-message">
-                            ❌ No connections to database are available. Please go to the <b>
-                            Manage Logical Sources</b> page.
-                        </div>""", unsafe_allow_html=True)
-                        st.write("")
-                    else:
-                        list_to_choose = list(reversed(st.session_state["db_connections_dict"].keys()))
-                        list_to_choose.insert(0, "Select a connection")
-                        with col1a:
-                            db_connection_for_ls = st.selectbox("🖱️ Select connection to database:*", list_to_choose,
-                                key="key_db_connection_for_ls")
-
-                        if db_connection_for_ls != "Select a connection":
-                            try:
-                                conn = utils.make_connection_to_db(db_connection_for_ls)
-
-                            except Exception as e:
-                                conn = ""
-                                st.markdown(f"""<div class="error-message">
-                                    ❌ Connection <b>{db_connection_for_ls}</b> is not working. Please go to the <b>
-                                    Manage Logical Sources</b> page to manage the connections to Databases.
-                                </div>""", unsafe_allow_html=True)
-
-                        with col1b:
-                            query_option = st.radio("🖱️ Select option:*", ["❔ Query", "🔖 Table name"],
-                                horizontal=True)
-
-                        if query_option == "❔ Query" and db_connection_for_ls != "Select a connection" and conn:
+                        if query_option == "🖼️ View" and db_connection_for_ls != "Select a connection" and conn:
 
                             with col1a:
-                                list_to_choose = []
-                                for query_label, [connection_label, query] in st.session_state["sql_queries_dict"].items():
-                                    if connection_label == db_connection_for_ls:
-                                        list_to_choose.insert(0, query_label)   # only include queries of the selected connection
-                                if list_to_choose:
-                                    list_to_choose.insert(0, "Enter new query")
-                                    list_to_choose.insert(0, "Select a query")
-                                    selected_query_for_ls = st.selectbox("🖱️ Choose a query:*", list_to_choose,
-                                        key="key_selected_query_for_ls")
-                                else:
-                                    selected_query_for_ls = "Enter new query"
+                                list_to_choose = query_for_selected_db_list
+                                list_to_choose.insert(0, "Select view")
+                                selected_query_for_ls = st.selectbox("🖱️ Select view:*", list_to_choose,
+                                    key="key_selected_query_for_ls")
 
-                            if selected_query_for_ls == "Enter new query":
-                                with col1:
-                                    sql_query = st.text_area("⌨️ Enter SQL query:*",
-                                        height=150, key="key_sql_query")
-                                    cur = conn.cursor()   # create a cursor
-                                    if sql_query:
-                                        try:
-                                            cur.execute(sql_query)
-                                            sql_query_ok_flag = True
-                                        except:
-                                            with col1:
-                                                st.markdown(f"""<div class="error-message">
-                                                    ❌ <b>Invalid SQL syntax</b>. Please check your query.<br>
-                                                </div>""", unsafe_allow_html=True)
-                                                st.write("")
-                                            sql_query_ok_flag = False
-
-                                        if sql_query_ok_flag:
-                                            with col1:
-                                                col1a, col1b = st.columns(2)
-                                            with col1a:
-                                                st.button("Save", key="key_save_tm_w_new_query", on_click=save_tm_w_query)
-
-                            elif selected_query_for_ls != "Select a query":
+                            if selected_query_for_ls != "Select view":
                                 sql_query = st.session_state["sql_queries_dict"][selected_query_for_ls][1]
                                 try:
                                     cur = conn.cursor()
@@ -873,14 +830,37 @@ with tab1:
                                 except:
                                     with col1a:
                                         st.markdown(f"""<div class="error-message">
-                                            ❌ <b>Invalid SQL syntax</b>. Please check your query.<br>
+                                            ❌ <b>Invalid SQL syntax</b>. Please check your view.<br>
                                         </div>""", unsafe_allow_html=True)
                                         st.write("")
                                     sql_query_ok_flag = False
 
                                 if sql_query_ok_flag:
-                                    with col1a:
-                                        st.button("Save", key="key_save_tm_w_saved_query", on_click=save_tm_w_query)
+                                    with col1:
+                                        col1a, col1b = st.columns([1.5, 1])
+                                    with col1b:
+                                        st.write("")
+                                        st.write("")
+                                        label_ls_checkbox = st.checkbox(
+                                        ":gray-badge[♻️ I want to reuse the Logical Source]",
+                                        key="key_label_ls_checkbox")
+
+                                    if label_ls_checkbox:
+                                        with col1a:
+                                            ls_label = st.text_input("⌨️ Enter label for the Logical Source:*")
+                                            if ls_label in labelled_ls_list:
+                                                with col1b:
+                                                    st.markdown(f"""<div class="warning-message">
+                                                            ⚠️ The logical source label <b>{ls_label}</b>
+                                                            is already in use. Please, pick a different label.
+                                                        </div>""", unsafe_allow_html=True)
+                                                    st.write("")
+                                    else:
+                                        ls_label = ""
+
+                                    if (label_ls_checkbox and ls_label) or not label_ls_checkbox:
+                                        with col1a:
+                                            st.button("Save", key="key_save_tm_w_saved_query", on_click=save_tm_w_query)
 
                         if query_option == "🔖 Table name" and db_connection_for_ls != "Select a connection" and conn:
                             cur = conn.cursor()   # create a cursor
@@ -896,39 +876,51 @@ with tab1:
                                     key="key_selected_table_for_ls")
 
                                 if selected_table_for_ls != "Select a table":
-                                    st.button("Save", key="key_save_tm_w_table_name", on_click=save_tm_w_table_name)
+                                    if (label_ls_checkbox and ls_label) or not label_ls_checkbox:
+                                        st.button("Save", key="key_save_tm_w_table_name", on_click=save_tm_w_table_name)
 
             if ls_option == "🛢️ Tabular data":
+
                 with col1a:
-                    logical_source_label = st.text_input("⌨️ Enter label for the logical source (optional):")
-                    if logical_source_label in labelled_ls_list:
-                        with col1b:
-                            st.markdown(f"""<div class="error-message">
-                                    ❌ The logical source label <b>{logical_source_label}</b>
-                                    is already in use. Please, pick a different label or leave blank.
-                                </div>""", unsafe_allow_html=True)
-                            st.write("")
+                    list_to_choose = list(reversed(st.session_state["ds_files_dict"].keys()))
+                    list_to_choose.insert(0, "Select file")
+                    ds_filename_for_tm = st.selectbox("🖱️ Select the Logical Source file:*", list_to_choose,
+                    key="key_ds_filename_for_tm")
 
-                    if not st.session_state["ds_files_dict"]:
-                        st.markdown(f"""<div class="error-message">
-                            ❌ No non-SQL data sources are available. Please go to the <b>
-                            Manage Logical Sources</b> page to load the files.
-                        </div>""", unsafe_allow_html=True)
+                if ds_filename_for_tm != "Select file":
+                    ds_file = st.session_state["ds_files_dict"][ds_filename_for_tm]
+
+                    with col1:
+                        col1a, col1b = st.columns([1.5,1])
+                    with col1b:
                         st.write("")
+                        st.write("")
+                        label_ls_checkbox = st.checkbox(
+                        ":gray-badge[♻️ I want to reuse the Logical Source]",
+                        key="key_label_ls_checkbox")
 
+                    if label_ls_checkbox:
+                        with col1a:
+                            ls_label = st.text_input("⌨️ Enter label for the Logical Source:*",
+                                key="key_ls_label")
+                            if ls_label in labelled_ls_list:
+                                with col1b:
+                                    st.write("")
+                                    st.markdown(f"""<div class="error-message">
+                                            ❌ The logical source label <b>{ls_label}</b>
+                                            is already in use. Please, pick a different label.
+                                        </div>""", unsafe_allow_html=True)
+                                    st.write("")
                     else:
-                        list_to_choose = list(reversed(st.session_state["ds_files_dict"].keys()))
-                        list_to_choose.insert(0, "Select file")
-                        ds_filename_for_tm = st.selectbox("🖱️ Select the data source file:*", list_to_choose,
-                        key="key_ds_filename_for_tm")
-
-                        ds_file = None
-                        if ds_filename_for_tm != "Select file":
-                            ds_file = st.session_state["ds_files_dict"][ds_filename_for_tm]
-
-
-                        if ds_file and not logical_source_label in labelled_ls_list:
+                        ls_label = ""
+                    with col1a:
+                        if label_ls_checkbox:
+                            if ls_label and ls_label not in labelled_ls_list:
+                                st.button("Save", key="key_save_tm_w_non_relational_ls", on_click=save_tm_w_non_relational_ls)
+                        else:
                             st.button("Save", key="key_save_tm_w_non_relational_ls", on_click=save_tm_w_non_relational_ls)
+
+
 
 
     # remove tm success message - show here if "Remove" purple heading is not going to be shown
@@ -1305,7 +1297,7 @@ with tab2:
 
                     with col1a:
                         sm_label = st.text_input("⌨️ Enter Subject Map label (optional):", key="key_sm_label_new")
-                    NS = st.session_state["structural_ns_dict"]["Subject Map"][1]
+                    NS = st.session_state["structural_ns"][1]
                     sm_iri = BNode() if not sm_label else NS[sm_label]
                     if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):
                         with col1a:
@@ -1709,7 +1701,7 @@ with tab2:
             with col1b:
                 sm_label_for_config = st.selectbox("🖱️ or select a labelled Subject Map:", reversed(labelled_sm_list))
             if sm_label_for_config != "Select a Subject Map":
-                NS = st.session_state["structural_ns_dict"]["Subject Map"][1]
+                NS = st.session_state["structural_ns"][1]
                 sm_iri_for_config = NS[sm_label_for_config]
 
         if sm_iri_for_config:    # only if the sm has been selected (either way)
@@ -2461,7 +2453,7 @@ with tab3:
                 col1a, col1b = st.columns([2.5,1])
             with col1a:
                 pom_label = st.text_input("⌨️ Enter Predicate-Object Map label (optional):", key= "key_pom_label")
-                NS = st.session_state["structural_ns_dict"]["Predicate-Object Map"][1]
+                NS = st.session_state["structural_ns"][1]
                 pom_iri = BNode() if not pom_label else NS[pom_label]
             if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectMap, pom_iri)), None):
                 with col1a:
@@ -2549,7 +2541,7 @@ with tab3:
                 col3a, col3b = st.columns([2,1])
             with col3a:
                 om_label = st.text_input("⌨️ Enter Object Map label (optional):", key= "key_om_label")
-            NS = st.session_state["structural_ns_dict"]["Object Map"][1]
+            NS = st.session_state["structural_ns"][1]
             om_iri = BNode() if not om_label else NS[om_label]
             if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
                 with col3a:

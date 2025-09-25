@@ -197,6 +197,16 @@ def import_st_aesthetics():
     .title-row td {font-size: 0.9rem; font-weight: bold; text-align: center;
         padding-bottom: 6px;}
 
+/* Reduce font size of checkbox label text */
+div[data-testid="stCheckbox"] > label > div > span {
+    font-size: 0.5rem !important;
+    line-height: 1.2;
+    color: #333;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
     </style>"""
 #_______________________________________________________
 
