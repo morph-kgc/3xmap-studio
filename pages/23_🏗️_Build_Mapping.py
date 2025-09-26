@@ -291,9 +291,9 @@ def save_sm_template():   #function to save subject map (template option)
         st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
     if add_sm_graph_map_option == "Add Graph Map" and subject_graph:
         st.session_state["g_mapping"].add((sm_iri, RR["graph"], subject_graph))
-    if sm_term_type == "🌐 IRI":
+    if sm_term_type_template == "🌐 IRI":
         st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.IRI))
-    elif sm_term_type == "👻 BNode":
+    elif sm_term_type_template == "👻 BNode":
         st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.BlankNode))
     # store information__________________
     st.session_state["last_added_sm_list"].insert(0, [sm_iri, tm_label_for_sm])
@@ -344,9 +344,9 @@ def save_sm_reference():   #function to save subject map (reference option)
         st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
     if add_sm_graph_map_option == "Add Graph Map" and subject_graph:
         st.session_state["g_mapping"].add((sm_iri, RR["graph"], subject_graph))
-    if sm_term_type == "🌐 IRI":
+    if sm_term_type_reference == "🌐 IRI":
         st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.IRI))
-    elif sm_term_type == "👻 BNode":
+    elif sm_term_type_reference == "👻 BNode":
         st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.BlankNode))
     # store information__________________
     st.session_state["last_added_sm_list"].insert(0, [sm_iri, tm_label_for_sm])
@@ -549,7 +549,7 @@ def unassign_sm():
         if pair[1] not in tm_to_unassign_sm_list]
     # reset fields__________________
     st.session_state["key_tm_to_unassign_sm"] = []
-    
+
 def delete_pom():           #function to delete a Predicate-Object Map
     for pom_iri in pom_to_delete_iri_list:
         om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RR.objectMap)
@@ -1035,56 +1035,7 @@ with tab2:
     sm_dict = utils.get_sm_dict()
 
     with col2:
-        col2a, col2b = st.columns([0.5, 2])
-
-    with col2b:
-
-        st.write("")
-        st.write("")
-
-        last_added_sm_df = pd.DataFrame([
-            {"Subject Map": sm_dict[subject_map][0], "Assigned to": triples_map,  # Use directly or format if needed
-            "Rule": sm_dict[subject_map][1], "Term": sm_dict[subject_map][2]}
-            for subject_map, triples_map in st.session_state["last_added_sm_list"]
-            if subject_map in sm_dict])
-
-        last_last_added_sm_df = last_added_sm_df.head(utils.get_max_length_for_display()[1])
-
-        max_length = utils.get_max_length_for_display()[0]   # max number of tm shown in dataframe
-        if st.session_state["last_added_sm_list"]:
-            st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
-                    🔎 last added Subject Maps
-                </div>""", unsafe_allow_html=True)
-            if len(sm_dict) < max_length:
-                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                        (complete list below)
-                    </div>""", unsafe_allow_html=True)
-            else:
-                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                        (longer list below)
-                    </div>""", unsafe_allow_html=True)
-            st.dataframe(last_last_added_sm_df, hide_index=True)
-            st.write("")
-
-
-        #Option to show all TriplesMaps
-        sm_df = pd.DataFrame([
-            {"Subject Map": v[0], "Assigned to": utils.format_list_for_markdown(v[4]),
-                "Rule": v[1], "ID/Constant": v[3]} for k, v in reversed(sm_dict.items())])
-        sm_df_short = sm_df.head(max_length)
-
-        if sm_dict and len(sm_dict) < max_length:
-            with st.expander("🔎 Show all Subject Maps"):
-                st.write("")
-                st.dataframe(sm_df, hide_index=True)
-        elif sm_dict:
-            with st.expander("🔎 Show more Subject Maps"):
-                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                        Go to the <b>Display Mapping</b> page for more information.
-                    </div>""", unsafe_allow_html=True)
-                st.write("")
-                st.dataframe(sm_df_short, hide_index=True)
-
+        col2a, col2b = st.columns([0.5, 2])   #HEREHERE
 
 
 
@@ -1277,6 +1228,8 @@ with tab2:
                                 st.button("Reset", on_click=reset_sm_template)
 
                         with col1:
+                            col1a, col1b = st.columns([3,1])
+                        with col1a:
                             sm_template = "".join(st.session_state["sm_template_list"])
                             if sm_template:
                                 st.write("")
@@ -1296,13 +1249,17 @@ with tab2:
                                     </div></div>""", unsafe_allow_html=True)
                                 st.write("")
 
+                        list_to_choose = ["🌐 IRI", "👻 BNode"]
+                        with col1b:
+                            sm_term_type_template = st.radio("🆔 Select term type:*", list_to_choose,
+                                key="key_sm_term_type_template")
 
                     #_______________________________________________
                     # SUBJECT MAP - CONSTANT-VALUED
                     if sm_generation_rule == "Constant 🔒":
 
                         with col1:
-                            col1a, col1b = st.columns([1,2])
+                            col1a, col1b, col1c = st.columns(3)
                         with col1b:
                             sm_constant = st.text_input("⌨️ Enter constant:*", key="key_sm_constant")
 
@@ -1322,6 +1279,11 @@ with tab2:
 
                         with col1a:
                             st.write("")
+
+                        list_to_choose = ["🌐 IRI"]
+                        with col1c:
+                            sm_term_type_constant = st.radio("🆔 Select term type:*", list_to_choose,
+                                key="key_sm_term_type_constant")
 
 
                     #_______________________________________________
@@ -1350,10 +1312,27 @@ with tab2:
                                 sm_column_name = st.selectbox(f"""🖱️ Select the reference of the Logical Source:*""", list_to_choose,
                                     key="key_sm_column_name")
 
+                        list_to_choose = ["🌐 IRI", "👻 BNode"]
+                        with col1b:
+                            sm_term_type_reference = st.radio("🆔 Select term type:*", list_to_choose,
+                                key="key_sm_term_type_reference")
+
 
                     # ADDITIONAL CONFIGURATION
                     with col1:
+                        col1a, col1b = st.columns([1,3])
+
+                    with col1:
                         col1a, col1b, col1c = st.columns(3)
+                    # SUBJECT MAP LABEL
+                    with col1c:
+                        label_sm_option = st.selectbox("🖱️ Reuse Subject Map (optional):", ["No", "Yes (add label)"])
+                    if label_sm_option == "Yes (add label)":
+                        with col1c:
+                            sm_label = st.text_input("🔖 Enter Subject Map label:*", key="key_sm_label_new")
+                    else:
+                        sm_label = ""
+                        sm_iri = BNode()
 
                     # SUBJECT CLASS
                     # dictionary for simple classes
@@ -1374,16 +1353,16 @@ with tab2:
 
                     # ONLY SHOW OPTIONS IF THE ONTOLOGY HAS THEM
                     if ontology_classes_dict:   # if the ontology includes at least one class
-                        list_to_choose = ["No Class", "Ontology Class", "Class outside Ontology"]
+                        list_to_choose = ["No Class", "🧩 Ontology Class", "🚫 Class outside Ontology"]
                     else:
-                        list_to_choose = ["No Class", "Class outside Ontology"]
+                        list_to_choose = ["No Class", "🚫 Class outside Ontology"]
 
                     with col1a:
                         add_subject_class_option = st.selectbox("🏷️ Subject Class (optional):",
                             list_to_choose, key="key_add_subject_class_option")
 
                     #ONTOLOGY CLASS
-                    if add_subject_class_option == "Ontology Class":
+                    if add_subject_class_option == "🧩 Ontology Class":
 
                         # Class selection
                         if superclass_dict:   # there exists at least one superclass (show superclass filter)
@@ -1391,7 +1370,7 @@ with tab2:
                             with col1a:
                                 superclass_list = list(superclass_dict.keys())
                                 superclass_list.insert(0, "Select a superclass")
-                                superclass = st.selectbox("🖱️ Select a superclass to filter classes (optional):", superclass_list,
+                                superclass = st.selectbox("🖱️ Filter by superclass (optional):", superclass_list,
                                     key="key_superclass")   #superclass label
                             if superclass != "Select a superclass":   # a superclass has been selected (filter)
                                 classes_in_superclass_dict[superclass] = superclass_dict[superclass]
@@ -1425,7 +1404,7 @@ with tab2:
 
 
                     #CLASS OUTSIDE ONTOLOGY
-                    if add_subject_class_option == "Class outside Ontology":
+                    if add_subject_class_option == "🚫 Class outside Ontology":
 
                         mapping_ns_dict = utils.get_mapping_ns_dict()
 
@@ -1488,32 +1467,27 @@ with tab2:
                                 subject_graph = ""
 
 
-                    # TERM TYPE
-                    with col1c:
-                        list_to_choose = ["🌐 IRI", "👻 BNode"] if sm_generation_rule !=  "Constant 🔒" else ["🌐 IRI"]
-                        sm_term_type = st.radio("🆔 Select term type:*", list_to_choose,
-                            key="key_sm_term_type")
 
-                    # REUSE SM
-                    with col1:
-                        col1a, col1b = st.columns([2,1])
-                    with col1b:
-                        st.write("")
-                        st.write("")
-                        label_sm_option_checkbox = st.checkbox(
-                        ":gray-badge[♻️ I want to reuse the Subject Map]",
-                        key="key_label_sm_option_checkbox")
-
-                        # list_to_choose = ["No", "Yes"]
-                        # label_sm_option_radio = st.radio("♻️ Reuse Subject Map:*", list_to_choose,
-                        #     horizontal=True, key="key_label_sm_option_radio")
-
-                    if label_sm_option_checkbox:
-                        with col1a:
-                            sm_label = st.text_input("⌨️ Enter Subject Map label:*", key="key_sm_label_new")
-                    else:
-                        sm_label = ""
-                        sm_iri = BNode()
+                    # # REUSE SM
+                    # with col1:
+                    #     col1a, col1b = st.columns([2,1])
+                    # with col1b:
+                    #     st.write("")
+                    #     st.write("")
+                    #     label_sm_option_checkbox = st.checkbox(
+                    #     ":gray-badge[♻️ I want to reuse the Subject Map]",
+                    #     key="key_label_sm_option_checkbox")
+                    #
+                    #     # list_to_choose = ["No", "Yes"]
+                    #     # label_sm_option_radio = st.radio("♻️ Reuse Subject Map:*", list_to_choose,
+                    #     #     horizontal=True, key="key_label_sm_option_radio")
+                    #
+                    # if label_sm_option_checkbox:
+                    #     with col1a:
+                    #         sm_label = st.text_input("⌨️ Enter Subject Map label:*", key="key_sm_label_new")
+                    # else:
+                    #     sm_label = ""
+                    #     sm_iri = BNode()
 
 
 
@@ -1545,24 +1519,24 @@ with tab2:
                                 inner_html_error += "<small>The <b>reference</b> has not been selected.<small><br>"
 
                     if sm_generation_rule == "Template 📐":
-                        if sm_template and sm_term_type == "🌐 IRI":   # if term type is IRI the NS is compulsory
+                        if sm_template and sm_term_type_template == "🌐 IRI":   # if term type is IRI the NS is compulsory
                             if not st.session_state["sm_template_prefix"]:
                                 sm_complete_flag = False
                                 inner_html_error += """<small>Term type is <b>🌐 IRI</b>. You must <b>add a namespace</b>
                                     to the template or change the term type</small>.<br>"""
 
                     if sm_generation_rule == "Reference 📊":
-                        if sm_column_name and sm_term_type == "🌐 IRI":
+                        if sm_column_name and sm_term_type_reference == "🌐 IRI":
                             inner_html_warning += """<small>Term type is <b>🌐 IRI</b>.
                                         Make sure that the values in the referenced column
                                         are valid IRIs.</small><br>"""
 
 
-                    if add_subject_class_option == "Ontology Class":
+                    if add_subject_class_option == "🧩 Ontology Class":
                         if subject_class == "Select a class":
                             sm_complete_flag = False
                             inner_html_error += "<small>The <b>Subject class</b> has not been selected.</small><br>"
-                    if add_subject_class_option == "Class outside Ontology":
+                    if add_subject_class_option == "🚫 Class outside Ontology":
                         if subject_class_prefix == "Select a namespace" or not subject_class_input:
                             sm_complete_flag = False
                             inner_html_error += """<small>The <b>Subject class</b> (and/or its namespace)
@@ -1574,19 +1548,19 @@ with tab2:
                             inner_html_error += """<small>The <b>Graph Map</b> (and/or its namespace)
                                 has not been given.</small><br>"""
 
-                    if add_subject_class_option == "Class outside Ontology":
+                    if add_subject_class_option == "🚫 Class outside Ontology":
                         if st.session_state["g_ontology"] and not ontology_classes_dict: #there is an ontology but it has no classes
                             inner_html_warning += """<small>Your <b>ontology</b> does not define any classes.
                                           Using an ontology with predefined classes is recommended.</small><br>"""
                         elif st.session_state["g_ontology"]:   #there exists an ontology and it has classes
-                            inner_html_warning += """<small>The option <b>Class outside ontology</b> lacks ontology alignment.
+                            inner_html_warning += """<small>The option <b>🚫 Class outside Ontology</b> lacks ontology alignment.
                                           An ontology-driven approach is recommended.</small><br>"""
                         else:
                             inner_html_warning += """<small>You are working <b>without an ontology</b>. Importing an ontology
                                         from the <b> Global Configuration</b> page is encouraged.</small><br>"""
 
 
-                    if label_sm_option_checkbox:
+                    if label_sm_option == "Yes (add label)":
                         if not sm_label:
                             sm_complete_flag = False
                             inner_html_error += """<small>The <b>Subject Map label</b>
@@ -1601,28 +1575,30 @@ with tab2:
 
 
                     # INFO AND SAVE BUTTON____________________________________
-                    with col1a:
+                    with col2b:
+
+                        st.write("")
+                        utils.get_column_list_and_give_info(tm_iri_for_sm)
 
                         if inner_html_warning:
-                            st.markdown(f"""<div class="info-message-gray">
+                            st.markdown(f"""<div class="warning-message">
                                 ⚠️ <b>Caution.</b><br>
                                 <div style='margin-left: 1.5em;'>{inner_html_warning}</div>
                             </div>""", unsafe_allow_html=True)
 
                         if inner_html_error:
-                            st.markdown(f"""<div class="info-message-gray">
+                            st.markdown(f"""<div class="error-message">
                                     ❌ <b>Subject Map is incomplete.</b><br>
                                 <div style='margin-left: 1.5em;'>{inner_html_error}</div>
                                 </div>""", unsafe_allow_html=True)
 
                         if sm_complete_flag:
-                            st.markdown(f"""<div class="info-message-gray">
+                            st.markdown(f"""<div class="success-message">
                                 ✔️ All <b>required fields (*)</b> are complete.
                                 <small>Double-check the information before saving.</smalL> </div>
                             """, unsafe_allow_html=True)
 
-                        utils.get_column_list_and_give_info(tm_iri_for_sm)
-
+                    with col1a:
                         if sm_complete_flag:
                             st.write("")
                             if sm_generation_rule == "Template 📐":
@@ -1631,6 +1607,55 @@ with tab2:
                                 save_sm_constant_button = st.button("Save", on_click=save_sm_constant, key="key_save_sm_constant_button")
                             if sm_generation_rule == "Reference 📊":
                                 save_sm_reference_button = st.button("Save", on_click=save_sm_reference, key="key_save_sm_reference_button")
+
+
+    with col2b:
+
+        st.write("")
+        st.write("")
+
+        last_added_sm_df = pd.DataFrame([
+            {"Subject Map": sm_dict[subject_map][0], "Assigned to": triples_map,  # Use directly or format if needed
+            "Rule": sm_dict[subject_map][1], "Term": sm_dict[subject_map][2]}
+            for subject_map, triples_map in st.session_state["last_added_sm_list"]
+            if subject_map in sm_dict])
+
+        last_last_added_sm_df = last_added_sm_df.head(utils.get_max_length_for_display()[1])
+
+        max_length = utils.get_max_length_for_display()[0]   # max number of tm shown in dataframe
+        if st.session_state["last_added_sm_list"]:
+            st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
+                    🔎 last added Subject Maps
+                </div>""", unsafe_allow_html=True)
+            if len(sm_dict) < max_length:
+                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                        (complete list below)
+                    </div>""", unsafe_allow_html=True)
+            else:
+                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                        (longer list below)
+                    </div>""", unsafe_allow_html=True)
+            st.dataframe(last_last_added_sm_df, hide_index=True)
+            st.write("")
+
+
+        #Option to show all TriplesMaps
+        sm_df = pd.DataFrame([
+            {"Subject Map": v[0], "Assigned to": utils.format_list_for_markdown(v[4]),
+                "Rule": v[1], "ID/Constant": v[3]} for k, v in reversed(sm_dict.items())])
+        sm_df_short = sm_df.head(max_length)
+
+        if sm_dict and len(sm_dict) < max_length:
+            with st.expander("🔎 Show all Subject Maps"):
+                st.write("")
+                st.dataframe(sm_df, hide_index=True)
+        elif sm_dict:
+            with st.expander("🔎 Show more Subject Maps"):
+                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                        Go to the <b>Display Mapping</b> page for more information.
+                    </div>""", unsafe_allow_html=True)
+                st.write("")
+                st.dataframe(sm_df_short, hide_index=True)
 
 
 

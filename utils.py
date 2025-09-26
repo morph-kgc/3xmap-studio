@@ -1048,7 +1048,7 @@ def get_column_list_and_give_info(tm_iri):
         df = utils.read_tab_file(ds)
         column_list = df.columns.tolist()
 
-        st.markdown(f"""<div class="info-message-gray">
+        st.markdown(f"""<div class="info-message-blue">
                 🛢️ The data source is <b>{ds}</b>.
             </div>""", unsafe_allow_html=True)
 
@@ -1078,7 +1078,7 @@ def get_column_list_and_give_info(tm_iri):
                         Manual entry of column references is discouraged.</small>
                     </div>""", unsafe_allow_html=True)
                 else:
-                    st.markdown(f"""<div class="info-message-gray">
+                    st.markdown(f"""<div class="info-message-blue">
                             📊 The data source is the database <b style="color:#F63366;">{database}</b>.<br>
                              <small>🔌 {conn_label} → <b>{jdbc_str}</b></small>
                         </div>""", unsafe_allow_html=True)
@@ -1111,7 +1111,7 @@ def get_column_list_and_give_info(tm_iri):
                         Manual entry of column references is discouraged.</small>
                     </div>""", unsafe_allow_html=True)
                 else:
-                    st.markdown(f"""<div class="info-message-gray">
+                    st.markdown(f"""<div class="info-message-blue">
                             📊 The data source is the database <b style="color:#F63366;">{database}</b>.<br>
                              <small>🔌 {conn_label} → <b>{jdbc_str}</b></small>
                         </div>""", unsafe_allow_html=True)
