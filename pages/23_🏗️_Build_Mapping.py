@@ -114,8 +114,6 @@ if "om_template_list" not in st.session_state:
     st.session_state["om_template_list"] = []
 if "last_added_pom_list" not in st.session_state:
     st.session_state["last_added_pom_list"] = []
-if "pom_deleted_ok_flag" not in st.session_state:
-    st.session_state["pom_deleted_ok_flag"] = False
 
 # TAB4
 if "tm_deleted_ok_flag" not in st.session_state:
@@ -126,6 +124,8 @@ if "sm_unassigned_ok_flag" not in st.session_state:
     st.session_state["sm_unassigned_ok_flag"] = False
 if "g_mapping_cleaned_ok_flag"  not in st.session_state:
     st.session_state["g_mapping_cleaned_ok_flag"]  = False
+if "pom_deleted_ok_flag" not in st.session_state:
+    st.session_state["pom_deleted_ok_flag"] = False
 
 
 #define on_click functions
@@ -492,34 +492,6 @@ def save_pom_reference():
     st.session_state["key_om_label"] = ""
     st.session_state["key_om_datatype_reference"] = "Select datatype"
 
-def delete_pom():           #function to delete a Predicate-Object Map
-    for pom_iri in pom_to_delete_iri_list:
-        om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RR.objectMap)
-        # remove triples______________________
-        st.session_state["g_mapping"].remove((pom_iri, None, None))
-        st.session_state["g_mapping"].remove((None, None, pom_iri))
-        st.session_state["g_mapping"].remove((om_to_delete, None, None))
-    # store information__________________
-    st.session_state["pom_deleted_ok_flag"] = True
-    st.session_state["last_added_pom_list"] = [pair for pair in st.session_state["last_added_pom_list"]
-        if pair[0] not in pom_to_delete_iri_list]
-    # reset fields
-    st.session_state["key_tm_to_delete_pom"] = "Select a TriplesMap"
-
-
-def delete_all_pom():           #function to delete a Predicate-Object Map
-    for pom_iri in pom_to_delete_all_iri_list:
-        om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RR.objectMap)
-        # remove triples______________________
-        st.session_state["g_mapping"].remove((pom_iri, None, None))
-        st.session_state["g_mapping"].remove((None, None, pom_iri))
-        st.session_state["g_mapping"].remove((om_to_delete, None, None))
-    # store information__________________
-    st.session_state["pom_deleted_ok_flag"] = True
-    st.session_state["last_added_pom_list"] = [pair for pair in st.session_state["last_added_pom_list"]
-        if pair[0] not in pom_to_delete_all_iri_list]
-    # reset fields
-    st.session_state["key_tm_to_delete_pom"] = "Select a TriplesMap"
 
 # TAB4
 def delete_tm():   #function to delete a TriplesMap
@@ -577,7 +549,35 @@ def unassign_sm():
         if pair[1] not in tm_to_unassign_sm_list]
     # reset fields__________________
     st.session_state["key_tm_to_unassign_sm"] = []
+    
+def delete_pom():           #function to delete a Predicate-Object Map
+    for pom_iri in pom_to_delete_iri_list:
+        om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RR.objectMap)
+        # remove triples______________________
+        st.session_state["g_mapping"].remove((pom_iri, None, None))
+        st.session_state["g_mapping"].remove((None, None, pom_iri))
+        st.session_state["g_mapping"].remove((om_to_delete, None, None))
+    # store information__________________
+    st.session_state["pom_deleted_ok_flag"] = True
+    st.session_state["last_added_pom_list"] = [pair for pair in st.session_state["last_added_pom_list"]
+        if pair[0] not in pom_to_delete_iri_list]
+    # reset fields
+    st.session_state["key_tm_to_delete_pom"] = "Select a TriplesMap"
 
+
+def delete_all_pom():           #function to delete a Predicate-Object Map
+    for pom_iri in pom_to_delete_all_iri_list:
+        om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RR.objectMap)
+        # remove triples______________________
+        st.session_state["g_mapping"].remove((pom_iri, None, None))
+        st.session_state["g_mapping"].remove((None, None, pom_iri))
+        st.session_state["g_mapping"].remove((om_to_delete, None, None))
+    # store information__________________
+    st.session_state["pom_deleted_ok_flag"] = True
+    st.session_state["last_added_pom_list"] = [pair for pair in st.session_state["last_added_pom_list"]
+        if pair[0] not in pom_to_delete_all_iri_list]
+    # reset fields
+    st.session_state["key_tm_to_delete_pom"] = "Select a TriplesMap"
 
 def clean_g_mapping():
     # REMOVE TRIPLESMAPS
@@ -1477,7 +1477,7 @@ with tab2:
                                     </div>""", unsafe_allow_html=True)
                             else:
                                 with col1b:
-                                    subject_graph_input = st.text_input("🖱️ Enter Subject graph:*", key="key_subject_graph_input")
+                                    subject_graph_input = st.text_input("🖱️ Enter Graph Map:*", key="key_subject_graph_input")
                                 if subject_graph_prefix != "Select a namespace":
                                     NS = Namespace(mapping_ns_dict[subject_graph_prefix])
 
@@ -1611,7 +1611,7 @@ with tab2:
 
                         if inner_html_error:
                             st.markdown(f"""<div class="info-message-gray">
-                                    ❌ <b>Subject Map incomplete.</b><br>
+                                    ❌ <b>Subject Map is incomplete.</b><br>
                                 <div style='margin-left: 1.5em;'>{inner_html_error}</div>
                                 </div>""", unsafe_allow_html=True)
 
@@ -1687,10 +1687,19 @@ with tab3:
         st.write("")
 
 
-
     #POM_____________________________________________________
     with col1:
         col1a, col1b = st.columns(2)
+
+    if st.session_state["pom_saved_ok_flag"]:
+        with col1a:
+            st.write("")
+            st.markdown(f"""<div class="success-message-flag">
+                ✅ The <b style="color:#F63366;">Predicate-Object Map</b> has been created!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["pom_saved_ok_flag"] = False
+        time.sleep(st.session_state["success_display_time"])
+        st.rerun()
 
 
     #list of all triplesmaps with assigned Subject Map
@@ -1756,17 +1765,17 @@ with tab3:
                 if ontology_p_list:   # if the ontology includes at least one predicate
                     with col1:
                         col1a, col1b = st.columns(2)
-                    p_type_option_list = ["Ontology predicate", "Predicate outside ontology"]
+                    p_type_option_list = ["🧩 Ontology predicate", "🚫 Predicate outside ontology"]
                     with col1a:
                         p_type = st.selectbox("🖱️ Select an option:*", p_type_option_list,
                             key="key_p_type")
                 else:
-                    p_type = "Predicate outside ontology"
+                    p_type = "🚫 Predicate outside ontology"
 
             else:   # no ontology
-                p_type = "Predicate outside ontology"
+                p_type = "🚫 Predicate outside ontology"
 
-            if p_type == "Ontology predicate":
+            if p_type == "🧩 Ontology predicate":
 
                 ontology_p_dict = {split_uri(p)[1]: p for p in ontology_p_list}
 
@@ -1778,7 +1787,7 @@ with tab3:
                 if selected_p_label != "Select a predicate":
                     selected_p_iri = ontology_p_dict[selected_p_label]
 
-            if p_type == "Predicate outside ontology":
+            if p_type == "🚫 Predicate outside ontology":
                 mapping_ns_dict = utils.get_mapping_ns_dict()
 
                 if not mapping_ns_dict:
@@ -2066,7 +2075,7 @@ with tab3:
                         with col1b:
                             subject_graph_prefix = st.selectbox("🖱️ Select a namespace:*", subject_graph_prefix_list,
                                 key="key_subject_graph_prefix")
-                            subject_graph_input = st.text_input("🖱️ Enter Subject graph:*", key="key_subject_graph_input")
+                            subject_graph_input = st.text_input("🖱️ Enter Graph Map:*", key="key_subject_graph_input")
                         if subject_graph_prefix != "Select a namespace":
                             NS = Namespace(mapping_ns_dict[subject_graph_prefix])
 
@@ -2078,190 +2087,109 @@ with tab3:
 
         if tm_label_for_pom != "Select a TriplesMap":
 
-            if st.session_state["pom_saved_ok_flag"]:
-                with col1:
-                    st.write("")
-                    st.markdown(f"""<div class="success-message-flag">
-                        ✅ The <b style="color:#F63366;">Predicate-Object Map</b> has been created!
-                    </div>""", unsafe_allow_html=True)
-                st.session_state["pom_saved_ok_flag"] = False
-                time.sleep(st.session_state["success_display_time"])
-                st.rerun()
-
-            col1, col2, col3, col4 = st.columns([1,1,0.2,1])
-
             # POM MAP ______________________________________
-            inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Predicate-Object Map</td></tr>
-                <tr><td><b>TriplesMap*:</b></td><td>{tm_label_for_pom}</td></tr>
-                <tr><td><b>Subject Map</b></td><td>{sm_label_for_pom}</td></tr>"""
-
-            if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectMap, pom_iri)), None):
-                pom_complete_flag = False
-                inner_html += f"""<tr><td><b>Predicate-Object Map label</b></td>
-                <td>{pom_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
-            else:
-                inner_html += f"""<tr><td><b>Predicate-Object Map label</b></td><td>{pom_label}</td></tr>"""
+            inner_html_error = ""
+            inner_html_warning = ""
+            pom_complete_flag = True
 
             if p_type == "🧩 Ontology predicate":
+                if selected_p_label == "Select a predicate":
+                    pom_complete_flag = False
+                    inner_html_error += "<small>You must select a <b>predicate</b>.</small><br>"
 
-                pom_complete_flag = True if selected_p_label != "Select a predicate" else False
-                selected_p_label_display = selected_p_label if selected_p_label != "Select a predicate" else ""
-                if selected_p_label != "Select a predicate":
-                    p_ont = utils.get_ontology_identifier(selected_p_iri)
-                    selected_p_label_display += " (" + p_ont + ")" if p_ont else selected_p_label_display
-
-                inner_html += f"""<tr><td><b>Predicate*</b></td><td>{selected_p_label_display}</td></tr>"""
 
             elif p_type == "🚫 Predicate outside ontology":
+                if (not manual_p_label or manual_p_ns_prefix == "Select a namespace"):
+                    pom_complete_flag = False
+                    inner_html_error += "<small>The <b>predicate</b> (and/or its namespace) has not been given.</small><br>"
 
-                pom_complete_flag = True if (manual_p_label and manual_p_ns_prefix != "Select a namespace") else False
-                manual_p_ns_prefix_display = manual_p_ns_prefix if manual_p_ns_prefix != "Select a namespace" else ""
-
-                inner_html += f"""<tr><td><b>Predicate Namespace*</b></td><td>{manual_p_ns_prefix_display}</td></tr>
-                    <tr><td><b>Predicate*</b></td><td>{manual_p_label}</td></tr>"""
-
-            inner_html += f"""<tr><td><b>Required fields complete</b></td><td>{pom_complete_flag}</td></tr>"""
-
-            if p_type == "🚫 Predicate outside ontology":
-                inner_html += f"""<tr><td colspan="2" style="font-size:12px; padding-top:6px;">
-                    ⚠️ Manual predicate input is <b>discouraged</b>.
-                    Use an ontology for safer results.</td></tr>"""
-
-            full_html = f"""<table class="info-table-gray">
-                    {inner_html}</table>"""
-            # render
-            with col1:
-                st.markdown(full_html, unsafe_allow_html=True)
-
-
+                inner_html_warning += f"""<small>Manual predicate input is <b>discouraged</b>.
+                    Use an ontology for safer results.</small>"""
 
             # OBJECT MAP - TEMPLATE______________________________________________________-
             if om_generation_rule == "Template 📐":
+                if not om_template:
+                    pom_complete_flag = False
+                    inner_html_error += "<small>The <b>template</b> is empty.</small><br>"
 
-                om_complete_flag = True if om_template else False
-
-                inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>"""
-
-                if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
-                    om_complete_flag = False
-                    inner_html += f"""<tr><td><b>Object Map label</b></td>
-                    <td>{om_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
-                else:
-                    inner_html += f"""<tr><td><b>Object Map label</b></td><td>{om_label}</td></tr>"""
-
-
-                inner_html += f"""<tr><td><b>Generation rule*</b></td><td>{om_generation_rule}</td></tr>
-                <tr><td><b>Template*</b></td><td>{om_template}</td></tr>
-                <tr><td><b>Term type*</b></td><td>{om_term_type_template}</td></tr>"""
-
-                if om_term_type_template == "🌐 IRI":
-                    om_template_ns_prefix_display = st.session_state["om_template_ns_prefix"] if st.session_state["template_om_is_iri_flag"] else ""
-                    inner_html += f"""<tr><td><b>Template namespace*</b></td><td>{om_template_ns_prefix_display}</td></tr>"""
-                    om_complete_flag = False if not st.session_state["template_om_is_iri_flag"] else om_complete_flag
+                if om_template and om_term_type_template == "🌐 IRI":
+                    if not st.session_state["template_om_is_iri_flag"]:
+                        pom_complete_flag = False
+                        inner_html_error += "<small>Term type is <b>🌐 IRI</b>. You must add a namespace to the template.</small><br>"
 
                 if om_template and om_term_type_template == "📘 Literal":
-                    om_datatype_display = om_datatype if om_datatype != "Select datatype" else ""
-                    inner_html += f"""<tr><td><b>Datatype</b></td><td>{om_datatype_display}</td></tr>"""
-                    if om_datatype == "Natural language tag":
-                        om_language_tag_display = om_language_tag if om_language_tag != "Select language tag" else ""
-                        inner_html += f"""<tr><td><b>Language tag*</b></td><td>{om_language_tag_display}</td></tr>"""
-                        om_complete_flag = False if om_language_tag == "Select language tag" else om_complete_flag
-
-                inner_html += f"""<tr><td><b>Required fields complete</b></td><td> {om_complete_flag} </td></tr>"""
-
-                full_html = f"""<table class="info-table-gray">
-                        {inner_html}</table>"""
-                # render
-                with col2:
-                    st.markdown(full_html, unsafe_allow_html=True)
-
+                    if om_datatype == "Natural language tag" and om_language_tag == "Select language tag":
+                        om_complete_flag = False
+                        inner_html_error += "<small>You must select a <b>🌐 language tag</b>.</small><br>"
 
             # OBJECT MAP - CONSTANT____________________________________________
             if om_generation_rule == "Constant 🔒":   #HEREIGO
-
-                om_complete_flag = True if om_constant else False
-
-                inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>"""
-
-                if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
-                    om_complete_flag = False
-                    inner_html += f"""<tr><td><b>Object Map label</b></td>
-                    <td>{om_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
-                else:
-                    inner_html += f"""<tr><td><b>Object Map label</b></td><td>{om_label}</td></tr>"""
-
-                    inner_html += f"""<tr><td><b>Generation rule*</b></td><td>{om_generation_rule}</td></tr>
-                    <tr><td><b>Constant*</b></td><td>{om_constant}</td></tr>
-                    <tr><td><b>Term type*</b></td><td>{om_term_type_constant}</td></tr>"""
+                if not om_constant:
+                    pom_complete_flag = False
+                    inner_html_error += "<small>You must enter a <b>constant</b>.</small><br>"
 
                 if om_term_type_constant == "📘 Literal":
-                    om_datatype_display = om_datatype if om_datatype != "Select datatype" else ""
-                    inner_html += f"""<tr><td><b>Datatype</b></td><td>{om_datatype_display}</td></tr>"""
-                    if om_datatype == "Natural language tag":
-                        om_language_tag_display = om_language_tag if om_language_tag != "Select language tag" else ""
-                        inner_html += f"""<tr><td><b>Language tag*</b></td><td>{om_language_tag_display}</td></tr>"""
-                        om_complete_flag = False if om_language_tag == "Select language tag" else om_complete_flag
+                    if om_datatype == "Natural language tag" and om_language_tag == "Select language tag":
+                        pom_complete_flag = False
+                        inner_html_error += "<small>You must select a <b>🌐 language tag</b>.</small><br>"
 
                 elif om_term_type_constant == "🌐 IRI":
-                    om_complete_flag = True if (om_constant_ns_prefix != "Select a namespace" and om_constant) else False
-                    om_constant_ns_prefix_display = om_constant_ns_prefix if om_constant_ns_prefix != "Select a namespace" else ""
-                    inner_html += f"""<tr><td><b>Constant namespace*</b></td><td>{om_constant_ns_prefix_display}</td></tr>"""
-
-                inner_html += f"""<tr><td><b>Required fields complete</b></td><td> {om_complete_flag} </td></tr>"""
-
-                full_html = f"""<table class="info-table-gray">
-                        {inner_html}</table>"""
-                # render
-                with col2:
-                    st.markdown(full_html, unsafe_allow_html=True)
+                    if om_constant and om_constant_ns_prefix == "Select a namespace":
+                        pom_complete_flag = False
+                        inner_html_error += "<small>Term type is <b>🌐 IRI</b>. You must select a namespace for the constant.</small><br>"
 
 
             # OBJECT MAP - REFERENCE___________________________
             if om_generation_rule == "Reference 📊":
 
                 if column_list:
-                    om_complete_flag = True if om_column_name != "Select a reference" else False
+                    if om_column_name == "Select a reference":
+                        pom_complete_flag = False
+                        inner_html_error += "<small>You must select a <b>reference</b>.</small><br>"
                 else:
-                    om_complete_flag = True if om_column_name else False
-                om_column_name_display = om_column_name if om_column_name != "Select a reference" else ""
-
-                inner_html = f"""<tr class="title-row"><td colspan="2">🔎 Object Map</td></tr>"""
-
-                if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
-                    om_complete_flag = False
-                    inner_html += f"""<tr><td><b>Object Map label</b></td>
-                    <td>{om_label} <span style='font-size:11px; color:#888;'>(❌ already in use)</span></td></tr>"""
-                else:
-                    inner_html += f"""<tr><td><b>Object Map label</b></td><td>{om_label}</td></tr>"""
-
-                inner_html += f"""<tr><td><b>Generation rule*</b></td><td>{om_generation_rule}</td></tr>
-                <tr><td><b>Data source column*</b></td><td>{om_column_name_display}</td></tr>
-                <tr><td><b>Term type*</b></td><td>{om_term_type_reference}</td></tr>"""
-
+                    if not om_column_name:
+                        pom_complete_flag = False
+                        inner_html_error += "<small>You must enter a <b>reference</b>.</small><br>"
 
                 if om_term_type_reference == "📘 Literal":
-                    om_datatype_reference_display = om_datatype_reference if om_datatype_reference != "Select datatype" else ""
-                    inner_html += f"""<tr><td><b>Datatype</b></td><td>{om_datatype_reference_display}</td></tr>"""
-                    if om_datatype_reference == "Natural language tag":
-                        om_language_tag_reference_display = om_language_tag_reference if om_language_tag_reference != "Select language tag" else ""
-                        om_complete_flag = False if om_language_tag_reference == "Select language tag" else om_complete_flag
-                        inner_html += f"""<tr><td><b>Language tag*</b></td><td>{om_language_tag_reference_display}</td></tr>"""
+                    if om_datatype_reference == "Natural language tag" and om_language_tag_reference == "Select language tag":
+                        pom_complete_flag = False
+                        inner_html_error += "<small>You must select a <b>🌐 language tag</b>.</small><br>"
 
-                inner_html += f"""<tr><td><b>Required fields complete</b></td><td> {om_complete_flag} </td></tr>"""
-
-                full_html = f"""<table class="info-table-gray">
-                        {inner_html}</table>"""
-                # render
-                with col2:
-                    st.markdown(full_html, unsafe_allow_html=True)
+                elif om_term_type_reference == "🌐 IRI":
+                    inner_html_warning += """<small>Term type is <b>🌐 IRI</b>.
+                                Make sure that the values in the referenced column
+                                are valid IRIs.</small><br>"""
 
 
-            if pom_complete_flag == True and om_complete_flag == True:
-                with col4:
-                    st.markdown(f"""<div class="success-message">
-                        🧐  All <b>required fields (*)</b> are complete.
-                        <small>Double-check the information before saving.</smalL> </div>
-                    """, unsafe_allow_html=True)
+                # INFO AND SAVE BUTTON____________________________________
+                with col1:
+                    col1a, col1b = st.columns([2,1])
+                with col1a:
+
+                    if inner_html_warning:
+                        st.markdown(f"""<div class="info-message-gray">
+                            ⚠️ <b>Caution.</b><br>
+                            <div style='margin-left: 1.5em;'>{inner_html_warning}</div>
+                        </div>""", unsafe_allow_html=True)
+
+                    if inner_html_error:
+                        st.markdown(f"""<div class="info-message-gray">
+                                ❌ <b>Subject Map is incomplete.</b><br>
+                            <div style='margin-left: 1.5em;'>{inner_html_error}</div>
+                            </div>""", unsafe_allow_html=True)
+
+                    if pom_complete_flag:
+                        st.markdown(f"""<div class="info-message-gray">
+                            ✔️ All <b>required fields (*)</b> are complete.
+                            <small>Double-check the information before saving.</smalL> </div>
+                        """, unsafe_allow_html=True)
+
+            #HEREIGO
+
+
+            if pom_complete_flag:
+                with col1a:
                     st.write("")
                     st.session_state["pom_iri_to_create"] = pom_iri    # otherwise it will change value in the on_click function
                     st.session_state["tm_iri_for_pom"] = tm_iri_for_pom
@@ -2273,133 +2201,6 @@ with tab3:
                         save_pom_reference_button = st.button("Save", on_click=save_pom_reference, key="key_save_pom_reference_button")
                     elif om_generation_rule == "BNode 👻":
                         save_pom_bnode_button = st.button("Save", on_click=save_bnode_bnode, key="key_save_pom_bnode_button")
-            else:
-                with col4:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ All <b>required fields (*)</b> must be filled in order to save the Subject Map.
-                        </div>""", unsafe_allow_html=True)
-                    st.write("")
-
-
-
-
-            col1, col2 = st.columns([2,1.5])   # back to the normal structure of columns
-
-
-
-    if st.session_state["pom_deleted_ok_flag"]:
-        with col1:
-            col1a, col1b = st.columns([2,1])
-        with col1a:
-            st.write("")
-            st.markdown(f"""<div class="success-message-flag">
-                ✅ The Predicate-Object Map/s have been deleted!
-            </div>""", unsafe_allow_html=True)
-            st.write("")
-        st.session_state["pom_deleted_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
-        st.rerun()
-
-
-    # PURPLE HEADING - REMOVE EXISTING PREDICATE-OBJECT MAP
-    tm_dict = utils.get_tm_dict()
-    pom_dict = utils.get_pom_dict()
-
-    if pom_dict:
-        with col1:
-            st.write("________")
-            st.markdown("""<div class="purple-heading">
-                    🗑️ Remove Existing Predicate-Object Map
-                </div>""", unsafe_allow_html=True)
-            st.write("") #HERE ONLY IF THERE EXISTS ONE
-
-        with col1:
-            col1a, col1b = st.columns(2)
-
-        tm_w_pom_list = []
-        for tm_iri in tm_dict:
-            for pom_iri in pom_dict:
-                if tm_iri in pom_dict[pom_iri] and tm_iri not in tm_w_pom_list:
-                    tm_w_pom_list.append(tm_iri)
-                    continue
-
-        with col1a:
-            list_to_choose = list(reversed(tm_w_pom_list))
-            list_to_choose.insert(0, "Select a TriplesMap")
-            tm_to_delete_pom_label = st.selectbox("🖱️ Select a TriplesMap:*", list_to_choose, key="key_tm_to_delete_pom")
-
-        if tm_to_delete_pom_label != "Select a TriplesMap":
-            tm_to_delete_pom_iri = tm_dict[tm_to_delete_pom_label]
-            pom_of_selected_tm_list = []
-            for pom_iri in pom_dict:
-                if pom_dict[pom_iri][0] == tm_to_delete_pom_iri:
-                    pom_of_selected_tm_list.append(pom_iri)
-
-
-
-            if pom_of_selected_tm_list:
-
-                with col1b:
-                    list_to_choose = []
-                    for pom_iri in pom_dict:
-                        if pom_dict[pom_iri][0] == tm_to_delete_pom_iri:
-                            list_to_choose.append(pom_dict[pom_iri][2])
-                    list_to_choose = list(reversed(list_to_choose))
-                    if len(list_to_choose) > 1:
-                        list_to_choose.insert(0, "Select all")
-                    pom_to_delete_label_list = st.multiselect("🖱️ Select a Predicate-Object Map:*", list_to_choose, key="key_pom_to_delete")
-                    pom_to_delete_iri_list = []
-                    pom_to_delete_all_iri_list = []
-                    for pom_iri in pom_dict:
-                        if "Select all" not in pom_to_delete_label_list and pom_dict[pom_iri][2] in pom_to_delete_label_list:
-                            pom_to_delete_iri_list.append(pom_iri)
-                        if "Select all" in pom_to_delete_label_list and pom_dict[pom_iri][0] == tm_to_delete_pom_iri:
-                            pom_to_delete_all_iri_list.append(pom_iri)
-
-                if pom_to_delete_label_list and "Select all" not in pom_to_delete_label_list:
-                    with col1a:
-                        delete_pom_checkbox = st.checkbox(
-                        f""":gray-badge[⚠️ I am  sure I want to permanently remove this/these Predicate-Object Maps]""",
-                        key="key_overwrite_g_mapping_checkbox_new")
-                        if delete_pom_checkbox:
-                            st.button("Delete", on_click=delete_pom, key="key_delete_pom_button")
-
-                elif pom_to_delete_label_list and "Select all" in pom_to_delete_label_list:
-                    with col1:
-                        col1a, col1b = st.columns([2,1])
-                    with col1a:
-                        st.markdown(f"""<div class="warning-message">
-                                ⚠️ You are deleting <b>all Predicate-Object Maps</b>
-                                of the TriplesMap {tm_to_delete_pom_label}.
-                                <small>Make sure you want to go ahead.</small>
-                            </div>""", unsafe_allow_html=True)
-                        st.write("")
-                    with col1a:
-                        delete_all_pom_checkbox = st.checkbox(
-                        f""":gray-badge[⚠️ I am  sure I want to permanently remove all Predicate-Object Maps]""",
-                        key="key_overwrite_g_mapping_checkbox_new")
-                        if delete_all_pom_checkbox:
-                            st.button("Delete", on_click=delete_all_pom, key="key_delete_all_pom_button")
-
-
-        if tm_to_delete_pom_label != "Select a TriplesMap":
-
-
-            rows = [{"P-O Map": pom_dict[pom_iri][2],
-                    "Predicate": pom_dict[pom_iri][4], "Object Map": pom_dict[pom_iri][5],
-                    "Rule": pom_dict[pom_iri][6], "ID/Constant": pom_dict[pom_iri][8]}
-                    for pom_iri in pom_of_selected_tm_list]
-            pom_of_selected_tm_df = pd.DataFrame(rows)
-
-
-            st.write("")
-            if pom_of_selected_tm_list:
-                with col1:
-                    st.markdown(f"""<div style='font-size: 14px; color: grey;'>
-                            🔎 Predicate-Object Maps of TriplesMap {tm_to_delete_pom_label}
-                        </div>""", unsafe_allow_html=True)
-                    st.dataframe(pom_of_selected_tm_df, hide_index=True)
-                    st.write("")
 
 
 
@@ -2886,6 +2687,122 @@ with tab4:
                     st.session_state["tm_to_unassign_sm_list"] = tm_to_unassign_sm_list
                     with col1a:
                         st.button("Unassign", on_click=unassign_sm, key="key_unassign_sm_button")
+
+
+
+    if st.session_state["pom_deleted_ok_flag"]:
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.write("")
+            st.markdown(f"""<div class="success-message-flag">
+                ✅ The Predicate-Object Map/s have been deleted!
+            </div>""", unsafe_allow_html=True)
+            st.write("")
+        st.session_state["pom_deleted_ok_flag"] = False
+        time.sleep(st.session_state["success_display_time"])
+        st.rerun()
+
+
+    # PURPLE HEADING - REMOVE EXISTING PREDICATE-OBJECT MAP
+    tm_dict = utils.get_tm_dict()
+    pom_dict = utils.get_pom_dict()
+
+    if pom_dict:
+        with col1:
+            st.write("________")
+            st.markdown("""<div class="purple-heading">
+                    🗑️ Remove Existing Predicate-Object Map
+                </div>""", unsafe_allow_html=True)
+            st.write("") #HERE ONLY IF THERE EXISTS ONE
+
+        with col1:
+            col1a, col1b = st.columns(2)
+
+        tm_w_pom_list = []
+        for tm_iri in tm_dict:
+            for pom_iri in pom_dict:
+                if tm_iri in pom_dict[pom_iri] and tm_iri not in tm_w_pom_list:
+                    tm_w_pom_list.append(tm_iri)
+                    continue
+
+        with col1a:
+            list_to_choose = list(reversed(tm_w_pom_list))
+            list_to_choose.insert(0, "Select a TriplesMap")
+            tm_to_delete_pom_label = st.selectbox("🖱️ Select a TriplesMap:*", list_to_choose, key="key_tm_to_delete_pom")
+
+        if tm_to_delete_pom_label != "Select a TriplesMap":
+            tm_to_delete_pom_iri = tm_dict[tm_to_delete_pom_label]
+            pom_of_selected_tm_list = []
+            for pom_iri in pom_dict:
+                if pom_dict[pom_iri][0] == tm_to_delete_pom_iri:
+                    pom_of_selected_tm_list.append(pom_iri)
+
+
+
+            if pom_of_selected_tm_list:
+
+                with col1b:
+                    list_to_choose = []
+                    for pom_iri in pom_dict:
+                        if pom_dict[pom_iri][0] == tm_to_delete_pom_iri:
+                            list_to_choose.append(pom_dict[pom_iri][2])
+                    list_to_choose = list(reversed(list_to_choose))
+                    if len(list_to_choose) > 1:
+                        list_to_choose.insert(0, "Select all")
+                    pom_to_delete_label_list = st.multiselect("🖱️ Select a Predicate-Object Map:*", list_to_choose, key="key_pom_to_delete")
+                    pom_to_delete_iri_list = []
+                    pom_to_delete_all_iri_list = []
+                    for pom_iri in pom_dict:
+                        if "Select all" not in pom_to_delete_label_list and pom_dict[pom_iri][2] in pom_to_delete_label_list:
+                            pom_to_delete_iri_list.append(pom_iri)
+                        if "Select all" in pom_to_delete_label_list and pom_dict[pom_iri][0] == tm_to_delete_pom_iri:
+                            pom_to_delete_all_iri_list.append(pom_iri)
+
+                if pom_to_delete_label_list and "Select all" not in pom_to_delete_label_list:
+                    with col1a:
+                        delete_pom_checkbox = st.checkbox(
+                        f""":gray-badge[⚠️ I am  sure I want to permanently remove this/these Predicate-Object Maps]""",
+                        key="key_overwrite_g_mapping_checkbox_new")
+                        if delete_pom_checkbox:
+                            st.button("Delete", on_click=delete_pom, key="key_delete_pom_button")
+
+                elif pom_to_delete_label_list and "Select all" in pom_to_delete_label_list:
+                    with col1:
+                        col1a, col1b = st.columns([2,1])
+                    with col1a:
+                        st.markdown(f"""<div class="warning-message">
+                                ⚠️ You are deleting <b>all Predicate-Object Maps</b>
+                                of the TriplesMap {tm_to_delete_pom_label}.
+                                <small>Make sure you want to go ahead.</small>
+                            </div>""", unsafe_allow_html=True)
+                        st.write("")
+                    with col1a:
+                        delete_all_pom_checkbox = st.checkbox(
+                        f""":gray-badge[⚠️ I am  sure I want to permanently remove all Predicate-Object Maps]""",
+                        key="key_overwrite_g_mapping_checkbox_new")
+                        if delete_all_pom_checkbox:
+                            st.button("Delete", on_click=delete_all_pom, key="key_delete_all_pom_button")
+
+
+        if tm_to_delete_pom_label != "Select a TriplesMap":
+
+
+            rows = [{"P-O Map": pom_dict[pom_iri][2],
+                    "Predicate": pom_dict[pom_iri][4], "Object Map": pom_dict[pom_iri][5],
+                    "Rule": pom_dict[pom_iri][6], "ID/Constant": pom_dict[pom_iri][8]}
+                    for pom_iri in pom_of_selected_tm_list]
+            pom_of_selected_tm_df = pd.DataFrame(rows)
+
+
+            st.write("")
+            if pom_of_selected_tm_list:
+                with col1:
+                    st.markdown(f"""<div style='font-size: 14px; color: grey;'>
+                            🔎 Predicate-Object Maps of TriplesMap {tm_to_delete_pom_label}
+                        </div>""", unsafe_allow_html=True)
+                    st.dataframe(pom_of_selected_tm_df, hide_index=True)
+                    st.write("")
 
 
     #PURPLE HEADING - CLEAN MAPPING
