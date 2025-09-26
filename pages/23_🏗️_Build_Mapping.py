@@ -1784,22 +1784,21 @@ with tab3:
                 if not mapping_ns_dict:
                     with col1b:
                         st.markdown(f"""<div class="error-message">
-                                ❌ You must add namespaces in the <b>Global Configuration</b> page.
+                                ❌ <b>No namespaces available.</b>
+                                <small>You must add namespaces in the <b>Global Configuration</b> page.</small>
                             </div>""", unsafe_allow_html=True)
                         st.write("")
+                else:
+                    with col1b:
+                        list_to_choose = list(reversed(list(mapping_ns_dict.keys())))
+                        list_to_choose.insert(0, "Select a namespace")
+                        manual_p_ns_prefix = st.selectbox("🖱️ Select a namespace (for the predicate):*", list_to_choose, key="key_manual_p_ns_prefix")
+                    with col1b:
+                        manual_p_label = st.text_input("⌨️ Enter a predicate:*", key="key_manual_p_label")
 
-
-                with col1b:
-                    list_to_choose = list(reversed(list(mapping_ns_dict.keys())))
-                    list_to_choose.insert(0, "Select a namespace")
-                    manual_p_ns_prefix = st.selectbox("🖱️ Select a namespace:*", list_to_choose, key="key_manual_p_ns_prefix")
-
-                with col1b:
-                    manual_p_label = st.text_input("⌨️ Enter a predicate:*", key="key_manual_p_label")
-
-                if manual_p_ns_prefix != "Select a namespace" and manual_p_label:
-                    NS = Namespace(mapping_ns_dict[manual_p_ns_prefix])
-                    selected_p_iri = NS[manual_p_label]
+                    if manual_p_ns_prefix != "Select a namespace" and manual_p_label:
+                        NS = Namespace(mapping_ns_dict[manual_p_ns_prefix])
+                        selected_p_iri = NS[manual_p_label]
 
                 # if not st.session_state["g_ontology_components_dict"]:
                 #     with col1:
@@ -1815,6 +1814,8 @@ with tab3:
                 #             <small> An ontology-driven approach is recommended.
                 #             </small></span>""", unsafe_allow_html=True)
 
+            with col1:
+                col1a, col1b = st.columns(2)
 
             #_______________________________________________
             # OBJECT MAP - TEMPLATE-VALUED
