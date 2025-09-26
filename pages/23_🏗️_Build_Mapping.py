@@ -1692,94 +1692,97 @@ with tab2:
                     if sm_generation_rule == "Template 📐":
                         if not sm_template:
                             sm_complete_flag = False
-                            inner_html_error += "❌ The <b>template</b> is empty.<br>"
+                            inner_html_error += "<small>The <b>template</b> is empty.</small><br>"
 
                     if sm_generation_rule == "Constant 🔒":
                         if not (sm_constant_ns_prefix != "Select a namespace" and sm_constant):
                             sm_complete_flag = False
-                            inner_html_error += "❌ <b>The constant</b> (and/or its namespace) is not given.<br>"
+                            inner_html_error += "<small>The <b>constant</b> (and/or its namespace) is not given.</small><br>"
 
 
                     if sm_generation_rule == "Reference 📊":
                         if column_list:
                             if sm_column_name == "Select a reference":
                                 sm_complete_flag = False
-                                inner_html_error += "❌ The <b>reference</b> has not been selected.<br>"
+                                inner_html_error += "<small>The <b>reference</b> has not been selected.<small><br>"
                         else:
                             if not sm_column_name:
                                 sm_complete_flag = False
-                                inner_html_error += "❌ The <b>reference</b> has not been selected.<br>"
+                                inner_html_error += "<small>The <b>reference</b> has not been selected.<small><br>"
 
                     if sm_generation_rule == "Template 📐":
                         if sm_template and sm_term_type == "🌐 IRI":   # if term type is IRI the NS is compulsory
                             if not st.session_state["sm_template_prefix"]:
                                 sm_complete_flag = False
-                                inner_html_error += """⚠️ Term type is <b>🌐 IRI</b>. <small>You must <b>add a namespace</b>
+                                inner_html_error += """<small>Term type is <b>🌐 IRI</b>. You must <b>add a namespace</b>
                                     to the template or change the term type</small>.<br>"""
 
                     if sm_generation_rule == "Reference 📊":
                         if sm_column_name and sm_term_type == "🌐 IRI":
-                            inner_html_warning += """⚠️ Term type is <b>🌐 IRI</b>.
-                                        <small>Make sure that the values in the referenced column
+                            inner_html_warning += """<small>Term type is <b>🌐 IRI</b>.
+                                        Make sure that the values in the referenced column
                                         are valid IRIs.</small><br>"""
 
 
                     if add_subject_class_option == "Ontology Class":
                         if subject_class == "Select a class":
                             sm_complete_flag = False
-                            inner_html_error += "❌ The <b>Subject class</b> has not been selected.<br>"
+                            inner_html_error += "<small>The <b>Subject class</b> has not been selected.</small><br>"
                     if add_subject_class_option == "Class outside Ontology":
                         if subject_class_prefix == "Select a namespace" or not subject_class_input:
                             sm_complete_flag = False
-                            inner_html_error += """❌ The <b>Subject class</b> (and/or its namespace)
-                                has not been given.<br>"""
+                            inner_html_error += """<small>The <b>Subject class</b> (and/or its namespace)
+                                has not been given.</small><br>"""
 
                     if add_sm_graph_map_option == "Add Graph Map":
                         if subject_graph_prefix == "Select a namespace" or not subject_graph_input:
                             sm_complete_flag = False
-                            inner_html_error += """❌ The <b>Graph Map</b> (and/or its namespace)
-                                has not been given.<br>"""
+                            inner_html_error += """<small>The <b>Graph Map</b> (and/or its namespace)
+                                has not been given.</small><br>"""
 
                     if add_subject_class_option == "Class outside Ontology":
                         if st.session_state["g_ontology"] and not ontology_classes_dict: #there is an ontology but it has no classes
-                            inner_html_warning += """⚠️ Your <b>ontology</b> does not define any classes.
-                                          <small>Using an ontology with predefined classes is recommended.</small><br>"""
+                            inner_html_warning += """<small>Your <b>ontology</b> does not define any classes.
+                                          Using an ontology with predefined classes is recommended.</small><br>"""
                         elif st.session_state["g_ontology"]:   #there exists an ontology and it has classes
-                            inner_html_warning += """⚠️ The option <b>Class outside ontology</b> lacks ontology alignment.
-                                          <small>An ontology-driven approach is recommended.</small><br>"""
+                            inner_html_warning += """<small>The option <b>Class outside ontology</b> lacks ontology alignment.
+                                          An ontology-driven approach is recommended.</small><br>"""
                         else:
-                            inner_html_warning += """⚠️ You are working <b>without an ontology</b>. <small>Loading an ontology
+                            inner_html_warning += """<small>You are working <b>without an ontology</b>. Importing an ontology
                                         from the <b> Global Configuration</b> page is encouraged.</small><br>"""
 
 
                     if label_sm_option_checkbox:
                         if not sm_label:
                             sm_complete_flag = False
-                            inner_html_error += """⚠️ The <b>Subject Map label</b>
-                                has not been given.<br>"""
+                            inner_html_error += """<small>The <b>Subject Map label</b>
+                                has not been given.</small><br>"""
                         else:
                             NS = st.session_state["structural_ns"][1]
                             sm_iri = BNode() if not sm_label else NS[sm_label]
                             if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):
                                 sm_complete_flag = False
-                                inner_html_error += """That <b>Subject Map label</b> is already in use.
-                                    <small>Please pick a different label.</small><br>"""
+                                inner_html_error += """<small>That <b>Subject Map label</b> is already in use.
+                                    Please pick a different label.</small><br>"""
 
 
                     # INFO AND SAVE BUTTON____________________________________
                     with col1a:
                         if inner_html_warning:
-                            st.markdown(f"""<div class="warning-message">
-                                {inner_html_warning}
+                            st.markdown(f"""<div class="info-message-gray">
+                                ⚠️ <b>Caution.</b><br>
+                                <div style='margin-left: 1.5em;'>{inner_html_warning}</div>
                             </div>""", unsafe_allow_html=True)
 
                         if inner_html_error:
-                            st.markdown(f"""<div class="error-message">
-                                {inner_html_error}
-                            </div>""", unsafe_allow_html=True)
+                            st.markdown(f"""<div class="info-message-gray">
+                                    ❌ <b>Subject Map incomplete.</b><br>
+                                <div style='margin-left: 1.5em;'>{inner_html_error}</div>
+                                </div>""", unsafe_allow_html=True)
+
 
                         if sm_complete_flag:
-                            st.markdown(f"""<div class="success-message">
+                            st.markdown(f"""<div class="info-message-gray">
                                 ✔️ All <b>required fields (*)</b> are complete.
                                 <small>Double-check the information before saving.</smalL> </div>
                             """, unsafe_allow_html=True)
