@@ -1012,6 +1012,10 @@ def remove_triplesmap(tm_label):
 
     g.remove((tm_iri, None, None))   # remove tm triple
 #______________________________________________________
+
+#______________________________________________________
+# Function get the column list of the data source of a tm
+# It also gives warning and info messages
 def get_column_list_and_give_info(tm_iri):
 
     ls_iri = next(st.session_state["g_mapping"].objects(tm_iri, RML.logicalSource), None)
@@ -1044,10 +1048,9 @@ def get_column_list_and_give_info(tm_iri):
         df = utils.read_tab_file(ds)
         column_list = df.columns.tolist()
 
-        st.markdown(f"""<div class="info-message-blue">
+        st.markdown(f"""<div class="info-message-gray">
                 🛢️ The data source is <b>{ds}</b>.
             </div>""", unsafe_allow_html=True)
-        st.write("")
 
     elif ds in jdbc_dict.values():        # saved sql data source
 
@@ -1075,11 +1078,10 @@ def get_column_list_and_give_info(tm_iri):
                         Manual entry of column references is discouraged.</small>
                     </div>""", unsafe_allow_html=True)
                 else:
-                    st.markdown(f"""<div class="info-message-blue">
+                    st.markdown(f"""<div class="info-message-gray">
                             📊 The data source is the database <b style="color:#F63366;">{database}</b>.<br>
                              <small>🔌 {conn_label} → <b>{jdbc_str}</b></small>
                         </div>""", unsafe_allow_html=True)
-                    st.write("")
 
             except:
                 st.markdown(f"""<div class="warning-message">
@@ -1109,11 +1111,10 @@ def get_column_list_and_give_info(tm_iri):
                         Manual entry of column references is discouraged.</small>
                     </div>""", unsafe_allow_html=True)
                 else:
-                    st.markdown(f"""<div class="info-message-blue">
+                    st.markdown(f"""<div class="info-message-gray">
                             📊 The data source is the database <b style="color:#F63366;">{database}</b>.<br>
                              <small>🔌 {conn_label} → <b>{jdbc_str}</b></small>
                         </div>""", unsafe_allow_html=True)
-                    st.write("")
 
             except:
                 st.markdown(f"""<div class="warning-message">
@@ -1170,11 +1171,93 @@ def get_column_list_and_give_info(tm_iri):
                     to enable automatic column detection.
                     Manual entry of column references is discouraged.</small>
                 </div>""", unsafe_allow_html=True)
-            st.write("")
         column_list = []
 
     return column_list
+#________________________________________________________
 
+#______________________________________________________
+# Function get the column list of the data source of a tm
+def get_column_list(tm_iri):
+
+    ls_iri = next(st.session_state["g_mapping"].objects(tm_iri, RML.logicalSource), None)
+    ds = str(next(st.session_state["g_mapping"].objects(ls_iri, RML.source), None))
+    reference_formulation = next(st.session_state["g_mapping"].objects(ls_iri, QL.referenceFormulation), None)
+    query_as_ds = next(st.session_state["g_mapping"].objects(ls_iri, RML.query), None)
+    table_name_as_ds = next(st.session_state["g_mapping"].objects(ls_iri, RR.tableName), None)
+
+    jdbc_dict = {}
+    for conn in st.session_state["db_connections_dict"]:
+        [engine, host, port, database, user, password] = st.session_state["db_connections_dict"][conn]
+        if engine == "Oracle":
+            jdbc_str = f"jdbc:oracle:thin:@{host}:{port}:{database}"
+            jdbc_dict[conn] = jdbc_str
+        elif engine == "SQL Server":
+            jdbc_str = f"jdbc:sqlserver://{host}:{port};databaseName={database}"
+            jdbc_dict[conn] = jdbc_str
+        elif engine == "PostgreSQL":
+            jdbc_str = f"jdbc:postgresql://{host}:{port}/{database}"
+            jdbc_dict[conn] = jdbc_str
+        elif engine == "MySQL":
+            jdbc_str = f"jdbc:mysql://{host}:{port}/{database}"
+            jdbc_dict[conn] = jdbc_str
+        elif engine =="MariaDB":
+            jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
+            jdbc_dict[conn] = jdbc_str
+
+    if ds in st.session_state["ds_files_dict"]:   # saved non-sql data source
+
+        df = utils.read_tab_file(ds)
+        column_list = df.columns.tolist()
+
+
+    elif ds in jdbc_dict.values():        # saved sql data source
+
+        for i_conn, i_jdbc_str in jdbc_dict.items():
+            if  i_jdbc_str == ds:
+                [engine, host, port, i_database, user, password] = st.session_state["db_connections_dict"][conn]
+                conn_label = i_conn
+                jdbc_str = i_jdbc_str
+                database = i_database
+                break
+
+
+        if query_as_ds:
+            try:
+                conn = utils.make_connection_to_db(conn_label)
+                cur = conn.cursor()
+                cur.execute(query_as_ds)
+                column_list = [description[0] for description in cur.description]
+                conn.close() # optional: close immediately or keep open for queries
+
+            except:
+                column_list = []
+
+        elif table_name_as_ds:
+            try:
+                conn = utils.make_connection_to_db(conn_label)
+                cur = conn.cursor()
+                cur.execute(f"SELECT * FROM {table_name_as_ds} LIMIT 0")
+                column_list = [desc[0] for desc in cur.description]
+                conn.close()
+
+
+            except:
+                column_list = []
+
+        else:
+            column_list = []
+
+    elif query_as_ds:    # try to look for the columns in the query
+        parsed = sqlglot.parse_one(query_as_ds)
+        column_list = [str(col) for col in parsed.find_all(sqlglot.expressions.Column)]
+
+
+    else:                                                           # data source not saved
+        column_list = []
+
+    return column_list
+#________________________________________________________
 
 
 #________________________________________________________

@@ -82,8 +82,6 @@ if "tm_label" not in st.session_state:
     st.session_state["tm_label"] = ""
 if "tm_saved_ok_flag" not in st.session_state:
     st.session_state["tm_saved_ok_flag"] = False
-if "tm_deleted_ok_flag" not in st.session_state:
-    st.session_state["tm_deleted_ok_flag"] = False
 
 # TAB2
 if "key_ds_uploader_for_sm" not in st.session_state:
@@ -100,10 +98,6 @@ if "sm_saved_ok_flag" not in st.session_state:
     st.session_state["sm_saved_ok_flag"] = False
 if "sm_iri" not in st.session_state:
     st.session_state["sm_iri"] = None
-if "labelled_sm_deleted_ok_flag" not in st.session_state:
-    st.session_state["labelled_sm_deleted_ok_flag"] = False
-if "sm_unassigned_ok_flag" not in st.session_state:
-    st.session_state["sm_unassigned_ok_flag"] = False
 if "sm_template_prefix" not in st.session_state:
     st.session_state["sm_template_prefix"] = ""
 
@@ -124,6 +118,12 @@ if "pom_deleted_ok_flag" not in st.session_state:
     st.session_state["pom_deleted_ok_flag"] = False
 
 # TAB4
+if "tm_deleted_ok_flag" not in st.session_state:
+    st.session_state["tm_deleted_ok_flag"] = False
+if "labelled_sm_deleted_ok_flag" not in st.session_state:
+    st.session_state["labelled_sm_deleted_ok_flag"] = False
+if "sm_unassigned_ok_flag" not in st.session_state:
+    st.session_state["sm_unassigned_ok_flag"] = False
 if "g_mapping_cleaned_ok_flag"  not in st.session_state:
     st.session_state["g_mapping_cleaned_ok_flag"]  = False
 
@@ -233,32 +233,6 @@ def save_tm_w_table_name():
     st.session_state["last_added_tm_list"].insert(0, st.session_state["tm_label"])    # to display last added tm
     # reset fields_______________________
     st.session_state["key_tm_label_input"] = ""
-
-def delete_tm():   #function to delete a TriplesMap
-    # remove triples and store information___________
-    for tm in tm_to_remove_list:
-        utils.remove_triplesmap(tm)      # remove the tm
-        if tm in st.session_state["last_added_tm_list"]:
-            st.session_state["last_added_tm_list"].remove(tm)       # if it is in last added list, remove
-    #store information
-    st.session_state["last_added_sm_list"] = [pair for pair in st.session_state["last_added_sm_list"]
-        if pair[1] in utils.get_tm_dict()]
-    st.session_state["last_added_pom_list"] = [pair for pair in st.session_state["last_added_pom_list"]
-        if pair[1] in utils.get_tm_dict()]
-    st.session_state["tm_deleted_ok_flag"] = True
-    #reset fields_________________________
-    st.session_state["key_tm_to_remove_list"] = []
-
-def delete_all_tm():   #function to delete a TriplesMap
-    # remove all triples
-    st.session_state["g_mapping"] = Graph()
-    #store information
-    st.session_state["last_added_tm_list"] = []
-    st.session_state["last_added_sm_list"] = []
-    st.session_state["last_added_pom_list"] = []
-    st.session_state["tm_deleted_ok_flag"] = True
-    #reset fields_______________________
-    st.session_state["key_tm_to_remove_list"] = []
 
 # TAB2
 def save_sm_existing():
@@ -380,36 +354,6 @@ def save_sm_reference():   #function to save subject map (reference option)
     # reset fields____________________
     st.session_state["sm_template_list"] = []   # in case it is not empty
     st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
-
-def delete_labelled_sm():   #function to delete a labelled Subject Map
-    # remove triples______________________
-    for sm in sm_to_remove_iri_list:
-        st.session_state["g_mapping"].remove((sm, None, None))
-        st.session_state["g_mapping"].remove((None, None, sm))
-    # store information__________________
-    st.session_state["labelled_sm_deleted_ok_flag"] = True
-    st.session_state["last_added_sm_list"] = [pair for pair in st.session_state["last_added_sm_list"]
-        if pair[0] not in sm_to_remove_iri_list]
-    # reset fields__________________
-    st.session_state["key_sm_to_remove_label"] = []
-
-def unassign_sm():
-    # remove triples______________________
-    for tm in tm_to_unassign_sm_list:
-        tm_iri = tm_dict[tm]
-        sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RR.subjectMap)
-        other_tm_with_sm = [split_uri(s)[1] for s, p, o in st.session_state["g_mapping"].triples((None, RR.subjectMap, sm)) if s != tm_iri]
-        if len(other_tm_with_sm) != 0:       # just unassign sm from tm (don't remove)
-            st.session_state["g_mapping"].remove((tm_iri, RR.subjectMap, None))
-        else:       # completely remove sm
-            st.session_state["g_mapping"].remove((sm_iri, None, None))
-            st.session_state["g_mapping"].remove((None, None, sm_iri))
-    # store information__________________
-    st.session_state["sm_unassigned_ok_flag"] = True
-    st.session_state["last_added_sm_list"] = [pair for pair in st.session_state["last_added_sm_list"]
-        if pair[1] not in tm_to_unassign_sm_list]
-    # reset fields__________________
-    st.session_state["key_tm_to_unassign_sm"] = []
 
 # TAB3
 def add_ns_to_om_template():
@@ -577,7 +521,64 @@ def delete_all_pom():           #function to delete a Predicate-Object Map
     # reset fields
     st.session_state["key_tm_to_delete_pom"] = "Select a TriplesMap"
 
-# TAB 4
+# TAB4
+def delete_tm():   #function to delete a TriplesMap
+    # remove triples and store information___________
+    for tm in tm_to_remove_list:
+        utils.remove_triplesmap(tm)      # remove the tm
+        if tm in st.session_state["last_added_tm_list"]:
+            st.session_state["last_added_tm_list"].remove(tm)       # if it is in last added list, remove
+    #store information
+    st.session_state["last_added_sm_list"] = [pair for pair in st.session_state["last_added_sm_list"]
+        if pair[1] in utils.get_tm_dict()]
+    st.session_state["last_added_pom_list"] = [pair for pair in st.session_state["last_added_pom_list"]
+        if pair[1] in utils.get_tm_dict()]
+    st.session_state["tm_deleted_ok_flag"] = True
+    #reset fields_________________________
+    st.session_state["key_tm_to_remove_list"] = []
+
+def delete_all_tm():   #function to delete a TriplesMap
+    # remove all triples
+    st.session_state["g_mapping"] = Graph()
+    #store information
+    st.session_state["last_added_tm_list"] = []
+    st.session_state["last_added_sm_list"] = []
+    st.session_state["last_added_pom_list"] = []
+    st.session_state["tm_deleted_ok_flag"] = True
+    #reset fields_______________________
+    st.session_state["key_tm_to_remove_list"] = []
+
+def delete_labelled_sm():   #function to delete a labelled Subject Map
+    # remove triples______________________
+    for sm in sm_to_remove_iri_list:
+        st.session_state["g_mapping"].remove((sm, None, None))
+        st.session_state["g_mapping"].remove((None, None, sm))
+    # store information__________________
+    st.session_state["labelled_sm_deleted_ok_flag"] = True
+    st.session_state["last_added_sm_list"] = [pair for pair in st.session_state["last_added_sm_list"]
+        if pair[0] not in sm_to_remove_iri_list]
+    # reset fields__________________
+    st.session_state["key_sm_to_remove_label"] = []
+
+def unassign_sm():
+    # remove triples______________________
+    for tm in tm_to_unassign_sm_list:
+        tm_iri = tm_dict[tm]
+        sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RR.subjectMap)
+        other_tm_with_sm = [split_uri(s)[1] for s, p, o in st.session_state["g_mapping"].triples((None, RR.subjectMap, sm)) if s != tm_iri]
+        if len(other_tm_with_sm) != 0:       # just unassign sm from tm (don't remove)
+            st.session_state["g_mapping"].remove((tm_iri, RR.subjectMap, None))
+        else:       # completely remove sm
+            st.session_state["g_mapping"].remove((sm_iri, None, None))
+            st.session_state["g_mapping"].remove((None, None, sm_iri))
+    # store information__________________
+    st.session_state["sm_unassigned_ok_flag"] = True
+    st.session_state["last_added_sm_list"] = [pair for pair in st.session_state["last_added_sm_list"]
+        if pair[1] not in tm_to_unassign_sm_list]
+    # reset fields__________________
+    st.session_state["key_tm_to_unassign_sm"] = []
+
+
 def clean_g_mapping():
     # REMOVE TRIPLESMAPS
     # remove triples and store information___________
@@ -623,7 +624,7 @@ if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
 
-tab1, tab2, tab3, tab4 = st.tabs(["Add TriplesMap", "Add Subject Map", "Add Predicate-Object Map", "Clean Mapping"])
+tab1, tab2, tab3, tab4 = st.tabs(["Add TriplesMap", "Add Subject Map", "Add Predicate-Object Map", "Manage Mapping"])
 
 
 #________________________________________________
@@ -1011,170 +1012,6 @@ with tab1:
         time.sleep(st.session_state["success_display_time"])
         st.rerun()
 
-
-
-    # PURPLE HEADING - REMOVE EXISTING TRIPLESMAP
-    tm_dict = utils.get_tm_dict()
-    if tm_dict:     # only show option if there are tm that can be removed
-        with col1:
-            st.write("________")
-            st.markdown("""<div class="purple-heading">
-                    🗑️ Remove Existing TriplesMap
-                </div>""", unsafe_allow_html=True)
-            st.write("")
-
-
-        if st.session_state["tm_deleted_ok_flag"]:  # show message here if "Remove" purple heading is going to be shown
-            with col1:
-                col1a, col1b = st.columns([2,1])
-            with col1a:
-                st.markdown(f"""
-                <div style="background-color:#d4edda; padding:1em;
-                border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                    ✅ The <b>Triplesmap/s</b> have been removed.
-                </div>""", unsafe_allow_html=True)
-                st.write("")
-            st.session_state["tm_deleted_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
-            st.rerun()
-
-        with col1:
-            col1a, col1b = st.columns([2,1])
-
-        tm_list = list(tm_dict)
-        if len(tm_list) > 1:
-            tm_list.append("Select all")
-
-        with col1a:
-            tm_to_remove_list = st.multiselect("🖱️ Select TriplesMap/s:*", reversed(tm_list), key="key_tm_to_remove_list")
-
-        #HEREHEREHERE
-
-        if "Select all" not in tm_to_remove_list:
-            sm_dict = utils.get_sm_dict()
-            inner_html = ""
-            max_length = 8
-            if len(tm_to_remove_list) < max_length:
-                for tm in tm_to_remove_list:
-                    inner_html += f"""<b>🔖 {tm}</b> ("""
-                    tm_iri = tm_dict[tm]
-                    sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RR.subjectMap)), None)
-                    if sm_to_remove_tm:
-                        inner_html += f"""<span style="font-size:0.85em;">Subject Map: {sm_dict[sm_to_remove_tm][0]} | </span>"""
-                    else:
-                        inner_html += f"""<span style="font-size:0.85em;">No Subject Map | </span>"""
-                    pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RR.predicateObjectMap))
-                    if len(pom_to_remove_tm_list) == 1:
-                        inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Map)<br></span>"""
-                    elif pom_to_remove_tm_list:
-                        inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Maps)<br></span>"""
-                    else:
-                        inner_html += f"""<span style="font-size:0.85em;">No Predicate-Object Maps)<br></span>"""
-            else:
-                for tm in tm_to_remove_list[:max_length]:
-                    inner_html += f"""🔖 <b>{tm}</b> ("""
-                    tm_iri = tm_dict[tm]
-                    sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RR.subjectMap)), None)
-                    if sm_to_remove_tm:
-                        inner_html += f"""<span style="font-size:0.85em;">Subject Map: {sm_dict[sm_to_remove_tm][0]} | </span>"""
-                    else:
-                        inner_html += f"""<span style="font-size:0.85em;">No Subject Map | </span>"""
-                    pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RR.predicateObjectMap))
-                    if len(pom_to_remove_tm_list) == 1:
-                        inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Map)<br></span>"""
-                    elif pom_to_remove_tm_list:
-                        inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Maps)<br></span>"""
-                    else:
-                        inner_html += f"""<span style="font-size:0.85em;">No Predicate-Object Maps)<br></span>"""
-                inner_html += f"""🔖 ..."""
-
-            if inner_html:
-                with col1:
-                    col1a, col1b = st.columns([2,1])
-                with col1a:
-                    st.markdown(f"""<div class="info-message-gray">
-                            {inner_html}
-                        <div>""", unsafe_allow_html=True)
-                    st.write("")
-
-        else:   #Select all option
-            sm_dict = utils.get_sm_dict()
-            inner_html = ""
-            max_length = utils.get_max_length_for_display()[4]
-            if len(tm_dict) < max_length:
-                for tm in tm_dict:
-                    inner_html += f"""<b>🔖 {tm}</b> ("""
-                    tm_iri = tm_dict[tm]
-                    sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RR.subjectMap)), None)
-                    if sm_to_remove_tm:
-                        inner_html += f"""<span style="font-size:0.85em;">Subject Map: {sm_dict[sm_to_remove_tm][0]} | </span>"""
-                    else:
-                        inner_html += f"""<span style="font-size:0.85em;">No Subject Map | </span>"""
-                    pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RR.predicateObjectMap))
-                    if len(pom_to_remove_tm_list) == 1:
-                        inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Map)<br></span>"""
-                    elif pom_to_remove_tm_list:
-                        inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Maps)<br></span>"""
-                    else:
-                        inner_html += f"""<span style="font-size:0.85em;">No Predicate-Object Maps)<br></span>"""
-            else:
-                for tm in list(tm_dict)[:max_length]:
-                    inner_html += f"""🔖 <b>{tm}</b> ("""
-                    tm_iri = tm_dict[tm]
-                    sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RR.subjectMap)), None)
-                    if sm_to_remove_tm:
-                        inner_html += f"""<span style="font-size:0.85em;">Subject Map: {sm_dict[sm_to_remove_tm][0]} | </span>"""
-                    else:
-                        inner_html += f"""<span style="font-size:0.85em;">No Subject Map | </span>"""
-                    pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RR.predicateObjectMap))
-                    if len(pom_to_remove_tm_list) == 1:
-                        inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Map)<br></span>"""
-                    elif pom_to_remove_tm_list:
-                        inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Maps)<br></span>"""
-                    else:
-                        inner_html += f"""<span style="font-size:0.85em;">No Predicate-Object Maps)<br></span>"""
-                inner_html += f"""🔖 ..."""
-
-            if inner_html:
-                with col1:
-                    col1a, col1b = st.columns([2,1])
-                with col1a:
-                    st.markdown(f"""<div class="info-message-gray">
-                            {inner_html}
-                        <div>""", unsafe_allow_html=True)
-                    st.write("")
-
-
-
-        if tm_to_remove_list:
-            if "Select all" not in tm_to_remove_list:
-                with col1a:
-                    delete_tm_checkbox = st.checkbox(
-                    ":gray-badge[⚠️ I am sure I want to delete the TriplesMap/s]",
-                    key="delete_tm_checkbox")
-                if delete_tm_checkbox:
-                    with col1:
-                        col1a, col1b = st.columns([1,2])
-                    with col1a:
-                        st.button("Delete", on_click=delete_tm)
-            else:   #if "Select all" selected
-                with col1b:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, <b>all TriplesMaps will be deleted</b>.
-                            <small>Make sure you want to go ahead.</small>
-                        </div>""", unsafe_allow_html=True)
-                    st.write("")
-                with col1a:
-                    delete_tm_checkbox = st.checkbox(
-                    ":gray-badge[⚠️ I am sure I want to delete all TriplesMaps]",
-                    key="delete_tm_checkbox")
-                if delete_tm_checkbox:
-                    with col1:
-                        col1a, col1b = st.columns([1,2])
-                    with col1a:
-                        st.button("Delete", on_click=delete_all_tm)
-
-
 #________________________________________________
 
 
@@ -1302,7 +1139,7 @@ with tab2:
                 🔒 <b>All existing TriplesMaps have already been assigned a Subject Map.</b><br>
                 <ul style="margin-top:0.5em; margin-bottom:0; font-size:0.9em; list-style-type: disc; padding-left: 1.2em;">
                     <li>You can add new TriplesMaps in the <b>Add TriplesMap</b> panel.</li>
-                    <li>You can remove the Subject Map of a TriplesMap in the <b>🗑️ Remove existing Subject Map</b> option.</li>
+                    <li>You can remove the Subject Map of a TriplesMap in the <b>Manage Mapping</b> pannel.</li>
                 </ul></div>""",unsafe_allow_html=True)
             st.write("")
 
@@ -1320,7 +1157,7 @@ with tab2:
         existing_sm_list = list(existing_sm_dict.keys())
 
         with col1:
-            col1a, col1b = st.columns([1.5,1])
+            col1a, col1b = st.columns(2)
         if st.session_state["last_added_tm_list"] and st.session_state["last_added_tm_list"][0] in tm_wo_sm_list:
             with col1a:
                 list_to_choose = list(reversed(tm_wo_sm_list))
@@ -1338,8 +1175,7 @@ with tab2:
             ls_iri_for_sm = next(st.session_state["g_mapping"].objects(tm_iri_for_sm, RML.logicalSource), None)
             ds_for_sm = str(next(st.session_state["g_mapping"].objects(ls_iri_for_sm, RML.source), None))
 
-            with col1a:
-                column_list = utils.get_column_list_and_give_info(tm_iri_for_sm)
+            column_list = utils.get_column_list(tm_iri_for_sm)
 
             with col1b:
                 st.write("")
@@ -1348,7 +1184,7 @@ with tab2:
                 else:
                     list_to_choose = ["Template 📐", "Constant 🔒", "Reference 📊"]
                 sm_generation_rule = st.radio("🖱️ Define the Subject Map generation rule:*",
-                    list_to_choose, label_visibility="collapsed", horizontal=True, key="key_sm_generation_rule_radio")
+                    list_to_choose, horizontal=True, key="key_sm_generation_rule_radio")
 
 
             if sm_generation_rule == "Existing Subject Map 📑":
@@ -1441,8 +1277,6 @@ with tab2:
                                 st.button("Reset", on_click=reset_sm_template)
 
                         with col1:
-                            col1a, col1b = st.columns([3,1])
-                        with col1a:
                             sm_template = "".join(st.session_state["sm_template_list"])
                             if sm_template:
                                 st.write("")
@@ -1768,6 +1602,7 @@ with tab2:
 
                     # INFO AND SAVE BUTTON____________________________________
                     with col1a:
+
                         if inner_html_warning:
                             st.markdown(f"""<div class="info-message-gray">
                                 ⚠️ <b>Caution.</b><br>
@@ -1780,12 +1615,15 @@ with tab2:
                                 <div style='margin-left: 1.5em;'>{inner_html_error}</div>
                                 </div>""", unsafe_allow_html=True)
 
-
                         if sm_complete_flag:
                             st.markdown(f"""<div class="info-message-gray">
                                 ✔️ All <b>required fields (*)</b> are complete.
                                 <small>Double-check the information before saving.</smalL> </div>
                             """, unsafe_allow_html=True)
+
+                        utils.get_column_list_and_give_info(tm_iri_for_sm)
+
+                        if sm_complete_flag:
                             st.write("")
                             if sm_generation_rule == "Template 📐":
                                 save_sm_template_button = st.button("Save", on_click=save_sm_template, key="key_save_sm_template_button")
@@ -1793,317 +1631,6 @@ with tab2:
                                 save_sm_constant_button = st.button("Save", on_click=save_sm_constant, key="key_save_sm_constant_button")
                             if sm_generation_rule == "Reference 📊":
                                 save_sm_reference_button = st.button("Save", on_click=save_sm_reference, key="key_save_sm_reference_button")
-
-
-
-    if st.session_state["labelled_sm_deleted_ok_flag"]:
-        with col2b:
-            st.write("")
-            st.write("")
-            st.write("")
-            st.write("")
-            st.write("")
-            st.write("")
-            st.write("")
-            st.write("")
-            st.write("")
-            st.write("")
-            st.write("")
-            st.write("")
-            st.markdown(f"""<div class="success-message-flag">
-                ✅ The <b>Subject Map/s</b> have been deleted!
-            </div>""", unsafe_allow_html=True)
-        st.session_state["labelled_sm_deleted_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
-        st.rerun()
-
-
-    if st.session_state["sm_unassigned_ok_flag"]:
-        with col2b:
-            st.write("")
-            st.write("")
-            st.write("")
-            st.write("")
-            st.write("")
-            st.write("")
-            st.write("")
-            st.write("")
-            st.write("")
-            st.write("")
-            st.write("")
-            st.write("")
-            st.markdown(f"""<div class="success-message-flag">
-                ✅ The <b>Subject Map/s</b> have been unassigned!
-            </div>""", unsafe_allow_html=True)
-        st.session_state["sm_unassigned_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
-        st.rerun()
-
-    # PURPLE HEADING - REMOVE EXISTING SUBJECT MAP
-    sm_list = list(st.session_state["g_mapping"].objects(predicate=RR.subjectMap))
-    tm_dict = utils.get_tm_dict()
-    sm_dict = utils.get_sm_dict()
-
-    if sm_list:    # only show option if there are sm to remove
-        with col1:
-            st.write("_____")
-            st.markdown("""<div class="purple-heading">
-                    🗑️ Remove existing Subject Map
-                </div>""", unsafe_allow_html=True)
-            st.write("")
-
-
-        tm_w_sm_list = ["Select a TriplesMap"]
-        for tm_label, tm_iri in tm_dict.items():
-            if any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectMap, None))):
-                tm_w_sm_list.append(tm_label)
-
-        with col1:
-            col1a, col1b = st.columns([2,1])
-
-        labelled_sm_list = [sm for sm in sm_list if isinstance(sm, URIRef)]
-        labelled_sm_dict = {}
-        for sm in labelled_sm_list:
-            labelled_sm_dict[split_uri(sm)[1]] = sm
-
-        if labelled_sm_list:    # if there exist labelled sm
-            remove_sm_options_list = ["🔖 Delete labelled Subject Map", "🎯 Unassign Subject Map of a TriplesMap"]
-            with col1a:
-                remove_sm_selected_option = st.radio("", remove_sm_options_list, label_visibility="collapsed",
-                    key="key_remove_sm_selected_option")
-        else:            # no labelled sm
-            remove_sm_selected_option = "🎯 Unassign Subject Map of a TriplesMap"
-
-
-        if remove_sm_selected_option == "🔖 Delete labelled Subject Map":
-
-            sm_to_choose_list = list(reversed(labelled_sm_dict.keys()))
-            if len(sm_to_choose_list) > 1:
-                sm_to_choose_list.insert(0, "Select all")
-            with col1a:
-                sm_to_remove_label_list = st.multiselect("🖱️ Select labelled Subject Map/s:*", sm_to_choose_list, key="key_sm_to_remove_label")
-            sm_to_remove_iri_list = [labelled_sm_dict[sm] for sm in sm_to_remove_label_list if not sm == "Select all"]
-
-            if "Select all" in sm_to_remove_label_list:
-                sm_to_remove_iri_list = labelled_sm_list
-                sm_to_remove_label_list = list(reversed(labelled_sm_dict.keys()))
-
-            if not sm_to_remove_label_list:
-                with col1b:
-                    st.markdown(f"""<div class="info-message-gray">
-                            ℹ️ The selected <b>Subject Maps</b> will be deleted
-                            <small>(and therefore unassigned from their <b>TriplesMaps</b>).</small>
-                        </div>""", unsafe_allow_html=True)
-                    st.write("")
-
-            # create a single info message
-            max_length = utils.get_max_length_for_display()[4]
-            inner_html = f"""<div style="margin-bottom:1px;">
-                    <b>Subject Map</b> →
-                    <b>TriplesMaps</b>
-                </div>"""
-
-            for sm in sm_to_remove_iri_list[:max_length]:
-                sm_label_to_remove = sm_dict[sm][0]
-                corresponding_tm_list = sm_dict[sm][4]
-                if len(corresponding_tm_list) > 1:
-                    formatted_corresponding_tm = ", ".join(corresponding_tm_list[:-1]) + " and " + corresponding_tm_list[-1]
-                    inner_html += f"""<div style="margin-bottom:1px;">
-                        <small>🔖 <b>{sm_label_to_remove}</b> → {formatted_corresponding_tm}</small>
-                    </div>"""
-                elif len(corresponding_tm_list) == 1:
-                    inner_html += f"""<div style="margin-bottom:1px;">
-                        <small>🔖 <b>{sm_label_to_remove}</b> → {corresponding_tm_list[0]}</small>
-                    </div>"""
-                else:
-                    inner_html += f"""<div style="margin-bottom:1px;">
-                        <small>❌ The Subject Map <b>{sm_label_to_remove}</b> is not assigned to any TriplesMap.
-                        Please check your mapping.</small>
-                    </div>"""
-
-
-            if len(sm_to_remove_iri_list) > max_length:   # many sm to remove
-                inner_html += f"""<div style="margin-bottom:1px;">
-                    <small>🔖 ... (+{len(sm_to_remove_iri_list[:max_length])})</small>
-                </div>"""
-
-            with col1:
-                col1a, col1b = st.columns([2,1])
-            with col1a:
-                if sm_to_remove_label_list:
-                    st.markdown(f"""<div class="info-message-gray">
-                            {inner_html}
-                        </div>""", unsafe_allow_html=True)
-                    st.write("")
-
-            # render
-            if sm_to_remove_iri_list:
-
-
-                inner_html = ""
-                sm_to_remove_label_list_mod = [sm for sm in sm_to_remove_label_list if sm != "Select all"]
-                formatted_sm_to_remove = utils.format_list_for_markdown(sm_to_remove_label_list_mod)
-                if len(sm_to_remove_label_list_mod) == 1:
-                    inner_html += f"""ℹ️ The Subject Map <b>{formatted_sm_to_remove}</b> will be completely removed."""
-                elif len(sm_to_remove_label_list_mod) > 1:
-                    inner_html += f"""ℹ️ The Subject Maps <b>{formatted_sm_to_remove}</b> will be completely removed."""
-
-                with col1b:
-                    st.markdown(f"""<div class="info-message-blue">
-                            {inner_html}
-                        <div>""", unsafe_allow_html=True)
-
-
-                if "Select all" in sm_to_remove_label_list:
-                    with col1b:
-                        st.markdown(f"""<div class="warning-message">
-                                ⚠️ You are deleting <b>all labelled Subject Maps</b>.
-                                <small>Make sure you want to go ahead.</small>
-                            </div>""", unsafe_allow_html=True)
-                        st.write("")
-                if len(sm_to_remove_iri_list):
-                    with col1a:
-                        delete_labelled_sm_checkbox = st.checkbox(
-                        ":gray-badge[⚠️ I am sure I want to delete the Subject Map/s]",
-                        key="delete_labelled_sm_checkbox")
-                    if delete_labelled_sm_checkbox:
-                        st.session_state["sm_to_remove_label_list"] = sm_to_remove_label_list
-                        with col1a:
-                            st.button("Delete", on_click=delete_labelled_sm, key="key_delete_labelled_sm_button")
-
-        if remove_sm_selected_option == "🎯 Unassign Subject Map of a TriplesMap":
-
-            tm_w_sm_list = []
-            for tm_label, tm_iri in tm_dict.items():
-                if any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectMap, None))):
-                    tm_w_sm_list.append(tm_label)
-
-
-            with col1a:
-                tm_w_sm_list_to_choose = list(reversed(tm_w_sm_list))
-                if len(tm_w_sm_list_to_choose) > 1:
-                    tm_w_sm_list_to_choose.insert(0, "Select all")
-                tm_to_unassign_sm_list_input = st.multiselect("🖱️ Select TriplesMap/s:*", tm_w_sm_list_to_choose, key="key_tm_to_unassign_sm")
-
-                if "Select all" in tm_to_unassign_sm_list_input:
-                    tm_to_unassign_sm_list = tm_w_sm_list
-                else:
-                    tm_to_unassign_sm_list = tm_to_unassign_sm_list_input
-
-            if not tm_to_unassign_sm_list_input:
-                with col1b:
-                    st.markdown(f"""<div class="info-message-gray">
-                            ℹ️ The selected <b>Subject Maps</b> will be detached from their
-                            <b>TriplesMaps</b>, and permanently removed
-                            <small>(unless they are assigned to another TriplesMap).</small>
-                        </div>""", unsafe_allow_html=True)
-                    st.write("")
-
-            # create a single info message
-            max_length = utils.get_max_length_for_display()[4]
-            inner_html = f"""<div style="margin-bottom:1px;">
-                    <b>TriplesMap</b> → <b>Subject Map</b> →
-                    <b>Linked TriplesMaps (if any)</b>
-                </div>"""
-
-            for tm in tm_to_unassign_sm_list[:max_length]:
-                tm_iri = tm_dict[tm]
-                sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RR.subjectMap)
-                sm_label_to_unassign = sm_dict[sm_iri][0]
-                other_tm_with_sm = [split_uri(s)[1] for s, p, o in st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)) if s != tm_iri]
-                if other_tm_with_sm:
-                    if len(other_tm_with_sm) > 1:
-                        formatted_corresponding_tm = ", ".join(other_tm_with_sm[:-1]) + " and " + other_tm_with_sm[-1]
-                    else:
-                        formatted_corresponding_tm = other_tm_with_sm[0]
-                    inner_html += f"""<div style="margin-bottom:1px;">
-                        <small>🔖 {tm} → <b>{sm_label_to_unassign}</b> → {formatted_corresponding_tm}</small>
-                    </div>"""
-                else:
-                    inner_html += f"""<div style="margin-bottom:1px;">
-                        <small>🔖 {tm} →  <b>{sm_label_to_unassign}</b></small>
-                    </div>"""
-
-            if len(tm_to_unassign_sm_list) > max_length:   # many sm to remove
-                inner_html += f"""<div style="margin-bottom:1px;">
-                    <small>🔖 ... (+{len(tm_to_unassign_sm_list[:max_length])})</small>
-                </div>"""
-
-            # render
-            with col1:
-                col1a, col1b = st.columns([2,1])
-            if tm_to_unassign_sm_list:
-                with col1a:
-                    st.markdown(f"""<div class="info-message-gray">
-                            {inner_html}
-                        </div>""", unsafe_allow_html=True)
-            with col1a:
-                st.write("")
-
-
-
-            sm_to_completely_remove_list = []
-            sm_to_just_unassign_list = []
-            for tm in tm_to_unassign_sm_list:
-                tm_iri = tm_dict[tm]
-                sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RR.subjectMap)
-                sm_label_to_unassign = sm_dict[sm_iri][0]
-                other_tm_with_sm = [split_uri(s)[1] for s, p, o in st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)) if s != tm_iri]
-                if all(tm in tm_to_unassign_sm_list for tm in other_tm_with_sm):   # if upon deletion sm is no longer assigned to any tm
-                    if sm_label_to_unassign not in sm_to_completely_remove_list:
-                        sm_to_completely_remove_list.append(sm_label_to_unassign)
-                else:
-                    sm_to_just_unassign_list.append(sm_label_to_unassign)
-
-            # warning messages
-            inner_html = ""
-            formatted_tm_to_unassign_sm = utils.format_list_for_markdown(tm_to_unassign_sm_list)
-            formatted_sm_to_completely_remove = utils.format_list_for_markdown(sm_to_completely_remove_list)
-            formatted_sm_to_just_unassign = utils.format_list_for_markdown(sm_to_just_unassign_list)
-
-            max_length = utils.get_max_length_for_display()[5]
-            if len(sm_to_just_unassign_list) == 1:
-                inner_html += f"""ℹ️ The Subject Map <b>{formatted_sm_to_just_unassign}</b> will be unassigned from
-                its TriplesMap.<br>"""
-            elif sm_to_just_unassign_list and len(sm_to_just_unassign_list) < max_length:
-                inner_html += f"""ℹ️ The Subject Maps <b>{formatted_sm_to_just_unassign}</b> will be unassigned from
-                their TriplesMaps</b>.<br>"""
-            elif sm_to_just_unassign_list:
-                inner_html += f"""ℹ️ <b>{len(sm_to_just_unassign_list)} Subject Maps</b> will be unassigned from
-                their TriplesMaps.<br>"""
-            if len(sm_to_completely_remove_list) == 1:
-                inner_html += f"""ℹ️ The Subject Map <b>{formatted_sm_to_completely_remove}</b> will be completely removed."""
-            elif sm_to_completely_remove_list and len(sm_to_completely_remove_list) < max_length:
-                inner_html += f"""ℹ️ The Subject Maps <b>{formatted_sm_to_completely_remove}</b> will be completely removed."""
-            elif sm_to_completely_remove_list:
-                inner_html += f"""ℹ️ <b>{len(sm_to_completely_remove_list)} Subject Maps</b> will be completely removed."""
-
-            if tm_to_unassign_sm_list:
-                with col1b:
-                    st.markdown(f"""<div class="info-message-blue">
-                            {inner_html}
-                        <div>""", unsafe_allow_html=True)
-
-
-            if "Select all" in tm_to_unassign_sm_list_input:
-                with col1b:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ You are deleting <b>all Subject Maps</b>.
-                            <small>Make sure you want to go ahead.</small>
-                        </div>""", unsafe_allow_html=True)
-
-
-            if tm_to_unassign_sm_list:
-                with col1a:
-                    unassign_sm_checkbox = st.checkbox(
-                    ":gray-badge[⚠️ I am sure I want to unassign the Subject Map/s]",
-                    key="key_unassign_sm_checkbox")
-                if unassign_sm_checkbox:
-                    st.session_state["sm_to_completely_remove_list"] = sm_to_completely_remove_list
-                    st.session_state["tm_to_unassign_sm_list"] = tm_to_unassign_sm_list
-                    with col1a:
-                        st.button("Unassign", on_click=unassign_sm, key="key_unassign_sm_button")
-
 
 
 
@@ -2197,20 +1724,16 @@ with tab3:
 
             tm_iri_for_pom = tm_dict[tm_label_for_pom]
 
-            with col1b:
-                st.write("")
-                column_list = utils.get_column_list_and_give_info(tm_iri_for_pom)
-
             sm_dict = utils.get_sm_dict()
 
             if not tm_label_for_pom in tm_w_sm_list:
                 sm_label_for_pom = ""
-                with col1a:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ TriplesMap <b>{tm_label_for_pom}</b> has no Subject Map.
-                            <small>It will be invalid without one.</small>
-                        </div>""", unsafe_allow_html=True)
-                    st.write("")
+                # with col1a:
+                #     st.markdown(f"""<div class="warning-message">
+                #             ⚠️ TriplesMap <b>{tm_label_for_pom}</b> has no Subject Map.
+                #             <small>It will be invalid without one.</small>
+                #         </div>""", unsafe_allow_html=True)
+                #     st.write("")
             else:
                 for sm in sm_dict:
                     if tm_label_for_pom in sm_dict[sm][4]:
@@ -2218,53 +1741,36 @@ with tab3:
                         break
                     sm_label_for_pom = ""
 
-            with col1:
-                st.write("")
-            # HERE CREATE THE PREDICATE MAP
+            om_generation_rule_list = ["Template 📐", "Constant 🔒", "Reference 📊"]
 
-            col1, col2, col3 = st.columns([1.5,0.2,2])
-
-            with col1:
-                st.markdown("""<div class="gray-heading">
-                        🏗️ Create the Predicate-Object Map</dic><br>
-                    """,unsafe_allow_html=True)
-                st.write("")
+            with col1b:
+                om_generation_rule = st.radio("🖱️ Define the Object Map generation rule:*",
+                    om_generation_rule_list, horizontal=True, key="key_om_generation_rule_radio")
 
 
-            with col1:
-                col1a, col1b = st.columns([2.5,1])
-            with col1a:
-                pom_label = st.text_input("⌨️ Enter Predicate-Object Map label (optional):", key= "key_pom_label")
-                NS = st.session_state["structural_ns"][1]
-                pom_iri = BNode() if not pom_label else NS[pom_label]
-            if next(st.session_state["g_mapping"].triples((None, RR.predicateObjectMap, pom_iri)), None):
-                with col1a:
-                    st.markdown(f"""<div class="error-message">
-                        ❌ That <b>Predicate-Object Map label</b> is already in use. Please pick another label or leave blank.
-                    </div>""", unsafe_allow_html=True)
+            pom_iri = BNode()
 
             if st.session_state["g_ontology_components_dict"]:
                 ontology_p_list = utils.get_ontology_defined_p()
 
                 if ontology_p_list:   # if the ontology includes at least one predicate
-                    p_type_option_list = ["🧩 Ontology predicate", "🚫 Predicate outside ontology"]
                     with col1:
-                        p_type = st.radio("Select an option:", p_type_option_list,
-                            label_visibility="collapsed", key="key_p_type_radio")
+                        col1a, col1b = st.columns(2)
+                    p_type_option_list = ["Ontology predicate", "Predicate outside ontology"]
+                    with col1a:
+                        p_type = st.selectbox("🖱️ Select an option:*", p_type_option_list,
+                            key="key_p_type")
                 else:
-                    p_type = "🚫 Predicate outside ontology"
+                    p_type = "Predicate outside ontology"
 
             else:   # no ontology
-                p_type = "🚫 Predicate outside ontology"
+                p_type = "Predicate outside ontology"
 
-            if p_type == "🧩 Ontology predicate":
-
-                with col1:
-                    col1a, col1b = st.columns([2,1])
+            if p_type == "Ontology predicate":
 
                 ontology_p_dict = {split_uri(p)[1]: p for p in ontology_p_list}
 
-                with col1a:
+                with col1b:
                     list_to_choose = list(ontology_p_dict.keys())
                     list_to_choose.insert(0, "Select a predicate")
                     selected_p_label = st.selectbox("🖱️ Select a predicate:*", list_to_choose, key="key_selected_p_label")
@@ -2272,22 +1778,18 @@ with tab3:
                 if selected_p_label != "Select a predicate":
                     selected_p_iri = ontology_p_dict[selected_p_label]
 
-            if p_type == "🚫 Predicate outside ontology":
+            if p_type == "Predicate outside ontology":
                 mapping_ns_dict = utils.get_mapping_ns_dict()
 
                 if not mapping_ns_dict:
-                    with col1:
-                        col1a, col1b = st.columns([2,1])
-                    with col1:
+                    with col1b:
                         st.markdown(f"""<div class="error-message">
                                 ❌ You must add namespaces in the <b>Global Configuration</b> page.
                             </div>""", unsafe_allow_html=True)
                         st.write("")
 
-                with col1:
-                    col1a, col1b = st.columns([1,1.5])
 
-                with col1a:
+                with col1b:
                     list_to_choose = list(reversed(list(mapping_ns_dict.keys())))
                     list_to_choose.insert(0, "Select a namespace")
                     manual_p_ns_prefix = st.selectbox("🖱️ Select a namespace:*", list_to_choose, key="key_manual_p_ns_prefix")
@@ -2299,58 +1801,33 @@ with tab3:
                     NS = Namespace(mapping_ns_dict[manual_p_ns_prefix])
                     selected_p_iri = NS[manual_p_label]
 
-                if not st.session_state["g_ontology_components_dict"]:
-                    with col1:
-                        st.markdown("""<div class="warning-message">
-                                ⚠️ <b>Working without an ontology</b> could result in structural inconsistencies.
-                            <small>
-                                This is especially discouraged when building Predicate-Object Maps.
-                            </small></span>""", unsafe_allow_html=True)
-                else:
-                    with col1:
-                        st.markdown("""<div class="warning-message">
-                                ⚠️ <b>Working outside the ontology</b> could result in structural inconsistencies.
-                            <small> An ontology-driven approach is recommended.
-                            </small></span>""", unsafe_allow_html=True)
+                # if not st.session_state["g_ontology_components_dict"]:
+                #     with col1:
+                #         st.markdown("""<div class="warning-message">
+                #                 ⚠️ <b>Working without an ontology</b> could result in structural inconsistencies.
+                #             <small>
+                #                 This is especially discouraged when building Predicate-Object Maps.
+                #             </small></span>""", unsafe_allow_html=True)
+                # else:
+                #     with col1:
+                #         st.markdown("""<div class="warning-message">
+                #                 ⚠️ <b>Working outside the ontology</b> could result in structural inconsistencies.
+                #             <small> An ontology-driven approach is recommended.
+                #             </small></span>""", unsafe_allow_html=True)
 
-            # BUILD OBJECT MAP_______________________________________________
-            with col3:
-                st.markdown("""<div class="gray-heading">
-                        🏗️ Create the Object Map</div><br>
-                    """,unsafe_allow_html=True)
-
-            with col3:
-                col3a, col3b = st.columns([2,1])
-            with col3a:
-                om_label = st.text_input("⌨️ Enter Object Map label (optional):", key= "key_om_label")
-            NS = st.session_state["structural_ns"][1]
-            om_iri = BNode() if not om_label else NS[om_label]
-            if next(st.session_state["g_mapping"].triples((None, RR.objectMap, om_iri)), None):
-                with col3a:
-                    st.markdown(f"""<div class="error-message">
-                        ❌ That <b>Object Map label</b> is already in use. Please pick another label or leave blank.
-                    </div>""", unsafe_allow_html=True)
-
-            om_generation_rule_list = ["Template 📐", "Constant 🔒", "Reference 📊"]
-
-            with col3:
-                om_generation_rule = st.radio("🖱️ Define the Object Map generation rule:*",
-                    om_generation_rule_list, horizontal=True, key="key_om_generation_rule_radio")
 
             #_______________________________________________
             # OBJECT MAP - TEMPLATE-VALUED
             if om_generation_rule == "Template 📐":
 
-                with col3:
-                    col3a, col3b = st.columns([1,1.5])
-                with col3a:
+                with col1a:
                     build_template_action_om = st.selectbox("🖱️ Add template part:",
                         ["🏷️ Add Namespace", "🔒 Add fixed part", "📈 Add variable part", "🗑️ Reset template"],
                         key="key_build_template_action_om")
 
 
                 if build_template_action_om == "🔒 Add fixed part":
-                    with col3b:
+                    with col1b:
                         om_template_fixed_part = st.text_input("⌨️ Enter fixed part:", key="key_om_fixed_part")
                         if re.search(r"[ \t\n\r<>\"{}|\\^`]", om_template_fixed_part):
                             st.markdown(f"""<div class="warning-message">
@@ -2361,7 +1838,7 @@ with tab3:
                             st.button("Add", key="key_save_om_template_fixed_part_button", on_click=save_om_template_fixed_part)
 
                 elif build_template_action_om == "📈 Add variable part":
-                    with col3b:
+                    with col1b:
                         if not column_list:   #data source is not available (load)
                             om_template_variable_part = st.text_input("⌨️ Manually enter column of the data source:*", key="key_om_template_variable_part")
                             st.markdown("""<div style='text-align: right; font-size: 10.5px; color: #cc9a06; font-weight: bold; margin-top: -10px;'>
@@ -2385,7 +1862,7 @@ with tab3:
 
 
                 elif build_template_action_om == "🏷️ Add Namespace":
-                    with col3b:
+                    with col1b:
                         mapping_ns_dict = utils.get_mapping_ns_dict()
                         list_to_choose = list(reversed(list(mapping_ns_dict.keys())))
                         list_to_choose.insert(0, "Select a namespace")
@@ -2403,16 +1880,14 @@ with tab3:
 
 
                 elif build_template_action_om == "🗑️ Reset template":
-                    with col3b:
+                    with col1b:
                         st.write("")
                         st.markdown(f"""<div class="warning-message">
                                 ⚠️ The current template will be deleted.
                             </div>""", unsafe_allow_html=True)
                         st.button("Reset", on_click=reset_om_template)
 
-                with col3:
-                    col3a, col3b = st.columns([3,1])
-                with col3a:
+                with col1:
                     om_template = "".join(st.session_state["om_template_list"])
                     if om_template:
                         st.write("")
@@ -2432,33 +1907,30 @@ with tab3:
                             </div></div>""", unsafe_allow_html=True)
                         st.write("")
 
-
-                with col3b:
-                    st.write("")
+                with col1:
+                    col1a, col1b = st.columns([1.5,1])
+                with col1a:
                     om_term_type_template = st.radio(label="🖱️ Select term type:*", options=["🌐 IRI", "📘 Literal", "👻 BNode"],
-                        key="om_term_type_template")
+                        horizontal=True, key="om_term_type_template")
 
-                if om_term_type_template == "🌐 IRI" and not st.session_state["template_om_is_iri_flag"] and om_template:
-                    with col3a:
-
-                        st.markdown(f"""<div class="error-message">
-                            ❌ Term type is <b>🌐 IRI</b>. <small>You must <b>add a namespace</b></small>.
-                        </div>""", unsafe_allow_html=True)
-                        st.write("")
+                # if om_term_type_template == "🌐 IRI" and not st.session_state["template_om_is_iri_flag"] and om_template:
+                #     with col3a:
+                #         st.markdown(f"""<div class="error-message">
+                #             ❌ Term type is <b>🌐 IRI</b>. <small>You must add a namespace to the template</small>.
+                #         </div>""", unsafe_allow_html=True)
+                #         st.write("")
 
                 if om_term_type_template == "📘 Literal":
                     rdf_datatypes = list(utils.get_datatypes_dict().keys())
 
-                    with col3:
-                        col3a, col3b = st.columns(2)
-                    with col3a:
+                    with col1b:
                         om_datatype = st.selectbox("🖱️ Select datatype (optional):", rdf_datatypes,
                             key="key_om_datatype")
 
                     if om_datatype == "Natural language tag":
                         language_tags = utils.get_language_tags_list()
 
-                        with col3b:
+                        with col1b:
                             om_language_tag = st.selectbox("🖱️ Select language tag:*", language_tags,
                                 key="key_om_language_tag")
 
@@ -2468,44 +1940,39 @@ with tab3:
             # OBJECT MAP - CONSTANT-VALUED
             if om_generation_rule == "Constant 🔒":
 
-                with col3:
-                    col3a, col3b = st.columns(2)
-                with col3a:
+                with col1a:
                     om_constant = st.text_input("⌨️ Enter constant:*", key="key_om_constant")
 
-                with col3b:
+                with col1b:
                     om_term_type_constant = st.radio(label="🖱️ Select term type:*", options=["📘 Literal", "🌐 IRI"], horizontal=True,
                         key="om_term_type_constant")
 
-                if om_constant and om_term_type_constant == "🌐 IRI":
-                    mapping_ns_dict = utils.get_mapping_ns_dict()
+                mapping_ns_dict = utils.get_mapping_ns_dict()
+                if om_term_type_constant == "🌐 IRI" and mapping_ns_dict:
                     list_to_choose = list(mapping_ns_dict.keys())
                     list_to_choose.insert(0, "Select a namespace")
-                    with col3a:
+                    with col1a:
                         om_constant_ns_prefix = st.selectbox("🖱️ Select a namespace for the constant:*", list_to_choose,
                             key="key_om_constant_ns")
 
-                    if not mapping_ns_dict:
-                        with col3b:
-                            st.markdown(f"""<div class="error-message">
-                                    ❌ You must add namespaces in
-                                    the <b>Global Configuration</b> page.
-                                </div>""", unsafe_allow_html=True)
+                elif om_term_type_constant == "🌐 IRI":
+                    with col1a:
+                        st.markdown(f"""<div class="error-message">
+                                ❌ Term type is <b>🌐 IRI</b>. <small>You must add at least one namespace in
+                                the <b>Global Configuration</b> page.</small>
+                            </div>""", unsafe_allow_html=True)
 
                 if om_term_type_constant == "📘 Literal":
                     rdf_datatypes = list(utils.get_datatypes_dict().keys())
 
-
-                    with col3:
-                        col3a, col3b = st.columns(2)
-                    with col3a:
+                    with col1a:
                         om_datatype = st.selectbox("🖱️ Select datatype (optional):", rdf_datatypes,
                             key="key_om_datatype_constant")
 
                     if om_datatype == "Natural language tag":
                         language_tags = utils.get_language_tags_list()
 
-                        with col3b:
+                        with col1b:
                             om_language_tag = st.selectbox("🖱️ Select language tag:*", language_tags,
                                 key="key_om_language_tag")
 
@@ -2516,18 +1983,14 @@ with tab3:
                 om_language_tag = ""
                 om_ready_flag_reference = False
 
-
-                with col3:
-                    col3a, col3b, col3c = st.columns([1.5,0.1,1])
-
                 if not column_list:   #data source is not available (load)
-                    with col3a:
+                    with col1a:
                         om_column_name = st.text_input("⌨️ Manually enter column of the data source:*", key="key_om_column_name")
                         st.markdown("""<div style='text-align: right; font-size: 10.5px; color: #cc9a06; font-weight: bold; margin-top: -10px;'>
                             ⚠️ discouraged
                         </div>""", unsafe_allow_html=True)
                 else:
-                    with col3a:
+                    with col1a:
                         list_to_choose = column_list.copy()
                         list_to_choose.insert(0, "Select a reference")
                         om_column_name = st.selectbox(f"""🖱️ Select the reference of the data source:*""", list_to_choose,
@@ -2549,41 +2012,70 @@ with tab3:
                 #
                 # else:
 
-                with col3c:
+                with col1b:
                     om_term_type_reference = st.radio(label="🖱️ Select Term type:*", options=["📘 Literal", "🌐 IRI", "👻 BNode"],
                         horizontal=True, key="om_term_type_reference")
 
                 if om_term_type_reference == "📘 Literal":
                     rdf_datatypes = list(utils.get_datatypes_dict().keys())
 
-                    with col3:
-                        col3a, col3b = st.columns(2)
-                    with col3a:
+                    with col1a:
                         om_datatype_reference = st.selectbox("🖱️ Select datatype (optional):", rdf_datatypes,
                         key="key_om_datatype_reference")
 
                     if om_datatype_reference == "Natural language tag":
                         language_tags = utils.get_language_tags_list()
 
-                        with col3b:
+                        with col1b:
                             om_language_tag_reference = st.selectbox("🖱️ Select language tag*", language_tags,
                                 key="key_om_language_tag_reference")
 
-                elif om_column_name != "Select a reference" and om_term_type_reference == "🌐 IRI":
-                    with col3c:
-                        st.markdown(f"""<div class="warning-message">
-                                ⚠️ Term type is <b>🌐 IRI</b>.
-                                <small>Make sure that the values in the referenced column
-                                are valid IRIs.</small>
-                            </div>""", unsafe_allow_html=True)
+                # elif om_column_name != "Select a reference" and om_term_type_reference == "🌐 IRI":
+                #     with col1:
+                #         st.markdown(f"""<div class="warning-message">
+                #                 ⚠️ Term type is <b>🌐 IRI</b>.
+                #                 <small>Make sure that the values in the referenced column
+                #                 are valid IRIs.</small>
+                #             </div>""", unsafe_allow_html=True)
+                #         st.write("")
+
+                # GRAPH MAP
+
+            with col1:
+                col1a, col1b = st.columns([1,2])
+            with col1a:
+                list_to_choose = ["Default Graph", "Add Graph Map"]
+                add_om_graph_map_option = st.selectbox("️🗺️️ Graph Map (optional):",
+                    list_to_choose, key="key_add_om_graph_map_option")
+
+            if add_om_graph_map_option == "Add Graph Map":
+
+                with col1b:
+                    mapping_ns_dict = utils.get_mapping_ns_dict()
+                    subject_graph_prefix_list = list(reversed(list(mapping_ns_dict.keys())))
+                    subject_graph_prefix_list.insert(0,"Select a namespace")
+
+                    if not mapping_ns_dict:
                         st.write("")
+                        st.markdown(f"""<div class="error-message">
+                                ❌ No namespaces available. You can add namespaces in the
+                                 <b>Global Configuration</b> page.
+                            </div>""", unsafe_allow_html=True)
+                    else:
+                        with col1b:
+                            subject_graph_prefix = st.selectbox("🖱️ Select a namespace:*", subject_graph_prefix_list,
+                                key="key_subject_graph_prefix")
+                            subject_graph_input = st.text_input("🖱️ Enter Subject graph:*", key="key_subject_graph_input")
+                        if subject_graph_prefix != "Select a namespace":
+                            NS = Namespace(mapping_ns_dict[subject_graph_prefix])
+
+                    if subject_graph_input and subject_graph_prefix != "Select a namespace":
+                        subject_graph = NS[subject_graph_input]
+
+                    else:
+                        subject_graph = ""
 
         if tm_label_for_pom != "Select a TriplesMap":
-
-            st.write("")
-            st.markdown("""<div class="gray-heading">
-                💾 Check and save Predicate-Object Map</div><br>
-            """, unsafe_allow_html=True)
 
             if st.session_state["pom_saved_ok_flag"]:
                 with col1:
@@ -2911,7 +2403,7 @@ with tab3:
 
 
 #________________________________________________
-# CLEAN MAPPING
+# MANAGE MAPPING
 with tab4:
     st.write("")
     st.write("")
@@ -2924,8 +2416,480 @@ with tab4:
         utils.get_corner_status_message()
         st.write("")
 
-    #PURPLE HEADING - ADD NEW TRIPLESMAP
+    # PURPLE HEADING - REMOVE EXISTING TRIPLESMAP
+    tm_dict = utils.get_tm_dict()
+    if tm_dict:     # only show option if there are tm that can be removed
+        with col1:
+            st.markdown("""<div class="purple-heading">
+                    🗑️ Remove TriplesMap
+                </div>""", unsafe_allow_html=True)
+            st.write("")
+
+
+        if st.session_state["tm_deleted_ok_flag"]:  # show message here if "Remove" purple heading is going to be shown
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                st.markdown(f"""
+                <div style="background-color:#d4edda; padding:1em;
+                border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
+                    ✅ The <b>Triplesmap/s</b> have been removed.
+                </div>""", unsafe_allow_html=True)
+                st.write("")
+            st.session_state["tm_deleted_ok_flag"] = False
+            time.sleep(st.session_state["success_display_time"])
+            st.rerun()
+
+        with col1:
+            col1a, col1b = st.columns([2,1])
+
+        tm_list = list(tm_dict)
+        if len(tm_list) > 1:
+            tm_list.append("Select all")
+
+        with col1a:
+            tm_to_remove_list = st.multiselect("🖱️ Select TriplesMap/s:*", reversed(tm_list), key="key_tm_to_remove_list")
+
+        #HEREHEREHERE
+
+        if "Select all" not in tm_to_remove_list:
+            sm_dict = utils.get_sm_dict()
+            inner_html = ""
+            max_length = 8
+            if len(tm_to_remove_list) < max_length:
+                for tm in tm_to_remove_list:
+                    inner_html += f"""<b>🔖 {tm}</b> ("""
+                    tm_iri = tm_dict[tm]
+                    sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RR.subjectMap)), None)
+                    if sm_to_remove_tm:
+                        inner_html += f"""<span style="font-size:0.85em;">Subject Map: {sm_dict[sm_to_remove_tm][0]} | </span>"""
+                    else:
+                        inner_html += f"""<span style="font-size:0.85em;">No Subject Map | </span>"""
+                    pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RR.predicateObjectMap))
+                    if len(pom_to_remove_tm_list) == 1:
+                        inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Map)<br></span>"""
+                    elif pom_to_remove_tm_list:
+                        inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Maps)<br></span>"""
+                    else:
+                        inner_html += f"""<span style="font-size:0.85em;">No Predicate-Object Maps)<br></span>"""
+            else:
+                for tm in tm_to_remove_list[:max_length]:
+                    inner_html += f"""🔖 <b>{tm}</b> ("""
+                    tm_iri = tm_dict[tm]
+                    sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RR.subjectMap)), None)
+                    if sm_to_remove_tm:
+                        inner_html += f"""<span style="font-size:0.85em;">Subject Map: {sm_dict[sm_to_remove_tm][0]} | </span>"""
+                    else:
+                        inner_html += f"""<span style="font-size:0.85em;">No Subject Map | </span>"""
+                    pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RR.predicateObjectMap))
+                    if len(pom_to_remove_tm_list) == 1:
+                        inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Map)<br></span>"""
+                    elif pom_to_remove_tm_list:
+                        inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Maps)<br></span>"""
+                    else:
+                        inner_html += f"""<span style="font-size:0.85em;">No Predicate-Object Maps)<br></span>"""
+                inner_html += f"""🔖 ..."""
+
+            if inner_html:
+                with col1:
+                    col1a, col1b = st.columns([2,1])
+                with col1a:
+                    st.markdown(f"""<div class="info-message-gray">
+                            {inner_html}
+                        <div>""", unsafe_allow_html=True)
+                    st.write("")
+
+        else:   #Select all option
+            sm_dict = utils.get_sm_dict()
+            inner_html = ""
+            max_length = utils.get_max_length_for_display()[4]
+            if len(tm_dict) < max_length:
+                for tm in tm_dict:
+                    inner_html += f"""<b>🔖 {tm}</b> ("""
+                    tm_iri = tm_dict[tm]
+                    sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RR.subjectMap)), None)
+                    if sm_to_remove_tm:
+                        inner_html += f"""<span style="font-size:0.85em;">Subject Map: {sm_dict[sm_to_remove_tm][0]} | </span>"""
+                    else:
+                        inner_html += f"""<span style="font-size:0.85em;">No Subject Map | </span>"""
+                    pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RR.predicateObjectMap))
+                    if len(pom_to_remove_tm_list) == 1:
+                        inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Map)<br></span>"""
+                    elif pom_to_remove_tm_list:
+                        inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Maps)<br></span>"""
+                    else:
+                        inner_html += f"""<span style="font-size:0.85em;">No Predicate-Object Maps)<br></span>"""
+            else:
+                for tm in list(tm_dict)[:max_length]:
+                    inner_html += f"""🔖 <b>{tm}</b> ("""
+                    tm_iri = tm_dict[tm]
+                    sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RR.subjectMap)), None)
+                    if sm_to_remove_tm:
+                        inner_html += f"""<span style="font-size:0.85em;">Subject Map: {sm_dict[sm_to_remove_tm][0]} | </span>"""
+                    else:
+                        inner_html += f"""<span style="font-size:0.85em;">No Subject Map | </span>"""
+                    pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RR.predicateObjectMap))
+                    if len(pom_to_remove_tm_list) == 1:
+                        inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Map)<br></span>"""
+                    elif pom_to_remove_tm_list:
+                        inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Maps)<br></span>"""
+                    else:
+                        inner_html += f"""<span style="font-size:0.85em;">No Predicate-Object Maps)<br></span>"""
+                inner_html += f"""🔖 ..."""
+
+            if inner_html:
+                with col1:
+                    col1a, col1b = st.columns([2,1])
+                with col1a:
+                    st.markdown(f"""<div class="info-message-gray">
+                            {inner_html}
+                        <div>""", unsafe_allow_html=True)
+                    st.write("")
+
+
+
+        if tm_to_remove_list:
+            if "Select all" not in tm_to_remove_list:
+                with col1a:
+                    delete_tm_checkbox = st.checkbox(
+                    ":gray-badge[⚠️ I am sure I want to delete the TriplesMap/s]",
+                    key="delete_tm_checkbox")
+                if delete_tm_checkbox:
+                    with col1:
+                        col1a, col1b = st.columns([1,2])
+                    with col1a:
+                        st.button("Delete", on_click=delete_tm)
+            else:   #if "Select all" selected
+                with col1b:
+                    st.markdown(f"""<div class="warning-message">
+                            ⚠️ If you continue, <b>all TriplesMaps will be deleted</b>.
+                            <small>Make sure you want to go ahead.</small>
+                        </div>""", unsafe_allow_html=True)
+                    st.write("")
+                with col1a:
+                    delete_tm_checkbox = st.checkbox(
+                    ":gray-badge[⚠️ I am sure I want to delete all TriplesMaps]",
+                    key="delete_tm_checkbox")
+                if delete_tm_checkbox:
+                    with col1:
+                        col1a, col1b = st.columns([1,2])
+                    with col1a:
+                        st.button("Delete", on_click=delete_all_tm)
+
+
+
+    if st.session_state["labelled_sm_deleted_ok_flag"]:
+        with col2b:
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.markdown(f"""<div class="success-message-flag">
+                ✅ The <b>Subject Map/s</b> have been deleted!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["labelled_sm_deleted_ok_flag"] = False
+        time.sleep(st.session_state["success_display_time"])
+        st.rerun()
+
+
+    if st.session_state["sm_unassigned_ok_flag"]:
+        with col2b:
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.markdown(f"""<div class="success-message-flag">
+                ✅ The <b>Subject Map/s</b> have been unassigned!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["sm_unassigned_ok_flag"] = False
+        time.sleep(st.session_state["success_display_time"])
+        st.rerun()
+
+    # PURPLE HEADING - REMOVE EXISTING SUBJECT MAP
+    sm_list = list(st.session_state["g_mapping"].objects(predicate=RR.subjectMap))
+    tm_dict = utils.get_tm_dict()
+    sm_dict = utils.get_sm_dict()
+
+    if sm_list:    # only show option if there are sm to remove
+        with col1:
+            st.write("_____")
+            st.markdown("""<div class="purple-heading">
+                    🗑️ Remove existing Subject Map
+                </div>""", unsafe_allow_html=True)
+            st.write("")
+
+
+        tm_w_sm_list = ["Select a TriplesMap"]
+        for tm_label, tm_iri in tm_dict.items():
+            if any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectMap, None))):
+                tm_w_sm_list.append(tm_label)
+
+        with col1:
+            col1a, col1b = st.columns([2,1])
+
+        labelled_sm_list = [sm for sm in sm_list if isinstance(sm, URIRef)]
+        labelled_sm_dict = {}
+        for sm in labelled_sm_list:
+            labelled_sm_dict[split_uri(sm)[1]] = sm
+
+        if labelled_sm_list:    # if there exist labelled sm
+            remove_sm_options_list = ["🔖 Delete labelled Subject Map", "🎯 Unassign Subject Map of a TriplesMap"]
+            with col1a:
+                remove_sm_selected_option = st.radio("", remove_sm_options_list, label_visibility="collapsed",
+                    key="key_remove_sm_selected_option")
+        else:            # no labelled sm
+            remove_sm_selected_option = "🎯 Unassign Subject Map of a TriplesMap"
+
+
+        if remove_sm_selected_option == "🔖 Delete labelled Subject Map":
+
+            sm_to_choose_list = list(reversed(labelled_sm_dict.keys()))
+            if len(sm_to_choose_list) > 1:
+                sm_to_choose_list.insert(0, "Select all")
+            with col1a:
+                sm_to_remove_label_list = st.multiselect("🖱️ Select labelled Subject Map/s:*", sm_to_choose_list, key="key_sm_to_remove_label")
+            sm_to_remove_iri_list = [labelled_sm_dict[sm] for sm in sm_to_remove_label_list if not sm == "Select all"]
+
+            if "Select all" in sm_to_remove_label_list:
+                sm_to_remove_iri_list = labelled_sm_list
+                sm_to_remove_label_list = list(reversed(labelled_sm_dict.keys()))
+
+            if not sm_to_remove_label_list:
+                with col1b:
+                    st.markdown(f"""<div class="info-message-gray">
+                            ℹ️ The selected <b>Subject Maps</b> will be deleted
+                            <small>(and therefore unassigned from their <b>TriplesMaps</b>).</small>
+                        </div>""", unsafe_allow_html=True)
+                    st.write("")
+
+            # create a single info message
+            max_length = utils.get_max_length_for_display()[4]
+            inner_html = f"""<div style="margin-bottom:1px;">
+                    <b>Subject Map</b> →
+                    <b>TriplesMaps</b>
+                </div>"""
+
+            for sm in sm_to_remove_iri_list[:max_length]:
+                sm_label_to_remove = sm_dict[sm][0]
+                corresponding_tm_list = sm_dict[sm][4]
+                if len(corresponding_tm_list) > 1:
+                    formatted_corresponding_tm = ", ".join(corresponding_tm_list[:-1]) + " and " + corresponding_tm_list[-1]
+                    inner_html += f"""<div style="margin-bottom:1px;">
+                        <small>🔖 <b>{sm_label_to_remove}</b> → {formatted_corresponding_tm}</small>
+                    </div>"""
+                elif len(corresponding_tm_list) == 1:
+                    inner_html += f"""<div style="margin-bottom:1px;">
+                        <small>🔖 <b>{sm_label_to_remove}</b> → {corresponding_tm_list[0]}</small>
+                    </div>"""
+                else:
+                    inner_html += f"""<div style="margin-bottom:1px;">
+                        <small>❌ The Subject Map <b>{sm_label_to_remove}</b> is not assigned to any TriplesMap.
+                        Please check your mapping.</small>
+                    </div>"""
+
+
+            if len(sm_to_remove_iri_list) > max_length:   # many sm to remove
+                inner_html += f"""<div style="margin-bottom:1px;">
+                    <small>🔖 ... (+{len(sm_to_remove_iri_list[:max_length])})</small>
+                </div>"""
+
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                if sm_to_remove_label_list:
+                    st.markdown(f"""<div class="info-message-gray">
+                            {inner_html}
+                        </div>""", unsafe_allow_html=True)
+                    st.write("")
+
+            # render
+            if sm_to_remove_iri_list:
+
+
+                inner_html = ""
+                sm_to_remove_label_list_mod = [sm for sm in sm_to_remove_label_list if sm != "Select all"]
+                formatted_sm_to_remove = utils.format_list_for_markdown(sm_to_remove_label_list_mod)
+                if len(sm_to_remove_label_list_mod) == 1:
+                    inner_html += f"""ℹ️ The Subject Map <b>{formatted_sm_to_remove}</b> will be completely removed."""
+                elif len(sm_to_remove_label_list_mod) > 1:
+                    inner_html += f"""ℹ️ The Subject Maps <b>{formatted_sm_to_remove}</b> will be completely removed."""
+
+                with col1b:
+                    st.markdown(f"""<div class="info-message-blue">
+                            {inner_html}
+                        <div>""", unsafe_allow_html=True)
+
+
+                if "Select all" in sm_to_remove_label_list:
+                    with col1b:
+                        st.markdown(f"""<div class="warning-message">
+                                ⚠️ You are deleting <b>all labelled Subject Maps</b>.
+                                <small>Make sure you want to go ahead.</small>
+                            </div>""", unsafe_allow_html=True)
+                        st.write("")
+                if len(sm_to_remove_iri_list):
+                    with col1a:
+                        delete_labelled_sm_checkbox = st.checkbox(
+                        ":gray-badge[⚠️ I am sure I want to delete the Subject Map/s]",
+                        key="delete_labelled_sm_checkbox")
+                    if delete_labelled_sm_checkbox:
+                        st.session_state["sm_to_remove_label_list"] = sm_to_remove_label_list
+                        with col1a:
+                            st.button("Delete", on_click=delete_labelled_sm, key="key_delete_labelled_sm_button")
+
+        if remove_sm_selected_option == "🎯 Unassign Subject Map of a TriplesMap":
+
+            tm_w_sm_list = []
+            for tm_label, tm_iri in tm_dict.items():
+                if any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectMap, None))):
+                    tm_w_sm_list.append(tm_label)
+
+
+            with col1a:
+                tm_w_sm_list_to_choose = list(reversed(tm_w_sm_list))
+                if len(tm_w_sm_list_to_choose) > 1:
+                    tm_w_sm_list_to_choose.insert(0, "Select all")
+                tm_to_unassign_sm_list_input = st.multiselect("🖱️ Select TriplesMap/s:*", tm_w_sm_list_to_choose, key="key_tm_to_unassign_sm")
+
+                if "Select all" in tm_to_unassign_sm_list_input:
+                    tm_to_unassign_sm_list = tm_w_sm_list
+                else:
+                    tm_to_unassign_sm_list = tm_to_unassign_sm_list_input
+
+            # if not tm_to_unassign_sm_list_input:
+            #     with col1b:
+            #         st.markdown(f"""<div class="info-message-gray">
+            #                 ℹ️ The selected <b>Subject Maps</b> will be detached from their
+            #                 <b>TriplesMaps</b>, and permanently removed
+            #                 <small>(unless they are assigned to another TriplesMap).</small>
+            #             </div>""", unsafe_allow_html=True)
+            #         st.write("")
+
+            # create a single info message
+            max_length = utils.get_max_length_for_display()[4]
+            inner_html = f"""<div style="margin-bottom:1px;">
+                    <b>TriplesMap</b> → <b>Subject Map</b> →
+                    <b>Linked TriplesMaps (if any)</b>
+                </div>"""
+
+            for tm in tm_to_unassign_sm_list[:max_length]:
+                tm_iri = tm_dict[tm]
+                sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RR.subjectMap)
+                sm_label_to_unassign = sm_dict[sm_iri][0]
+                other_tm_with_sm = [split_uri(s)[1] for s, p, o in st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)) if s != tm_iri]
+                if other_tm_with_sm:
+                    if len(other_tm_with_sm) > 1:
+                        formatted_corresponding_tm = ", ".join(other_tm_with_sm[:-1]) + " and " + other_tm_with_sm[-1]
+                    else:
+                        formatted_corresponding_tm = other_tm_with_sm[0]
+                    inner_html += f"""<div style="margin-bottom:1px;">
+                        <small>🔖 {tm} → <b>{sm_label_to_unassign}</b> → {formatted_corresponding_tm}</small>
+                    </div>"""
+                else:
+                    inner_html += f"""<div style="margin-bottom:1px;">
+                        <small>🔖 {tm} →  <b>{sm_label_to_unassign}</b></small>
+                    </div>"""
+
+            if len(tm_to_unassign_sm_list) > max_length:   # many sm to remove
+                inner_html += f"""<div style="margin-bottom:1px;">
+                    <small>🔖 ... (+{len(tm_to_unassign_sm_list[:max_length])})</small>
+                </div>"""
+
+            # render
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            if tm_to_unassign_sm_list:
+                with col1a:
+                    st.markdown(f"""<div class="info-message-gray">
+                            {inner_html}
+                        </div>""", unsafe_allow_html=True)
+            with col1a:
+                st.write("")
+
+
+
+            sm_to_completely_remove_list = []
+            sm_to_just_unassign_list = []
+            for tm in tm_to_unassign_sm_list:
+                tm_iri = tm_dict[tm]
+                sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RR.subjectMap)
+                sm_label_to_unassign = sm_dict[sm_iri][0]
+                other_tm_with_sm = [split_uri(s)[1] for s, p, o in st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)) if s != tm_iri]
+                if all(tm in tm_to_unassign_sm_list for tm in other_tm_with_sm):   # if upon deletion sm is no longer assigned to any tm
+                    if sm_label_to_unassign not in sm_to_completely_remove_list:
+                        sm_to_completely_remove_list.append(sm_label_to_unassign)
+                else:
+                    sm_to_just_unassign_list.append(sm_label_to_unassign)
+
+            # warning messages
+            inner_html = ""
+            formatted_tm_to_unassign_sm = utils.format_list_for_markdown(tm_to_unassign_sm_list)
+            formatted_sm_to_completely_remove = utils.format_list_for_markdown(sm_to_completely_remove_list)
+            formatted_sm_to_just_unassign = utils.format_list_for_markdown(sm_to_just_unassign_list)
+
+            max_length = utils.get_max_length_for_display()[5]
+            if len(sm_to_just_unassign_list) == 1:
+                inner_html += f"""ℹ️ The Subject Map <b>{formatted_sm_to_just_unassign}</b> will be unassigned from
+                its TriplesMap.<br>"""
+            elif sm_to_just_unassign_list and len(sm_to_just_unassign_list) < max_length:
+                inner_html += f"""ℹ️ The Subject Maps <b>{formatted_sm_to_just_unassign}</b> will be unassigned from
+                their TriplesMaps</b>.<br>"""
+            elif sm_to_just_unassign_list:
+                inner_html += f"""ℹ️ <b>{len(sm_to_just_unassign_list)} Subject Maps</b> will be unassigned from
+                their TriplesMaps.<br>"""
+            if len(sm_to_completely_remove_list) == 1:
+                inner_html += f"""ℹ️ The Subject Map <b>{formatted_sm_to_completely_remove}</b> will be completely removed."""
+            elif sm_to_completely_remove_list and len(sm_to_completely_remove_list) < max_length:
+                inner_html += f"""ℹ️ The Subject Maps <b>{formatted_sm_to_completely_remove}</b> will be completely removed."""
+            elif sm_to_completely_remove_list:
+                inner_html += f"""ℹ️ <b>{len(sm_to_completely_remove_list)} Subject Maps</b> will be completely removed."""
+
+            if tm_to_unassign_sm_list:
+                with col1b:
+                    st.markdown(f"""<div class="info-message-blue">
+                            {inner_html}
+                        <div>""", unsafe_allow_html=True)
+
+
+            if "Select all" in tm_to_unassign_sm_list_input:
+                with col1b:
+                    st.markdown(f"""<div class="warning-message">
+                            ⚠️ You are deleting <b>all Subject Maps</b>.
+                            <small>Make sure you want to go ahead.</small>
+                        </div>""", unsafe_allow_html=True)
+
+
+            if tm_to_unassign_sm_list:
+                with col1a:
+                    unassign_sm_checkbox = st.checkbox(
+                    ":gray-badge[⚠️ I am sure I want to unassign the Subject Map/s]",
+                    key="key_unassign_sm_checkbox")
+                if unassign_sm_checkbox:
+                    st.session_state["sm_to_completely_remove_list"] = sm_to_completely_remove_list
+                    st.session_state["tm_to_unassign_sm_list"] = tm_to_unassign_sm_list
+                    with col1a:
+                        st.button("Unassign", on_click=unassign_sm, key="key_unassign_sm_button")
+
+
+    #PURPLE HEADING - CLEAN MAPPING
     with col1:
+        st.write("_________")
         st.markdown("""<div class="purple-heading">
                 🧹 Clean Mapping
             </div>""", unsafe_allow_html=True)
