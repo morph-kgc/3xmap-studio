@@ -734,12 +734,12 @@ with tab1:
         else:    #if label is valid
 
             ls_options_list = []
-            if labelled_ls_list:
-                ls_options_list.append("📑 Existing Logical Source")
             if st.session_state["db_connections_dict"]:
                 ls_options_list.append("📊 SQL Database")
             if st.session_state["ds_files_dict"]:
                 ls_options_list.append("🛢️ Tabular data")
+            if labelled_ls_list:
+                ls_options_list.append("📑 Existing Logical Source")
             if not st.session_state["db_connections_dict"] and not st.session_state["ds_files_dict"]:
                 with col1a:
                     st.markdown(f"""<div class="error-message">
@@ -750,7 +750,7 @@ with tab1:
 
             if ls_options_list:
                 with col1b:
-                    ls_option = st.radio("🖱️ Choose the logical source option:*", ls_options_list, horizontal=False)
+                    ls_option = st.radio("🖱️ Choose the Logical Source option:*", ls_options_list, horizontal=False)
             else:
                 ls_option = None
 
@@ -794,7 +794,24 @@ with tab1:
                                     query_for_selected_db_list.insert(0, query_label)   # only include queries of the selected connection
 
                             with col1:
-                                col1a, col1b = st.columns([1,2])
+                                col1a, col1b, col1c = st.columns([1.5,1,1])
+                            with col1c:
+                                label_ls_option = st.selectbox("♻️ Reuse Logical Source (optional):", ["No", "Yes (add label)"],
+                                    key="label_ls_option")
+
+                                if label_ls_option == "Yes (add label)":
+                                    with col1c:
+                                        ls_label = st.text_input("⌨️ Enter label for the Logical Source:*")
+                                        if ls_label in labelled_ls_list:
+                                            with col1b:
+                                                st.markdown(f"""<div class="warning-message">
+                                                        ⚠️ The logical source label <b>{ls_label}</b>
+                                                        is already in use. Please, pick a different label.
+                                                    </div>""", unsafe_allow_html=True)
+                                                st.write("")
+                                else:
+                                    ls_label = ""
+
                             with col1b:
                                 list_to_choose = ["🖼️ View", "🔖 Table name"] if query_for_selected_db_list else ["🔖 Table name"]
                                 query_option = st.radio("🖱️ Select option:*", list_to_choose,
@@ -964,37 +981,52 @@ with tab1:
                 if ds_filename_for_tm != "Select file":
                     ds_file = st.session_state["ds_files_dict"][ds_filename_for_tm]
 
-                    with col1:
-                        col1a, col1b = st.columns([1.5,1])
-                    with col1b:
-                        st.write("")
-                        st.write("")
-                        label_ls_checkbox = st.checkbox(
-                        ":gray-badge[♻️ I want to reuse the Logical Source]",
-                        key="key_label_ls_checkbox")
+                with col1b:
+                    label_ls_option = st.selectbox("♻️ Reuse Logical Source (optional):", ["No", "Yes (add label)"],
+                        key="label_ls_option")
 
-                    if label_ls_checkbox:
-                        with col1a:
-                            ls_label = st.text_input("⌨️ Enter label for the Logical Source:*",
-                                key="key_ls_label")
+                    if label_ls_option == "Yes (add label)":
+                        with col1b:
+                            ls_label = st.text_input("⌨️ Enter label for the Logical Source:*")
                             if ls_label in labelled_ls_list:
                                 with col1b:
-                                    st.write("")
-                                    st.markdown(f"""<div class="error-message">
-                                            ❌ The logical source label <b>{ls_label}</b>
+                                    st.markdown(f"""<div class="warning-message">
+                                            ⚠️ The logical source label <b>{ls_label}</b>
                                             is already in use. Please, pick a different label.
                                         </div>""", unsafe_allow_html=True)
                                     st.write("")
                     else:
                         ls_label = ""
+
+                    # with col1:
+                    #     col1a, col1b = st.columns([1.5,1])
+                    # with col1b:
+                    #     st.write("")
+                    #     st.write("")
+                    #     label_ls_checkbox = st.checkbox(
+                    #     ":gray-badge[♻️ I want to reuse the Logical Source]",
+                    #     key="key_label_ls_checkbox")
+                    #
+                    # if label_ls_checkbox:
+                    #     with col1a:
+                    #         ls_label = st.text_input("⌨️ Enter label for the Logical Source:*",
+                    #             key="key_ls_label")
+                    #         if ls_label in labelled_ls_list:
+                    #             with col1b:
+                    #                 st.write("")
+                    #                 st.markdown(f"""<div class="error-message">
+                    #                         ❌ The logical source label <b>{ls_label}</b>
+                    #                         is already in use. Please, pick a different label.
+                    #                     </div>""", unsafe_allow_html=True)
+                    #                 st.write("")
+                    # else:
+                    #     ls_label = ""
                     with col1a:
-                        if label_ls_checkbox:
+                        if label_ls_option == "Yes (add label)":
                             if ls_label and ls_label not in labelled_ls_list:
                                 st.button("Save", key="key_save_tm_w_non_relational_ls", on_click=save_tm_w_non_relational_ls)
                         else:
                             st.button("Save", key="key_save_tm_w_non_relational_ls", on_click=save_tm_w_non_relational_ls)
-
-
 
 
     # remove tm success message - show here if "Remove" purple heading is not going to be shown
@@ -1326,7 +1358,7 @@ with tab2:
                         col1a, col1b, col1c = st.columns(3)
                     # SUBJECT MAP LABEL
                     with col1c:
-                        label_sm_option = st.selectbox("🖱️ Reuse Subject Map (optional):", ["No", "Yes (add label)"])
+                        label_sm_option = st.selectbox("♻️ Reuse Subject Map (optional):", ["No", "Yes (add label)"])
                     if label_sm_option == "Yes (add label)":
                         with col1c:
                             sm_label = st.text_input("🔖 Enter Subject Map label:*", key="key_sm_label_new")
