@@ -205,7 +205,7 @@ def change_g_label():
 # TAB2
 def bind_custom_namespace():
     # bind and store information___________________________
-    st.session_state["g_mapping"].bind(prefix_input, iri_input)  # bind the new namespace
+    st.session_state["g_mapping"].bind(prefix_input, iri_input, replace=True)  # bind the new namespace
     st.session_state["last_added_ns_list"].insert(0, st.session_state["new_ns_prefix"])  # to display last added ns
     st.session_state["ns_bound_ok_flag"] = True   #for success message
     # reset fields_____________________________
@@ -276,6 +276,20 @@ def unbind_namespaces():
     st.session_state["ns_unbound_ok_flag"] = True
     # reset fields_____________________________
     st.session_state["key_unbind_multiselect"] = []
+
+# def unbind_namespaces():
+#     # unbind and store information___________________________
+#     for prefix in ns_to_unbind_list:
+#         ns_mgr = st.session_state["g_mapping"].namespace_manager
+#         if prefix in ns_mgr.namespaces():
+#             del ns_mgr._prefix[ns_mgr.store.prefix(prefix)]    # remove from internal prefix-to-namespace mapping
+#             del ns_mgr.store._prefix[ns_mgr.store.prefix(prefix)]
+#             del ns_mgr.store._namespace[prefix]
+#         if prefix in st.session_state["last_added_ns_list"]:
+#             st.session_state["last_added_ns_list"].remove(prefix)
+#     st.session_state["ns_unbound_ok_flag"] = True
+#     # reset fields_____________________________
+#     st.session_state["key_unbind_multiselect"] = []
 
 def unbind_all_namespaces():
     # unbind and store information___________________________
