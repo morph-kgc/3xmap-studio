@@ -502,21 +502,6 @@ def get_rdfolio_base_iri():
     return "http://rdfolio.org/mapping/"
 #________________________________________________________
 
-# #_________________________________________________________
-# # Function to get the default base iri for the structural components
-# def get_default_structural_ns_dict():
-#
-#     base_iri = get_rdfolio_base_iri()
-#
-#     return {
-#             "tmap": Namespace(base_iri + "triplesmap/"),
-#             "smap": Namespace(base_iri + "subjectmap/"),
-#             "pomap": Namespace(base_iri + "predicateobjectmap/"),
-#             "omap": Namespace(base_iri + "objectmap/"),
-#             "ls": Namespace(base_iri + "logicalsource/"),
-#             "lt": Namespace(base_iri + "logicaltable/")}
-# #________________________________________________________
-
 #_________________________________________________________
 # Function to get the default base iri for the structural components
 def get_default_structural_ns():
@@ -612,23 +597,70 @@ RML, RR, QL = get_required_ns().values()
 #________________________________________________________
 
 
+#_________________________________________________________
+# Funtion to get dictionary {prefix: namespace} bound in the ontology
+# It will ignore the default namespaces
+def get_ontology_ns_dict():
+
+    default_ns_dict = get_default_ns_dict()
+    all_ontology_ns_dict = dict(st.session_state["g_ontology"].namespace_manager.namespaces())
+    ontology_ns_dict = {k: Namespace(v) for k, v in all_ontology_ns_dict.items() if (k not in default_ns_dict)}
+
+    return ontology_ns_dict
+#_________________________________________________________
+
+#_________________________________________________________
+# Funtion to get dictionary {prefix: namespace} bound in the ontology
+# It will ignore the default namespaces
+def get_mapping_ns_dict():
+
+    default_ns_dict = get_default_ns_dict()
+    all_mapping_ns_dict = dict(st.session_state["g_mapping"].namespace_manager.namespaces())
+    mapping_ns_dict = {k: Namespace(v) for k, v in all_mapping_ns_dict.items() if (k not in default_ns_dict and v != URIRef("None"))}   # without default ns
+    # last condition added so that it will not show unbound namespaces
+    # mapping_ns_dict = mapping_ns_dict | default_ns_dict
+
+    return mapping_ns_dict
+#_________________________________________________________
+
+#_________________________________________________
+#Function to check whether an IRI is valid
+def is_valid_iri(iri):
+    valid_iri_schemes = ("http://", "https://", "ftp://", "mailto:",
+        "urn:", "tag:", "doi:", "data:")
+
+    if isinstance(iri, URIRef):
+        iri = str(iri)
+
+    if not iri.startswith(valid_iri_schemes):
+        return False
+
+    try:
+        parsed = urlparse(iri)
+    except:
+        return False
+    schemes_with_netloc = {"http", "https", "ftp"}
+    if parsed.scheme in schemes_with_netloc and not parsed.netloc:
+        return False
+
+    if re.search(r"[ \t\n\r<>\"{}|\\^`]", iri):    # disallow spaces or unescaped characters
+        return False
+
+    if not iri[-1] in ("/", "#", ":"):
+        return False  # must end with a recognized delimiter
+
+    return True
+#__________________________________________________
+
 
 # GLOBAL CONFIGURATION - SELECT MAPPING -------------------------------------------------------------
 #_______________________________________________________
 # List of allowed mapping file format
 # HERE expand options, now reduced version
 def get_g_mapping_file_formats_dict():
-    # allowed_format_dict = {"turtle": ".ttl", "rdf": ".rdf","xml": ".xml",
-    #     "json": ".json", "jsonld": ".jsonld", "ntriples": ".nt",
-    #     "n3": ".n3","trig": ".trig","trix": ".trix"}
-
-    # allowed_format_dict = {"turtle": ".ttl","xml": ".xml",
-    #     "ntriples": ".nt", "n3": ".n3", "trig": ".trig"}
 
     allowed_format_dict = {"turtle": ".ttl",
-        "ntriples": ".nt", "trig": ".trig", "jsonld": ".jsonld"}
-
-    # missing hdt, nquads
+        "ntriples": ".nt", "trig": ".trig", "jsonld": ".jsonld"}    # missing hdt, nquads
 
     return allowed_format_dict
 #_______________________________________________________
@@ -714,6 +746,109 @@ def get_number_of_tm(g):
     return len(triplesmaps)
 #_________________________________________________________
 
+
+
+# GLOBAL CONFIGURATION - SAVE MAPPING
+#_________________________________________________
+#Funtion to create the list that stores the state of the project
+# project_state_list
+# 0. [g_label, g_mapping]     1. g_ontology_components_dict      2. structural_ns_dict
+# 3. db_connections_dict       4. db_connection_status_dict
+# 5. ds_files_dict                6. sql_queries_dict
+def save_project_state():
+
+    # list to save the mapping
+    mapping_list = []
+    mapping_list.append(st.session_state["g_label"])
+    mapping_list.append(st.session_state["g_mapping"])
+
+    # list to save session
+    project_state_list = []
+    project_state_list.append(mapping_list)
+    project_state_list.append(st.session_state["g_ontology_components_dict"])
+    project_state_list.append(st.session_state["structural_ns"])
+    project_state_list.append(st.session_state["db_connections_dict"])
+    project_state_list.append(st.session_state["db_connection_status_dict"])
+    project_state_list.append(st.session_state["ds_files_dict"])
+    project_state_list.append(st.session_state["sql_queries_dict"])
+
+    return project_state_list
+
+#______________________________________________________
+
+#_________________________________________________
+#Funtion to retrieve the project state
+def retrieve_project_state(project_state_list):
+
+    st.session_state["g_mapping"] = project_state_list[0][1]
+    st.session_state["g_label"] = project_state_list[0][0]
+    st.session_state["g_ontology_components_dict"] = project_state_list[1]
+    st.session_state["structural_ns"] = project_state_list[2]
+    st.session_state["db_connections_dict"] = project_state_list[3]
+    st.session_state["db_connection_status_dict"] = project_state_list[4]
+    st.session_state["ds_files_dict"] = project_state_list[5]
+    st.session_state["sql_queries_dict"] = project_state_list[6]
+
+#______________________________________________________
+
+#_________________________________________________
+#Funtion to check that a filename is valid
+def is_valid_filename(filename):  #HEREIGO
+
+    excluded_characters = r"[\\/:*?\"<>| ]"
+    windows_reserved_names = ["CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"]
+
+    if filename.endswith("."):
+        st.markdown(f"""<div class="error-message">
+            ❌ <b>Trailing "."</b> in filename.
+            <small> Please, remove it.</small>
+        </div>""", unsafe_allow_html=True)
+        return False
+    elif "." in filename:
+        st.markdown(f"""<div class="error-message">
+                ❌ The filename seems to include an <b>extension</b>.
+                <small> Please, remove it.</b>
+            </div>""", unsafe_allow_html=True)
+        return False
+    elif re.search(excluded_characters, filename):
+        st.markdown(f"""<div class="error-message">
+            ❌ <b>Forbidden character</b> in filename.
+            <small> Please, pick a valid filename.</small>
+        </div>""", unsafe_allow_html=True)
+        return False
+    else:
+        for item in windows_reserved_names:
+            if item == os.path.splitext(filename)[0].upper():
+                st.markdown(f"""<div class="error-message">
+                    ❌ <b>Reserved filename.</b><br>
+                    <small>Please, pick a different filename.</small>
+                </div>""", unsafe_allow_html=True)
+                return False
+                break  # Stop checking after first match
+
+    return True
+
+#______________________________________________________
+
+# ONTOLOGIES----------------------------------------------------------------
+#_________________________________________________________
+# Function to get the ontology base iri
+# Returns a list because the ontology can have several components
+def get_ontology_base_iri():
+    base_iri_list = []
+    for s in st.session_state["g_ontology"].subjects(RDF.type, OWL.Ontology):
+        try:
+            split_uri(s)
+            if is_valid_iri(split_uri(s)[0]):
+                base_iri_list.append(split_uri(s)[0])
+        except:
+            if is_valid_iri(s):
+                base_iri_list.append(s)
+
+    return base_iri_list
+#________________________________________________________
 
 # GLOBAL CONFIGURATION - LOAD ONTOLOGY ----------------------------------------------------------
 #___________________________________________________________________________________
@@ -815,125 +950,9 @@ def check_ontology_overlap(g1, g2):
     return bool(common)
 #___________________________________________________________________________________
 
-#_________________________________________________________
-# Funtion to get dictionary {prefix: namespace} bound in the ontology
-# It will ignore the default namespaces
-def get_ontology_ns_dict():
-
-    default_ns_dict = get_default_ns_dict()
-    all_ontology_ns_dict = dict(st.session_state["g_ontology"].namespace_manager.namespaces())
-    ontology_ns_dict = {k: Namespace(v) for k, v in all_ontology_ns_dict.items() if (k not in default_ns_dict)}
-
-    return ontology_ns_dict
-#_________________________________________________________
-
-#_________________________________________________________
-# Funtion to get dictionary {prefix: namespace} bound in the ontology
-# It will ignore the default namespaces
-def get_mapping_ns_dict():
-
-    default_ns_dict = get_default_ns_dict()
-    all_mapping_ns_dict = dict(st.session_state["g_mapping"].namespace_manager.namespaces())
-    mapping_ns_dict = {k: Namespace(v) for k, v in all_mapping_ns_dict.items() if (k not in default_ns_dict and v != URIRef("None"))}   # without default ns
-    # last condition added so that it will not show unbound namespaces
-    # mapping_ns_dict = mapping_ns_dict | default_ns_dict
-
-    return mapping_ns_dict
-#_________________________________________________________
 
 
-#_________________________________________________
-#Function to check whether an IRI is valid
-def is_valid_iri(iri):
-    valid_iri_schemes = ("http://", "https://", "ftp://", "mailto:",
-        "urn:", "tag:", "doi:", "data:")
 
-    if isinstance(iri, URIRef):
-        iri = str(iri)
-
-    if not iri.startswith(valid_iri_schemes):
-        return False
-
-    try:
-        parsed = urlparse(iri)
-    except:
-        return False
-    schemes_with_netloc = {"http", "https", "ftp"}
-    if parsed.scheme in schemes_with_netloc and not parsed.netloc:
-        return False
-
-    if re.search(r"[ \t\n\r<>\"{}|\\^`]", iri):    # disallow spaces or unescaped characters
-        return False
-
-    if not iri[-1] in ("/", "#", ":"):
-        return False  # must end with a recognized delimiter
-
-    return True
-#__________________________________________________
-
-#_________________________________________________
-#Funtion to create the list that stores the state of the project
-# project_state_list
-# 0. [g_label, g_mapping]     1. g_ontology_components_dict      2. structural_ns_dict
-# 3. db_connections_dict       4. db_connection_status_dict
-# 5. ds_files_dict                6. sql_queries_dict
-def save_project_state():
-
-    # list to save the mapping
-    mapping_list = []
-    mapping_list.append(st.session_state["g_label"])
-    mapping_list.append(st.session_state["g_mapping"])
-
-    # list to save session
-    project_state_list = []
-    project_state_list.append(mapping_list)
-    project_state_list.append(st.session_state["g_ontology_components_dict"])
-    project_state_list.append(st.session_state["structural_ns"])
-    project_state_list.append(st.session_state["db_connections_dict"])
-    project_state_list.append(st.session_state["db_connection_status_dict"])
-    project_state_list.append(st.session_state["ds_files_dict"])
-    project_state_list.append(st.session_state["sql_queries_dict"])
-
-    return project_state_list
-
-#______________________________________________________
-
-#_________________________________________________
-#Funtion to create the list that stores the state of the project
-# project_state_list
-# 0. [g_label, g_mapping]     1. g_ontology_components_dict      2. structural_ns_dict
-# 3. db_connections_dict       4. db_connection_status_dict
-# 5. ds_files_dict                6. sql_queries_dict
-def retrieve_project_state(project_state_list):
-
-    st.session_state["g_mapping"] = project_state_list[0][1]
-    st.session_state["g_label"] = project_state_list[0][0]
-    st.session_state["g_ontology_components_dict"] = project_state_list[1]
-    st.session_state["structural_ns"] = project_state_list[2]
-    st.session_state["db_connections_dict"] = project_state_list[3]
-    st.session_state["db_connection_status_dict"] = project_state_list[4]
-    st.session_state["ds_files_dict"] = project_state_list[5]
-    st.session_state["sql_queries_dict"] = project_state_list[6]
-
-#______________________________________________________
-
-
-#_________________________________________________________
-# Function to get the ontology base iri
-# Returns a list because the ontology can have several components
-def get_ontology_base_iri():
-    base_iri_list = []
-    for s in st.session_state["g_ontology"].subjects(RDF.type, OWL.Ontology):
-        try:
-            split_uri(s)
-            if is_valid_iri(split_uri(s)[0]):
-                base_iri_list.append(split_uri(s)[0])
-        except:
-            if is_valid_iri(s):
-                base_iri_list.append(s)
-
-    return base_iri_list
-#________________________________________________________
 
 #________________________________________________________
 # Funtion to get the dictionary of the TriplesMaps

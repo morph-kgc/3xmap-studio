@@ -27,7 +27,7 @@ if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_f
                 <span style="color:#511D66; font-weight:bold; margin-left:12px;">◽◽◽◽◽</span>
             </h3>
             <p style="margin:0; font-size:0.95rem; color:#555;">
-                System-wide settings: Load <b>mapping</b> and <b>ontology</b>, and <b>save work</b>.
+                System-wide settings: Load <b>mapping</b>, manage <b>namespaces</b>, and <b>save work</b>.
             </p>
         </div>
     </div>
@@ -474,7 +474,7 @@ with tab1:
                         ⚠️ If you continue:<br>
                         <div style="margin-left:1.5em;">
                         🗑️ Mapping <b>{st.session_state["g_label"]}</b> will be overwritten.<br>
-                        🆕 Mapping <b>{st.session_state["g_label_temp_new"]}</b> will be created.<br>
+                        🆕 Mapping <b>{st.session_state["g_label_temp_existing"]}</b> will be created.<br>
                         </div>
                         <small>You can export the current mapping or save the session in
                         the <b>Save Mapping </b> pannel.</small>
@@ -1379,20 +1379,14 @@ with tab3:
         with col1b:
             export_filename = st.text_input("⌨️ Enter filename (without extension):*", key="key_export_filename_selectbox")
 
-        if "." in export_filename:
-            with col1c:
-                st.markdown(f"""<div class="warning-message">
-                        ⚠️ The filename <b style="color:#cc9a06;">{export_filename}</b>
-                        seems to include an extension.
-                    </div>""", unsafe_allow_html=True)
-
-        with col1:
-            col1a, col1b = st.columns([2,1])
+        with col1c:
+            if export_filename:
+                export_filename_valid_flag = utils.is_valid_filename(export_filename)
 
         export_filename_complete = export_filename + export_extension if export_filename else ""
 
-        if export_filename_complete:
-            with col1a:
+        if export_filename_complete and export_filename_valid_flag:
+            with col1c:
                 st.markdown(f"""<div class="info-message-blue">
                         ℹ️ Current state of mapping <b>
                         {st.session_state["g_label"]}</b> will exported
@@ -1401,7 +1395,6 @@ with tab3:
 
             serialised_data = st.session_state["g_mapping"].serialize(format=export_format)
             with col1a:
-                st.write("")
                 st.session_state["mapping_downloaded_ok_flag"] = st.download_button(label="Export", data=serialised_data,
                     file_name=export_filename_complete, mime="text/plain")
 
@@ -1449,12 +1442,15 @@ with tab3:
             pkl_filename = st.text_input("⌨️ Enter filename (without extension):*", key="key_pkl_filename")
 
         if pkl_filename:
-            if "." in pkl_filename:
-                with col1b:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ The filename <b style="color:#cc9a06;">{pkl_filename}</b>
-                            seems to include an extension.
-                        </div>""", unsafe_allow_html=True)
+            # if "." in pkl_filename:
+            #     with col1b:
+            #         st.markdown(f"""<div class="warning-message">
+            #                 ⚠️ The filename <b style="color:#cc9a06;">{pkl_filename}</b>
+            #                 seems to include an extension.
+            #             </div>""", unsafe_allow_html=True)
+            with col1b:
+                valid_pkl_filename_flag = utils.is_valid_filename(pkl_filename)
+
 
         folder_name = "saved_sessions"
         pkl_filename_w_extension = pkl_filename + '.pkl'
@@ -1462,20 +1458,27 @@ with tab3:
         file_path = os.path.join(folder_path, pkl_filename_w_extension)
 
         if pkl_filename and os.path.isfile(file_path):
-            with col1a:
+            with col1b:
                 st.markdown(f"""<div class="warning-message">
-                        ⚠️ <b>A session was already saved with this filename</b>. Please, pick
-                        a different filename unless you want to overwrite it.
+                        ⚠️ <b>A session was already saved with this filename</b>. <small>Please, pick
+                        a different filename unless you want to overwrite it.</small>
                     </div>""", unsafe_allow_html=True)
-                st.write("")
+            with col1a:
                 overwrite_pkl_checkbox = st.checkbox(
                 ":gray-badge[⚠️ I am sure I want to overwrite]",
                 key="key_overwrite_pkl_checkbox")
             if overwrite_pkl_checkbox:
                 with col1a:
                     st.button("Save", key="key_save_session_button", on_click=save_session)
-        elif pkl_filename:
-            st.button("Save", key="key_save_session_button", on_click=save_session)
+        elif pkl_filename and valid_pkl_filename_flag:
+            with col1b:
+                st.markdown(f"""<div class="info-message-blue">
+                        ℹ️ Current <b>session state</b> will be exported
+                        to file <b style="color:#F63366;">{pkl_filename + ".pkl"}</b>.
+                        <small> This includes the mapping, ontologies, namespaces and data sources.</small>
+                    </span></div>""", unsafe_allow_html=True)
+            with col1a:
+                st.button("Save", key="key_save_session_button", on_click=save_session)
 
 
 #_____________________________________________

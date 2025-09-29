@@ -662,7 +662,7 @@ with tab1:
                         if not os.path.splitext(output_filename)[1]:
                             st.markdown(f"""<div class="warning-message">
                                 ⚠️ <b>No extension</b> in filename.
-                                <small> Using an extension is recommended. Make sure it matched the file format (if given).</small>
+                                <small> Using an extension is recommended. Make sure it matches the file format (if given).</small>
                             </div>""", unsafe_allow_html=True)
 
             output_file = os.path.join(temp_folder_path, output_filename) if output_filename else ""
