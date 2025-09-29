@@ -71,6 +71,10 @@ if "ds_file_saved_ok_flag" not in st.session_state:
 if "ds_file_removed_ok_flag" not in st.session_state:
     st.session_state["ds_file_removed_ok_flag"] = False
 
+# OTHER PAGES
+if not "db_connections_dict" in st.session_state:
+    st.session_state["db_connections_dict"] = {}
+
 
 #define on_click functions
 # TAB1
@@ -417,8 +421,8 @@ with tab2:
     if not st.session_state["db_connections_dict"] and not st.session_state["ds_files_dict"]:
             with col1:
                 st.markdown(f"""<div class="error-message">
-                    ❌ <b>No Logical Sources have been added.</b> <small>You can add them in the
-                    <b>Manage SQL Data Sources</b> and <b>Manage Tabular Data Sources</b> pannels.</small>
+                    ❌ <b>No Tabular Logical Sources have been added.</b> <small>You can add them in the
+                    <b>Load File</b> pannel.</small>
                 </div>""", unsafe_allow_html=True)
 
     else:
@@ -428,130 +432,130 @@ with tab2:
         with col2:
             col2a, col2b = st.columns([0.5, 2])
 
-    with col2b:
-        st.write("")
-        st.write("")
-
-
-    rows = []
-    ds_files = list(st.session_state["ds_files_dict"].items())
-    ds_files.reverse()
-
-    for filename, file_obj in ds_files:
-        base_name = filename.split(".")[0]
-        file_format = filename.split(".")[-1]
-
-        if hasattr(file_obj, "size"):
-            # Streamlit UploadedFile
-            file_size_kb = file_obj.size / 1024
-        elif hasattr(file_obj, "fileno"):
-            # File object from open(path, "rb")
-            file_size_kb = os.fstat(file_obj.fileno()).st_size / 1024
-        else:
-            file_size_kb = None  # Unknown format
-
-        if not file_size_kb:
-            file_size = None
-        elif file_size_kb < 1:
-            file_size = f"""{int(file_size_kb*1024)} bytes"""
-        elif file_size_kb < 1024:
-            file_size = f"""{int(file_size_kb)} kB"""
-        else:
-            file_size = f"""{int(file_size_kb/1024)} MB"""
-
-        row = {"Filename": base_name, "Format": file_format,
-            "Size": file_size if file_size_kb is not None else "N/A"}
-        rows.append(row)
-
-        db_connections_df = pd.DataFrame(rows)
-        last_added_db_connections_df = db_connections_df.head(utils.get_max_length_for_display()[1])
-
-    with col2b:
-        max_length = utils.get_max_length_for_display()[1]   # max number of connections to show directly
-        if st.session_state["ds_files_dict"]:
-            if len(st.session_state["ds_files_dict"]) < max_length:
-                st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
-                        🔎 uploaded files
-                    </div>""", unsafe_allow_html=True)
-                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                    </div>""", unsafe_allow_html=True)
-            else:
-                st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
-                        🔎 last uploaded files
-                    </div>""", unsafe_allow_html=True)
-                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                        (complete list below)
-                    </div>""", unsafe_allow_html=True)
-            st.dataframe(last_added_db_connections_df, hide_index=True)
-
-        #Option to show all connections (if too many)
-        if st.session_state["ds_files_dict"] and len(st.session_state["ds_files_dict"]) > max_length:
-            with st.expander("🔎 Show all files"):
-                st.write("")
-                st.dataframe(db_connections_df, hide_index=True)
-
-        #PURPLE HEADING - VIEW TABLE
-        with col1:
+        with col2b:
             st.write("")
-            st.markdown("""<div class="purple-heading">
-                    🔎 Display Table
-                </div>""", unsafe_allow_html=True)
             st.write("")
 
-        with col1:
-            col1a, col1b = st.columns(2)
 
-        with col1a:
-            list_to_choose = list(reversed(list(st.session_state["ds_files_dict"].keys())))
-            list_to_choose.insert(0, "Select file")
-            tab_filename_for_display = st.selectbox("🖱️ Select file:*", list_to_choose,
-                key="key_tab_filename_for_display")
+        rows = []
+        ds_files = list(st.session_state["ds_files_dict"].items())
+        ds_files.reverse()
 
-        if tab_filename_for_display != "Select file":
+        for filename, file_obj in ds_files:
+            base_name = filename.split(".")[0]
+            file_format = filename.split(".")[-1]
 
-            tab_file_for_display = st.session_state["ds_files_dict"][tab_filename_for_display]
-
-            df = utils.read_tab_file(tab_filename_for_display)
-            tab_file_for_display.seek(0)
-
-            with col1b:
-                column_list = df.columns.tolist()
-                tab_column_filter_list = st.multiselect(f"""🖱️ Select columns (optional, max {utils.get_max_length_for_display()[3]}):""",
-                    column_list, key="key_tab_column_filter")
-
-            if not tab_column_filter_list:
-                with col1:
-                    max_rows = utils.get_max_length_for_display()[2]
-                    max_cols = utils.get_max_length_for_display()[3]
-
-                    limited_df = df.iloc[:, :max_cols]   # limit number of columns
-
-                    # Slice rows if needed
-                    if len(df) > max_rows and df.shape[1] > max_cols:
-                        st.markdown(f"""<div class="warning-message">
-                            ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
-                            and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
-                        </div>""", unsafe_allow_html=True)
-                        st.write("")
-                    elif len(df) > max_rows:
-                        st.markdown(f"""<div class="warning-message">
-                            ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
-                        </div>""", unsafe_allow_html=True)
-                        st.write("")
-                    elif df.shape[1] > max_cols:
-                        st.markdown(f"""<div class="warning-message">
-                            ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
-                        </div>""", unsafe_allow_html=True)
-                        st.write("")
-                    st.dataframe(limited_df.head(max_rows), hide_index=True)
-
+            if hasattr(file_obj, "size"):
+                # Streamlit UploadedFile
+                file_size_kb = file_obj.size / 1024
+            elif hasattr(file_obj, "fileno"):
+                # File object from open(path, "rb")
+                file_size_kb = os.fstat(file_obj.fileno()).st_size / 1024
             else:
-                if len(tab_column_filter_list) > utils.get_max_length_for_display()[3]:
-                    with col1:
-                        st.markdown(f"""<div class="error-message">
-                            ❌ <b> Too many columns</b> selected. Please, respect the limit
-                            of {utils.get_max_length_for_display()[3]}.
+                file_size_kb = None  # Unknown format
+
+            if not file_size_kb:
+                file_size = None
+            elif file_size_kb < 1:
+                file_size = f"""{int(file_size_kb*1024)} bytes"""
+            elif file_size_kb < 1024:
+                file_size = f"""{int(file_size_kb)} kB"""
+            else:
+                file_size = f"""{int(file_size_kb/1024)} MB"""
+
+            row = {"Filename": base_name, "Format": file_format,
+                "Size": file_size if file_size_kb is not None else "N/A"}
+            rows.append(row)
+
+            db_connections_df = pd.DataFrame(rows)
+            last_added_db_connections_df = db_connections_df.head(utils.get_max_length_for_display()[1])
+
+        with col2b:
+            max_length = utils.get_max_length_for_display()[1]   # max number of connections to show directly
+            if st.session_state["ds_files_dict"]:
+                if len(st.session_state["ds_files_dict"]) < max_length:
+                    st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
+                            🔎 uploaded files
+                        </div>""", unsafe_allow_html=True)
+                    st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
                         </div>""", unsafe_allow_html=True)
                 else:
+                    st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
+                            🔎 last uploaded files
+                        </div>""", unsafe_allow_html=True)
+                    st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                            (complete list below)
+                        </div>""", unsafe_allow_html=True)
+                st.dataframe(last_added_db_connections_df, hide_index=True)
+
+            #Option to show all connections (if too many)
+            if st.session_state["ds_files_dict"] and len(st.session_state["ds_files_dict"]) > max_length:
+                with st.expander("🔎 Show all files"):
+                    st.write("")
+                    st.dataframe(db_connections_df, hide_index=True)
+
+            #PURPLE HEADING - VIEW TABLE
+            with col1:
+                st.write("")
+                st.markdown("""<div class="purple-heading">
+                        🔎 Display Table
+                    </div>""", unsafe_allow_html=True)
+                st.write("")
+
+            with col1:
+                col1a, col1b = st.columns(2)
+
+            with col1a:
+                list_to_choose = list(reversed(list(st.session_state["ds_files_dict"].keys())))
+                list_to_choose.insert(0, "Select file")
+                tab_filename_for_display = st.selectbox("🖱️ Select file:*", list_to_choose,
+                    key="key_tab_filename_for_display")
+
+            if tab_filename_for_display != "Select file":
+
+                tab_file_for_display = st.session_state["ds_files_dict"][tab_filename_for_display]
+
+                df = utils.read_tab_file(tab_filename_for_display)
+                tab_file_for_display.seek(0)
+
+                with col1b:
+                    column_list = df.columns.tolist()
+                    tab_column_filter_list = st.multiselect(f"""🖱️ Select columns (optional, max {utils.get_max_length_for_display()[3]}):""",
+                        column_list, key="key_tab_column_filter")
+
+                if not tab_column_filter_list:
                     with col1:
-                        st.dataframe(df[tab_column_filter_list], hide_index=True)
+                        max_rows = utils.get_max_length_for_display()[2]
+                        max_cols = utils.get_max_length_for_display()[3]
+
+                        limited_df = df.iloc[:, :max_cols]   # limit number of columns
+
+                        # Slice rows if needed
+                        if len(df) > max_rows and df.shape[1] > max_cols:
+                            st.markdown(f"""<div class="warning-message">
+                                ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
+                                and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+                            </div>""", unsafe_allow_html=True)
+                            st.write("")
+                        elif len(df) > max_rows:
+                            st.markdown(f"""<div class="warning-message">
+                                ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
+                            </div>""", unsafe_allow_html=True)
+                            st.write("")
+                        elif df.shape[1] > max_cols:
+                            st.markdown(f"""<div class="warning-message">
+                                ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+                            </div>""", unsafe_allow_html=True)
+                            st.write("")
+                        st.dataframe(limited_df.head(max_rows), hide_index=True)
+
+                else:
+                    if len(tab_column_filter_list) > utils.get_max_length_for_display()[3]:
+                        with col1:
+                            st.markdown(f"""<div class="error-message">
+                                ❌ <b> Too many columns</b> selected. Please, respect the limit
+                                of {utils.get_max_length_for_display()[3]}.
+                            </div>""", unsafe_allow_html=True)
+                    else:
+                        with col1:
+                            st.dataframe(df[tab_column_filter_list], hide_index=True)

@@ -888,7 +888,7 @@ def save_project_state():
     project_state_list = []
     project_state_list.append(mapping_list)
     project_state_list.append(st.session_state["g_ontology_components_dict"])
-    project_state_list.append(st.session_state["structural_ns_dict"])
+    project_state_list.append(st.session_state["structural_ns"])
     project_state_list.append(st.session_state["db_connections_dict"])
     project_state_list.append(st.session_state["db_connection_status_dict"])
     project_state_list.append(st.session_state["ds_files_dict"])
@@ -909,7 +909,7 @@ def retrieve_project_state(project_state_list):
     st.session_state["g_mapping"] = project_state_list[0][1]
     st.session_state["g_label"] = project_state_list[0][0]
     st.session_state["g_ontology_components_dict"] = project_state_list[1]
-    st.session_state["structural_ns_dict"] = project_state_list[2]
+    st.session_state["structural_ns"] = project_state_list[2]
     st.session_state["db_connections_dict"] = project_state_list[3]
     st.session_state["db_connection_status_dict"] = project_state_list[4]
     st.session_state["ds_files_dict"] = project_state_list[5]
@@ -2172,7 +2172,7 @@ def get_map_dict(map_label, map_dict):   #HERE FIX
 #It also builds a dictionary to save the new maps: {map name: map}
 def add_logical_source(g, tmap_label, source_file, logical_source_iri):
 
-    NS = st.session_state["structural_ns_dict"]["TriplesMap"][1]
+    NS = st.session_state["structural_ns"]["TriplesMap"][1]
     tmap_iri = NS[f"{tmap_label}"]
 
     g.add((tmap_iri, RML.logicalSource, logical_source_iri))    #bind to logical source
@@ -2230,7 +2230,7 @@ def remove_map(g, map_label, map_dict):
 def add_subject_map_template(g, tmap_label, smap_label, s_generation_type, subject_id):   #HERE DELETE
 
     tmap_iri = st.session_state["tmap_dict"][tmap_label]
-    NS = st.session_state["structural_ns_dict"]["Subject Map"][1]
+    NS = st.session_state["structural_ns"]["Subject Map"][1]
     smap_iri = NS[f"{smap_label}"]
 
     g.add((tmap_iri, RR.subjectMap, smap_iri))

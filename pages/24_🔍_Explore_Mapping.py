@@ -316,19 +316,21 @@ with tab1:
                     key="key_order_clause")
 
             query = f"""
-            SELECT ?pom ?predicate ?objectMap ?template ?constant ?column ?termType ?datatype ?language WHERE {{
-              <{tm_iri_for_search}> a <http://www.w3.org/ns/r2rml#TriplesMap> ;
-                                     <http://www.w3.org/ns/r2rml#predicateObjectMap> ?pom .
-              OPTIONAL {{ ?pom <http://www.w3.org/ns/r2rml#predicate> ?predicate }}
-              OPTIONAL {{ ?pom <http://www.w3.org/ns/r2rml#objectMap> ?objectMap }}
-              OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#template> ?template }}
-              OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#constant> ?constant }}
-              OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#reference> ?column }}
-              OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#termType> ?termType }}
-              OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#datatype> ?datatype }}
-              OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#language> ?language }}
-            }}
+                SELECT ?pom ?predicate ?objectMap ?template ?constant ?column ?termType ?datatype ?language ?graphMap WHERE {{
+                  <{tm_iri_for_search}> a <http://www.w3.org/ns/r2rml#TriplesMap> ;
+                                         <http://www.w3.org/ns/r2rml#predicateObjectMap> ?pom .
+                  OPTIONAL {{ ?pom <http://www.w3.org/ns/r2rml#predicate> ?predicate }}
+                  OPTIONAL {{ ?pom <http://www.w3.org/ns/r2rml#objectMap> ?objectMap }}
+                  OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#template> ?template }}
+                  OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#constant> ?constant }}
+                  OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#reference> ?column }}
+                  OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#termType> ?termType }}
+                  OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#datatype> ?datatype }}
+                  OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#language> ?language }}
+                  OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#graphMap> ?graphMap }}
+                }}
             """
+
 
             if order_clause == "Ascending":
                 query += f"ORDER BY ASC(?pom) "
@@ -355,6 +357,7 @@ with tab1:
                 term_type = split_uri(term_type)[1] if term_type else ""
                 datatype = str(row.datatype) if row.datatype else ""
                 language = str(row.language) if row.language else ""
+                graph_map = str(row.graphMap) if row.graphMap else ""
 
                 pom_label = utils.get_node_label(pom)
                 om_label = utils.get_node_label(object_map)
@@ -366,7 +369,8 @@ with tab1:
                         "Predicate": predicate, "Object Map": om_label,
                         "Template": template, "Constant": constant, "Reference": column,
                         "TermType": term_type, "Datatype": datatype, "Language": language,
-                        "Predicate-Object Map (complete)": pom, "Object Map (complete)": object_map})
+                        "Graph Map": graph_map, "Predicate-Object Map (complete)": pom,
+                        "Object Map (complete)": object_map})
 
             df = pd.DataFrame(df_data)
             with col1:

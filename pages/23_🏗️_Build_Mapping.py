@@ -409,6 +409,9 @@ def save_pom_template():
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.IRI))
     elif om_term_type_template == "👻 BNode":
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.BlankNode))
+    if add_om_graph_map_option == "Add Graph Map":
+        st.session_state["g_mapping"].add((om_iri, RR.graphMap, om_graph))
+        #HEREIGO
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
     st.session_state["last_added_pom_list"].insert(0, [st.session_state["pom_iri_to_create"], st.session_state["tm_iri_for_pom"]])
@@ -446,6 +449,8 @@ def save_pom_constant():
             st.session_state["g_mapping"].add((om_iri, RR.datatype, datatype_dict[om_datatype]))
         elif om_datatype == "Natural language tag":
             st.session_state["g_mapping"].add((om_iri, RR.language, Literal(om_language_tag)))
+    if add_om_graph_map_option == "Add Graph Map":
+        st.session_state["g_mapping"].add((om_iri, RR.graphMap, om_graph))
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
     st.session_state["last_added_pom_list"].insert(0, [st.session_state["pom_iri_to_create"], st.session_state["tm_iri_for_pom"]])
@@ -479,6 +484,8 @@ def save_pom_reference():
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.IRI))
     elif om_term_type_reference == "👻 BNode":
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.BlankNode))
+    if add_om_graph_map_option == "Add Graph Map":
+        st.session_state["g_mapping"].add((om_iri, RR.graphMap, om_graph))
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
     st.session_state["last_added_pom_list"].insert(0, [st.session_state["pom_iri_to_create"], st.session_state["tm_iri_for_pom"]])
@@ -1685,9 +1692,11 @@ with tab3:
 
         if tm_label_for_pom != "Select a TriplesMap":
 
+
             ns_needed_for_pom_flag = False
 
             tm_iri_for_pom = tm_dict[tm_label_for_pom]
+            column_list = utils.get_column_list(tm_iri_for_pom)
 
             sm_dict = utils.get_sm_dict()
 
@@ -1708,6 +1717,7 @@ with tab3:
 
 
             pom_iri = BNode()
+            om_iri = BNode()
 
             if st.session_state["g_ontology_components_dict"]:
                 ontology_p_list = utils.get_ontology_defined_p()
@@ -2111,8 +2121,6 @@ with tab3:
                         save_pom_constant_button = st.button("Save", on_click=save_pom_constant, key="key_save_pom_constant_button")
                     elif om_generation_rule == "Reference 📊":
                         save_pom_reference_button = st.button("Save", on_click=save_pom_reference, key="key_save_pom_reference_button")
-                    elif om_generation_rule == "BNode 👻":
-                        save_pom_bnode_button = st.button("Save", on_click=save_bnode_bnode, key="key_save_pom_bnode_button")
 
     with col2b:
         st.markdown("""<div class='info-message-gray'>
