@@ -1,0 +1,17 @@
+@prefix ns1: <http://semweb.mmlab.be/ns/ql#> .
+@prefix ns2: <http://www.w3.org/ns/r2rml#> .
+@prefix ns3: <http://semweb.mmlab.be/ns/rml#> .
+@prefix rdfolio: <http://rdfolio.org/mapping/> .
+
+rdfolio:tm1 a ns2:TriplesMap ;
+    ns3:logicalSource [ ns1:referenceFormulation ns1:CSV ;
+            ns3:source "Authors.csv" ] ;
+    ns2:predicateObjectMap [ a ns2:PredicateObjectMap ;
+            ns2:objectMap [ a ns2:ObjectMap ;
+                    ns2:template "http://rdfolio.org/mapping/" ;
+                    ns2:termType ns2:IRI ] ;
+            ns2:predicate rdfolio:ewfew ] ;
+    ns2:subjectMap [ a ns2:SubjectMap ;
+            ns3:constant rdfolio:efe ;
+            ns2:termType ns2:IRI ] .
+

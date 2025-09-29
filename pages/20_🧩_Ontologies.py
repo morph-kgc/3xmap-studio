@@ -223,7 +223,7 @@ with tab1[0]:
     with col2b:
         st.write("")
         st.markdown("""<div class="info-message-gray">
-        🐢 Certain options in this panel can be a bit slow, some patience may be required.
+        🐢 Certain options in this panel can be a bit slow. <small> Some patience may be required.</small>
             </div>""", unsafe_allow_html=True)
 
 
@@ -263,7 +263,7 @@ with tab1[0]:
                 if not utils.is_valid_ontology(g_candidate):
                     with col1b:
                         st.markdown(f"""<div class="error-message">
-                            ❌ <b>URL does not link to a valid ontology.</b>
+                            ❌ URL <b>does not</b> link to a valid ontology.
                         </div>""", unsafe_allow_html=True)
                         st.write("")
 
@@ -299,7 +299,7 @@ with tab1[0]:
                 if not utils.is_valid_ontology(g_candidate):
                     with col1b:
                         st.markdown(f"""<div class="error-message">
-                            ❌ <b>File does not contain a valid ontology</b>.
+                            ❌ File <b>does not</b> contain a valid ontology.
                         </div>""", unsafe_allow_html=True)
                         st.write("")
 
@@ -346,19 +346,19 @@ with tab1[0]:
                 if not utils.is_valid_ontology(g_candidate):
                     with col1b:
                         st.markdown(f"""<div class="error-message">
-                            ❌ <b>URL does not link to a valid ontology.</b>
+                            ❌ URL <b>does not</b> link to a valid ontology.
                         </div>""", unsafe_allow_html=True)
 
                 elif st.session_state["g_ontology_from_link_candidate_label"] in st.session_state["g_ontology_components_dict"]:
                     with col1b:
                         st.markdown(f"""<div class="error-message">
-                                ⚠️ The ontology <b style="color:#F63366;">
+                                ⚠️ The ontology <b>
                                 {st.session_state["g_ontology_from_link_candidate_label"]}</b>
                                 has been already imported.
                             </div>""", unsafe_allow_html=True)
 
                 else:
-                    with col1b:
+                    with col1a:
                         st.markdown(f"""<div class="success-message">
                                 ✔️ <b>Valid ontology:</b> <b style="color:#F63366;">
                                 {st.session_state["g_ontology_from_link_candidate_label"]}</b>
@@ -398,7 +398,7 @@ with tab1[0]:
                         st.write("")
                         st.write("")
                         st.markdown(f"""<div class="error-message">
-                            ❌ <b>File does not contain a valid ontology</b>.
+                            ❌ File <b>does not</b> contain a valid ontology.
                         </div>""", unsafe_allow_html=True)
                         st.write("")
 
@@ -416,7 +416,7 @@ with tab1[0]:
                     with col1b:
                         st.write("")
                         st.markdown(f"""<div class="success-message">
-                                ✔️ Valid ontology <b>
+                                ✔️ <b>Valid ontology:</b> <b style="color:#F63366;">
                                 {st.session_state["g_ontology_from_file_candidate_label"]}</b><br>
                                 <small>(parsed successfully with format
                                 <b>{st.session_state["g_ontology_from_file_candidate_fmt"]}</b>).</small>
