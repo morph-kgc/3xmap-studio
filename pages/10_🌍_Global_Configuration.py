@@ -269,9 +269,7 @@ def change_structural_ns():
 
 def unbind_namespaces():
     # unbind and store information___________________________
-    st.session_state["removed_ns_list"] = []   # save the ns that have been deleted for display
     for prefix in ns_to_unbind_list:
-        st.session_state["removed_ns_list"].append(prefix)
         st.session_state["g_mapping"].namespace_manager.bind(prefix, None, replace=True)
         if prefix in st.session_state["last_added_ns_list"]:
             st.session_state["last_added_ns_list"].remove(prefix)   # to remove from last added if it is there
@@ -281,9 +279,7 @@ def unbind_namespaces():
 
 def unbind_all_namespaces():
     # unbind and store information___________________________
-    st.session_state["removed_ns_list"] = []   # save the ns that have been deleted for display
-    for prefix in mapping_ns_dict:
-        st.session_state["removed_ns_list"].append(prefix)
+    for prefix in mapping_ns_dict_wo_structural_ns:
         st.session_state["g_mapping"].namespace_manager.bind(prefix, None, replace=True)
         if prefix in st.session_state["last_added_ns_list"]:
             st.session_state["last_added_ns_list"].remove(prefix)    # to remove from last added if it is there
@@ -772,7 +768,7 @@ with tab2:
                 if prefix_input in ontology_ns_dict:
                     with col1a:
                         st.markdown(f"""<div class="error-message">
-                            ❌ <b> Prefix {prefix_input} is contained in the ontology. </b>
+                            ❌ Prefix <b>{prefix_input}</b> is contained in the ontology.
                             <small>You can either choose a different prefix or bind {prefix_input}
                             directly from the ontology namespaces option.</small>
                         </div>""", unsafe_allow_html=True)
@@ -780,7 +776,7 @@ with tab2:
                 elif prefix_input in predefined_ns_dict:
                     with col1a:
                         st.markdown(f"""<div class="error-message">
-                            ❌ <b> Prefix {prefix_input} is tied to a predefined namespace. </b>
+                            ❌  Prefix <b>{prefix_input}</b> is tied to a predefined namespace.
                             <small>You can either choose a different prefix or bind {prefix_input}
                             directly from the predefined namespaces option.</small>
                         </div>""", unsafe_allow_html=True)
@@ -788,21 +784,21 @@ with tab2:
                 elif prefix_input in default_ns_dict:
                     with col1a:
                         st.markdown(f"""<div class="error-message">
-                            ❌ <b> Prefix {prefix_input} is tied to a default namespace. </b>
+                            ❌ Prefix <b>{prefix_input}</b> is tied to a default namespace.
                             <small>You must choose a different prefix.</small>
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                 elif prefix_input == default_structural_ns[0]:
                     with col1a:
                         st.markdown(f"""<div class="error-message">
-                            ❌ <b> Prefix {prefix_input} is tied to a default structural namespace. </b>
+                            ❌ Prefix <b>{prefix_input}</b> is tied to the default structural namespace.
                             <small>You must choose a different prefix.</small>
                         </div>""", unsafe_allow_html=True)
                         st.write("")
                 elif prefix_input in mapping_ns_dict:
                     with col1a:
                         st.markdown(f"""<div class="error-message">
-                            ❌ <b> Prefix {prefix_input} is already in use. </b>
+                            ❌ Prefix <b>{prefix_input}</b> is already in use.
                             <small>You can either choose a different prefix or unbind {prefix_input} to reassing it.</small>
                         </div>""", unsafe_allow_html=True)
                         st.write("")
@@ -1164,27 +1160,9 @@ with tab2:
             with col1:
                 col1a, col1b = st.columns([2,1])
             with col1a:
-                formatted_deleted_ns = ", ".join(st.session_state["removed_ns_list"][:-1]) + " and " + st.session_state["removed_ns_list"][-1]
-                if len(st.session_state["removed_ns_list"]) == 1:
-                    st.write("")
-                    st.markdown(f"""<div class="success-message-flag">
-                        ✅ The Namespace <b style="color:#F63366;">
-                        {st.session_state["removed_ns_list"][0]}</b> has been unbound!
-                    </div>""", unsafe_allow_html=True)
-                elif len(st.session_state["removed_ns_list"]) < 7:
-                    st.markdown(f"""
-                    <div style="background-color:#d4edda; padding:1em;
-                    border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                        ✅ The Namespaces <b style="color:#F63366;">
-                        {formatted_deleted_ns}</b> have been succesfully deleted!  </div>
-                    """, unsafe_allow_html=True)
-                else:
-                    st.markdown(f"""
-                    <div style="background-color:#d4edda; padding:1em;
-                    border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                        ✅ <b style="color:#F63366;">{len(st.session_state["removed_ns_list"])} Namespaces
-                        </b> have been succesfully deleted!  </div>
-                    """, unsafe_allow_html=True)
+                st.markdown(f"""<div class="success-message-flag">
+                    ✅ The <b>Namespace/s</b> have been unbound!
+                </div>""", unsafe_allow_html=True)
             st.write("")
             st.write("")
             st.session_state["ns_unbound_ok_flag"] = False
@@ -1204,41 +1182,25 @@ with tab2:
                 with col1:
                     col1a, col1b = st.columns([2,1])
                 with col1a:
-                    formatted_deleted_ns = ", ".join(st.session_state["removed_ns_list"][:-1]) + " and " + st.session_state["removed_ns_list"][-1]
-                    if len(st.session_state["removed_ns_list"]) == 1:
-                        st.write("")
-                        st.markdown(f"""<div class="success-message-flag">
-                            ✅ The Namespace <b style="color:#F63366;">
-                            {st.session_state["removed_ns_list"][0]}</b> has been unbound!
-                        </div>""", unsafe_allow_html=True)
-                    elif len(st.session_state["removed_ns_list"]) < 7:
-                        st.markdown(f"""
-                        <div style="background-color:#d4edda; padding:1em;
-                        border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                            ✅ The Namespaces <b style="color:#F63366;">
-                            {formatted_deleted_ns}</b> have been succesfully deleted!  </div>
-                        """, unsafe_allow_html=True)
-                    else:
-                        st.markdown(f"""
-                        <div style="background-color:#d4edda; padding:1em;
-                        border-radius:5px; color:#155724; border:1px solid #c3e6cb;">
-                            ✅ <b style="color:#F63366;">{len(st.session_state["removed_ns_list"])} Namespaces
-                            </b> have been succesfully deleted!  </div>
-                        """, unsafe_allow_html=True)
+                    st.markdown(f"""<div class="success-message-flag">
+                        ✅ The <b>Namespace/s</b> have been unbound!
+                    </div>""", unsafe_allow_html=True)
                 st.write("")
                 st.session_state["ns_unbound_ok_flag"] = False
                 time.sleep(st.session_state["success_display_time"])
                 st.rerun()
 
             mapping_ns_dict = utils.get_mapping_ns_dict()
-            mapping_ns_list = list(mapping_ns_dict.keys())
-            if len(mapping_ns_list) > 1:
-                mapping_ns_list.append("Select all")
+            list_to_choose = list(reversed(list(mapping_ns_dict.keys())))
+            if len(list_to_choose) > 1:
+                list_to_choose.insert(0, "Select all")
 
             with col1:
                 col1a, col1b = st.columns([2,1])
-                with col1a:
-                    ns_to_unbind_list = st.multiselect("🖱️ Select namespace/s to unbind:*", reversed(mapping_ns_list), key="key_unbind_multiselect")
+            with col1a:
+                if st.session_state["structural_ns"][0] in list_to_choose:
+                    list_to_choose.remove(st.session_state["structural_ns"][0])
+                ns_to_unbind_list = st.multiselect("🖱️ Select namespaces to unbind:*", list_to_choose, key="key_unbind_multiselect")
 
 
             if ns_to_unbind_list and "Select all" not in ns_to_unbind_list:
@@ -1280,16 +1242,17 @@ with tab2:
                 # create a single info message
                 inner_html = ""
                 max_length = utils.get_max_length_for_display()[4]
+                mapping_ns_dict_wo_structural_ns = {k: v for k, v in mapping_ns_dict.items() if k != st.session_state["structural_ns"][0]}
 
-                for prefix in list(mapping_ns_dict)[:max_length]:
+                for prefix in list(mapping_ns_dict_wo_structural_ns)[:max_length]:
                     if prefix != "Select all":
                         inner_html += f"""<div style="margin-bottom:6px;">
-                            🔗 <b>{prefix}</b> → {mapping_ns_dict[prefix]}
+                            🔗 <b>{prefix}</b> → {mapping_ns_dict_wo_structural_ns[prefix]}
                         </div>"""
 
-                if len(mapping_ns_dict) > max_length:   # many sm to remove
+                if len(mapping_ns_dict_wo_structural_ns) > max_length:   # many sm to remove
                     inner_html += f"""<div style="margin-bottom:2px;">
-                        🔗 ... <b>(+{len(list(mapping_ns_dict)[:max_length])})</b>
+                        🔗 ... <b>(+{len(list(mapping_ns_dict_wo_structural_ns)[:max_length])})</b>
                     </div>"""
 
                 # wrap it all in a single info box
