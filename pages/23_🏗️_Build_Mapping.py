@@ -316,7 +316,7 @@ def save_sm_constant():   #function to save subject map (constant option)
     sm_constant_ns = mapping_ns_dict[sm_constant_ns_prefix]
     NS = Namespace(sm_constant_ns)
     sm_constant_iri = NS[sm_constant]
-    st.session_state["g_mapping"].add((sm_iri, RR.constant, sm_constant_iri))
+    st.session_state["g_mapping"].add((sm_iri, RML.constant, sm_constant_iri))
     if add_subject_class_option != "No Class" and subject_class:
         st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
     if add_sm_graph_map_option == "Add Graph Map" and subject_graph:
@@ -339,7 +339,7 @@ def save_sm_reference():   #function to save subject map (reference option)
         sm_iri = NS[sm_label]
     st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, sm_iri))
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RR.SubjectMap))
-    st.session_state["g_mapping"].add((sm_iri, RR.reference, Literal(sm_column_name)))    #HERE change to RR.column in R2RML
+    st.session_state["g_mapping"].add((sm_iri, RML.reference, Literal(sm_column_name)))    #HERE change to RR.column in R2RML
     if add_subject_class_option != "No Class" and subject_class:
         st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
     if add_sm_graph_map_option == "Add Graph Map" and subject_graph:
@@ -436,10 +436,10 @@ def save_pom_constant():
         om_constant_ns = mapping_ns_dict[om_constant_ns_prefix]
         NS = Namespace(om_constant_ns)
         om_constant_iri = NS[om_constant]
-        st.session_state["g_mapping"].add((om_iri, RR.constant, om_constant_iri))
+        st.session_state["g_mapping"].add((om_iri, RML.constant, om_constant_iri))
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.IRI))
     elif om_term_type_constant == "📘 Literal":
-        st.session_state["g_mapping"].add((om_iri, RR.constant, Literal(om_constant)))
+        st.session_state["g_mapping"].add((om_iri, RML.constant, Literal(om_constant)))
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.Literal))
         if om_datatype != "Select datatype" and om_datatype != "Natural language tag":
             datatype_dict = utils.get_datatypes_dict()
@@ -1006,9 +1006,7 @@ with tab2:
     sm_dict = utils.get_sm_dict()
 
     with col2:
-        col2a, col2b = st.columns([0.5, 2])   #HEREHERE
-
-
+        col2a, col2b = st.columns([0.5, 2])
 
 #____________________________________
 
@@ -1071,6 +1069,8 @@ with tab2:
         #IF THERE ARE TRIPLESMAPS AVAILABLE___________________________
 
         #first create dictionary of all the existing Subject Maps
+
+        ns_needed_for_sm_flag = False
 
         existing_sm_dict = {}
         for sm in st.session_state["g_mapping"].objects(predicate=RR.subjectMap):
@@ -1176,11 +1176,12 @@ with tab2:
                                 list_to_choose = list(reversed(list(mapping_ns_dict.keys())))
                                 list_to_choose.insert(0, "Select a namespace")
                                 sm_template_ns_prefix = st.selectbox("🖱️ Select a namespace for the template:", list_to_choose, key="key_sm_template_ns_prefix")
-                                if not mapping_ns_dict:
-                                    st.markdown(f"""<div class="error-message">
-                                            ❌ No namespaces available. You can add namespaces in the
-                                             <b>Global Configuration</b> page.
-                                        </div>""", unsafe_allow_html=True)
+                                ns_needed_for_sm_flag = True
+                                # if not mapping_ns_dict:
+                                #     st.markdown(f"""<div class="error-message">
+                                #             ❌ No namespaces available. You can add namespaces in the
+                                #              <b>Global Configuration</b> page.
+                                #         </div>""", unsafe_allow_html=True)
 
 
                                 if sm_template_ns_prefix != "Select a namespace":
@@ -1242,11 +1243,12 @@ with tab2:
                                 key="key_sm_constant_ns")
 
                             if not mapping_ns_dict:
-                                with col1b:
-                                    st.markdown(f"""<div class="error-message">
-                                            ❌ You must add namespaces in
-                                            the <b>Global Configuration</b> page.
-                                        </div>""", unsafe_allow_html=True)
+                                ns_needed_for_sm_flag = True
+                                # with col1b:
+                                #     st.markdown(f"""<div class="error-message">
+                                #             ❌ You must add namespaces in
+                                #             the <b>Global Configuration</b> page.
+                                #         </div>""", unsafe_allow_html=True)
 
                         with col1a:
                             st.write("")
@@ -1386,22 +1388,23 @@ with tab2:
                             subject_class_prefix = st.selectbox("🖱️ Select a namespace:*", subject_class_prefix_list,
                                 key="key_subject_class_prefix")
 
-                        if not mapping_ns_dict:
-                            with col1a:
-                                st.write("")
-                                st.markdown(f"""<div class="error-message">
-                                        ❌ No namespaces available. You can add namespaces in the
-                                         <b>Global Configuration</b> page.
-                                    </div>""", unsafe_allow_html=True)
+                        # if not mapping_ns_dict:
+                        #     with col1a:
+                        #         st.write("")
+                        #         st.markdown(f"""<div class="error-message">
+                        #                 ❌ No namespaces available. You can add namespaces in the
+                        #                  <b>Global Configuration</b> page.
+                        #             </div>""", unsafe_allow_html=True)
+                        # else:
+                        ns_needed_for_sm_flag = True
+                        if subject_class_prefix != "Select a namespace":
+                            NS = Namespace(mapping_ns_dict[subject_class_prefix])
+                        with col1a:
+                            subject_class_input = st.text_input("⌨️ Enter subject class:*", key="key_subject_class_input")
+                        if subject_class_input and subject_class_prefix != "Select a namespace":
+                            subject_class_iri = NS[subject_class_input]
                         else:
-                            if subject_class_prefix != "Select a namespace":
-                                NS = Namespace(mapping_ns_dict[subject_class_prefix])
-                            with col1a:
-                                subject_class_input = st.text_input("⌨️ Enter subject class:*", key="key_subject_class_input")
-                            if subject_class_input and subject_class_prefix != "Select a namespace":
-                                subject_class_iri = NS[subject_class_input]
-                            else:
-                                subject_class_iri = ""
+                            subject_class_iri = ""
 
                     # GRAPH MAP
                     with col1b:
@@ -1419,17 +1422,18 @@ with tab2:
                             subject_graph_prefix = st.selectbox("🖱️ Select a namespace:*", subject_graph_prefix_list,
                                 key="key_subject_graph_prefix")
 
-                            if not mapping_ns_dict:
-                                st.write("")
-                                st.markdown(f"""<div class="error-message">
-                                        ❌ No namespaces available. You can add namespaces in the
-                                         <b>Global Configuration</b> page.
-                                    </div>""", unsafe_allow_html=True)
-                            else:
-                                with col1b:
-                                    subject_graph_input = st.text_input("🖱️ Enter Graph Map:*", key="key_subject_graph_input")
-                                if subject_graph_prefix != "Select a namespace":
-                                    NS = Namespace(mapping_ns_dict[subject_graph_prefix])
+                            # if not mapping_ns_dict:
+                            #     st.write("")
+                            #     st.markdown(f"""<div class="error-message">
+                            #             ❌ No namespaces available. You can add namespaces in the
+                            #              <b>Global Configuration</b> page.
+                            #         </div>""", unsafe_allow_html=True)
+                            # else:
+                            ns_needed_for_sm_flag = True
+                            with col1b:
+                                subject_graph_input = st.text_input("🖱️ Enter Graph Map:*", key="key_subject_graph_input")
+                            if subject_graph_prefix != "Select a namespace":
+                                NS = Namespace(mapping_ns_dict[subject_graph_prefix])
 
                             if subject_graph_input and subject_graph_prefix != "Select a namespace":
                                 subject_graph = NS[subject_graph_input]
@@ -1439,66 +1443,47 @@ with tab2:
 
 
 
-                    # # REUSE SM
-                    # with col1:
-                    #     col1a, col1b = st.columns([2,1])
-                    # with col1b:
-                    #     st.write("")
-                    #     st.write("")
-                    #     label_sm_option_checkbox = st.checkbox(
-                    #     ":gray-badge[♻️ I want to reuse the Subject Map]",
-                    #     key="key_label_sm_option_checkbox")
-                    #
-                    #     # list_to_choose = ["No", "Yes"]
-                    #     # label_sm_option_radio = st.radio("♻️ Reuse Subject Map:*", list_to_choose,
-                    #     #     horizontal=True, key="key_label_sm_option_radio")
-                    #
-                    # if label_sm_option_checkbox:
-                    #     with col1a:
-                    #         sm_label = st.text_input("⌨️ Enter Subject Map label:*", key="key_sm_label_new")
-                    # else:
-                    #     sm_label = ""
-                    #     sm_iri = BNode()
-
-
-
                     # CHECK EVERYTHING IS READY________________________________
                     sm_complete_flag = True
                     inner_html_error = ""
                     inner_html_warning = ""
 
+                    if ns_needed_for_sm_flag:
+                        inner_html_error += f"""<small>· <b>No namespaces available.</b> Go to the
+                            <b>Global Configuration</b> page to add them.</small><br>"""
+
 
                     if sm_generation_rule == "Template 📐":
                         if not sm_template:
                             sm_complete_flag = False
-                            inner_html_error += "<small>The <b>template</b> is empty.</small><br>"
+                            inner_html_error += "<small>· The <b>template</b> is empty.</small><br>"
 
                     if sm_generation_rule == "Constant 🔒":
                         if not (sm_constant_ns_prefix != "Select a namespace" and sm_constant):
                             sm_complete_flag = False
-                            inner_html_error += "<small>The <b>constant</b> (and/or its namespace) is not given.</small><br>"
+                            inner_html_error += "<small>· The <b>constant</b> (and/or its namespace) is not given.</small><br>"
 
 
                     if sm_generation_rule == "Reference 📊":
                         if column_list:
                             if sm_column_name == "Select a reference":
                                 sm_complete_flag = False
-                                inner_html_error += "<small>The <b>reference</b> has not been selected.<small><br>"
+                                inner_html_error += "<small>· The <b>reference</b> has not been selected.<small><br>"
                         else:
                             if not sm_column_name:
                                 sm_complete_flag = False
-                                inner_html_error += "<small>The <b>reference</b> has not been selected.<small><br>"
+                                inner_html_error += "<small>· The <b>reference</b> has not been selected.<small><br>"
 
                     if sm_generation_rule == "Template 📐":
                         if sm_template and sm_term_type_template == "🌐 IRI":   # if term type is IRI the NS is compulsory
                             if not st.session_state["sm_template_prefix"]:
                                 sm_complete_flag = False
-                                inner_html_error += """<small>Term type is <b>🌐 IRI</b>. You must <b>add a namespace</b>
+                                inner_html_error += """<small>· Term type is <b>🌐 IRI</b>. You must <b>add a namespace</b>
                                     to the template or change the term type</small>.<br>"""
 
                     if sm_generation_rule == "Reference 📊":
                         if sm_column_name and sm_term_type_reference == "🌐 IRI":
-                            inner_html_warning += """<small>Term type is <b>🌐 IRI</b>.
+                            inner_html_warning += """<small>· Term type is <b>🌐 IRI</b>.
                                         Make sure that the values in the referenced column
                                         are valid IRIs.</small><br>"""
 
@@ -1506,42 +1491,42 @@ with tab2:
                     if add_subject_class_option == "🧩 Ontology Class":
                         if subject_class == "Select a class":
                             sm_complete_flag = False
-                            inner_html_error += "<small>The <b>Subject class</b> has not been selected.</small><br>"
+                            inner_html_error += "<small>· The <b>Subject class</b> has not been selected.</small><br>"
                     if add_subject_class_option == "🚫 Class outside Ontology":
                         if subject_class_prefix == "Select a namespace" or not subject_class_input:
                             sm_complete_flag = False
-                            inner_html_error += """<small>The <b>Subject class</b> (and/or its namespace)
+                            inner_html_error += """<small>· The <b>Subject class</b> (and/or its namespace)
                                 has not been given.</small><br>"""
 
                     if add_sm_graph_map_option == "Add Graph Map":
                         if subject_graph_prefix == "Select a namespace" or not subject_graph_input:
                             sm_complete_flag = False
-                            inner_html_error += """<small>The <b>Graph Map</b> (and/or its namespace)
+                            inner_html_error += """<small>· The <b>Graph Map</b> (and/or its namespace)
                                 has not been given.</small><br>"""
 
                     if add_subject_class_option == "🚫 Class outside Ontology":
                         if st.session_state["g_ontology"] and not ontology_classes_dict: #there is an ontology but it has no classes
-                            inner_html_warning += """<small>Your <b>ontology</b> does not define any classes.
+                            inner_html_warning += """<small>· Your <b>ontology</b> does not define any classes.
                                           Using an ontology with predefined classes is recommended.</small><br>"""
                         elif st.session_state["g_ontology"]:   #there exists an ontology and it has classes
-                            inner_html_warning += """<small>The option <b>🚫 Class outside Ontology</b> lacks ontology alignment.
+                            inner_html_warning += """<small>· The option <b>🚫 Class outside Ontology</b> lacks ontology alignment.
                                           An ontology-driven approach is recommended.</small><br>"""
                         else:
-                            inner_html_warning += """<small>You are working <b>without an ontology</b>. Importing an ontology
+                            inner_html_warning += """<small>· You are working <b>without an ontology</b>. Importing an ontology
                                         from the <b> Global Configuration</b> page is encouraged.</small><br>"""
 
 
                     if label_sm_option == "Yes (add label)":
                         if not sm_label:
                             sm_complete_flag = False
-                            inner_html_error += """<small>The <b>Subject Map label</b>
+                            inner_html_error += """<small>· The <b>Subject Map label</b>
                                 has not been given.</small><br>"""
                         else:
                             NS = st.session_state["structural_ns"][1]
                             sm_iri = BNode() if not sm_label else NS[sm_label]
                             if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):
                                 sm_complete_flag = False
-                                inner_html_error += """<small>That <b>Subject Map label</b> is already in use.
+                                inner_html_error += """<small>· That <b>Subject Map label</b> is already in use.
                                     Please pick a different label.</small><br>"""
 
 
@@ -1639,41 +1624,14 @@ with tab3:
     col1, col2 = st.columns([2,1.5])
 
     with col2:
-        col2a,col2b = st.columns([1,2])
+        col2a, col2b = st.columns([1,2])
     with col2b:
         utils.get_corner_status_message()
         st.write("")
 
-    # tm_dict = utils.get_tm_dict()
-    # pom_dict = utils.get_pom_dict()
-    #
-    # with col2b:
-    #     st.write("")
-    #     rows = [{"TriplesMap": pom_dict[pom_iri][1], "P-O Map": pom_dict[pom_iri][2],
-    #             "Predicate": pom_dict[pom_iri][4], "Object Map": pom_dict[pom_iri][5],
-    #             "Rule": pom_dict[pom_iri][6], "ID/Constant": pom_dict[pom_iri][8]}
-    #             for pom_iri, tm in st.session_state["last_added_pom_list"]]
-    #     last_added_tm_df = pd.DataFrame(rows)
-    #     last_last_added_tm_df = last_added_tm_df.head(utils.get_max_length_for_display()[1])
-    #
-    #     if st.session_state["last_added_pom_list"]:
-    #         st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
-    #                 🔎 last added Predicate-Object Maps
-    #             </div>""", unsafe_allow_html=True)
-    #         st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-    #                 (complete list in <b>Display Mapping</b> page)
-    #             </div>""", unsafe_allow_html=True)
-    #         st.dataframe(last_last_added_tm_df, hide_index=True)
-    #         st.write("")
+    with col2:
+        col2a, col2b = st.columns([0.5, 2])   #HEREHERE
 
-    with col2b:
-        st.markdown("""<div class='info-message-gray'>
-                To consult the added Predicate-Object Maps go to the <b>🔎 Explore Mapping</b> page.
-            </div>""", unsafe_allow_html=True)
-        # st.markdown("""<div class='text-align: right; font-size: 14px; color: grey;'>
-        #         To consult the added Predicate-Object Maps go to the <b>🔎 Explore Mapping</b> page.
-        #     </div>""", unsafe_allow_html=True)
-        st.write("")
 
     #PURPLE HEADING - ADD NEW TRIPLESMAP
     with col1:
@@ -1727,18 +1685,14 @@ with tab3:
 
         if tm_label_for_pom != "Select a TriplesMap":
 
+            ns_needed_for_pom_flag = False
+
             tm_iri_for_pom = tm_dict[tm_label_for_pom]
 
             sm_dict = utils.get_sm_dict()
 
-            if not tm_label_for_pom in tm_w_sm_list:
+            if not tm_label_for_pom in tm_w_sm_list:   # HERE I LEAVE THIS FOR THE TABLE DISPLAYING SM PREDICATE POM
                 sm_label_for_pom = ""
-                # with col1a:
-                #     st.markdown(f"""<div class="warning-message">
-                #             ⚠️ TriplesMap <b>{tm_label_for_pom}</b> has no Subject Map.
-                #             <small>It will be invalid without one.</small>
-                #         </div>""", unsafe_allow_html=True)
-                #     st.write("")
             else:
                 for sm in sm_dict:
                     if tm_label_for_pom in sm_dict[sm][4]:
@@ -1784,40 +1738,24 @@ with tab3:
                     selected_p_iri = ontology_p_dict[selected_p_label]
 
             if p_type == "🚫 Predicate outside ontology":
+
+                with col1:
+                    col1a, col1b = st.columns(2)
                 mapping_ns_dict = utils.get_mapping_ns_dict()
 
                 if not mapping_ns_dict:
-                    with col1b:
-                        st.markdown(f"""<div class="error-message">
-                                ❌ <b>No namespaces available.</b>
-                                <small>You must add namespaces in the <b>Global Configuration</b> page.</small>
-                            </div>""", unsafe_allow_html=True)
-                        st.write("")
-                else:
-                    with col1b:
-                        list_to_choose = list(reversed(list(mapping_ns_dict.keys())))
-                        list_to_choose.insert(0, "Select a namespace")
-                        manual_p_ns_prefix = st.selectbox("🖱️ Select a namespace (for the predicate):*", list_to_choose, key="key_manual_p_ns_prefix")
-                    with col1b:
-                        manual_p_label = st.text_input("⌨️ Enter a predicate:*", key="key_manual_p_label")
+                    ns_needed_for_pom_flag = True
 
-                    if manual_p_ns_prefix != "Select a namespace" and manual_p_label:
-                        NS = Namespace(mapping_ns_dict[manual_p_ns_prefix])
-                        selected_p_iri = NS[manual_p_label]
+                with col1a:
+                    list_to_choose = list(reversed(list(mapping_ns_dict.keys())))
+                    list_to_choose.insert(0, "Select a namespace")
+                    manual_p_ns_prefix = st.selectbox("🖱️ Select a namespace (for the predicate):*", list_to_choose, key="key_manual_p_ns_prefix")
+                with col1b:
+                    manual_p_label = st.text_input("⌨️ Enter a predicate:*", key="key_manual_p_label")
 
-                # if not st.session_state["g_ontology_components_dict"]:
-                #     with col1:
-                #         st.markdown("""<div class="warning-message">
-                #                 ⚠️ <b>Working without an ontology</b> could result in structural inconsistencies.
-                #             <small>
-                #                 This is especially discouraged when building Predicate-Object Maps.
-                #             </small></span>""", unsafe_allow_html=True)
-                # else:
-                #     with col1:
-                #         st.markdown("""<div class="warning-message">
-                #                 ⚠️ <b>Working outside the ontology</b> could result in structural inconsistencies.
-                #             <small> An ontology-driven approach is recommended.
-                #             </small></span>""", unsafe_allow_html=True)
+                if manual_p_ns_prefix != "Select a namespace" and manual_p_label:
+                    NS = Namespace(mapping_ns_dict[manual_p_ns_prefix])
+                    selected_p_iri = NS[manual_p_label]
 
             with col1:
                 col1a, col1b = st.columns(2)
@@ -1874,10 +1812,7 @@ with tab3:
                         list_to_choose.insert(0, "Select a namespace")
                         om_template_ns_prefix = st.selectbox("🖱️ Select a namespace for the template:", list_to_choose, key="key_om_template_ns_prefix")
                         if not mapping_ns_dict:
-                            st.markdown(f"""<div class="error-message">
-                                    ❌ No namespaces available. You can add namespaces in the
-                                     <b>Global Configuration</b> page.
-                                </div>""", unsafe_allow_html=True)
+                            ns_needed_for_pom_flag = True
 
 
                         if om_template_ns_prefix != "Select a namespace":
@@ -1894,6 +1829,8 @@ with tab3:
                         st.button("Reset", on_click=reset_om_template)
 
                 with col1:
+                    col1a, col1b = st.columns([3,1])
+                with col1a:
                     om_template = "".join(st.session_state["om_template_list"])
                     if om_template:
                         st.write("")
@@ -1913,23 +1850,16 @@ with tab3:
                             </div></div>""", unsafe_allow_html=True)
                         st.write("")
 
-                with col1:
-                    col1a, col1b = st.columns([1.5,1])
-                with col1a:
+                with col1b:
                     om_term_type_template = st.radio(label="🖱️ Select term type:*", options=["🌐 IRI", "📘 Literal", "👻 BNode"],
                         horizontal=True, key="om_term_type_template")
 
-                # if om_term_type_template == "🌐 IRI" and not st.session_state["template_om_is_iri_flag"] and om_template:
-                #     with col3a:
-                #         st.markdown(f"""<div class="error-message">
-                #             ❌ Term type is <b>🌐 IRI</b>. <small>You must add a namespace to the template</small>.
-                #         </div>""", unsafe_allow_html=True)
-                #         st.write("")
-
+                with col1:
+                    col1a, col1b = st.columns(2)
                 if om_term_type_template == "📘 Literal":
                     rdf_datatypes = list(utils.get_datatypes_dict().keys())
 
-                    with col1b:
+                    with col1a:
                         om_datatype = st.selectbox("🖱️ Select datatype (optional):", rdf_datatypes,
                             key="key_om_datatype")
 
@@ -1962,11 +1892,12 @@ with tab3:
                             key="key_om_constant_ns")
 
                 elif om_term_type_constant == "🌐 IRI":
-                    with col1a:
-                        st.markdown(f"""<div class="error-message">
-                                ❌ Term type is <b>🌐 IRI</b>. <small>You must add at least one namespace in
-                                the <b>Global Configuration</b> page.</small>
-                            </div>""", unsafe_allow_html=True)
+                    ns_needed_for_pom_flag = True
+                    # with col1a:
+                    #     st.markdown(f"""<div class="error-message">
+                    #             ❌ Term type is <b>🌐 IRI</b>. <small>You must add at least one namespace in
+                    #             the <b>Global Configuration</b> page.</small>
+                    #         </div>""", unsafe_allow_html=True)
 
                 if om_term_type_constant == "📘 Literal":
                     rdf_datatypes = list(utils.get_datatypes_dict().keys())
@@ -2002,22 +1933,6 @@ with tab3:
                         om_column_name = st.selectbox(f"""🖱️ Select the reference of the data source:*""", list_to_choose,
                             key="key_om_column_name")
 
-                # if not column_list:   #data source is not available (load)
-                #     with col3b:
-                #         st.write("")
-                #         if not ds_file_for_pom:
-                #             st.markdown(f"""<div class="error-message">
-                #                     ❌ You must load the
-                #                     <b>data source file</b> to continue.
-                #                 </div>""", unsafe_allow_html=True)
-                #         else:
-                #             st.markdown(f"""<div class="error-message">
-                #                 ❌ Please upload the correct <b>data source file</b> to continue.
-                #                 </div>""", unsafe_allow_html=True)
-                #
-                #
-                # else:
-
                 with col1b:
                     om_term_type_reference = st.radio(label="🖱️ Select Term type:*", options=["📘 Literal", "🌐 IRI", "👻 BNode"],
                         horizontal=True, key="om_term_type_reference")
@@ -2025,6 +1940,8 @@ with tab3:
                 if om_term_type_reference == "📘 Literal":
                     rdf_datatypes = list(utils.get_datatypes_dict().keys())
 
+                    with col1:
+                        col1a, col1b = st.columns(2)
                     with col1a:
                         om_datatype_reference = st.selectbox("🖱️ Select datatype (optional):", rdf_datatypes,
                         key="key_om_datatype_reference")
@@ -2036,19 +1953,10 @@ with tab3:
                             om_language_tag_reference = st.selectbox("🖱️ Select language tag*", language_tags,
                                 key="key_om_language_tag_reference")
 
-                # elif om_column_name != "Select a reference" and om_term_type_reference == "🌐 IRI":
-                #     with col1:
-                #         st.markdown(f"""<div class="warning-message">
-                #                 ⚠️ Term type is <b>🌐 IRI</b>.
-                #                 <small>Make sure that the values in the referenced column
-                #                 are valid IRIs.</small>
-                #             </div>""", unsafe_allow_html=True)
-                #         st.write("")
-
-                # GRAPH MAP
+            # GRAPH MAP
 
             with col1:
-                col1a, col1b = st.columns([1,2])
+                col1a, col1b, col1c = st.columns(3)
             with col1a:
                 list_to_choose = ["Default Graph", "Add Graph Map"]
                 add_om_graph_map_option = st.selectbox("️🗺️️ Graph Map (optional):",
@@ -2056,30 +1964,24 @@ with tab3:
 
             if add_om_graph_map_option == "Add Graph Map":
 
+                if not mapping_ns_dict:
+                    ns_needed_for_pom_flag = True
                 with col1b:
                     mapping_ns_dict = utils.get_mapping_ns_dict()
-                    subject_graph_prefix_list = list(reversed(list(mapping_ns_dict.keys())))
-                    subject_graph_prefix_list.insert(0,"Select a namespace")
+                    list_to_choose = list(reversed(list(mapping_ns_dict.keys())))
+                    list_to_choose.insert(0,"Select a namespace")
+                    om_graph_prefix = st.selectbox("🖱️ Select a namespace:*", list_to_choose,
+                        key="key_om_graph_prefix")
+                with col1c:
+                    om_graph_input = st.text_input("🖱️ Enter Graph Map:*", key="key_om_graph_input")
+                if om_graph_prefix != "Select a namespace":
+                    NS = Namespace(mapping_ns_dict[om_graph_prefix])
 
-                    if not mapping_ns_dict:
-                        st.write("")
-                        st.markdown(f"""<div class="error-message">
-                                ❌ No namespaces available. You can add namespaces in the
-                                 <b>Global Configuration</b> page.
-                            </div>""", unsafe_allow_html=True)
-                    else:
-                        with col1b:
-                            subject_graph_prefix = st.selectbox("🖱️ Select a namespace:*", subject_graph_prefix_list,
-                                key="key_subject_graph_prefix")
-                            subject_graph_input = st.text_input("🖱️ Enter Graph Map:*", key="key_subject_graph_input")
-                        if subject_graph_prefix != "Select a namespace":
-                            NS = Namespace(mapping_ns_dict[subject_graph_prefix])
+                if om_graph_input and om_graph_prefix != "Select a namespace":
+                    om_graph = NS[om_graph_input]
 
-                    if subject_graph_input and subject_graph_prefix != "Select a namespace":
-                        subject_graph = NS[subject_graph_input]
-
-                    else:
-                        subject_graph = ""
+                else:
+                    om_graph = ""
 
         if tm_label_for_pom != "Select a TriplesMap":
 
@@ -2088,51 +1990,59 @@ with tab3:
             inner_html_warning = ""
             pom_complete_flag = True
 
+            if ns_needed_for_pom_flag:
+                inner_html_error += f"""<small>· <b>No namespaces available.</b> Go to the
+                    <b>Global Configuration</b> page to add them.</small><br>"""
+
+
+            if not tm_label_for_pom in tm_w_sm_list:
+                inner_html_warning += f"""<small>· TriplesMap <b>{tm_label_for_pom}</b> has no Subject Map.
+                            It will be invalid without one.</small><br>"""
+
             if p_type == "🧩 Ontology predicate":
                 if selected_p_label == "Select a predicate":
                     pom_complete_flag = False
-                    inner_html_error += "<small>You must select a <b>predicate</b>.</small><br>"
-
+                    inner_html_error += "<small>· You must select a <b>predicate</b>.</small><br>"
 
             elif p_type == "🚫 Predicate outside ontology":
                 if (not manual_p_label or manual_p_ns_prefix == "Select a namespace"):
                     pom_complete_flag = False
-                    inner_html_error += "<small>The <b>predicate</b> (and/or its namespace) has not been given.</small><br>"
+                    inner_html_error += "<small>· The <b>predicate</b> (and/or its namespace) has not been given.</small><br>"
 
-                inner_html_warning += f"""<small>Manual predicate input is <b>discouraged</b>.
-                    Use an ontology for safer results.</small>"""
+                inner_html_warning += f"""<small>· Manual predicate input is <b>discouraged</b>.
+                    Use an ontology for safer results.</small><br>"""
 
             # OBJECT MAP - TEMPLATE______________________________________________________-
             if om_generation_rule == "Template 📐":
                 if not om_template:
                     pom_complete_flag = False
-                    inner_html_error += "<small>The <b>template</b> is empty.</small><br>"
+                    inner_html_error += "<small>· The <b>template</b> is empty.</small><br>"
 
                 if om_template and om_term_type_template == "🌐 IRI":
                     if not st.session_state["template_om_is_iri_flag"]:
                         pom_complete_flag = False
-                        inner_html_error += "<small>Term type is <b>🌐 IRI</b>. You must add a namespace to the template.</small><br>"
+                        inner_html_error += "<small>· Term type is <b>🌐 IRI</b>. You must add a namespace to the template.</small><br>"
 
                 if om_template and om_term_type_template == "📘 Literal":
                     if om_datatype == "Natural language tag" and om_language_tag == "Select language tag":
                         om_complete_flag = False
-                        inner_html_error += "<small>You must select a <b>🌐 language tag</b>.</small><br>"
+                        inner_html_error += "<small>· You must select a <b>🌐 language tag</b>.</small><br>"
 
             # OBJECT MAP - CONSTANT____________________________________________
             if om_generation_rule == "Constant 🔒":   #HEREIGO
                 if not om_constant:
                     pom_complete_flag = False
-                    inner_html_error += "<small>You must enter a <b>constant</b>.</small><br>"
+                    inner_html_error += "<small>· You must enter a <b>constant</b>.</small><br>"
 
                 if om_term_type_constant == "📘 Literal":
                     if om_datatype == "Natural language tag" and om_language_tag == "Select language tag":
                         pom_complete_flag = False
-                        inner_html_error += "<small>You must select a <b>🌐 language tag</b>.</small><br>"
+                        inner_html_error += "<small>· You must select a <b>🌐 language tag</b>.</small><br>"
 
                 elif om_term_type_constant == "🌐 IRI":
                     if om_constant and om_constant_ns_prefix == "Select a namespace":
                         pom_complete_flag = False
-                        inner_html_error += "<small>Term type is <b>🌐 IRI</b>. You must select a namespace for the constant.</small><br>"
+                        inner_html_error += "<small>· Term type is <b>🌐 IRI</b>. You must select a namespace for the constant.</small><br>"
 
 
             # OBJECT MAP - REFERENCE___________________________
@@ -2141,47 +2051,53 @@ with tab3:
                 if column_list:
                     if om_column_name == "Select a reference":
                         pom_complete_flag = False
-                        inner_html_error += "<small>You must select a <b>reference</b>.</small><br>"
+                        inner_html_error += "<small>· You must select a <b>reference</b>.</small><br>"
                 else:
                     if not om_column_name:
                         pom_complete_flag = False
-                        inner_html_error += "<small>You must enter a <b>reference</b>.</small><br>"
+                        inner_html_error += "<small>· You must enter a <b>reference</b>.</small><br>"
 
                 if om_term_type_reference == "📘 Literal":
                     if om_datatype_reference == "Natural language tag" and om_language_tag_reference == "Select language tag":
                         pom_complete_flag = False
-                        inner_html_error += "<small>You must select a <b>🌐 language tag</b>.</small><br>"
+                        inner_html_error += "<small>· You must select a <b>🌐 language tag</b>.</small><br>"
 
                 elif om_term_type_reference == "🌐 IRI":
-                    inner_html_warning += """<small>Term type is <b>🌐 IRI</b>.
+                    inner_html_warning += """<small>· Term type is <b>🌐 IRI</b>.
                                 Make sure that the values in the referenced column
                                 are valid IRIs.</small><br>"""
 
 
-                # INFO AND SAVE BUTTON____________________________________
-                with col1:
-                    col1a, col1b = st.columns([2,1])
-                with col1a:
+            # GRAPH MAP
+            if add_om_graph_map_option == "Add Graph Map":
+                if om_graph_prefix == "Select a namespace" or not om_graph_input:
+                    pom_complete_flag = False
+                    inner_html_error += """<small>· The <b>Graph Map</b> (and/or its namespace)
+                        has not been given.</small><br>"""
 
-                    if inner_html_warning:
-                        st.markdown(f"""<div class="info-message-gray">
-                            ⚠️ <b>Caution.</b><br>
-                            <div style='margin-left: 1.5em;'>{inner_html_warning}</div>
+            # INFO AND SAVE BUTTON____________________________________
+            with col2b:
+
+                st.write("")
+                utils.get_column_list_and_give_info(tm_iri_for_pom)
+
+                if inner_html_warning:
+                    st.markdown(f"""<div class="warning-message">
+                        ⚠️ <b>Caution.</b><br>
+                        <div style='margin-left: 1.5em;'>{inner_html_warning}</div>
+                    </div>""", unsafe_allow_html=True)
+
+                if inner_html_error:
+                    st.markdown(f"""<div class="error-message">
+                            ❌ <b>Predicate-Object Map is incomplete.</b><br>
+                        <div style='margin-left: 1.5em;'>{inner_html_error}</div>
                         </div>""", unsafe_allow_html=True)
 
-                    if inner_html_error:
-                        st.markdown(f"""<div class="info-message-gray">
-                                ❌ <b>Subject Map is incomplete.</b><br>
-                            <div style='margin-left: 1.5em;'>{inner_html_error}</div>
-                            </div>""", unsafe_allow_html=True)
-
-                    if pom_complete_flag:
-                        st.markdown(f"""<div class="info-message-gray">
-                            ✔️ All <b>required fields (*)</b> are complete.
-                            <small>Double-check the information before saving.</smalL> </div>
-                        """, unsafe_allow_html=True)
-
-            #HEREIGO
+                if pom_complete_flag:
+                    st.markdown(f"""<div class="success-message">
+                        ✔️ All <b>required fields (*)</b> are complete.
+                        <small>Double-check the information before saving.</smalL> </div>
+                    """, unsafe_allow_html=True)
 
 
             if pom_complete_flag:
@@ -2197,6 +2113,11 @@ with tab3:
                         save_pom_reference_button = st.button("Save", on_click=save_pom_reference, key="key_save_pom_reference_button")
                     elif om_generation_rule == "BNode 👻":
                         save_pom_bnode_button = st.button("Save", on_click=save_bnode_bnode, key="key_save_pom_bnode_button")
+
+    with col2b:
+        st.markdown("""<div class='info-message-gray'>
+                To consult the added Predicate-Object Maps go to the <b>🔎 Explore Mapping</b> page.
+            </div>""", unsafe_allow_html=True)
 
 
 

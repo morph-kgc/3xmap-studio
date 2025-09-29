@@ -1152,7 +1152,7 @@ def get_column_list_and_give_info(tm_iri):
                     ⚠️ The data source <b>{ds}</b> is not available.
                     <small>Please load it in the <b>📊 Manage Logical Sources</b> page
                     to enable automatic column detection.
-                    Manual entry of column references is discouraged.</small>
+                    Manual entry of column references is strongly discouraged.</small>
                 </div>""", unsafe_allow_html=True)
 
 
@@ -1162,14 +1162,14 @@ def get_column_list_and_give_info(tm_iri):
                     ⚠️ The data source <b>{ds}</b> is not available.<br>
                     <small>Please connect to the database in the <b>📊 Manage Logical Sources</b> page
                     to enable automatic column detection.
-                    Manual entry of column references is discouraged.</small>
+                    Manual entry of column references is strongly discouraged.</small>
                 </div>""", unsafe_allow_html=True)
         else:
             st.markdown(f"""<div class="warning-message">
                     ⚠️ The data source <b>{ds}</b> is not available.
                     <small>Please load it in the <b>📊 Manage Logical Sources</b> page
                     to enable automatic column detection.
-                    Manual entry of column references is discouraged.</small>
+                    Manual entry of column references is strongly discouraged.</small>
                 </div>""", unsafe_allow_html=True)
         column_list = []
 
@@ -1276,9 +1276,9 @@ def get_sm_dict():
         tm_label = split_uri(tm)[1]
         sm_iri = st.session_state["g_mapping"].value(tm, RR.subjectMap)
 
-        template = st.session_state["g_mapping"].value(sm_iri, RR.template)
-        constant = st.session_state["g_mapping"].value(sm_iri, RR.constant)
-        reference = st.session_state["g_mapping"].value(sm_iri, RR.reference)
+        template = st.session_state["g_mapping"].value(sm_iri, RML.template)
+        constant = st.session_state["g_mapping"].value(sm_iri, RML.constant)
+        reference = st.session_state["g_mapping"].value(sm_iri, RML.reference)
 
         sm_id_iri = None
         sm_type = None
@@ -1425,8 +1425,6 @@ def get_language_tags_list():
 def get_pom_dict():
 
     pom_dict = {}
-
-
     pom_list = list(st.session_state["g_mapping"].objects(None, RR.predicateObjectMap))
 
     for pom_iri in pom_list:
@@ -1436,8 +1434,8 @@ def get_pom_dict():
         predicate = st.session_state["g_mapping"].value(pom_iri, RR.predicate)
         om_iri = st.session_state["g_mapping"].value(pom_iri, RR.objectMap)
 
-        template = st.session_state["g_mapping"].value(om_iri, RR.template)
-        constant = st.session_state["g_mapping"].value(om_iri, RR.constant)
+        template = st.session_state["g_mapping"].value(om_iri, RML.template)
+        constant = st.session_state["g_mapping"].value(om_iri, RML.constant)
         reference = st.session_state["g_mapping"].value(om_iri, RML.reference)
 
         pom_id_iri = None
@@ -2083,8 +2081,8 @@ def update_dictionaries():
             subject_type = None
             subject_id = None
 
-            template = st.session_state["g_mapping"].value(sm_iri, RR.template)
-            constant = st.session_state["g_mapping"].value(sm_iri, RR.constant)
+            template = st.session_state["g_mapping"].value(sm_iri, RML.template)
+            constant = st.session_state["g_mapping"].value(sm_iri, RML.constant)
             reference = st.session_state["g_mapping"].value(sm_iri, RML.reference)
 
             if isinstance(sm_iri, URIRef):
@@ -2236,7 +2234,7 @@ def add_subject_map_template(g, tmap_label, smap_label, s_generation_type, subje
     smap_iri = NS[f"{smap_label}"]
 
     g.add((tmap_iri, RR.subjectMap, smap_iri))
-    g.add((smap_iri, RR.template, Literal(f"http://example.org/resource/{subject_id}")))
+    g.add((smap_iri, RML.template, Literal(f"http://example.org/resource/{subject_id}")))
 
 #___________________________________________________________________________________
 
@@ -2435,7 +2433,7 @@ def get_tmap_derived_triples(x_tmap_label):
             if isinstance(o, (BNode, URIRef)):
                 for sp, so in g.predicate_objects(o):
                     #focus only on expected predicates inside subjectMap
-                    if sp in [RR["class"], RR.termType, RR.graphMap, RR.template, RR.constant, RML.reference, QL.referenceFormulation]:
+                    if sp in [RR["class"], RR.termType, RR.graphMap, RML.template, RML.constant, RML.reference, QL.referenceFormulation]:
                         derived_triples.add((o, sp, so))
 
                         #optionally follow graphMap HERE FURTHER WORK
