@@ -1,27 +1,34 @@
 # RDFolio
 
-Web app to visually build RML mappings - tool for transforming structured data into RDF triples
+RDFolio is a visual editor for **[R2RML](https://www.w3.org/TR/r2rml/)** and **[RML](https://w3id.org/rml/core/spec)** mappings. It is built with [Streamlit](https://github.com/streamlit/streamlit) and uses [Morph-KGC](https://github.com/morph-kgc/morph-kgc/) to create the knowledge graph.
 
-RDFolio is a simple tool to visually build RML mappings. It is an interactive web app built
-with Streamlit for transforming structured data into RDF triples, using mainly the rdflib in Python.
+## Features :sparkles:
 
-To run it:
+- Supports relational databases and CSV files (more formats to come).
+- Guide mapping development through pre-loaded ontologies.
+- Create [RML views](https://www.w3.org/TR/r2rml/#r2rml-views) over relational databases with SQL.
+- Export the RML mapping and create the knowledge graph.
+- Explore your mapping.
+- Save the session for later.
 
-`pip install -r requirements.txt`
+## Getting Started :rocket:
 
-`python -m streamlit run RDFolio.py`
+You can run RDFolio by cloning this repository and executing:
 
-- You can start a new mapping from scratch.
-- You can save progress, storing the mapping on a pkl file.
-- When you are done, you can export the mapping to a ttl file
-(other formats available).
+```bash
+pip install -r requirements.txt
+python -m streamlit run RDFolio.py
+```
 
+We recommend to use [virtual environments](https://docs.python.org/3/library/venv.html#) to install RDFolio.
 
+## License :unlock:
 
+RDFolio is available under the **[Apache License 2.0](https://github.com/arenasg-paloma/RDFolio/blob/main/LICENSE)**.
 
-MAIN VARIABLES:
-st.session_state["g_mapping"]: stores the mapping
-st.session_state["ns_dict"]: dictionary in the shape {prefix: namespace iri}
-st.session_state["tmap_dict"]: dictionary in the shape {triplesmap label: triplesmap}
-st.session_state["data_source_dict"]: dictionary in the shape {triplesmap label: data source}
-st.session_state["subject_dict"]: dictionary in the shape {triplesmap label: [subject label, subject data source column]}
+## Author & Contact :mailbox_with_mail:
+
+- **[Paloma Arenas-Guerrero](https://github.com/arenasg-paloma/)**
+- **[Julián Arenas-Guerrero](https://github.com/arenas-guerrero-julian/) - [julian.arenas.guerrero@upm.es](mailto:julian.arenas.guerrero@upm.es)**
+
+*[Universidad Politécnica de Madrid](https://www.upm.es/internacional)*.
