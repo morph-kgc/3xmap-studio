@@ -452,7 +452,7 @@ with tab1:
                         with col1:
                             st.markdown(f"""<div class="error-message">
                                 ❌ <b> No mappings available. </b>
-                                <small>You can build a mapping using <b>RDFolio</b>
+                                <small>You can build a mapping using <b>RDForge</b>
                                 and/or load additional mappings in the <b>Additional Mappings</b> pannel.</small>
                             </div>""", unsafe_allow_html=True)
 
@@ -507,7 +507,7 @@ with tab1:
                         with col1:
                             st.markdown(f"""<div class="error-message">
                                 ❌ <b> No mappings available. </b>
-                                <small>You can build a mapping using <b>RDFolio</b>
+                                <small>You can build a mapping using <b>RDForge</b>
                                 and/or load additional mappings in the <b>Additional Mappings</b> pannel.</small>
                             </div>""", unsafe_allow_html=True)
 

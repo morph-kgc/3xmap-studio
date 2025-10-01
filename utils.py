@@ -498,17 +498,17 @@ def get_max_length_for_display():
 # We define these first because they will be needed in this page
 #_________________________________________________________
 # Function to get a base iri for our application
-def get_rdfolio_base_iri():
-    return "http://rdfolio.org/mapping/"
+def get_rdforge_base_iri():
+    return "http://rdforge.org/mapping/"
 #________________________________________________________
 
 #_________________________________________________________
 # Function to get the default base iri for the structural components
 def get_default_structural_ns():
 
-    default_structural_ns = utils.get_rdfolio_base_iri()
+    default_structural_ns = utils.get_rdforge_base_iri()
 
-    return ["rdfolio", Namespace(default_structural_ns)]
+    return ["rdforge", Namespace(default_structural_ns)]
 #________________________________________________________
 
 #_________________________________________________________
@@ -573,10 +573,10 @@ def get_predefined_ns_dict():
         "vann": Namespace("http://purl.org/vocab/vann/"),
         "qb": Namespace("http://purl.org/linked-data/cube#"),
         "void": Namespace("http://rdfs.org/ns/void#"),
-        "map": Namespace(get_rdfolio_base_iri() + "/mapping#"),
-        "class": Namespace(get_rdfolio_base_iri() + "/class#"),
-        "resource": Namespace(get_rdfolio_base_iri() + "/resource#"),
-        "logicalSource": Namespace(get_rdfolio_base_iri() + "/logicalSource#")}
+        "map": Namespace(get_rdforge_base_iri() + "/mapping#"),
+        "class": Namespace(get_rdforge_base_iri() + "/class#"),
+        "resource": Namespace(get_rdforge_base_iri() + "/resource#"),
+        "logicalSource": Namespace(get_rdforge_base_iri() + "/logicalSource#")}
 
     default_ns_dict = get_default_ns_dict()
     predefined_ns_dict = {k: Namespace(v) for k, v in all_predefined_ns_dict.items() if (k not in default_ns_dict)}

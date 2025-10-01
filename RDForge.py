@@ -2,7 +2,7 @@ import streamlit as st
 
 
 st.set_page_config(
-    page_title="🌌 RDFolio",
+    page_title="🌌 RDForge",
     layout="wide"
 )
 
@@ -11,5 +11,5 @@ st.set_page_config(
 
 
 
-st.title("Welcome to 🌌 RDFolio")
+st.title("Welcome to 🌌 RDForge")
 st.write("Use sidebar to work with existing or new mapping")
