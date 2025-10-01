@@ -24,7 +24,7 @@ We recommend to use [virtual environments](https://docs.python.org/3/library/ven
 
 ## License :unlock:
 
-RDForge is available under the **[Apache License 2.0](https://github.com/arenasg-paloma/RDForge/blob/main/LICENSE)**.
+RDForge is available under the **[Apache License 2.0](https://github.com/morph-kgc/RDForge/blob/main/LICENSE)**.
 
 ## Author & Contact :mailbox_with_mail:
 
