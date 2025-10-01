@@ -1,6 +1,6 @@
-# RDFolio
+# RDForge
 
-RDFolio is a visual editor for **[R2RML](https://www.w3.org/TR/r2rml/)** and **[RML](https://w3id.org/rml/core/spec)** mappings. It is built with [Streamlit](https://github.com/streamlit/streamlit) and uses [Morph-KGC](https://github.com/morph-kgc/morph-kgc/) to create the knowledge graph.
+RDForge is a visual editor for **[R2RML](https://www.w3.org/TR/r2rml/)** and **[RML](https://w3id.org/rml/core/spec)** mappings. It is built with [Streamlit](https://github.com/streamlit/streamlit) and uses [Morph-KGC](https://github.com/morph-kgc/morph-kgc/) to create the knowledge graph.
 
 ## Features :sparkles:
 
@@ -13,18 +13,18 @@ RDFolio is a visual editor for **[R2RML](https://www.w3.org/TR/r2rml/)** and **[
 
 ## Getting Started :rocket:
 
-You can run RDFolio by cloning this repository and executing:
+You can run RDForge by cloning this repository and executing:
 
 ```bash
 pip install -r requirements.txt
-python -m streamlit run RDFolio.py
+python -m streamlit run RDForge.py
 ```
 
-We recommend to use [virtual environments](https://docs.python.org/3/library/venv.html#) to install RDFolio.
+We recommend to use [virtual environments](https://docs.python.org/3/library/venv.html#) to install RDForge.
 
 ## License :unlock:
 
-RDFolio is available under the **[Apache License 2.0](https://github.com/arenasg-paloma/RDFolio/blob/main/LICENSE)**.
+RDForge is available under the **[Apache License 2.0](https://github.com/arenasg-paloma/RDForge/blob/main/LICENSE)**.
 
 ## Author & Contact :mailbox_with_mail:
 
