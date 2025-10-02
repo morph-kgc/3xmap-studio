@@ -16,6 +16,7 @@ import pymysql    # another option mysql-connector-python
 import oracledb
 import pyodbc
 import sqlglot
+import requests
 
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 
@@ -112,34 +113,36 @@ def import_st_aesthetics():
                 border-radius:5px; padding:6px; margin-bottom:8px;
                 font-size:1rem; font-weight:600; color:#333333;}
 
-    /* GRAY PREVIEW MESSAGE */
-            .gray-preview-message {background-color:#f9f9f9; padding:0.7em; border-radius:5px;
-            color:#333333; border:1px solid #e0e0e0; font-size: 0.92em;}
-
     /* SUBSECTION */
         .subsection {background-color: #dcdcdc;
             border: 1px solid #e0e0e0; border-radius: 5px;
             font-size: 0.9rem; padding: 2px 6px;
             margin-top: 2px; margin-bottom: 2px;}
 
+    /* GRAY PREVIEW MESSAGE */
+            .gray-preview-message {background-color:#f9f9f9; padding:0.7em; border-radius:5px;
+            color:#333333; border:1px solid #e0e0e0; font-size: 0.92em; word-wrap: break-word;}
+
     /* BLUE STATUS MESSAGE */
             .blue-status-message {background-color: #eaf4ff; padding: 0.8em;
-            border-radius: 5px; color: #0c5460; border-left: 4px solid #0c5460;}
+            border-radius: 5px; color: #0c5460; border-left: 4px solid #0c5460;
+            word-wrap: break-word;}
 
             .blue-status-message b {color: #0c5460;}
 
     /* GRAY STATUS MESSAGE */
             .gray-status-message {background-color:#f5f5f5; padding:1em;
-            border-radius:5px; color:#2a0134; border-left:4px solid #777777;}
+            border-radius:5px; color:#2a0134; border-left:4px solid #777777;
+            word-wrap: break-word;}
 
     /* GRAY STATUS MESSAGE SMALL */
         .gray-status-message-small {background-color: #f5f5f5; padding: 0.8em;
           border-radius: 5px; color: #2a0134; border-left: 4px solid #777777;
-          line-height: 1.1;}
+          line-height: 1.1; word-wrap: break-word;}
 
     /* SUCCESS MESSAGE FLAG */
         .success-message-flag {background-color: #d4edda; padding: 1em;
-            border-radius: 5px; color: #155724;}
+            border-radius: 5px; color: #155724; word-wrap: break-word;}
 
         .success-message-flag b {color: #0f5132;}
 
@@ -148,7 +151,7 @@ def import_st_aesthetics():
         ;padding: 0.4em 0.6em;
         color: #155724; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
         margin: 0.5em 0; background-color: #edf7f1;
-        border-radius: 4px; box-sizing: border-box;}
+        border-radius: 4px; box-sizing: border-box; word-wrap: break-word;}
 
     .success-message b {color: #0f5132; font-weight:600;}
 
@@ -157,7 +160,7 @@ def import_st_aesthetics():
             ; padding: 0.4em 0.6em;
             color: #6c5e2e; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
             margin: 0.5em 0; background-color: #fff7db;
-            border-radius: 4px; box-sizing: border-box;}
+            border-radius: 4px; box-sizing: border-box; word-wrap: break-word;}
 
         .warning-message b {color: #cc9a06; font-weight: 600;}
 
@@ -166,7 +169,7 @@ def import_st_aesthetics():
             padding: 0.4em 0.6em; color: #7a2e33; font-size: 0.85em;
             font-family: "Source Sans Pro", sans-serif; margin: 0.5em 0;
             background-color: #fbe6e8; border-radius: 4px;
-            box-sizing: border-box;}
+            box-sizing: border-box; word-wrap: break-word;}
 
         .error-message b {color: #a94442; font-weight: 600;}
 
@@ -175,7 +178,7 @@ def import_st_aesthetics():
         ;padding: 0.4em 0.6em;
         color: #4d4d4d; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
         margin: 0.5em 0; background-color: #f5f5f5;
-        border-radius: 4px; box-sizing: border-box;}
+        border-radius: 4px; box-sizing: border-box; word-wrap: break-word;}
 
     .info-message-gray b {
         color: #111111; font-weight:600;}
@@ -185,7 +188,7 @@ def import_st_aesthetics():
         ;padding: 0.4em 0.6em;
         color: #0c5460; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
         margin: 0.5em 0; background-color: #eaf4ff;
-        border-radius: 4px; box-sizing: border-box;}
+        border-radius: 4px; box-sizing: border-box; word-wrap: break-word;}
 
     .info-message-blue b {
         color: #003366; font-weight:600;}
@@ -225,16 +228,16 @@ def import_st_aesthetics_dark_mode():
 
     st.markdown("""<style>
 
-    /* TABS */
+    /* TABS - dark mode*/
         /* Style tab buttons inside stTabs */
         div[data-testid="stTabs"] button[data-baseweb="tab"] {flex: 1 1 auto;
-            background-color: #555555; color: white; font-size: 25px;
+            background-color: #222222; color: white; font-size: 25px;
             padding: 1.2em; border-radius: 5px; border: none;
             margin: 6px;}
 
         /* Hover effect for tab buttons */
         div[data-testid="stTabs"] button[data-baseweb="tab"]:hover {
-            background-color: #7a4c8f;}
+            background-color: #47295c;}
 
         /* Style tab label text */
         div[data-testid="stTabs"] button[data-baseweb="tab"] > div > span {
@@ -242,7 +245,7 @@ def import_st_aesthetics_dark_mode():
 
         /* Style selected tab */
         div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] {
-            background-color: #9871b5; color: white; font-weight: bold;
+            background-color: #281634; color: white; font-weight: bold;
             box-shadow: 0 0 10px #9871b5;}
 
     /* MAIN BUTTONS (AND DOWNLOAD BUTTON) */
@@ -311,7 +314,7 @@ def import_st_aesthetics_dark_mode():
             height: 14px !important;}
 
     /* PURPLE HEADINGS — Dark Mode */
-        .purple-heading {background-color: #1a1125; border-bottom: 4px solid #d8c3f0;
+        .purple-heading {background-color: #281634; border-bottom: 4px solid #d8c3f0;
           border-radius: 5px; padding: 10px; margin-bottom: 8px;
           font-size: 1.1rem; font-weight: 600; color: #d8c3f0;}
 
@@ -320,29 +323,38 @@ def import_st_aesthetics_dark_mode():
           border-radius: 5px;   padding: 6px; margin-bottom: 8px; font-size: 1rem;
           font-weight: 600; color: #dddddd;}
 
+    /* SUBSECTION */
+        .subsection {background-color: #dcdcdc;
+            border: 1px solid #e0e0e0; border-radius: 5px;
+            font-size: 0.9rem; padding: 2px 6px;
+            margin-top: 2px; margin-bottom: 2px;}
+
     /* GRAY PREVIEW MESSAGE — Dark Mode */
         .gray-preview-message {background-color: #1c1c1c; padding: 0.7em;
-          border-radius: 5px; color: #dddddd; border: 1px solid #444444; font-size: 0.92em;}
+          border-radius: 5px; color: #dddddd; border: 1px solid #444444; font-size: 0.92em;
+          word-wrap: break-word;}
 
 
     /* BLUE STATUS MESSAGE — Dark Mode */
         .blue-status-message {background-color: #0b1c2d; padding: 0.8em;
-            border-radius: 5px; color: #b3d9ff; border-left: 4px solid #b3d9ff;}
+            border-radius: 5px; color: #b3d9ff; border-left: 4px solid #b3d9ff;
+            word-wrap: break-word;}
 
         .blue-status-message b {color: #dceeff;}
 
     /* GRAY STATUS MESSAGE — Dark Mode */
         .gray-status-message {background-color: #1e1e1e;
             padding: 1em; border-radius: 5px; color: #dddddd;
-            border-left: 4px solid #999999;}
+            border-left: 4px solid #999999; word-wrap: break-word;}
 
     /* GRAY STATUS MESSAGE SMALL — Dark Mode */
         .gray-status-message-small {background-color: #1e1e1e; padding: 0.8em;
-            border-radius: 5px; color: #dddddd; border-left: 4px solid #999999; line-height: 1.1;}
+            border-radius: 5px; color: #dddddd; border-left: 4px solid #999999; line-height: 1.1;
+            word-wrap: break-word;}
 
     /* SUCCESS MESSAGE FLAG — Dark Mode */
         .success-message-flag {background-color: #1e2e24; padding: 1em;
-          border-radius: 5px; color: #b2e3c7;}
+          border-radius: 5px; color: #b2e3c7; word-wrap: break-word;}
 
         .success-message-flag b {color: #7fc89e;}
 
@@ -350,7 +362,7 @@ def import_st_aesthetics_dark_mode():
     .success-message {border-left: 4px solid #b2e3c7; padding: 0.4em 0.6em;
       color: #b2e3c7; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
       margin: 0.5em 0; background-color: #1e2e24; border-radius: 4px;
-      box-sizing: border-box;}
+      box-sizing: border-box; word-wrap: break-word;}
 
     .success-message b {color: #c6edd4; font-weight: 600;}
 
@@ -358,7 +370,7 @@ def import_st_aesthetics_dark_mode():
         .warning-message {border-left: 4px solid #e0c36d; padding: 0.4em 0.6em;
           color: #e0c36d; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
           margin: 0.5em 0; background-color: #2f2a1e; border-radius: 4px;
-          box-sizing: border-box;}
+          box-sizing: border-box; word-wrap: break-word;}
 
     .warning-message b {color: #c6edd4; font-weight: 600;}
 
@@ -366,7 +378,7 @@ def import_st_aesthetics_dark_mode():
         .error-message {border-left: 4px solid #e89ca0; padding: 0.4em 0.6em;
           color: #e89ca0; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
           margin: 0.5em 0; background-color: #2d1e1f; border-radius: 4px;
-          box-sizing: border-box;}
+          box-sizing: border-box; word-wrap: break-word;}
 
         .error-message b {color: #f2b6b9; font-weight: 600;}
 
@@ -374,7 +386,7 @@ def import_st_aesthetics_dark_mode():
         .info-message-gray {border-left: 4px solid #999999; padding: 0.4em 0.6em;
           color: #cccccc; font-size: 0.85em;font-family: "Source Sans Pro", sans-serif;
           margin: 0.5em 0; background-color: #1e1e1e; border-radius: 4px;
-          box-sizing: border-box;}
+          box-sizing: border-box; word-wrap: break-word;}
 
         .info-message-gray b {color: #eeeeee; font-weight: 600;}
 
@@ -383,7 +395,7 @@ def import_st_aesthetics_dark_mode():
           padding: 0.4em 0.6em; color: #b3d9ff; font-size: 0.85em;
           font-family: "Source Sans Pro", sans-serif; margin: 0.5em 0;
           background-color: #0b1c2d; border-radius: 4px;
-          box-sizing: border-box;}
+          box-sizing: border-box; word-wrap: break-word;}
 
         .info-message-blue b {color: #dceeff; font-weight: 600;}
 
@@ -498,17 +510,17 @@ def get_max_length_for_display():
 # We define these first because they will be needed in this page
 #_________________________________________________________
 # Function to get a base iri for our application
-def get_rdforge_base_iri():
-    return "http://rdforge.org/mapping/"
+def get_rdfolio_base_iri():
+    return "http://rdfolio.org/mapping/"
 #________________________________________________________
 
 #_________________________________________________________
 # Function to get the default base iri for the structural components
 def get_default_structural_ns():
 
-    default_structural_ns = utils.get_rdforge_base_iri()
+    default_structural_ns = utils.get_rdfolio_base_iri()
 
-    return ["rdforge", Namespace(default_structural_ns)]
+    return ["rdfolio", Namespace(default_structural_ns)]
 #________________________________________________________
 
 #_________________________________________________________
@@ -573,10 +585,10 @@ def get_predefined_ns_dict():
         "vann": Namespace("http://purl.org/vocab/vann/"),
         "qb": Namespace("http://purl.org/linked-data/cube#"),
         "void": Namespace("http://rdfs.org/ns/void#"),
-        "map": Namespace(get_rdforge_base_iri() + "/mapping#"),
-        "class": Namespace(get_rdforge_base_iri() + "/class#"),
-        "resource": Namespace(get_rdforge_base_iri() + "/resource#"),
-        "logicalSource": Namespace(get_rdforge_base_iri() + "/logicalSource#")}
+        "map": Namespace(get_rdfolio_base_iri() + "/mapping#"),
+        "class": Namespace(get_rdfolio_base_iri() + "/class#"),
+        "resource": Namespace(get_rdfolio_base_iri() + "/resource#"),
+        "logicalSource": Namespace(get_rdfolio_base_iri() + "/logicalSource#")}
 
     default_ns_dict = get_default_ns_dict()
     predefined_ns_dict = {k: Namespace(v) for k, v in all_predefined_ns_dict.items() if (k not in default_ns_dict)}
@@ -880,7 +892,28 @@ def parse_ontology(source):
         except:
             continue
 
+    # If it fails, we try to parse downloading the content using requests
+    # (it automatically handles HTTP compression)
+    for fmt in ["xml", "turtle", "jsonld", "ntriples", "trig", "trix"]:
+        try:
+            response = requests.get(source)
+            response.encoding = 'utf-8'  # Ensure correct decoding
+            g = Graph()
+            g.parse(data=response.text, format=fmt)
+            return [g, fmt]
+        except:
+            continue
+
     return [Graph(), None]
+
+
+    #___________________________________________________________________________________
+    def parse_ttl_url(url):
+        response = requests.get(url)
+        response.encoding = 'utf-8'  # Ensure correct decoding
+        g = Graph()
+        g.parse(data=response.text, format='turtle')
+        return g
 #___________________________________________________________________________________
 
 #___________________________________________________________________________________

@@ -268,6 +268,8 @@ with tab1[0]:
                         st.write("")
 
                 else:
+                    with col1:
+                        col1a, col1b = st.columns(2)
 
                     with col1b:
                         st.markdown(f"""<div class="success-message">
@@ -352,13 +354,17 @@ with tab1[0]:
                 elif st.session_state["g_ontology_from_link_candidate_label"] in st.session_state["g_ontology_components_dict"]:
                     with col1b:
                         st.markdown(f"""<div class="error-message">
-                                ⚠️ The ontology <b>
+                                ❌ The ontology <b>
                                 {st.session_state["g_ontology_from_link_candidate_label"]}</b>
                                 has been already imported.
                             </div>""", unsafe_allow_html=True)
 
                 else:
+                    with col1:
+                        col1a, col1b, col1c = st.columns([1,1.8,1.8])
                     with col1a:
+                        st.button("Add", key="key_extend_ontology_from_link_button", on_click=extend_ontology_from_link)
+                    with col1c:
                         st.markdown(f"""<div class="success-message">
                                 ✔️ <b>Valid ontology:</b> <b style="color:#F63366;">
                                 {st.session_state["g_ontology_from_link_candidate_label"]}</b>
@@ -369,11 +375,11 @@ with tab1[0]:
                     if utils.check_ontology_overlap(st.session_state["g_ontology_from_link_candidate"], st.session_state["g_ontology"]):
                         with col1b:
                             st.markdown(f"""<div class="warning-message">
-                                    ⚠️ <b>Ontologies overlap</b>. <small>Check your ontologies
+                                    ⚠️ <b>Ontologies overlap</b>. <small>Check them
                                     externally to make sure they are aligned and compatible.</small>
                                 </div>""", unsafe_allow_html=True)
-                    with col1a:
-                        st.button("Add", key="key_extend_ontology_from_link_button", on_click=extend_ontology_from_link)
+                    # with col1a:
+                    #     st.button("Add", key="key_extend_ontology_from_link_button", on_click=extend_ontology_from_link)
 
 
 
@@ -405,7 +411,7 @@ with tab1[0]:
                 elif st.session_state["g_ontology_from_file_candidate_label"] in st.session_state["g_ontology_components_dict"]:
                     with col1b:
                         st.markdown(f"""<div class="error-message">
-                                ⚠️ The ontology <b>
+                                ❌ The ontology <b>
                                 {st.session_state["g_ontology_from_file_candidate_label"]}</b>
                                 has been already imported.
                             </div>""", unsafe_allow_html=True)

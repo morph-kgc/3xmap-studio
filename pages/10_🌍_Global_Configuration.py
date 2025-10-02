@@ -394,18 +394,18 @@ with tab1:
             with col1:
                 st.markdown(f"""<div class="warning-message">
                         ⚠️ If you continue:<br>
-                        <div style="margin-left:1.5em;">
+                        <small><div style="margin-left:1.5em;">
                         🗑️ Mapping <b>{st.session_state["g_label"]}</b> will be overwritten.<br>
                         🆕 Mapping <b>{st.session_state["g_label_temp_new"]}</b> will be created.<br>
                         </div>
-                        <small>You can export the current mapping or save the session in
+                        You can export the current mapping or save the session in
                         the <b>Save Mapping </b> pannel.</small>
                     </div>""", unsafe_allow_html=True)
 
             with col1a:
                 overwrite_g_mapping_checkbox = st.checkbox(
-                f""":gray-badge[⚠️ I am completely sure I want to overwrite mapping {st.session_state["g_label"]}]""",
-                key="key_overwrite_g_mapping_checkbox_new")
+                    f"""🔒 I am sure I want to overwrite mapping {st.session_state["g_label"]}""",
+                    key="key_overwrite_g_mapping_checkbox_new")
 
                 if overwrite_g_mapping_checkbox:
                     with col1a:
@@ -472,18 +472,18 @@ with tab1:
             with col1:
                 st.markdown(f"""<div class="warning-message">
                         ⚠️ If you continue:<br>
-                        <div style="margin-left:1.5em;">
+                        <small><div style="margin-left:1.5em;">
                         🗑️ Mapping <b>{st.session_state["g_label"]}</b> will be overwritten.<br>
                         🆕 Mapping <b>{st.session_state["g_label_temp_existing"]}</b> will be created.<br>
                         </div>
                         <small>You can export the current mapping or save the session in
-                        the <b>Save Mapping </b> pannel.</small>
+                        the <b>Save Mapping </b> pannel.
                     </div>""", unsafe_allow_html=True)
 
             with col1a:
                 overwrite_g_mapping_checkbox = st.checkbox(
-                f""":gray-badge[⚠️ I am completely sure I want to overwrite mapping {st.session_state["g_label"]}]""",
-                key="key_overwrite_g_mapping_checkbox_existing")
+                    f"""🔒 I am sure I want to overwrite mapping {st.session_state["g_label"]}""",
+                    key="key_overwrite_g_mapping_checkbox_existing")
 
                 if overwrite_g_mapping_checkbox:
                     st.button(f"""Overwrite and create""", on_click=load_existing_g_mapping, key="key_load_existing_g_mapping_button_2")
@@ -531,8 +531,8 @@ with tab1:
             if st.session_state["g_label"]:
                 with col1a:
                     overwrite_g_mapping_checkbox_retrieve = st.checkbox(
-                    f""":gray-badge[⚠️ I am completely sure I want to overwrite mapping {st.session_state["g_label"]}]""",
-                    key="key_overwrite_g_mapping_checkbox_retrieve")
+                        f"""🔒 I am sure I want to overwrite mapping {st.session_state["g_label"]}""",
+                        key="key_overwrite_g_mapping_checkbox_retrieve")
 
                 if overwrite_g_mapping_checkbox_retrieve:
                     with col1a:
@@ -541,12 +541,12 @@ with tab1:
                 with col1:
                     st.markdown(f"""<div class="warning-message">
                             ⚠️ If you continue:<br>
-                            <div style="margin-left:1.5em;">
+                            <small><div style="margin-left:1.5em;">
                             🗑️ Mapping <b>{st.session_state["g_label"]}</b> will be overwritten.<br>
                             🆕 Session <b>{selected_pkl_file_wo_extension}</b> will be retrieved.<br>
                             </div>
                             <small>You can export the current mapping or save the session in
-                            the <b>Save Mapping </b> pannel.</small>
+                            the <b>Save Mapping </b> pannel.
                         </div>""", unsafe_allow_html=True)
 
             else:
@@ -600,7 +600,7 @@ with tab1:
 
         else:
             st.markdown("""<div class="gray-status-message">
-                ✖️ <b style="color:#511D66;">No mapping</b> has been loaded yet.
+                ✖️ <b>No mapping</b> has been loaded yet.
             </div>
             """, unsafe_allow_html=True)
 
@@ -638,12 +638,11 @@ with tab1:
                 g_label_candidate = st.text_input("⌨️ Enter new mapping label:*")
 
                 if g_label_candidate:
-                    st.markdown(f"""<div class="info-message-blue">
+                    st.button("Change", key="key_change_g_label_button", on_click=change_g_label)
+                    st.markdown(f"""<div class="info-message-gray">
                             ℹ️ Mapping label will be changed to <b style="color:#F63366;">
                             {g_label_candidate}</b> (currently <b>{st.session_state["g_label"]}</b>).
                         </span></div>""", unsafe_allow_html=True)
-                    st.write("")
-                    st.button("Change", key="key_change_g_label_button", on_click=change_g_label)
 
 
 #_______________________________________________________
@@ -920,13 +919,6 @@ with tab2:
                             🔗 ... <b>(+{len(ontology_ns_to_bind_list[max_length:])})</b>
                         </div>"""
 
-                    # wrap it all in a single info box
-                    full_html = f"""<div class="info-message-gray">
-                        {inner_html}</div>"""
-                    # render
-                    with col1a:
-                        st.markdown(full_html, unsafe_allow_html=True)
-                        st.write("")
 
                 elif ontology_ns_to_bind_list:
                     # create a single info message
@@ -943,14 +935,6 @@ with tab2:
                             🔗 ... <b>(+{len(list(ontology_ns_dict)[max_length:])})</b>
                         </div>"""
 
-                    # wrap it all in a single info box
-                    full_html = f"""<div class="info-message-gray">
-                        {inner_html}</div>"""
-                    # render
-                    with col1a:
-                        st.markdown(full_html, unsafe_allow_html=True)
-                        st.write("")
-
                 if ontology_ns_to_bind_list:
                     if "Select all" not in ontology_ns_to_bind_list:   # "Select all" not selected
                         with col1a:
@@ -958,11 +942,14 @@ with tab2:
                     else:
                         with col1a:
                             bind_all_ontology_ns_checkbox = st.checkbox(
-                            ":gray-badge[⚠️ I want to bind all ontology namespaces]",
+                            "🔒 I want to bind all ontology namespaces",
                             key="key_bind_all_ontology_ns_checkbox")
                             if bind_all_ontology_ns_checkbox:
                                 st.button("Bind", key="key_bind_all_ontology_ns_button", on_click=bind_all_ontology_namespaces)
-
+                    with col1b:
+                        st.markdown(f"""<div class="info-message-blue">
+                                <small>{inner_html}</small>
+                            </div>""", unsafe_allow_html=True)
 
 
         elif add_ns_selected_option == "📋 Predefined":
@@ -1465,8 +1452,8 @@ with tab3:
                     </div>""", unsafe_allow_html=True)
             with col1a:
                 overwrite_pkl_checkbox = st.checkbox(
-                ":gray-badge[⚠️ I am sure I want to overwrite]",
-                key="key_overwrite_pkl_checkbox")
+                    f"""🔒 I am sure I want to overwrite""",
+                    key="key_overwrite_pkl_checkbox")
             if overwrite_pkl_checkbox:
                 with col1a:
                     st.button("Save", key="key_save_session_button", on_click=save_session)
