@@ -132,12 +132,12 @@ def import_st_aesthetics():
 
     /* GRAY STATUS MESSAGE */
             .gray-status-message {background-color:#f5f5f5; padding:1em;
-            border-radius:5px; color:#2a0134; border-left:4px solid #777777;
+            border-radius:5px; color:#2a0134; border-left:4px solid #2a0134;
             word-wrap: break-word;}
 
     /* GRAY STATUS MESSAGE SMALL */
         .gray-status-message-small {background-color: #f5f5f5; padding: 0.8em;
-          border-radius: 5px; color: #2a0134; border-left: 4px solid #777777;
+          border-radius: 5px; color: #2a0134; border-left: 4px solid #2a0134;
           line-height: 1.1; word-wrap: break-word;}
 
     /* SUCCESS MESSAGE FLAG */
@@ -156,7 +156,7 @@ def import_st_aesthetics():
     .success-message b {color: #0f5132; font-weight:600;}
 
     /* WARNING MESSAGE*/
-        .warning-message {border-left: 4px solid #e0c36d;
+        .warning-message {border-left: 4px solid #6c5e2e;
             ; padding: 0.4em 0.6em;
             color: #6c5e2e; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
             margin: 0.5em 0; background-color: #fff7db;
@@ -165,7 +165,7 @@ def import_st_aesthetics():
         .warning-message b {color: #cc9a06; font-weight: 600;}
 
     /* ERROR MESSAGE */
-        .error-message {border-left: 4px solid #e89ca0;
+        .error-message {border-left: 4px solid #7a2e33;
             padding: 0.4em 0.6em; color: #7a2e33; font-size: 0.85em;
             font-family: "Source Sans Pro", sans-serif; margin: 0.5em 0;
             background-color: #fbe6e8; border-radius: 4px;
@@ -436,7 +436,7 @@ def get_corner_status_message():
                     style="vertical-align:middle; margin-right:8px; height:20px;">
                     You are working with mapping
                     <b>{st.session_state["g_label"]}</b>.<br> <br>
-                    🧩 Your <b>ontology</b> is the merger of:
+                    🧩 You are working with the <b>ontologies</b>:
                     <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
                 <ul>
                     {ontology_items}
@@ -624,6 +624,18 @@ def get_ontology_ns_dict():
 #_________________________________________________________
 # Funtion to get dictionary {prefix: namespace} bound in the ontology
 # It will ignore the default namespaces
+def get_ontology_component_ns_dict(g_ont_component):
+
+    default_ns_dict = get_default_ns_dict()
+    ontology_component_ns_dict = dict(g_ont_component.namespace_manager.namespaces())
+    ontology_component_ns_dict = {k: Namespace(v) for k, v in ontology_component_ns_dict.items() if (k not in default_ns_dict)}
+
+    return ontology_component_ns_dict
+#_________________________________________________________
+
+#_________________________________________________________
+# Funtion to get dictionary {prefix: namespace} bound in the ontology
+# It will ignore the default namespaces
 def get_mapping_ns_dict():
 
     default_ns_dict = get_default_ns_dict()
@@ -631,6 +643,18 @@ def get_mapping_ns_dict():
     mapping_ns_dict = {k: Namespace(v) for k, v in all_mapping_ns_dict.items() if (k not in default_ns_dict and v != URIRef("None"))}   # without default ns
     # last condition added so that it will not show unbound namespaces
     # mapping_ns_dict = mapping_ns_dict | default_ns_dict
+
+    return mapping_ns_dict
+#_________________________________________________________
+
+#_________________________________________________________
+# Funtion to get dictionary {prefix: namespace} bound in the ontology
+# It will ignore the default namespaces
+def get_mapping_ns_dict_w_default():
+
+    all_mapping_ns_dict = dict(st.session_state["g_mapping"].namespace_manager.namespaces())
+    mapping_ns_dict = {k: Namespace(v) for k, v in all_mapping_ns_dict.items() if v != URIRef("None")}   # without default ns
+    # last condition added so that it will not show unbound namespaces
 
     return mapping_ns_dict
 #_________________________________________________________
@@ -684,39 +708,6 @@ def empty_last_added_lists():
     st.session_state["last_added_tm_list"] = []
     st.session_state["last_added_sm_list"] = []
     st.session_state["last_added_pom_list"] = []
-
-#_______________________________________________________
-#Funcion to save mapping to file
-#HERE check all formats work
-def save_mapping_to_file(filename):
-
-    save_mappings_folder = os.path.join(os.getcwd(), "saved_mappings")  #folder to save mappings
-    if not os.path.isdir(save_mappings_folder):   # create folder if it does not exist
-        os.makedirs(save_mappings_folder)
-
-    ext = os.path.splitext(filename)[1].lower()  #file extension
-
-    file_path = save_mappings_folder + "\\" + filename
-
-    if ext == ".pkl":
-        with open(file_path, "wb") as f:    # save current mapping to pkl file
-            pickle.dump(st.session_state["g_mapping"], f)
-
-    elif ext in [".json", ".jsonld"]:
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(st.session_state["g_mapping"], f, indent=2)
-
-    elif ext in [".ttl", ".rdf", ".xml", ".nt", ".n3", ".trig", ".trix"]:
-        rdf_format_dict = {".ttl": "turtle", ".rdf": "xml",
-            ".xml": "xml", ".nt": "nt", ".n3": "n3",
-            ".trig": "trig", ".trix": "trix"}
-
-        st.session_state["g_mapping"].serialize(destination=file_path, format=rdf_format_dict[ext])
-
-    else:
-        raise ValueError(f"Unsupported file extension: {ext}")   #should not occur
-
-#__________________________________________________
 
 #_______________________________________________________
 #Funcion to load mapping from file
@@ -906,14 +897,6 @@ def parse_ontology(source):
 
     return [Graph(), None]
 
-
-    #___________________________________________________________________________________
-    def parse_ttl_url(url):
-        response = requests.get(url)
-        response.encoding = 'utf-8'  # Ensure correct decoding
-        g = Graph()
-        g.parse(data=response.text, format='turtle')
-        return g
 #___________________________________________________________________________________
 
 #___________________________________________________________________________________
@@ -983,8 +966,20 @@ def check_ontology_overlap(g1, g2):
     return bool(common)
 #___________________________________________________________________________________
 
+#___________________________________________________________________________________
+#Function to find duplicated namespaces
+def get_duplicated_ns(d):
+    value_to_keys = {}
+    for key, value in d.items():
+        if value in value_to_keys:
+            value_to_keys[value].append(key)
+        else:
+            value_to_keys[value] = [key]
 
-
+    # Filter to values that appear more than once
+    duplicates = {value: keys for value, keys in value_to_keys.items() if len(keys) > 1}
+    return duplicates
+#________________________________________________________
 
 
 #________________________________________________________
@@ -1486,8 +1481,8 @@ def get_pom_dict():
         predicate = st.session_state["g_mapping"].value(pom_iri, RR.predicate)
         om_iri = st.session_state["g_mapping"].value(pom_iri, RR.objectMap)
 
-        template = st.session_state["g_mapping"].value(om_iri, RML.template)
-        constant = st.session_state["g_mapping"].value(om_iri, RML.constant)
+        template = st.session_state["g_mapping"].value(om_iri, RR.template)
+        constant = st.session_state["g_mapping"].value(om_iri, RR.constant)
         reference = st.session_state["g_mapping"].value(om_iri, RML.reference)
 
         pom_id_iri = None
@@ -2014,194 +2009,6 @@ def get_node_label(node):
 
 
 #HEREIGO
-
-
-
-
-
-
-#______________________________________________
-#Directories    #REFACTORING - Unused, but could be interesting to check if the permissions are correct
-def check_directories():
-    save_progress_folder = os.path.join(os.getcwd(), "saved_mappings")  #folder to save mappings (pkl)
-    export_folder = os.path.join(os.getcwd(), "exported_mappings")    #filder to export mappings (ttl and others)
-    if not os.path.exists(save_progress_folder):
-        st.markdown(f"""<div style="background-color:#f8d7da; padding:1em;
-            border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-            🚫 The folder <b style="color:#c82333;">
-            saved_mappings</b> does not exist and must be created!
-            </div>""", unsafe_allow_html=True)
-        st.stop()
-
-    if not os.access(save_progress_folder, os.R_OK | os.W_OK):
-        st.markdown(f"""
-            <div style="background-color:#f8d7da; padding:1em;
-            border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-            🚫 No read/write permission for <b style="color:#c82333;">
-            saved_mappings</b> folder!
-            </div>""", unsafe_allow_html=True)
-        st.stop()
-
-    if not os.path.exists(export_folder):
-        st.markdown(f"""
-            <div style="background-color:#f8d7da; padding:1em;
-            border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-            🚫 The folder <b style="color:#c82333;">
-            exported_mappings</b> does not exist and must be created!
-            </div>""", unsafe_allow_html=True)
-        st.stop()
-
-    if not os.access(export_folder, os.R_OK | os.W_OK):
-        st.markdown(f"""
-            <div style="background-color:#f8d7da; padding:1em;
-            border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-            🚫 No read/write permission for <b style="color:#c82333;">
-            export</b> folder!
-            </div>""", unsafe_allow_html=True)
-        st.stop()
-
-#__________________________________________
-
-#_________________________________________________________
-#Confirm button
-def get_confirm_button():
-    col1,col2,col3 = st.columns([1,1,10])
-    with col1:
-        button_YES = st.button("Yes")
-    with col2:
-        button_NO = st.button("No")
-    if button_YES:
-        return True
-    if button_NO:
-        return False
-
-#_________________________________________________
-#Allowed data formats
-def get_ds_allowed_formats():
-    allowed_tab_formats_list = (".csv",".json", ".xml")
-    return allowed_tab_formats_list
-
-
-#_________________________________________________
-
-
-#________________________________________________
-#Update DICTIONARIES
-#This should be deleted HERE
-def update_dictionaries():
-
-    st.session_state["tmap_dict"] = {}
-    st.session_state["data_source_dict"] = {}
-    st.session_state["subject_dict"] = {}
-    st.session_state["ns_dict"] = {}
-
-    if st.session_state["g_label"]:
-
-        # {TripleMap label: TripleMap}
-        triples_maps = list(st.session_state["g_mapping"].subjects(RML.logicalSource, None))
-        for tm in triples_maps:
-            tm_label = split_uri(tm)[1]
-            st.session_state["tmap_dict"][tm_label] = tm
-
-        # {TripleMap label: data source}
-        for tmap_label, tmap_node in st.session_state["tmap_dict"].items():
-            data_source = get_data_source_file(st.session_state["g_mapping"], tmap_node)
-            st.session_state["data_source_dict"][tmap_label] = data_source
-
-        # {prefix: namespace}  namespaces bound to g_mapping
-        st.session_state["g_mapping_ns_dict_including_default"] = dict(st.session_state["g_mapping"].namespace_manager.namespaces())
-
-        # {prefix: namespace} only custom
-        default_ns_dict = get_default_ns_dict()
-        all_mapping_ns_dict = dict(st.session_state["g_mapping"].namespace_manager.namespaces())
-        st.session_state["g_mapping_ns_dict"] = {k: v for k, v in all_mapping_ns_dict.items() if (k not in default_ns_dict and v != URIRef("None"))}
-
-        # {prefix: namespace} only ontology
-        st.session_state["ontology_ns_dict"] = dict(st.session_state["g_ontology"].namespace_manager.namespaces())
-
-        # {prefix: namespace} custom+ontology
-        st.session_state["ns_dict"] = st.session_state["g_mapping_ns_dict"] | st.session_state["ontology_ns_dict"]
-
-        # subject dictionary   {tm label: [subject_label, subject_id, subject_type]}
-        st.session_state["subject_dict"] = {}
-        triples_maps = list(st.session_state["g_mapping"].subjects(RML.logicalSource, None))
-        for tm in triples_maps:
-            tm_label = split_uri(tm)[1]
-            sm_iri = st.session_state["g_mapping"].value(tm, RR.subjectMap)
-
-            subject = None
-            subject_type = None
-            subject_id = None
-
-            template = st.session_state["g_mapping"].value(sm_iri, RML.template)
-            constant = st.session_state["g_mapping"].value(sm_iri, RML.constant)
-            reference = st.session_state["g_mapping"].value(sm_iri, RML.reference)
-
-            if isinstance(sm_iri, URIRef):
-                subject_label = split_uri(sm_iri)[1]
-            elif isinstance(sm_iri, BNode):
-                subject_label = "_:" + str(sm_iri)[:7] + "..."
-            else:
-                subject_label = "Unlabelled"
-
-            if template:
-                matches = re.findall(r"{([^}]+)}", template)   #splitting template is not so easy but we try
-                if matches:
-                    subject = str(template)
-                    subject_type = "template"
-                    subject_id = str(matches[-1])
-                else:
-                    subject = str(template)
-                    subject_type = "template"
-                    subject_id = str(template)
-
-            elif constant:
-                subject = str(constant)
-                subject_type = "constant"
-                subject_id = str(split_uri(constant)[1])
-
-            elif reference:
-                subject = str(reference)
-                subject_type = "reference"
-                subject_id = str(reference)
-
-            st.session_state["subject_dict"][tm_label] = [subject, subject_id, subject_type, subject_label]   # add to dict
-#___________________________________________
-
-
-#___________________________________________________________________________________
-#Functions to get the file name and path of the data source files  HERE FIX
-
-def get_ds_full_path(filename):
-    folder_path = get_ds_folder_path()
-    full_path = os.path.join(folder_path, filename)
-    return full_path
-
-def get_ds_folder_path():
-    folder_path = os.path.abspath(".\\data_sources")
-    return folder_path
-
-def get_g_full_path(filename):
-    folder_path = get_g_folder_path()
-    full_path = os.path.join(folder_path, filename)
-    return full_path
-
-def get_g_folder_path():
-    folder_path = os.path.abspath(".\\saved_mappings")
-    return folder_path
-
-def show_ds_file_path_success():   #FIX HERE
-    graph_filename = get_filename()
-    st.markdown(
-    f"""<span style="color:grey; font-size:16px;">
-    <div style="line-height: 1.5;border: 1px solid blue; padding: 10px; border-radius: 5px;">
-    You are currently working with the file
-    <span style="color:blue; font-weight:bold;">{graph_filename}</span>.
-    To change the file go to \"Select graph\".</div></span>
-    """,
-    unsafe_allow_html=True)
-
-#___________________________________________
 
 
 

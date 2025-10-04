@@ -287,13 +287,15 @@ with tab1:
                         jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
 
                     with col1:
+                        col1a, col1b = st.columns([2,1])
+                    with col1a:
+                        st.button("Save", key="key_save_connection_button", on_click=save_connection)
                         st.markdown(f"""<div class="success-message">
-                                ✔️ Valid connection to database:<br>
-                                <small><b>{conn_label}</b> → <b style="color:#F63366;">{jdbc_str}</b>.</small>
+                                ✔️ Valid connection to database.<br>
+                                <small>🔌 <b>{conn_label}</b> → <b style="color:#F63366;">{jdbc_str}</b>.</small>
                             </div>""", unsafe_allow_html=True)
-                        st.write("")
 
-                    st.button("Save", key="key_save_connection_button", on_click=save_connection)
+
 
 
     if not st.session_state["db_connections_dict"] and st.session_state["db_connection_removed_ok_flag"]:
@@ -362,30 +364,22 @@ with tab1:
                     <small>🔌 ... <b>(+{len(connection_labels_to_remove_list[:max_length])})</b></small>
                 </div>"""
 
-            # wrap it all in a single info box
-            full_html = f"""<div class="info-message-gray">
-                {inner_html}</div>"""
-            # render
-
-            with col1:
-                col1a, col1b = st.columns([2,1])
-            if len(connection_labels_to_remove_list) > 0:
-                with col1a:
-                    st.markdown(full_html, unsafe_allow_html=True)
-
             with col1b:
                 st.markdown(f"""<div class="warning-message">
                     ⚠️ You are removing <b>all connections</b> to databases.
                     <small>Make sure you want to go ahead.</small>
                 </div>""", unsafe_allow_html=True)
-                st.write("")
 
             with col1a:
                 delete_all_connections_checkbox = st.checkbox(
-                ":gray-badge[⚠️ I am sure I want to delete all connections]",
+                "🔒 I am sure I want to delete all connections",
                 key="key_delete_all_connections_checkbox")
                 if delete_all_connections_checkbox:
                     st.button("Remove", key="key_remove_connection_button", on_click=remove_connection)
+                if len(connection_labels_to_remove_list) > 0:
+                    st.markdown(f"""<div class="info-message-gray">
+                            {inner_html}
+                        </div>""", unsafe_allow_html=True)
 
 
         elif "Select all ❌" in connection_labels_to_remove_list:
@@ -422,24 +416,20 @@ with tab1:
                 </div>"""
             else:
                 inner_html += f"""<div style="margin-bottom:4px;">
-                    <small>✔️ All <b>connections</b> are working <small>(no ❌ connections to remove).</small>
+                    <small>✔️ All <b>connections</b> are working. <small>No ❌ connections to remove.</small>
                 </div>"""
-
-            # wrap it all in a single info box
-            full_html = f"""<div class="info-message-gray">
-                {inner_html}</div>"""
-            # render
-            with col1a:
-                st.markdown(full_html, unsafe_allow_html=True)
 
             with col1a:
                 if connection_labels_to_remove_list:
                     st.write("")
                     delete_all_cross_connections_checkbox= st.checkbox(
-                    ":gray-badge[⚠️ I am sure I want to delete the connections]",
+                    "🔒 I am sure I want to delete the connections",
                     key="key_delete_all_cross_connections_checkbox")
                     if delete_all_cross_connections_checkbox:
                         st.button("Remove", key="key_remove_connection_button", on_click=remove_connection)
+                    st.markdown(f"""<div class="info-message-gray">
+                            {inner_html}
+                        </div>""", unsafe_allow_html=True)
 
         elif connection_labels_to_remove_list:
             # create a single info message
@@ -457,18 +447,15 @@ with tab1:
                     <small>🔌 ... <b>(+{len(connection_labels_to_remove_list[:max_length])})</b></small>
                 </div>"""
 
-            # wrap it all in a single info box
-            full_html = f"""<div class="info-message-gray">
-                {inner_html}</div>"""
-            # render
             with col1a:
-                st.markdown(full_html, unsafe_allow_html=True)
                 delete_connections_checkbox= st.checkbox(
-                ":gray-badge[⚠️ I am sure I want to delete the connections]",
+                "🔒 I am sure I want to delete the connections",
                 key="key_delete_connections_checkbox")
                 if delete_connections_checkbox:
-                    st.write("")
                     st.button("Remove", key="key_remove_connection_button", on_click=remove_connection)
+                st.markdown(f"""<div class="info-message-gray">
+                        {inner_html}
+                    </div>""", unsafe_allow_html=True)
 
     # PURPLE HEADING - CONSULT CONNECTION
     if st.session_state["db_connections_dict"]:
@@ -955,12 +942,12 @@ with tab3:
                     </div>""", unsafe_allow_html=True)
                     st.write("")
                     remove_views_checkbox = st.checkbox(
-                    ":gray-badge[⚠️ I am sure I want to delete all views]",
+                    "🔒 I am sure I want to delete all views",
                     key="key_remove_views_checkbox")
                     queries_to_drop_list = list(st.session_state["sql_queries_dict"].keys())
                 else:
                     remove_views_checkbox = st.checkbox(
-                    ":gray-badge[⚠️ I am sure I want to delete the selected views]",
+                    "🔒 I am sure I want to delete the selected views",
                     key="key_remove_views_checkbox")
 
             if remove_views_checkbox:

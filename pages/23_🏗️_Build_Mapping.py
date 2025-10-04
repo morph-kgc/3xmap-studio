@@ -100,6 +100,8 @@ if "sm_iri" not in st.session_state:
     st.session_state["sm_iri"] = None
 if "sm_template_prefix" not in st.session_state:
     st.session_state["sm_template_prefix"] = ""
+if "sm_template_variable_part_flag" not in st.session_state:
+    st.session_state["sm_template_variable_part_flag"] = False
 
 # TAB3
 if "key_ds_uploader_for_pom" not in st.session_state:
@@ -114,6 +116,8 @@ if "om_template_list" not in st.session_state:
     st.session_state["om_template_list"] = []
 if "last_added_pom_list" not in st.session_state:
     st.session_state["last_added_pom_list"] = []
+if "om_template_variable_part_flag" not in st.session_state:
+    st.session_state["om_template_variable_part_flag"] = False
 
 # TAB4
 if "tm_deleted_ok_flag" not in st.session_state:
@@ -264,6 +268,8 @@ def save_sm_template_fixed_part():
 def save_sm_template_variable_part():
     # update template_____________
     st.session_state["sm_template_list"].append("{" + sm_template_variable_part + "}")
+    # store information
+    st.session_state["sm_template_variable_part_flag"] = True
     # reset fields_____________
     st.session_state["key_build_template_action_sm"] = "🔒 Add fixed part"
 
@@ -273,6 +279,7 @@ def reset_sm_template():
     # store information____________________
     st.session_state["sm_template_prefix"] = ""
     st.session_state["template_sm_is_iri_flag"] = False
+    st.session_state["sm_template_variable_part_flag"] = False
     # reset fields_____________
     st.session_state["key_build_template_action_sm"] = "🔒 Add fixed part"
 
@@ -377,6 +384,8 @@ def save_om_template_fixed_part():
 def save_om_template_variable_part():
     # update template_____________
     st.session_state["om_template_list"].append("{" + om_template_variable_part + "}")
+    # store information
+    st.session_state["om_template_variable_part_flag"] = True
     # reset fields_____________
     st.session_state["key_build_template_action_om"] = "🔒 Add fixed part"
 
@@ -386,6 +395,7 @@ def reset_om_template():
     # store information____________________
     st.session_state["om_template_ns_prefix"] = ""
     st.session_state["template_om_is_iri_flag"] = False
+    st.session_state["om_template_variable_part_flag"] = False
     # reset fields_____________
     st.session_state["key_build_template_action_om"] = "🔒 Add fixed part"
 
@@ -439,10 +449,10 @@ def save_pom_constant():
         om_constant_ns = mapping_ns_dict[om_constant_ns_prefix]
         NS = Namespace(om_constant_ns)
         om_constant_iri = NS[om_constant]
-        st.session_state["g_mapping"].add((om_iri, RML.constant, om_constant_iri))
+        st.session_state["g_mapping"].add((om_iri, RR.constant, om_constant_iri))
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.IRI))
     elif om_term_type_constant == "📘 Literal":
-        st.session_state["g_mapping"].add((om_iri, RML.constant, Literal(om_constant)))
+        st.session_state["g_mapping"].add((om_iri, RR.constant, Literal(om_constant)))
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.Literal))
         if om_datatype != "Select datatype" and om_datatype != "Natural language tag":
             datatype_dict = utils.get_datatypes_dict()
@@ -1107,7 +1117,6 @@ with tab2:
             column_list = utils.get_column_list(tm_iri_for_sm)
 
             with col1b:
-                st.write("")
                 if existing_sm_list:
                     list_to_choose = ["Template 📐", "Constant 🔒", "Reference 📊", "Existing Subject Map 📑"]
                 else:
@@ -1306,7 +1315,7 @@ with tab2:
                         col1a, col1b, col1c = st.columns(3)
                     # SUBJECT MAP LABEL
                     with col1c:
-                        label_sm_option = st.selectbox("♻️ Reuse Subject Map (optional):", ["No", "Yes (add label)"])
+                        label_sm_option = st.selectbox("♻️ Reuse Subject Map:", ["No", "Yes (add label)"])
                     if label_sm_option == "Yes (add label)":
                         with col1c:
                             sm_label = st.text_input("🔖 Enter Subject Map label:*", key="key_sm_label_new")
@@ -1464,6 +1473,10 @@ with tab2:
                         if not sm_template:
                             sm_complete_flag = False
                             inner_html_error += "<small>· The <b>template</b> is empty.</small><br>"
+                        elif not st.session_state["sm_template_variable_part_flag"]:
+                            inner_html_error += """<small>· The <b>template</b> must contain
+                                at least one <b>variable part</b>.</small><br>"""
+                            sm_complete_flag = False
 
                     if sm_generation_rule == "Constant 🔒":
                         if not (sm_constant_ns_prefix != "Select a namespace" and sm_constant):
@@ -2027,6 +2040,10 @@ with tab3:
                 if not om_template:
                     pom_complete_flag = False
                     inner_html_error += "<small>· The <b>template</b> is empty.</small><br>"
+                elif not st.session_state["om_template_variable_part_flag"]:
+                    pom_complete_flag = False
+                    inner_html_error += """<small>· The <b>template</b> must contain
+                        at least one <b>variable part</b>..</small><br>"""
 
                 if om_template and om_term_type_template == "🌐 IRI":
                     if not st.session_state["template_om_is_iri_flag"]:
