@@ -1922,7 +1922,7 @@ def check_g_mapping(g):
 
         max_length = utils.get_max_length_for_display()[5]
 
-        inner_html = f"""The mapping <b>{st.session_state["g_label"]}</b> is incomplete!
+        inner_html = f"""The <b>mapping</b> is incomplete!
             <br>"""
 
         if tm_wo_sm_list:
@@ -2006,8 +2006,70 @@ def get_node_label(node):
 
 #_________________________________________________
 
+#_________________________________________________
+# Funtion to check a mapping loaded from URL is ok
+def is_valid_url_mapping(mapping_url, show_info):
+    mapping_url_ok_flag = True
 
+    try:
+        # Fetch content
+        response = requests.get(mapping_url)
+        response.raise_for_status()
+        url_mapping = response.text
 
+        # Check extension
+        if mapping_url.endswith((".ttl", ".rml.ttl", ".r2rml.ttl", ".fnml.ttl", ".rml-star.ttl")):
+            # Step 3a: Parse as RDF
+            g = rdflib.Graph()
+            g.parse(data=url_mapping, format="turtle")
+
+            # Look for RML/R2RML predicates
+            rml_predicates = [
+                rdflib.URIRef("http://semweb.mmlab.be/ns/rml#logicalSource"),
+                rdflib.URIRef("http://www.w3.org/ns/r2rml#subjectMap"),
+                rdflib.URIRef("http://www.w3.org/ns/r2rml#predicateObjectMap")]
+
+            found = any(p in [pred for _, pred, _ in g] for p in rml_predicates)
+
+            if not found:
+                if show_info:
+                    st.markdown(f"""<div class="error-message">
+                            ❌ Link working, but <b>no RML structure found</b>.
+                            <small>Please, check your mapping content.</small>
+                        </div>""", unsafe_allow_html=True)
+                mapping_url_ok_flag = False
+
+        elif url.endswith((".yaml", ".yml")):
+            # Parse as YAML
+            data = yaml.safe_load(url_mapping)
+
+            # Check for YARRRML structure
+            if not "mappings" in data and isinstance(data["mappings"], dict):
+                if show_info:
+                    st.markdown(f"""<div class="error-message">
+                            ❌ Link working, but <b>no YARRRML structure found</b>.
+                            <small>Please, check your mapping content.</small>
+                        </div>""", unsafe_allow_html=True)
+                mapping_url_ok_flag = False
+
+        else:
+            if show_info:
+                st.markdown(f"""<div class="error-message">
+                    ❌ <b>Extension is not valid</b>.
+                </div>""", unsafe_allow_html=True)
+            mapping_url_ok_flag = False
+
+    except Exception as e:
+        if show_info:
+            st.markdown(f"""<div class="error-message">
+                ❌ <b>Validation failed.</b><br>
+                <small><b>Full error:</b> {e}</small>
+            </div>""", unsafe_allow_html=True)
+        mapping_url_ok_flag = False
+
+    return mapping_url_ok_flag
+
+#_________________________________________________
 #HEREIGO
 
 

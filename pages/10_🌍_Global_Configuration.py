@@ -850,9 +850,10 @@ with tab2:
                         #         <b>🔗 {prefix_input}</b> → {iri_input}
                         #     </div>""", unsafe_allow_html=True)
                         st.button("Bind", key="key_bind_custom_ns_button", on_click=bind_custom_namespace)
+
         elif add_ns_selected_option == "🧩 Ontology":
             with col1:
-                col1a, col1b = st.columns([1.5, 1])
+                col1a, col1b = st.columns([2,1])
 
             there_are_ontology_ns_unbound_flag = False
             ontology_ns_dict = utils.get_ontology_ns_dict()
@@ -918,8 +919,7 @@ with tab2:
                             key="key_bind_all_ontology_ns_checkbox")
                             if bind_all_ontology_ns_checkbox:
                                 st.button("Bind", key="key_bind_all_ontology_ns_button", on_click=bind_all_ontology_namespaces)
-                    with col1b:
-                        st.write("")
+                    with col1a:
                         st.markdown(f"""<div class="info-message-gray">
                                 <small>{inner_html}</small>
                             </div>""", unsafe_allow_html=True)
@@ -927,7 +927,7 @@ with tab2:
 
         elif add_ns_selected_option == "📋 Predefined":
             with col1:
-                col1a, col1b = st.columns([1.5,1])
+                col1a, col1b = st.columns([2,1])
 
             there_are_predefined_ns_unbound_flag = False
             for prefix in predefined_ns_dict:
@@ -992,7 +992,7 @@ with tab2:
                             if bind_all_predefined_ns_button_checkbox:
                                 st.button("Bind", key="key_bind_all_predefined_ns_button", on_click=bind_all_predefined_namespaces)
 
-                    with col1b:
+                    with col1a:
                         st.markdown(f"""<div class="info-message-gray">
                                 <small>{inner_html}</small>
                             </div>""", unsafe_allow_html=True)
@@ -1141,7 +1141,7 @@ with tab2:
                 list_to_choose.insert(0, "Select all")
 
             with col1:
-                col1a, col1b = st.columns([1.5,1])
+                col1a, col1b = st.columns([2,1])
             with col1a:
                 if st.session_state["structural_ns"][0] in list_to_choose:
                     list_to_choose.remove(st.session_state["structural_ns"][0])
@@ -1166,14 +1166,13 @@ with tab2:
 
                 with col1a:
                     unbind_ns_button_checkbox = st.checkbox(
-                    "🔒 I am sure want to unbind the namespaces",
+                    "🔒 I am sure want to unbind the selected namespace/s",
                     key="key_unbind_all_ns_button_checkbox")
                     if unbind_ns_button_checkbox:
                         st.button(f"Unbind", key="key_unbind_ns_button", on_click=unbind_namespaces)
 
                     if len(ns_to_unbind_list) > 0:
-                        with col1b:
-                            st.write("")
+                        with col1a:
                             st.markdown(f"""<div class="info-message-gray">
                                     <small>{inner_html}</small>
                                 </div>""", unsafe_allow_html=True)
@@ -1204,16 +1203,16 @@ with tab2:
                         <small>Make sure you want to go ahead.</small>
                     </div>""", unsafe_allow_html=True)
 
-                    st.markdown(f"""<div class="info-message-gray">
-                            <small>{inner_html}</small>
-                        </div>""", unsafe_allow_html=True)
-
                 with col1a:
                     unbind_all_ns_button_checkbox = st.checkbox(
                     "🔒 I am sure I want to unbind all namespaces",
                     key="key_unbind_all_ns_button_checkbox")
                     if unbind_all_ns_button_checkbox:
                         st.button("Unbind", key="key_unbind_all_ns_button", on_click=unbind_all_namespaces)
+
+                    st.markdown(f"""<div class="info-message-gray">
+                            <small>{inner_html}</small>
+                        </div>""", unsafe_allow_html=True)
 
 
 #_____________________________________________

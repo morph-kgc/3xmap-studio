@@ -265,7 +265,6 @@ with tab1:
 
             if not os.path.isdir(folder_path):
                 with col1a:
-                    st.write("")
                     st.markdown(f"""<div class="warning-message">
                             ⚠️ Folder <b>{folder_name}</b> does not exist. Please,
                             create it within the main folder and add your file to it.
@@ -359,54 +358,27 @@ with tab1:
 
         if "Select all" in ds_files_to_remove_list:
             ds_files_to_remove_list = list(st.session_state["ds_files_dict"].keys())
-            with col1a:
-                if len(ds_files_to_remove_list) == 1:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, the file <b style="color:#F63366;">
-                            {utils.format_list_for_markdown(ds_files_to_remove_list)}</b>
-                            will be removed.
-                        </div>""", unsafe_allow_html=True)
-                elif len(ds_files_to_remove_list) < utils.get_max_length_for_display()[5]:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, the files <b style="color:#F63366;">
-                            {utils.format_list_for_markdown(ds_files_to_remove_list)}</b>
-                            will be removed.
-                        </div>""", unsafe_allow_html=True)
-                else:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, <b style="color:#F63366;">all files</b>
-                            will be removed.
-                        </div>""", unsafe_allow_html=True)
+            with col1b:
                 st.write("")
-
-
+                st.markdown(f"""<div class="warning-message">
+                        ⚠️ You are removing <b>all files ({len(ds_files_to_remove_list)})</b>.
+                        <small>Make sure you want to go ahead.</small>
+                    </div>""", unsafe_allow_html=True)
+            with col1a:
                 delete_all_files_checkbox= st.checkbox(
-                ":gray-badge[⚠️ I am sure I want to delete all files]",
+                "🔒 I am sure I want to remove all files",
                 key="key_delete_all_files_checkbox")
                 if delete_all_files_checkbox:
                     st.button("Remove", key="key_remove_file_button", on_click=remove_file)
+
         elif ds_files_to_remove_list:
             with col1a:
-                if len(ds_files_to_remove_list) == 1:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, the file <b style="color:#F63366;">
-                            {utils.format_list_for_markdown(ds_files_to_remove_list)}</b>
-                            will be removed.
-                        </div>""", unsafe_allow_html=True)
-                elif len(ds_files_to_remove_list) < 6:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, the files <b style="color:#F63366;">
-                            {utils.format_list_for_markdown(ds_files_to_remove_list)}</b>
-                            will be removed.
-                        </div>""", unsafe_allow_html=True)
-                else:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, the <b style="color:#F63366;">selected files</b>
-                            will be removed.
-                        </div>""", unsafe_allow_html=True)
-                st.write("")
+                delete_files_checkbox= st.checkbox(
+                "🔒 I am sure I want to remove the selected file/s",
+                key="key_delete_files_checkbox")
+                if delete_files_checkbox:
+                    st.button("Remove", key="key_remove_file_button", on_click=remove_file)
 
-                st.button("Remove", key="key_remove_file_button", on_click=remove_file)
 
 
 #________________________________________________

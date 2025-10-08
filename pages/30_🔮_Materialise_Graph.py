@@ -14,6 +14,7 @@ import uuid   # to handle uploader keys
 import requests
 from morph_kgc import materialize
 from sqlalchemy import create_engine
+from streamlit.runtime.uploaded_file_manager import UploadedFile
 
 st.set_page_config(layout="wide")
 
@@ -91,8 +92,6 @@ if "configuration_for_mk_saved_ok_flag" not in st.session_state:
     st.session_state["configuration_for_mk_saved_ok_flag"] = False
 if "configuration_for_mk_removed_ok_flag" not in st.session_state:
     st.session_state["configuration_for_mk_removed_ok_flag"] = False
-
-# TAB2
 if "additional_mapping_added_ok_flag" not in st.session_state:
     st.session_state["additional_mapping_added_ok_flag"] = False
 if "key_mapping_uploader" not in st.session_state:
@@ -101,10 +100,8 @@ if "additional_mapping_for_mk_saved_ok_flag" not in st.session_state:
     st.session_state["additional_mapping_for_mk_saved_ok_flag"] = False
 if "additional_mapping_removed_ok_flag" not in st.session_state:
     st.session_state["additional_mapping_removed_ok_flag"] = False
-if "additional_mapping_added_from_URL_ok_flag" not in st.session_state:
-    st.session_state["additional_mapping_added_from_URL_ok_flag"] = False
 
-# TAB3
+# TAB2
 if "materialised_g_mapping_file" not in st.session_state:
     st.session_state["materialised_g_mapping_file"] = None
 if "materialised_g_mapping" not in st.session_state:
@@ -219,21 +216,20 @@ def remove_options_for_mk():
     # reset fields__________________________
     st.session_state["key_configure_options_for_mk"] = "🚫 No options"
 
-# TAB2
 def save_mapping_for_mk():
     # store information________________________
-    st.session_state["mk_g_mappings_dict"][uploaded_mapping_label] = uploaded_mapping
+    st.session_state["mk_g_mappings_dict"][additional_mapping_label] = uploaded_mapping
     st.session_state["additional_mapping_added_ok_flag"] = True
     # reset fields_______________________________
-    st.session_state["key_uploaded_mapping_label"] = ""
+    st.session_state["key_additional_mapping_label"] = ""
     st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
 
 def save_mapping_for_mk_from_url():
     # store information________________________
-    st.session_state["mk_g_mappings_dict"][url_mapping_label] = url_mapping
-    st.session_state["additional_mapping_added_from_URL_ok_flag"] = True
+    st.session_state["mk_g_mappings_dict"][additional_mapping_label] = mapping_url
+    st.session_state["additional_mapping_added_ok_flag"] = True
     # reset fields_______________________________
-    st.session_state["key_mapping_label_url"] = ""
+    st.session_state["key_additional_mapping_label"] = ""
 
 def remove_additional_mapping_for_mk():
     # remove________________________
@@ -244,7 +240,7 @@ def remove_additional_mapping_for_mk():
     # reset fields_______________________________
     st.session_state["key_mappings_to_remove_list"] = []
 
-# TAB3
+# TAB2
 def materialise_graph():
     # empty folder if it exists or create if it does not______________
     if os.path.exists(temp_folder_path):
@@ -271,15 +267,16 @@ def materialise_graph():
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(mapping_content_str)
 
-    # download additional mappings to file if used__________________________
+    # download additional mappings to file if used (only for files, not URL mappings)________________
     for g_label in mk_used_mapping_list:
         if g_label != st.session_state["g_label"]:
             g_mapping_file = st.session_state["mk_g_mappings_dict"][g_label]
-            ext = os.path.splitext(g_mapping_file.name)[1]
-            filename = g_label + ext
-            file_path = os.path.join(temp_folder_path, filename)
-            with open(file_path, "wb") as f:
-                f.write(g_mapping_file.getvalue())  # write file content as bytes
+            if isinstance(g_mapping_file, UploadedFile):
+                ext = os.path.splitext(g_mapping_file.name)[1]
+                filename = g_label + ext
+                file_path = os.path.join(temp_folder_path, filename)
+                with open(file_path, "wb") as f:
+                    f.write(g_mapping_file.getvalue())  # write file content as bytes
 
     # download used tabular data sources___________________________________
     for ds_filename in mk_used_tab_ds_list:
@@ -303,20 +300,33 @@ def materialise_graph():
         st.session_state["mk_config"].write(f)
 
     # run Morph-KGC with the config file path to materialise_______________________
-    st.session_state["materialised_g_mapping"] = materialize(config_path)
-    st.session_state["materialised_g_mapping_file"] = io.BytesIO()
-    st.session_state["materialised_g_mapping"].serialize(destination=st.session_state["materialised_g_mapping_file"], format="turtle")  # or "xml", "nt", "json-ld"
-    st.session_state["materialised_g_mapping_file"].seek(0)  # rewind to the beginning
+    try:
+        st.session_state["materialised_g_mapping"] = materialize(config_path)
+        st.session_state["materialised_g_mapping_file"] = io.BytesIO()
+        st.session_state["materialised_g_mapping"].serialize(destination=st.session_state["materialised_g_mapping_file"], format="turtle")  # or "xml", "nt", "json-ld"
+        st.session_state["materialised_g_mapping_file"].seek(0)  # rewind to the beginning
+        # delete temporal folder___________________________________________________
+        for filename in os.listdir(temp_folder_path):       # delete all files inside the folder
+            file_path = os.path.join(temp_folder_path, filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+        os.rmdir(temp_folder_path)      # remove the empty folder
 
-    # delete temporal folder___________________________________________________
-    for filename in os.listdir(temp_folder_path):       # delete all files inside the folder
-        file_path = os.path.join(temp_folder_path, filename)
-        if os.path.isfile(file_path):
-            os.remove(file_path)
-    os.rmdir(temp_folder_path)      # remove the empty folder
+        # store information________________________________________________________
+        st.session_state["graph_materialised_ok_flag"] = True
 
-    # store information________________________________________________________
-    st.session_state["graph_materialised_ok_flag"] = True
+    except Exception as e:
+        st.session_state["graph_materialised_ok_flag"] = ["error", e]
+        # delete temporal folder___________________________________________________
+        for filename in os.listdir(temp_folder_path):       # delete all files inside the folder
+            file_path = os.path.join(temp_folder_path, filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+        os.rmdir(temp_folder_path)      # remove the empty folder
+
+
+
+
 
 
 def reset_materialise_page():
@@ -330,7 +340,7 @@ def reset_materialise_page():
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
 
-tab1, tab2, tab3 = st.tabs(["Materialise", "Additional Mappings", "Check and Go"])
+tab1, tab2 = st.tabs(["Materialise", "Check and Go"])
 
 
 #________________________________________________
@@ -452,15 +462,22 @@ with tab1:
                         with col1:
                             st.markdown(f"""<div class="error-message">
                                 ❌ <b> No mappings available. </b>
-                                <small>You can build a mapping using <b>RDForge</b>
-                                and/or load additional mappings in the <b>Additional Mappings</b> pannel.</small>
+                                <small>You can <b>build a mapping</b> using this application
+                                and/or load additional mappings in the <b>Additional Mappings</b> section
+                                of this pannel.</small>
                             </div>""", unsafe_allow_html=True)
 
                 if "Select all" in mk_mappings_list_for_sql:
                     mk_mappings_list_for_sql = list(reversed(list(mk_g_mapping_dict_complete)))
 
-                mk_mappings_paths_list_for_sql = [os.path.join(temp_folder_path, mapping + ".ttl")
-                    for mapping in mk_mappings_list_for_sql]
+                mk_mappings_paths_list_for_sql = []
+                for mapping_label in mk_mappings_list_for_sql:
+                    if mapping_label == st.session_state["g_label"]:
+                        mk_mappings_paths_list_for_sql.append(os.path.join(temp_folder_path, mapping_label + ".ttl"))
+                    elif isinstance(st.session_state["mk_g_mappings_dict"][mapping_label], UploadedFile):
+                        mk_mappings_paths_list_for_sql.append(os.path.join(temp_folder_path, mapping_label + ".ttl"))
+                    else:
+                        mk_mappings_paths_list_for_sql.append(st.session_state["mk_g_mappings_dict"][mapping_label])
                 mk_mappings_str_for_sql = ",".join(mk_mappings_paths_list_for_sql)   # join into a comma-separated string for the config
 
                 # with col1:
@@ -507,13 +524,20 @@ with tab1:
                         with col1:
                             st.markdown(f"""<div class="error-message">
                                 ❌ <b> No mappings available. </b>
-                                <small>You can build a mapping using <b>RDForge</b>
-                                and/or load additional mappings in the <b>Additional Mappings</b> pannel.</small>
+                                <small>You can <b>build a mapping</b> using this application
+                                and/or load additional mappings in the <b>Additional Mappings</b> section
+                                of this pannel.</small>
                             </div>""", unsafe_allow_html=True)
 
-                mk_mappings_paths_list_for_tab = [os.path.join(temp_folder_path, mapping + ".ttl")
-                    for mapping in mk_mappings_list_for_tab]
-                mk_mappings_str_for_tab = ", ".join(mk_mappings_paths_list_for_tab)   # join into a comma-separated string for the config
+                mk_mappings_paths_list_for_tab = []
+                for mapping_label in mk_mappings_list_for_tab:
+                    if mapping_label == st.session_state["g_label"]:
+                        mk_mappings_paths_list_for_tab.append(os.path.join(temp_folder_path, mapping_label + ".ttl"))
+                    elif isinstance(st.session_state["mk_g_mappings_dict"][mapping_label], UploadedFile):
+                        mk_mappings_paths_list_for_tab.append(os.path.join(temp_folder_path, mapping_label + ".ttl"))
+                    else:
+                        mk_mappings_paths_list_for_tab.append(st.session_state["mk_g_mappings_dict"][mapping_label])
+                mk_mappings_str_for_tab = ",".join(mk_mappings_paths_list_for_tab)   # join into a comma-separated string for the config
 
                 if mk_tab_ds_file != "Select data source" and mk_mappings_list_for_tab:
                     with col1a:
@@ -569,10 +593,25 @@ with tab1:
                 ds_for_mk_to_remove_list.remove("DEFAULT")
                 if "CONFIGURATION" in ds_for_mk_to_remove_list:
                     ds_for_mk_to_remove_list.remove("CONFIGURATION")
-
-            if ds_for_mk_to_remove_list:
+                with col1b:
+                    st.markdown(f"""<div class="warning-message">
+                        ⚠️ You are deleting <b>all Data Sources</b>.
+                        <small>Make sure you want to go ahead.</small>
+                    </div>""", unsafe_allow_html=True)
                 with col1a:
-                    st.button("Remove", key="remove_ds_for_mk_button", on_click=remove_ds_for_mk)
+                    remove_all_ds_checkbox = st.checkbox(
+                    "🔒 I am sure I want to remove all Data Sources",
+                    key="key_remove_all_ds_checkbox")
+                    if remove_all_ds_checkbox:
+                        st.button("Remove", key="remove_ds_for_mk_button", on_click=remove_ds_for_mk)
+
+            elif ds_for_mk_to_remove_list:
+                with col1a:
+                    remove_ds_checkbox = st.checkbox(
+                    "🔒 I am sure I want to remove the selected Data Source/s",
+                    key="key_remove_ds_checkbox")
+                    if remove_ds_checkbox:
+                        st.button("Remove", key="remove_ds_for_mk_button", on_click=remove_ds_for_mk)
 
 
 
@@ -794,378 +833,231 @@ with tab1:
             if remove_options_for_mk_checkbox:
                 st.button("Remove", on_click=remove_options_for_mk)
 
-#________________________________________________
-# ADDITIONAL MAPPINGS
-with tab2:
 
-    col1, col2 = st.columns([2,1.5])
-
+    # PURPLE HEADING - ADDITIONAL MAPPINGS
     with col1:
-        col1a, col1b = st.columns([2,1])
-
-    with col2:
-        col2a, col2b = st.columns([0.5, 2])
-
-    with col2b:
-        st.write("")
-        st.write("")
-
-        rows = [{"Mapping": label} for label in reversed(list(st.session_state["mk_g_mappings_dict"].keys()))]
-        mk_g_mappings_df = pd.DataFrame(rows)
-        mk_g_mappings_df = mk_g_mappings_df.head(utils.get_max_length_for_display()[1])
-
-        max_length = utils.get_max_length_for_display()[1]   # max number of connections to show directly
-        if st.session_state["mk_g_mappings_dict"]:
-            if len(st.session_state["mk_g_mappings_dict"]) < max_length:
-                st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
-                        🔎 additional mappings
-                    </div>""", unsafe_allow_html=True)
-                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                    </div>""", unsafe_allow_html=True)
-            else:
-                st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
-                        🔎 last added mappings
-                    </div>""", unsafe_allow_html=True)
-                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                        (complete list below)
-                    </div>""", unsafe_allow_html=True)
-            st.dataframe(mk_g_mappings_df, hide_index=True)
-
-
-        #Option to show all connections (if too many)
-        if st.session_state["db_connections_dict"] and len(st.session_state["db_connections_dict"]) > max_length:
-            with st.expander("🔎 Show all mappings"):
-                st.write("")
-                st.dataframe(mk_g_mappings_df, hide_index=True)
-
-    #PURPLE HEADING - UPLOAD FILE
-    with col1:
-        st.write("")
+        st.write("_______")
         st.markdown("""<div class="purple-heading">
-                📁 Upload Mapping from File
+                ➕ Additional Mappings
             </div>""", unsafe_allow_html=True)
-        st.write("")
 
     with col1:
-        col1a, col1b = st.columns([2,1])
+        st.write("")
+        col1a, col1b = st.columns([1.5,1])
 
     if st.session_state["additional_mapping_added_ok_flag"]:
         with col1a:
             st.write("")
             st.markdown(f"""<div class="success-message-flag">
-                ✅ The <b>mapping</b> has been added!
+                ✅ The <b>additional mapping</b> has been included!
             </div>""", unsafe_allow_html=True)
         st.session_state["additional_mapping_added_ok_flag"] = False
         time.sleep(st.session_state["success_display_time"])
         st.rerun()
 
-    with col1a:
-        uploaded_mapping_label = st.text_input("⌨️ Enter mapping label:*", key="key_uploaded_mapping_label")
-
-    if uploaded_mapping_label in st.session_state["mk_g_mappings_dict"] or uploaded_mapping_label == st.session_state["g_label"]:
-        if uploaded_mapping_label:
-            with col1a:
-                st.markdown(f"""<div class="error-message">
-                    ❌ Label <b>{uploaded_mapping_label}</b> is already in use.
-                    <small>Please, pick a different label.</small>
-                </div>""", unsafe_allow_html=True)
-
-    elif uploaded_mapping_label:
-
-        with col1:
-            col1a, col1b = st.columns([2,1])
-
-        with col1a:
-            uploaded_mapping = st.file_uploader(f"""🖱️ Upload mapping file:*""",
-                key=st.session_state["key_mapping_uploader"])
-
-            if uploaded_mapping:
-
-                uploaded_mapping_ok_flag = True
-                extension = os.path.splitext(uploaded_mapping.name)[1]
-                allowed_mapping_extensions = [".ttl", ".rml.ttl", ".r2rml.ttl", ".fnml.ttl",
-                    ".rml-star.ttl", ".yaml", ".yml"]
-                if extension not in allowed_mapping_extensions:
-                    with col1b:
-                        st.write("")
-                        st.markdown(f"""<div class="error-message">
-                            ❌ <b> File type is not valid. </b>
-                            <small>The allowed extensions are ".ttl", ".rml.ttl", ".r2rml.ttl", ".fnml.ttl",
-                                ".rml-star.ttl", ".yaml" and ".yml".</small>
-                        </div>""", unsafe_allow_html=True)
-                        uploaded_mapping_ok_flag = False
-
-                else:
-                    try:
-                        g = utils.load_mapping_from_file(uploaded_mapping)
-
-                        # Check for key RML predicates
-                        rml_predicates = [rdflib.URIRef("http://semweb.mmlab.be/ns/rml#logicalSource"),
-                            rdflib.URIRef("http://www.w3.org/ns/r2rml#subjectMap"),
-                            rdflib.URIRef("http://www.w3.org/ns/r2rml#predicateObjectMap")]
-
-                        found_predicates = any(p in [pred for _, pred, _ in g] for p in rml_predicates)
-                        check_g_mapping = utils.check_g_mapping(g)
-
-                        if not found_predicates:
-                            with col1b:
-                                st.write("")
-                                st.write("")
-                                st.markdown(f"""<div class="error-message">
-                                        ❌ File loaded, but <b>no RML structure found</b>.
-                                        <small>Please, check your mapping content.</small>
-                                    </div>""", unsafe_allow_html=True)
-                                uploaded_mapping_ok_flag = False
-
-                        elif check_g_mapping:
-                            with col1b:
-                                st.write("")
-                                st.write("")
-                                st.markdown(f"""<div class="error-message">
-                                        {check_g_mapping}
-                                    </div>""", unsafe_allow_html=True)
-                                uploaded_mapping_ok_flag = False
-
-                        else:
-                            with col1b:
-                                st.write("")
-                                st.write("")
-                                st.markdown(f"""<div class="success-message">
-                                        ✔️ <b>Valid RML mapping<b> detected.
-                                    </div>""", unsafe_allow_html=True)
-
-                    except Exception as e:
-                        with col1b:
-                            st.write("")
-                            st.write("")
-                            st.markdown(f"""<div class="error-message">
-                                ❌ <b> Failed to parse mapping file. </b>
-                                <small>Complete error: {e}</small>
-                            </div>""", unsafe_allow_html=True)
-                            uploaded_mapping_ok_flag = False
-
-                if uploaded_mapping_ok_flag:
-                    with col1a:
-                        st.write("")
-                        st.button("Save", key="key_save_mapping_for_mk_button",
-                            on_click=save_mapping_for_mk)
-
-
-    #PURPLE HEADING - ADD MAPPING FROM URL
-    with col1:
-        st.write("______")
-        st.markdown("""<div class="purple-heading">
-                🌐 Add Mapping from URL
-            </div>""", unsafe_allow_html=True)
-        st.write("")
-
-
-    with col1:
-        col1a, col1b = st.columns([1,2])
-
-    if st.session_state["additional_mapping_added_from_URL_ok_flag"]:
-        with col1:
-            st.write("")
-            st.markdown(f"""<div class="success-message-flag">
-                ✅ The <b>mapping</b> has been added!
-            </div>""", unsafe_allow_html=True)
-        st.session_state["additional_mapping_added_from_URL_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
-        st.rerun()
-
-    with col1a:
-        url_mapping_label = st.text_input("⌨️ Enter mapping label:*", key="key_mapping_label_url")
-
-        #https://raw.githubusercontent.com/arcangelo7/rml-mapping/main/rules.rml.ttl
-
-    if url_mapping_label in st.session_state["mk_g_mappings_dict"] or url_mapping_label == st.session_state["g_label"]:
-        if url_mapping_label:
-            with col1a:
-                st.markdown(f"""<div class="error-message">
-                    ❌ Label <b>{url_mapping_label}</b> is already in use.
-                    <small>Please, pick a different label.</small>
-                </div>""", unsafe_allow_html=True)
-
-    elif url_mapping_label:
-
-        with col1b:
-            mapping_url = st.text_input("⌨️ Enter mapping URL:*", key="key_mapping_url")
-
-        if mapping_url:
-
-            mapping_url_ok_flag = True
-
-            try:
-                # Fetch content
-                response = requests.get(mapping_url)
-                response.raise_for_status()
-                url_mapping = response.text
-
-                # Check extension
-                if mapping_url.endswith((".ttl", ".rml.ttl", ".r2rml.ttl", ".fnml.ttl", ".rml-star.ttl")):
-                    # Step 3a: Parse as RDF
-                    g = rdflib.Graph()
-                    g.parse(data=url_mapping, format="turtle")
-
-                    # Look for RML/R2RML predicates
-                    rml_predicates = [
-                        rdflib.URIRef("http://semweb.mmlab.be/ns/rml#logicalSource"),
-                        rdflib.URIRef("http://www.w3.org/ns/r2rml#subjectMap"),
-                        rdflib.URIRef("http://www.w3.org/ns/r2rml#predicateObjectMap")]
-
-                    found = any(p in [pred for _, pred, _ in g] for p in rml_predicates)
-
-                    if not found:
-                        with col1:
-                            st.markdown(f"""<div class="error-message">
-                                    ❌ Link working, but <b>no RML structure found</b>.
-                                    <small>Please, check your mapping content.</small>
-                                </div>""", unsafe_allow_html=True)
-                            mapping_url_ok_flag = False
-
-                elif url.endswith((".yaml", ".yml")):
-                    # Parse as YAML
-                    data = yaml.safe_load(url_mapping)
-
-                    # Step 4b: Check for YARRRML structure
-                    if not "mappings" in data and isinstance(data["mappings"], dict):
-                        with col1:
-                            st.markdown(f"""<div class="error-message">
-                                    ❌ Link working, but <b>no YARRRML structure found</b>.
-                                    <small>Please, check your mapping content.</small>
-                                </div>""", unsafe_allow_html=True)
-                            mapping_url_ok_flag = False
-
-                else:
-                    with col1:
-                        st.markdown(f"""<div class="error-message">
-                            ❌ <b>Extension is not valid</b>.
-                        </div>""", unsafe_allow_html=True)
-                        mapping_url_ok_flag = False
-
-            except Exception as e:
-                with col1:
-                    st.markdown(f"""<div class="error-message">
-                        ❌ <b>Validation failed.</b><br>
-                        <small> Complete error: {e}</small>
-                    </div>""", unsafe_allow_html=True)
-                mapping_url_ok_flag = False
-
-            if mapping_url_ok_flag:
-                with col1:
-                    st.markdown(f"""<div class="success-message">
-                            ✔️ <b>Valid RML mapping<b> detected.
-                        </div>""", unsafe_allow_html=True)
-
-                with col1:
-                    st.write("")
-                    st.button("Save", key="key_save_mapping_for_mk_from_url_button",
-                        on_click=save_mapping_for_mk_from_url)
-
-    if not st.session_state["ds_files_dict"] and st.session_state["additional_mapping_removed_ok_flag"]:
+    if st.session_state["additional_mapping_removed_ok_flag"]:
         with col1:
             col1a, col1b = st.columns([2,1])
         with col1a:
             st.write("")
             st.markdown(f"""<div class="success-message-flag">
-                ✅ The <b>data source file/s</b> have been removed!
+                ✅ The <b>additional mapping/s</b> have been removed!
             </div>""", unsafe_allow_html=True)
         st.session_state["additional_mapping_removed_ok_flag"] = False
         time.sleep(st.session_state["success_display_time"])
         st.rerun()
 
-    #PURPLE HEADING - REMOVE FILE
-    if st.session_state["ds_files_dict"]:
-        with col1:
-            st.write("_______")
-            st.markdown("""<div class="purple-heading">
-                    🗑️ Remove Mapping
-                </div>""", unsafe_allow_html=True)
-            st.write("")
+    # List of all used mappings (only allow to remvoe mapping if not used)
+    mk_used_mapping_list = []
+    mk_not_used_mapping_list = []
+    for section in st.session_state["mk_config"].sections():
+        if section != "CONFIGURATION" and section != "DEFAULT":
+            mapping_path_list_string = st.session_state["mk_config"].get(section, "mappings", fallback="")
+            if mapping_path_list_string:
+                for mapping_path in mapping_path_list_string.split(","):
+                    mapping_path = mapping_path.strip()
+                    g_label = next((key for key, value in st.session_state["mk_g_mappings_dict"].items()
+                        if value == mapping_path), os.path.splitext(os.path.basename(mapping_path))[0])
+                    if g_label not in mk_used_mapping_list:   # only save if not duplicated
+                        mk_used_mapping_list.append(g_label)
+    for g_label in st.session_state["mk_g_mappings_dict"]:
+        if g_label not in mk_used_mapping_list:
+            mk_not_used_mapping_list.append(g_label)
 
-        if st.session_state["additional_mapping_removed_ok_flag"]:
-            with col1:
-                col1a, col1b = st.columns([2,1])
+
+    with col1b:
+        list_to_choose = ["📁 File", "🌐 URL"]
+
+        if mk_not_used_mapping_list:
+            list_to_choose.append("🗑️ Remove")
+        additional_mapping_source_option = st.radio("🖱️ Add mapping from:*", list_to_choose,
+            horizontal=True, key="key_additional_mapping_source_option")
+
+    if additional_mapping_source_option == "📁 File":
+        with col1a:
+            additional_mapping_label = st.text_input("⌨️ Enter mapping label:*", key="key_additional_mapping_label")
+
+        if additional_mapping_label in st.session_state["mk_g_mappings_dict"] or additional_mapping_label == st.session_state["g_label"]:
+            if additional_mapping_label:
+                with col1a:
+                    st.markdown(f"""<div class="error-message">
+                        ❌ Label <b>{additional_mapping_label}</b> is already in use.
+                        <small>Please, pick a different label.</small>
+                    </div>""", unsafe_allow_html=True)
+
+        elif additional_mapping_label:
+
             with col1a:
-                st.write("")
-                st.markdown(f"""<div class="success-message-flag">
-                    ✅ The <b>mapping/s</b> have been removed!
-                </div>""", unsafe_allow_html=True)
-            st.session_state["additional_mapping_removed_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
-            st.rerun()
+                uploaded_mapping = st.file_uploader(f"""🖱️ Upload mapping file:*""",
+                    key=st.session_state["key_mapping_uploader"])
 
-        with col1:
-            col1a, col1b = st.columns([2,1])
+                if uploaded_mapping:
 
-        list_to_choose =  list(reversed(list(st.session_state["mk_g_mappings_dict"].keys())))
+                    uploaded_mapping_ok_flag = True
+                    extension = os.path.splitext(uploaded_mapping.name)[1]
+                    allowed_mapping_extensions = [".ttl", ".rml.ttl", ".r2rml.ttl", ".fnml.ttl",
+                        ".rml-star.ttl", ".yaml", ".yml"]
+                    if extension not in allowed_mapping_extensions:
+                        with col1b:
+                            st.write("")
+                            st.markdown(f"""<div class="error-message">
+                                ❌ <b> File type is not valid. </b>
+                                <small>The allowed extensions are ".ttl", ".rml.ttl", ".r2rml.ttl", ".fnml.ttl",
+                                    ".rml-star.ttl", ".yaml" and ".yml".</small>
+                            </div>""", unsafe_allow_html=True)
+                            uploaded_mapping_ok_flag = False
+
+                    else:
+                        try:
+                            g = utils.load_mapping_from_file(uploaded_mapping)
+
+                            # Check for key RML predicates
+                            rml_predicates = [rdflib.URIRef("http://semweb.mmlab.be/ns/rml#logicalSource"),
+                                rdflib.URIRef("http://www.w3.org/ns/r2rml#subjectMap"),
+                                rdflib.URIRef("http://www.w3.org/ns/r2rml#predicateObjectMap")]
+
+                            found_predicates = any(p in [pred for _, pred, _ in g] for p in rml_predicates)
+                            check_g_mapping = utils.check_g_mapping(g)
+
+                            if not found_predicates:
+                                with col1b:
+                                    st.write("")
+                                    st.write("")
+                                    st.markdown(f"""<div class="error-message">
+                                            ❌ File loaded, but <b>no RML structure found</b>.
+                                            <small>Please, check your mapping content.</small>
+                                        </div>""", unsafe_allow_html=True)
+                                    uploaded_mapping_ok_flag = False
+
+                            elif check_g_mapping:
+                                with col1b:
+                                    st.write("")
+                                    st.write("")
+                                    st.markdown(f"""<div class="error-message">
+                                            {check_g_mapping}
+                                        </div>""", unsafe_allow_html=True)
+                                    uploaded_mapping_ok_flag = False
+
+                            else:
+                                with col1b:
+                                    st.write("")
+                                    st.write("")
+                                    st.markdown(f"""<div class="success-message">
+                                            ✔️ <b>Valid RML mapping<b> detected.
+                                        </div>""", unsafe_allow_html=True)
+
+                        except Exception as e:
+                            with col1b:
+                                st.write("")
+                                st.write("")
+                                st.markdown(f"""<div class="error-message">
+                                    ❌ <b> Failed to parse mapping file. </b>
+                                    <small>Complete error: {e}</small>
+                                </div>""", unsafe_allow_html=True)
+                                uploaded_mapping_ok_flag = False
+
+                    if uploaded_mapping_ok_flag:
+                        with col1a:
+                            st.button("Save", key="key_save_mapping_for_mk_button",
+                                on_click=save_mapping_for_mk)
+
+    elif additional_mapping_source_option == "🌐 URL":
+
+        with col1a:
+            additional_mapping_label = st.text_input("⌨️ Enter mapping label:*", key="key_additional_mapping_label")
+
+        if additional_mapping_label in st.session_state["mk_g_mappings_dict"] or additional_mapping_label == st.session_state["g_label"]:
+            if additional_mapping_label:
+                with col1a:
+                    st.markdown(f"""<div class="error-message">
+                        ❌ Label <b>{additional_mapping_label}</b> is already in use.
+                        <small>Please, pick a different label.</small>
+                    </div>""", unsafe_allow_html=True)
+
+        elif additional_mapping_label:
+            with col1a:
+                mapping_url = st.text_input("⌨️ Enter mapping URL:*", key="key_mapping_url")
+
+            if mapping_url:
+
+                with col1:
+                    mapping_url_ok_flag = utils.is_valid_url_mapping(mapping_url, True)
+
+                if mapping_url_ok_flag:
+                    with col1b:
+                        st.write("")
+                        st.markdown(f"""<div class="success-message">
+                                ✔️ <b>Valid RML mapping<b> detected.
+                            </div>""", unsafe_allow_html=True)
+
+                    with col1a:
+                        st.button("Save", key="key_save_mapping_for_mk_from_url_button",
+                            on_click=save_mapping_for_mk_from_url)
+
+    if additional_mapping_source_option == "🗑️ Remove":
+
+        list_to_choose =  list(reversed(mk_not_used_mapping_list))
         if len(list_to_choose) > 1:
             list_to_choose.insert(0, "Select all")
         with col1a:
-            mappings_to_remove_list = st.multiselect("🖱️ Select mappings:*",list_to_choose,
+            mappings_to_remove_list = st.multiselect("🖱️ Select mappings to remove:*",list_to_choose,
                 key="key_mappings_to_remove_list")
+
+        if len(mk_not_used_mapping_list) < len(st.session_state["mk_g_mappings_dict"]):
+            with col1b:
+                st.markdown(f"""<div class="info-message-gray">
+                        Only <b>unused mappings</b> can be removed. <small>To remove other mappings,
+                        delete the Data Sources that use them.</small>
+                    </div>""", unsafe_allow_html=True)
 
         if "Select all" in mappings_to_remove_list:
             mappings_to_remove_list = list(st.session_state["mk_g_mappings_dict"].keys())
-            with col1a:
-                if len(mappings_to_remove_list) == 1:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, the mapping <b style="color:#F63366;">
-                            {utils.format_list_for_markdown(mappings_to_remove_list)}</b>
-                            will be removed.
-                        </div>""", unsafe_allow_html=True)
-                elif len(mappings_to_remove_list) < utils.get_max_length_for_display()[5]:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, the mappings <b style="color:#F63366;">
-                            {utils.format_list_for_markdown(mappings_to_remove_list)}</b>
-                            will be removed.
-                        </div>""", unsafe_allow_html=True)
-                else:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, <b style="color:#F63366;">all mappings</b>
-                            will be removed.
-                        </div>""", unsafe_allow_html=True)
-                st.write("")
+            with col1b:
+                st.markdown(f"""<div class="warning-message">
+                        ⚠️ If you continue, <b>all mappings ({len(mappings_to_remove_list)})</b>
+                        will be removed. <small>Make sure you want to go ahead.</small>
+                    </div>""", unsafe_allow_html=True)
 
+            with col1a:
                 delete_all_mappings_checkbox = st.checkbox(
-                ":gray-badge[⚠️ I am sure I want to delete all mappings]",
-                key="key_delete_sm_class_checkbox")
+                "🔒 I am sure I want to delete all mappings",
+                key="key_delete_all_mappings_checkbox")
                 if delete_all_mappings_checkbox:
                     st.button("Remove", key="key_remove_additional_mapping_for_mk_button", on_click=remove_additional_mapping_for_mk)
 
         elif mappings_to_remove_list:
             with col1a:
-                if len(mappings_to_remove_list) == 1:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, the mapping <b style="color:#F63366;">
-                            {utils.format_list_for_markdown(mappings_to_remove_list)}</b>
-                            will be removed.
-                        </div>""", unsafe_allow_html=True)
-                elif len(mappings_to_remove_list) < utils.get_max_length_for_display()[5]:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, the mappings <b style="color:#F63366;">
-                            {utils.format_list_for_markdown(mappings_to_remove_list)}</b>
-                            will be removed.
-                        </div>""", unsafe_allow_html=True)
-                else:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ If you continue, the <b style="color:#F63366;">selected files</b>
-                            will be removed.
-                        </div>""", unsafe_allow_html=True)
-                st.write("")
-
                 delete_mappings_checkbox = st.checkbox(
-                ":gray-badge[⚠️ I am sure I want to delete the selected mapping/s]",
-                key="key_delete_sm_class_checkbox")
+                "🔒 I am sure I want to delete the selected mapping/s",
+                key="key_delete_mappings_checkbox")
                 if delete_mappings_checkbox:
                     st.button("Remove", key="key_remove_additional_mapping_for_mk_button", on_click=remove_additional_mapping_for_mk)
 
 
 
-
 #________________________________________________
 # CHECK AND GO
-with tab3:
+with tab2:
 
     col1, col2 = st.columns([2,1.5])
 
@@ -1190,6 +1082,19 @@ with tab3:
 
         with col1:
             col1a, col1b = st.columns([2.5,1])
+
+        if isinstance(st.session_state["graph_materialised_ok_flag"], list):
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                st.write("")
+                st.markdown(f"""<div class="error-message">
+                    ❌ <b>Error during materialisation.</b>
+                    <small><b>Full error: {st.session_state["graph_materialised_ok_flag"][1]}</b></small>
+                </div>""", unsafe_allow_html=True)
+            st.session_state["graph_materialised_ok_flag"] = False
+            time.sleep(st.session_state["success_display_time"]+5)
+            st.rerun()
 
         if st.session_state["graph_materialised_ok_flag"]:
             with col1:
@@ -1218,9 +1123,10 @@ with tab3:
                     mapping_path_list_string = st.session_state["mk_config"].get(section, "mappings", fallback="")
                     if mapping_path_list_string:
                         for mapping_path in mapping_path_list_string.split(","):
-                            clean_path = mapping_path.strip()
-                            g_label = os.path.splitext(os.path.basename(clean_path))[0]
-                            if g_label not in mk_used_mapping_list:
+                            mapping_path = mapping_path.strip()
+                            g_label = next((key for key, value in st.session_state["mk_g_mappings_dict"].items()
+                                if value == mapping_path), os.path.splitext(os.path.basename(mapping_path))[0])
+                            if g_label not in mk_used_mapping_list:   # only save if not duplicated
                                 mk_used_mapping_list.append(g_label)
 
             # List of all used sql databases
@@ -1260,13 +1166,29 @@ with tab3:
                             complete.<br>"""
 
             # Message on additional mappings if used
+            # Check links to additional mappings
+            mk_not_working_url_mappings_list = []
+            for section in st.session_state["mk_config"].sections():
+                if section != "CONFIGURATION" and section != "DEFAULT":
+                    mapping_path_list_string = st.session_state["mk_config"].get(section, "mappings", fallback="")
+                    if mapping_path_list_string:
+                        for mapping_path in mapping_path_list_string.split(","):
+                            if mapping_path in st.session_state["mk_g_mappings_dict"].values(): # these are the URL additional mappings
+                                if not utils.is_valid_url_mapping(mapping_path, False):
+                                    mk_not_working_url_mappings_list.append(mapping_path)
+
+
             mk_used_additional_mapping_list = mk_used_mapping_list.copy()
             if st.session_state["g_label"] in mk_used_additional_mapping_list:
                 mk_used_additional_mapping_list.remove(st.session_state["g_label"])
-            if mk_used_additional_mapping_list:
-                additional_mappings_list_for_display = utils.format_list_for_markdown(mk_used_additional_mapping_list)
+            if mk_used_additional_mapping_list and not mk_not_working_url_mappings_list:
                 inner_html_success += f"""✔️ <b>Additional mappings</b> are valid:<br>
-                    <div style="margin-left: 20px"><b><small>{additional_mappings_list_for_display}</small><br></div>"""
+                    <div style="margin-left: 20px"><b><small>
+                    {utils.format_list_for_markdown(mk_used_additional_mapping_list)}</small><br></div>"""
+            elif mk_used_additional_mapping_list:
+                inner_html_error += f"""❌ URL to <b>additional mapping/s</b> not working:<br>
+                    <div style="margin-left: 20px"><b><small>
+                    {utils.format_list_for_markdown(mk_not_working_url_mappings_list)}</small><br></div>"""
 
             # Check connections to db if used
             not_working_db_conn_list = []
@@ -1298,11 +1220,11 @@ with tab3:
                 if not ds_filename in st.session_state["ds_files_dict"]:
                     not_loaded_ds_list.append(ds_filename)
 
-            if not not_loaded_ds_list:
+            if not not_loaded_ds_list and mk_used_tab_ds_list:
                 inner_html_success += f"""✔️ All <b>tabular data sources</b> are loaded:<br>
                     <div style="margin-left: 20px"><small>
                     <b>{utils.format_list_for_markdown(mk_used_tab_ds_list)}</b></small><br></div>"""
-            else:
+            elif mk_used_tab_ds_list:
                 everything_ok_flag = False
                 with col1a:
                     if len(not_loaded_ds_list) == 1:
@@ -1310,11 +1232,12 @@ with tab3:
                             <div style="margin-left: 20px"><b><small>
                             {utils.format_list_for_markdown(not_loaded_ds_list)}</b></small><br></div>"""
                     else:
-                        inner_html_error += f"""❌ Several <b>tabular data sources</b>
+                        inner_html_error += f"""❌ Several <b>tabular data sources</b> are not loaded:
                             <div style="margin-left: 20px"><small><b>
                             {utils.format_list_for_markdown(not_loaded_ds_list)}</b></small>
                             <br></div>"""
 
+            # show check message
             with col1a:
                 if inner_html_success:
                     st.markdown(f"""<div class="success-message">
@@ -1430,7 +1353,7 @@ with tab3:
         with col1a:
             st.write("")
             reset_materialise_page_checkbox = st.checkbox(
-            ":gray-badge[⚠️ I am sure I want to reset this page]",
+            "🔒 I am sure I want to reset this page",
             key="key_reset_materialise_page_checkbox")
 
         if reset_materialise_page_checkbox:
