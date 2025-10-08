@@ -1336,7 +1336,7 @@ with tab2:
                 </div>""", unsafe_allow_html=True)
 
         with col1:
-            col1a, col1b = st.columns([2,1])
+            col1a, col1b = st.columns([1,1])
 
         if st.session_state["materialisation_page_reset_ok_flag"]:
             with col1:
@@ -1357,10 +1357,11 @@ with tab2:
             key="key_reset_materialise_page_checkbox")
 
         if reset_materialise_page_checkbox:
-            with col1a:
+            with col1b:
                 st.markdown(f"""<div class="warning-message">
                     ⚠️ If you continue, <b>everything entered in this page will be deleted</b>
                     (Data Sources, Configuration and Additional Mappings).
                     <small>Make sure you want to go ahead.</small>
                 </div>""", unsafe_allow_html=True)
+            with col1a:
                 st.button("Reset", key="key_reset_materialise_page_button", on_click=reset_materialise_page)

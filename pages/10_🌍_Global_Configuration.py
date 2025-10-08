@@ -660,10 +660,10 @@ with tab2:
 
         col1,col2 = st.columns([2,1.5])
 
-        with col2:
-            col2a,col2b = st.columns([1,2])
-        with col2b:
-            utils.get_corner_status_message()
+        # with col2:
+        #     col2a,col2b = st.columns([1,2])
+        # with col2b:
+        #     utils.get_corner_status_message()
 
 
         # Display last added namespaces in dataframe (also option to show all ns)
@@ -1236,8 +1236,8 @@ with tab3:
 
         with col2:
             col2a,col2b = st.columns([1,2])
-        with col2b:
-            utils.get_corner_status_message()
+        # with col2b:
+        #     utils.get_corner_status_message()
 
         with col2b:
             st.write("")

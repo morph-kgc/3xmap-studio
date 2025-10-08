@@ -90,8 +90,8 @@ with tab1:
 
     with col2:
         col2a,col2b = st.columns([1,2])
-    with col2b:
-        utils.get_corner_status_message()
+    # with col2b:
+    #     utils.get_corner_status_message()
 
     #PURPLE HEADING - ADD NEW TRIPLESMAP
     with col1:
@@ -882,8 +882,8 @@ with tab2:
 
     with col2:
         col2a,col2b = st.columns([1,2])
-    with col2b:
-        utils.get_corner_status_message()
+    # with col2b:
+    #     utils.get_corner_status_message()
 
     #PURPLE HEADING - ADD NEW TRIPLESMAP
     with col1:

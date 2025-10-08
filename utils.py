@@ -124,21 +124,16 @@ def import_st_aesthetics():
             color:#333333; border:1px solid #e0e0e0; font-size: 0.92em; word-wrap: break-word;}
 
     /* BLUE STATUS MESSAGE */
-            .blue-status-message {background-color: #eaf4ff; padding: 0.8em;
+            .blue-status-message {background-color: #eaf4ff; padding: 0.6em;
             border-radius: 5px; color: #0c5460; border-left: 4px solid #0c5460;
-            word-wrap: break-word;}
+            word-wrap: break-word; line-height: 1.5; font-size: 0.92em;}
 
             .blue-status-message b {color: #0c5460;}
 
     /* GRAY STATUS MESSAGE */
-            .gray-status-message {background-color:#f5f5f5; padding:1em;
+            .gray-status-message {background-color:#f5f5f5; padding: 0.6em;
             border-radius:5px; color:#2a0134; border-left:4px solid #2a0134;
-            word-wrap: break-word;}
-
-    /* GRAY STATUS MESSAGE SMALL */
-        .gray-status-message-small {background-color: #f5f5f5; padding: 0.8em;
-          border-radius: 5px; color: #2a0134; border-left: 4px solid #2a0134;
-          line-height: 1.1; word-wrap: break-word;}
+            word-wrap: break-word; line-height: 1.5; font-size: 0.92em;}
 
     /* SUCCESS MESSAGE FLAG */
         .success-message-flag {background-color: #d4edda; padding: 1em;
@@ -336,21 +331,17 @@ def import_st_aesthetics_dark_mode():
 
 
     /* BLUE STATUS MESSAGE — Dark Mode */
-        .blue-status-message {background-color: #0b1c2d; padding: 0.8em;
+        .blue-status-message {background-color: #0b1c2d; padding: 0.6em;
             border-radius: 5px; color: #b3d9ff; border-left: 4px solid #b3d9ff;
-            word-wrap: break-word;}
+            word-wrap: break-word; line-height: 1.5; font-size: 0.92em;}
 
         .blue-status-message b {color: #dceeff;}
 
     /* GRAY STATUS MESSAGE — Dark Mode */
         .gray-status-message {background-color: #1e1e1e;
-            padding: 1em; border-radius: 5px; color: #dddddd;
-            border-left: 4px solid #999999; word-wrap: break-word;}
-
-    /* GRAY STATUS MESSAGE SMALL — Dark Mode */
-        .gray-status-message-small {background-color: #1e1e1e; padding: 0.8em;
-            border-radius: 5px; color: #dddddd; border-left: 4px solid #999999; line-height: 1.1;
-            word-wrap: break-word;}
+            padding: 0.6em; border-radius: 5px; color: #dddddd;
+            border-left: 4px solid #999999; word-wrap: break-word;
+             line-height: 1.5; font-size: 0.92em;}
 
     /* SUCCESS MESSAGE FLAG — Dark Mode */
         .success-message-flag {background-color: #1e2e24; padding: 1em;
@@ -431,7 +422,7 @@ def get_corner_status_message():
     if st.session_state["g_ontology"]:
         if len(st.session_state["g_ontology_components_dict"]) > 1:
             ontology_items = '\n'.join([f"""<li><b>{ont}</b></li>""" for ont in st.session_state["g_ontology_components_dict"]])
-            st.markdown(f"""<div class="gray-status-message-small">
+            st.markdown(f"""<div class="blue-status-message">
                     <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                     style="vertical-align:middle; margin-right:8px; height:20px;">
                     You are working with mapping
@@ -442,7 +433,7 @@ def get_corner_status_message():
                     {ontology_items}
                 </ul></div>""", unsafe_allow_html=True)
         else:
-            st.markdown(f"""<div class="gray-status-message-small">
+            st.markdown(f"""<div class="blue-status-message">
                     <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                     style="vertical-align:middle; margin-right:8px; height:20px;">
                     You are working with mapping
@@ -452,7 +443,7 @@ def get_corner_status_message():
                     is loaded.
                 </div>""", unsafe_allow_html=True)
     else:
-        st.markdown(f"""<div class="gray-status-message-small">
+        st.markdown(f"""<div class="blue-status-message">
                 <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                 style="vertical-align:middle; margin-right:8px; height:20px;">
                 You are working with mapping
