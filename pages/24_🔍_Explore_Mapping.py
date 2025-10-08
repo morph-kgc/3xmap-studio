@@ -78,7 +78,7 @@ if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
 
-tab1, tab2 = st.tabs(["Predefined Searches", "SPARQL"])
+tab1, tab2, tab3 = st.tabs(["Predefined Searches", "SPARQL", "Preview"])
 
 #________________________________________________
 # PREDEFINED SEARCHES
@@ -935,3 +935,47 @@ with tab2:
                     ❌ <b> Failed to parse query. </b>
                     <small><b>Complete error:</b> {e}Y</small>
                 </div>""", unsafe_allow_html=True)
+
+
+#________________________________________________
+# PREVIEW
+with tab3:
+    st.write("")
+    st.write("")
+
+    col1, col2 = st.columns([2,1.5])
+
+    with col2:
+        col2a,col2b = st.columns([1,2])
+    # with col2b:
+    #     utils.get_corner_status_message()
+
+    #PURPLE HEADING - PREVIEW
+    with col1:
+        st.markdown("""<div class="purple-heading">
+                🔍 Preview
+            </div>""", unsafe_allow_html=True)
+        st.write("")
+
+    with col1:
+        col1a, col1b = st.columns(2)
+
+
+    list_to_choose = list(utils.get_g_mapping_file_formats_dict())
+    list_to_choose.insert(0, "Select format")
+    list_to_choose.remove("jsonld")
+
+    with col1b:
+        preview_format = st.selectbox("🖱️ Select format:*", list_to_choose, key="key_export_format_selectbox")
+
+    with col1a:
+        st.markdown(f"""<div class="gray-preview-message">
+                <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
+                style="vertical-align:middle; margin-right:8px; height:18px;">
+                 Mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b><br>
+                <small style="margin-left:26px;">{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps </small>
+            </div>""", unsafe_allow_html=True)
+
+    if preview_format != "Select format":
+        serialised_data = st.session_state["g_mapping"].serialize(format=preview_format)
+        st.code(serialised_data)
