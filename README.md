@@ -1,4 +1,6 @@
-# 3Xmap Studio
+<p align="center">
+<img src="https://raw.githubusercontent.com/morph-kgc/3xmap-studio/main/logo/logo.png" height="130" alt="3xmap-studio">
+</p>
 
 3Xmap Studio is a visual editor for **[R2RML](https://www.w3.org/TR/r2rml/)** and **[RML](https://w3id.org/rml/core/spec)** mappings. It is built with [Streamlit](https://github.com/streamlit/streamlit) and uses [Morph-KGC](https://github.com/morph-kgc/morph-kgc/) to create the knowledge graph.
 
