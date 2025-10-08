@@ -16,6 +16,7 @@ import pymysql    # another option mysql-connector-python
 import oracledb
 import pyodbc
 import sqlglot
+import requests
 
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 
@@ -112,34 +113,31 @@ def import_st_aesthetics():
                 border-radius:5px; padding:6px; margin-bottom:8px;
                 font-size:1rem; font-weight:600; color:#333333;}
 
-    /* GRAY PREVIEW MESSAGE */
-            .gray-preview-message {background-color:#f9f9f9; padding:0.7em; border-radius:5px;
-            color:#333333; border:1px solid #e0e0e0; font-size: 0.92em;}
-
     /* SUBSECTION */
         .subsection {background-color: #dcdcdc;
             border: 1px solid #e0e0e0; border-radius: 5px;
             font-size: 0.9rem; padding: 2px 6px;
             margin-top: 2px; margin-bottom: 2px;}
 
+    /* GRAY PREVIEW MESSAGE */
+            .gray-preview-message {background-color:#f9f9f9; padding:0.7em; border-radius:5px;
+            color:#333333; border:1px solid #e0e0e0; font-size: 0.92em; word-wrap: break-word;}
+
     /* BLUE STATUS MESSAGE */
-            .blue-status-message {background-color: #eaf4ff; padding: 0.8em;
-            border-radius: 5px; color: #0c5460; border-left: 4px solid #0c5460;}
+            .blue-status-message {background-color: #eaf4ff; padding: 0.6em;
+            border-radius: 5px; color: #0c5460; border-left: 4px solid #0c5460;
+            word-wrap: break-word; line-height: 1.5; font-size: 0.92em;}
 
             .blue-status-message b {color: #0c5460;}
 
     /* GRAY STATUS MESSAGE */
-            .gray-status-message {background-color:#f5f5f5; padding:1em;
-            border-radius:5px; color:#2a0134; border-left:4px solid #777777;}
-
-    /* GRAY STATUS MESSAGE SMALL */
-        .gray-status-message-small {background-color: #f5f5f5; padding: 0.8em;
-          border-radius: 5px; color: #2a0134; border-left: 4px solid #777777;
-          line-height: 1.1;}
+            .gray-status-message {background-color:#f5f5f5; padding: 0.6em;
+            border-radius:5px; color:#2a0134; border-left:4px solid #2a0134;
+            word-wrap: break-word; line-height: 1.5; font-size: 0.92em;}
 
     /* SUCCESS MESSAGE FLAG */
         .success-message-flag {background-color: #d4edda; padding: 1em;
-            border-radius: 5px; color: #155724;}
+            border-radius: 5px; color: #155724; word-wrap: break-word;}
 
         .success-message-flag b {color: #0f5132;}
 
@@ -148,25 +146,25 @@ def import_st_aesthetics():
         ;padding: 0.4em 0.6em;
         color: #155724; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
         margin: 0.5em 0; background-color: #edf7f1;
-        border-radius: 4px; box-sizing: border-box;}
+        border-radius: 4px; box-sizing: border-box; word-wrap: break-word;}
 
     .success-message b {color: #0f5132; font-weight:600;}
 
     /* WARNING MESSAGE*/
-        .warning-message {border-left: 4px solid #e0c36d;
+        .warning-message {border-left: 4px solid #6c5e2e;
             ; padding: 0.4em 0.6em;
             color: #6c5e2e; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
             margin: 0.5em 0; background-color: #fff7db;
-            border-radius: 4px; box-sizing: border-box;}
+            border-radius: 4px; box-sizing: border-box; word-wrap: break-word;}
 
         .warning-message b {color: #cc9a06; font-weight: 600;}
 
     /* ERROR MESSAGE */
-        .error-message {border-left: 4px solid #e89ca0;
+        .error-message {border-left: 4px solid #7a2e33;
             padding: 0.4em 0.6em; color: #7a2e33; font-size: 0.85em;
             font-family: "Source Sans Pro", sans-serif; margin: 0.5em 0;
             background-color: #fbe6e8; border-radius: 4px;
-            box-sizing: border-box;}
+            box-sizing: border-box; word-wrap: break-word;}
 
         .error-message b {color: #a94442; font-weight: 600;}
 
@@ -175,7 +173,7 @@ def import_st_aesthetics():
         ;padding: 0.4em 0.6em;
         color: #4d4d4d; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
         margin: 0.5em 0; background-color: #f5f5f5;
-        border-radius: 4px; box-sizing: border-box;}
+        border-radius: 4px; box-sizing: border-box; word-wrap: break-word;}
 
     .info-message-gray b {
         color: #111111; font-weight:600;}
@@ -185,7 +183,7 @@ def import_st_aesthetics():
         ;padding: 0.4em 0.6em;
         color: #0c5460; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
         margin: 0.5em 0; background-color: #eaf4ff;
-        border-radius: 4px; box-sizing: border-box;}
+        border-radius: 4px; box-sizing: border-box; word-wrap: break-word;}
 
     .info-message-blue b {
         color: #003366; font-weight:600;}
@@ -225,16 +223,16 @@ def import_st_aesthetics_dark_mode():
 
     st.markdown("""<style>
 
-    /* TABS */
+    /* TABS - dark mode*/
         /* Style tab buttons inside stTabs */
         div[data-testid="stTabs"] button[data-baseweb="tab"] {flex: 1 1 auto;
-            background-color: #555555; color: white; font-size: 25px;
+            background-color: #222222; color: white; font-size: 25px;
             padding: 1.2em; border-radius: 5px; border: none;
             margin: 6px;}
 
         /* Hover effect for tab buttons */
         div[data-testid="stTabs"] button[data-baseweb="tab"]:hover {
-            background-color: #7a4c8f;}
+            background-color: #47295c;}
 
         /* Style tab label text */
         div[data-testid="stTabs"] button[data-baseweb="tab"] > div > span {
@@ -242,7 +240,7 @@ def import_st_aesthetics_dark_mode():
 
         /* Style selected tab */
         div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] {
-            background-color: #9871b5; color: white; font-weight: bold;
+            background-color: #281634; color: white; font-weight: bold;
             box-shadow: 0 0 10px #9871b5;}
 
     /* MAIN BUTTONS (AND DOWNLOAD BUTTON) */
@@ -311,7 +309,7 @@ def import_st_aesthetics_dark_mode():
             height: 14px !important;}
 
     /* PURPLE HEADINGS — Dark Mode */
-        .purple-heading {background-color: #1a1125; border-bottom: 4px solid #d8c3f0;
+        .purple-heading {background-color: #281634; border-bottom: 4px solid #d8c3f0;
           border-radius: 5px; padding: 10px; margin-bottom: 8px;
           font-size: 1.1rem; font-weight: 600; color: #d8c3f0;}
 
@@ -320,29 +318,34 @@ def import_st_aesthetics_dark_mode():
           border-radius: 5px;   padding: 6px; margin-bottom: 8px; font-size: 1rem;
           font-weight: 600; color: #dddddd;}
 
+    /* SUBSECTION */
+        .subsection {background-color: #dcdcdc;
+            border: 1px solid #e0e0e0; border-radius: 5px;
+            font-size: 0.9rem; padding: 2px 6px;
+            margin-top: 2px; margin-bottom: 2px;}
+
     /* GRAY PREVIEW MESSAGE — Dark Mode */
         .gray-preview-message {background-color: #1c1c1c; padding: 0.7em;
-          border-radius: 5px; color: #dddddd; border: 1px solid #444444; font-size: 0.92em;}
+          border-radius: 5px; color: #dddddd; border: 1px solid #444444; font-size: 0.92em;
+          word-wrap: break-word;}
 
 
     /* BLUE STATUS MESSAGE — Dark Mode */
-        .blue-status-message {background-color: #0b1c2d; padding: 0.8em;
-            border-radius: 5px; color: #b3d9ff; border-left: 4px solid #b3d9ff;}
+        .blue-status-message {background-color: #0b1c2d; padding: 0.6em;
+            border-radius: 5px; color: #b3d9ff; border-left: 4px solid #b3d9ff;
+            word-wrap: break-word; line-height: 1.5; font-size: 0.92em;}
 
         .blue-status-message b {color: #dceeff;}
 
     /* GRAY STATUS MESSAGE — Dark Mode */
         .gray-status-message {background-color: #1e1e1e;
-            padding: 1em; border-radius: 5px; color: #dddddd;
-            border-left: 4px solid #999999;}
-
-    /* GRAY STATUS MESSAGE SMALL — Dark Mode */
-        .gray-status-message-small {background-color: #1e1e1e; padding: 0.8em;
-            border-radius: 5px; color: #dddddd; border-left: 4px solid #999999; line-height: 1.1;}
+            padding: 0.6em; border-radius: 5px; color: #dddddd;
+            border-left: 4px solid #999999; word-wrap: break-word;
+             line-height: 1.5; font-size: 0.92em;}
 
     /* SUCCESS MESSAGE FLAG — Dark Mode */
         .success-message-flag {background-color: #1e2e24; padding: 1em;
-          border-radius: 5px; color: #b2e3c7;}
+          border-radius: 5px; color: #b2e3c7; word-wrap: break-word;}
 
         .success-message-flag b {color: #7fc89e;}
 
@@ -350,7 +353,7 @@ def import_st_aesthetics_dark_mode():
     .success-message {border-left: 4px solid #b2e3c7; padding: 0.4em 0.6em;
       color: #b2e3c7; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
       margin: 0.5em 0; background-color: #1e2e24; border-radius: 4px;
-      box-sizing: border-box;}
+      box-sizing: border-box; word-wrap: break-word;}
 
     .success-message b {color: #c6edd4; font-weight: 600;}
 
@@ -358,7 +361,7 @@ def import_st_aesthetics_dark_mode():
         .warning-message {border-left: 4px solid #e0c36d; padding: 0.4em 0.6em;
           color: #e0c36d; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
           margin: 0.5em 0; background-color: #2f2a1e; border-radius: 4px;
-          box-sizing: border-box;}
+          box-sizing: border-box; word-wrap: break-word;}
 
     .warning-message b {color: #c6edd4; font-weight: 600;}
 
@@ -366,7 +369,7 @@ def import_st_aesthetics_dark_mode():
         .error-message {border-left: 4px solid #e89ca0; padding: 0.4em 0.6em;
           color: #e89ca0; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
           margin: 0.5em 0; background-color: #2d1e1f; border-radius: 4px;
-          box-sizing: border-box;}
+          box-sizing: border-box; word-wrap: break-word;}
 
         .error-message b {color: #f2b6b9; font-weight: 600;}
 
@@ -374,7 +377,7 @@ def import_st_aesthetics_dark_mode():
         .info-message-gray {border-left: 4px solid #999999; padding: 0.4em 0.6em;
           color: #cccccc; font-size: 0.85em;font-family: "Source Sans Pro", sans-serif;
           margin: 0.5em 0; background-color: #1e1e1e; border-radius: 4px;
-          box-sizing: border-box;}
+          box-sizing: border-box; word-wrap: break-word;}
 
         .info-message-gray b {color: #eeeeee; font-weight: 600;}
 
@@ -383,7 +386,7 @@ def import_st_aesthetics_dark_mode():
           padding: 0.4em 0.6em; color: #b3d9ff; font-size: 0.85em;
           font-family: "Source Sans Pro", sans-serif; margin: 0.5em 0;
           background-color: #0b1c2d; border-radius: 4px;
-          box-sizing: border-box;}
+          box-sizing: border-box; word-wrap: break-word;}
 
         .info-message-blue b {color: #dceeff; font-weight: 600;}
 
@@ -419,18 +422,18 @@ def get_corner_status_message():
     if st.session_state["g_ontology"]:
         if len(st.session_state["g_ontology_components_dict"]) > 1:
             ontology_items = '\n'.join([f"""<li><b>{ont}</b></li>""" for ont in st.session_state["g_ontology_components_dict"]])
-            st.markdown(f"""<div class="gray-status-message-small">
+            st.markdown(f"""<div class="blue-status-message">
                     <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                     style="vertical-align:middle; margin-right:8px; height:20px;">
                     You are working with mapping
                     <b>{st.session_state["g_label"]}</b>.<br> <br>
-                    🧩 Your <b>ontology</b> is the merger of:
+                    🧩 You are working with the <b>ontologies</b>:
                     <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
                 <ul>
                     {ontology_items}
                 </ul></div>""", unsafe_allow_html=True)
         else:
-            st.markdown(f"""<div class="gray-status-message-small">
+            st.markdown(f"""<div class="blue-status-message">
                     <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                     style="vertical-align:middle; margin-right:8px; height:20px;">
                     You are working with mapping
@@ -440,7 +443,7 @@ def get_corner_status_message():
                     is loaded.
                 </div>""", unsafe_allow_html=True)
     else:
-        st.markdown(f"""<div class="gray-status-message-small">
+        st.markdown(f"""<div class="blue-status-message">
                 <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                 style="vertical-align:middle; margin-right:8px; height:20px;">
                 You are working with mapping
@@ -498,17 +501,17 @@ def get_max_length_for_display():
 # We define these first because they will be needed in this page
 #_________________________________________________________
 # Function to get a base iri for our application
-def get_rdforge_base_iri():
-    return "http://rdforge.org/mapping/"
+def get_rdfolio_base_iri():
+    return "http://rdfolio.org/mapping/"
 #________________________________________________________
 
 #_________________________________________________________
 # Function to get the default base iri for the structural components
 def get_default_structural_ns():
 
-    default_structural_ns = utils.get_rdforge_base_iri()
+    default_structural_ns = utils.get_rdfolio_base_iri()
 
-    return ["rdforge", Namespace(default_structural_ns)]
+    return ["rdfolio", Namespace(default_structural_ns)]
 #________________________________________________________
 
 #_________________________________________________________
@@ -573,10 +576,10 @@ def get_predefined_ns_dict():
         "vann": Namespace("http://purl.org/vocab/vann/"),
         "qb": Namespace("http://purl.org/linked-data/cube#"),
         "void": Namespace("http://rdfs.org/ns/void#"),
-        "map": Namespace(get_rdforge_base_iri() + "/mapping#"),
-        "class": Namespace(get_rdforge_base_iri() + "/class#"),
-        "resource": Namespace(get_rdforge_base_iri() + "/resource#"),
-        "logicalSource": Namespace(get_rdforge_base_iri() + "/logicalSource#")}
+        "map": Namespace(get_rdfolio_base_iri() + "/mapping#"),
+        "class": Namespace(get_rdfolio_base_iri() + "/class#"),
+        "resource": Namespace(get_rdfolio_base_iri() + "/resource#"),
+        "logicalSource": Namespace(get_rdfolio_base_iri() + "/logicalSource#")}
 
     default_ns_dict = get_default_ns_dict()
     predefined_ns_dict = {k: Namespace(v) for k, v in all_predefined_ns_dict.items() if (k not in default_ns_dict)}
@@ -612,6 +615,18 @@ def get_ontology_ns_dict():
 #_________________________________________________________
 # Funtion to get dictionary {prefix: namespace} bound in the ontology
 # It will ignore the default namespaces
+def get_ontology_component_ns_dict(g_ont_component):
+
+    default_ns_dict = get_default_ns_dict()
+    ontology_component_ns_dict = dict(g_ont_component.namespace_manager.namespaces())
+    ontology_component_ns_dict = {k: Namespace(v) for k, v in ontology_component_ns_dict.items() if (k not in default_ns_dict)}
+
+    return ontology_component_ns_dict
+#_________________________________________________________
+
+#_________________________________________________________
+# Funtion to get dictionary {prefix: namespace} bound in the ontology
+# It will ignore the default namespaces
 def get_mapping_ns_dict():
 
     default_ns_dict = get_default_ns_dict()
@@ -619,6 +634,18 @@ def get_mapping_ns_dict():
     mapping_ns_dict = {k: Namespace(v) for k, v in all_mapping_ns_dict.items() if (k not in default_ns_dict and v != URIRef("None"))}   # without default ns
     # last condition added so that it will not show unbound namespaces
     # mapping_ns_dict = mapping_ns_dict | default_ns_dict
+
+    return mapping_ns_dict
+#_________________________________________________________
+
+#_________________________________________________________
+# Funtion to get dictionary {prefix: namespace} bound in the ontology
+# It will ignore the default namespaces
+def get_mapping_ns_dict_w_default():
+
+    all_mapping_ns_dict = dict(st.session_state["g_mapping"].namespace_manager.namespaces())
+    mapping_ns_dict = {k: Namespace(v) for k, v in all_mapping_ns_dict.items() if v != URIRef("None")}   # without default ns
+    # last condition added so that it will not show unbound namespaces
 
     return mapping_ns_dict
 #_________________________________________________________
@@ -672,39 +699,6 @@ def empty_last_added_lists():
     st.session_state["last_added_tm_list"] = []
     st.session_state["last_added_sm_list"] = []
     st.session_state["last_added_pom_list"] = []
-
-#_______________________________________________________
-#Funcion to save mapping to file
-#HERE check all formats work
-def save_mapping_to_file(filename):
-
-    save_mappings_folder = os.path.join(os.getcwd(), "saved_mappings")  #folder to save mappings
-    if not os.path.isdir(save_mappings_folder):   # create folder if it does not exist
-        os.makedirs(save_mappings_folder)
-
-    ext = os.path.splitext(filename)[1].lower()  #file extension
-
-    file_path = save_mappings_folder + "\\" + filename
-
-    if ext == ".pkl":
-        with open(file_path, "wb") as f:    # save current mapping to pkl file
-            pickle.dump(st.session_state["g_mapping"], f)
-
-    elif ext in [".json", ".jsonld"]:
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(st.session_state["g_mapping"], f, indent=2)
-
-    elif ext in [".ttl", ".rdf", ".xml", ".nt", ".n3", ".trig", ".trix"]:
-        rdf_format_dict = {".ttl": "turtle", ".rdf": "xml",
-            ".xml": "xml", ".nt": "nt", ".n3": "n3",
-            ".trig": "trig", ".trix": "trix"}
-
-        st.session_state["g_mapping"].serialize(destination=file_path, format=rdf_format_dict[ext])
-
-    else:
-        raise ValueError(f"Unsupported file extension: {ext}")   #should not occur
-
-#__________________________________________________
 
 #_______________________________________________________
 #Funcion to load mapping from file
@@ -880,7 +874,20 @@ def parse_ontology(source):
         except:
             continue
 
+    # If it fails, we try to parse downloading the content using requests
+    # (it automatically handles HTTP compression)
+    for fmt in ["xml", "turtle", "jsonld", "ntriples", "trig", "trix"]:
+        try:
+            response = requests.get(source)
+            response.encoding = 'utf-8'  # Ensure correct decoding
+            g = Graph()
+            g.parse(data=response.text, format=fmt)
+            return [g, fmt]
+        except:
+            continue
+
     return [Graph(), None]
+
 #___________________________________________________________________________________
 
 #___________________________________________________________________________________
@@ -950,8 +957,20 @@ def check_ontology_overlap(g1, g2):
     return bool(common)
 #___________________________________________________________________________________
 
+#___________________________________________________________________________________
+#Function to find duplicated namespaces
+def get_duplicated_ns(d):
+    value_to_keys = {}
+    for key, value in d.items():
+        if value in value_to_keys:
+            value_to_keys[value].append(key)
+        else:
+            value_to_keys[value] = [key]
 
-
+    # Filter to values that appear more than once
+    duplicates = {value: keys for value, keys in value_to_keys.items() if len(keys) > 1}
+    return duplicates
+#________________________________________________________
 
 
 #________________________________________________________
@@ -1453,8 +1472,8 @@ def get_pom_dict():
         predicate = st.session_state["g_mapping"].value(pom_iri, RR.predicate)
         om_iri = st.session_state["g_mapping"].value(pom_iri, RR.objectMap)
 
-        template = st.session_state["g_mapping"].value(om_iri, RML.template)
-        constant = st.session_state["g_mapping"].value(om_iri, RML.constant)
+        template = st.session_state["g_mapping"].value(om_iri, RR.template)
+        constant = st.session_state["g_mapping"].value(om_iri, RR.constant)
         reference = st.session_state["g_mapping"].value(om_iri, RML.reference)
 
         pom_id_iri = None
@@ -1894,7 +1913,7 @@ def check_g_mapping(g):
 
         max_length = utils.get_max_length_for_display()[5]
 
-        inner_html = f"""The mapping <b>{st.session_state["g_label"]}</b> is incomplete!
+        inner_html = f"""The <b>mapping</b> is incomplete!
             <br>"""
 
         if tm_wo_sm_list:
@@ -1978,197 +1997,71 @@ def get_node_label(node):
 
 #_________________________________________________
 
+#_________________________________________________
+# Funtion to check a mapping loaded from URL is ok
+def is_valid_url_mapping(mapping_url, show_info):
+    mapping_url_ok_flag = True
 
+    try:
+        # Fetch content
+        response = requests.get(mapping_url)
+        response.raise_for_status()
+        url_mapping = response.text
 
+        # Check extension
+        if mapping_url.endswith((".ttl", ".rml.ttl", ".r2rml.ttl", ".fnml.ttl", ".rml-star.ttl")):
+            # Step 3a: Parse as RDF
+            g = rdflib.Graph()
+            g.parse(data=url_mapping, format="turtle")
+
+            # Look for RML/R2RML predicates
+            rml_predicates = [
+                rdflib.URIRef("http://semweb.mmlab.be/ns/rml#logicalSource"),
+                rdflib.URIRef("http://www.w3.org/ns/r2rml#subjectMap"),
+                rdflib.URIRef("http://www.w3.org/ns/r2rml#predicateObjectMap")]
+
+            found = any(p in [pred for _, pred, _ in g] for p in rml_predicates)
+
+            if not found:
+                if show_info:
+                    st.markdown(f"""<div class="error-message">
+                            ❌ Link working, but <b>no RML structure found</b>.
+                            <small>Please, check your mapping content.</small>
+                        </div>""", unsafe_allow_html=True)
+                mapping_url_ok_flag = False
+
+        elif url.endswith((".yaml", ".yml")):
+            # Parse as YAML
+            data = yaml.safe_load(url_mapping)
+
+            # Check for YARRRML structure
+            if not "mappings" in data and isinstance(data["mappings"], dict):
+                if show_info:
+                    st.markdown(f"""<div class="error-message">
+                            ❌ Link working, but <b>no YARRRML structure found</b>.
+                            <small>Please, check your mapping content.</small>
+                        </div>""", unsafe_allow_html=True)
+                mapping_url_ok_flag = False
+
+        else:
+            if show_info:
+                st.markdown(f"""<div class="error-message">
+                    ❌ <b>Extension is not valid</b>.
+                </div>""", unsafe_allow_html=True)
+            mapping_url_ok_flag = False
+
+    except Exception as e:
+        if show_info:
+            st.markdown(f"""<div class="error-message">
+                ❌ <b>Validation failed.</b><br>
+                <small><b>Full error:</b> {e}</small>
+            </div>""", unsafe_allow_html=True)
+        mapping_url_ok_flag = False
+
+    return mapping_url_ok_flag
+
+#_________________________________________________
 #HEREIGO
-
-
-
-
-
-
-#______________________________________________
-#Directories    #REFACTORING - Unused, but could be interesting to check if the permissions are correct
-def check_directories():
-    save_progress_folder = os.path.join(os.getcwd(), "saved_mappings")  #folder to save mappings (pkl)
-    export_folder = os.path.join(os.getcwd(), "exported_mappings")    #filder to export mappings (ttl and others)
-    if not os.path.exists(save_progress_folder):
-        st.markdown(f"""<div style="background-color:#f8d7da; padding:1em;
-            border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-            🚫 The folder <b style="color:#c82333;">
-            saved_mappings</b> does not exist and must be created!
-            </div>""", unsafe_allow_html=True)
-        st.stop()
-
-    if not os.access(save_progress_folder, os.R_OK | os.W_OK):
-        st.markdown(f"""
-            <div style="background-color:#f8d7da; padding:1em;
-            border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-            🚫 No read/write permission for <b style="color:#c82333;">
-            saved_mappings</b> folder!
-            </div>""", unsafe_allow_html=True)
-        st.stop()
-
-    if not os.path.exists(export_folder):
-        st.markdown(f"""
-            <div style="background-color:#f8d7da; padding:1em;
-            border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-            🚫 The folder <b style="color:#c82333;">
-            exported_mappings</b> does not exist and must be created!
-            </div>""", unsafe_allow_html=True)
-        st.stop()
-
-    if not os.access(export_folder, os.R_OK | os.W_OK):
-        st.markdown(f"""
-            <div style="background-color:#f8d7da; padding:1em;
-            border-radius:5px; color:#721c24; border:1px solid #f5c6cb;">
-            🚫 No read/write permission for <b style="color:#c82333;">
-            export</b> folder!
-            </div>""", unsafe_allow_html=True)
-        st.stop()
-
-#__________________________________________
-
-#_________________________________________________________
-#Confirm button
-def get_confirm_button():
-    col1,col2,col3 = st.columns([1,1,10])
-    with col1:
-        button_YES = st.button("Yes")
-    with col2:
-        button_NO = st.button("No")
-    if button_YES:
-        return True
-    if button_NO:
-        return False
-
-#_________________________________________________
-#Allowed data formats
-def get_ds_allowed_formats():
-    allowed_tab_formats_list = (".csv",".json", ".xml")
-    return allowed_tab_formats_list
-
-
-#_________________________________________________
-
-
-#________________________________________________
-#Update DICTIONARIES
-#This should be deleted HERE
-def update_dictionaries():
-
-    st.session_state["tmap_dict"] = {}
-    st.session_state["data_source_dict"] = {}
-    st.session_state["subject_dict"] = {}
-    st.session_state["ns_dict"] = {}
-
-    if st.session_state["g_label"]:
-
-        # {TripleMap label: TripleMap}
-        triples_maps = list(st.session_state["g_mapping"].subjects(RML.logicalSource, None))
-        for tm in triples_maps:
-            tm_label = split_uri(tm)[1]
-            st.session_state["tmap_dict"][tm_label] = tm
-
-        # {TripleMap label: data source}
-        for tmap_label, tmap_node in st.session_state["tmap_dict"].items():
-            data_source = get_data_source_file(st.session_state["g_mapping"], tmap_node)
-            st.session_state["data_source_dict"][tmap_label] = data_source
-
-        # {prefix: namespace}  namespaces bound to g_mapping
-        st.session_state["g_mapping_ns_dict_including_default"] = dict(st.session_state["g_mapping"].namespace_manager.namespaces())
-
-        # {prefix: namespace} only custom
-        default_ns_dict = get_default_ns_dict()
-        all_mapping_ns_dict = dict(st.session_state["g_mapping"].namespace_manager.namespaces())
-        st.session_state["g_mapping_ns_dict"] = {k: v for k, v in all_mapping_ns_dict.items() if (k not in default_ns_dict and v != URIRef("None"))}
-
-        # {prefix: namespace} only ontology
-        st.session_state["ontology_ns_dict"] = dict(st.session_state["g_ontology"].namespace_manager.namespaces())
-
-        # {prefix: namespace} custom+ontology
-        st.session_state["ns_dict"] = st.session_state["g_mapping_ns_dict"] | st.session_state["ontology_ns_dict"]
-
-        # subject dictionary   {tm label: [subject_label, subject_id, subject_type]}
-        st.session_state["subject_dict"] = {}
-        triples_maps = list(st.session_state["g_mapping"].subjects(RML.logicalSource, None))
-        for tm in triples_maps:
-            tm_label = split_uri(tm)[1]
-            sm_iri = st.session_state["g_mapping"].value(tm, RR.subjectMap)
-
-            subject = None
-            subject_type = None
-            subject_id = None
-
-            template = st.session_state["g_mapping"].value(sm_iri, RML.template)
-            constant = st.session_state["g_mapping"].value(sm_iri, RML.constant)
-            reference = st.session_state["g_mapping"].value(sm_iri, RML.reference)
-
-            if isinstance(sm_iri, URIRef):
-                subject_label = split_uri(sm_iri)[1]
-            elif isinstance(sm_iri, BNode):
-                subject_label = "_:" + str(sm_iri)[:7] + "..."
-            else:
-                subject_label = "Unlabelled"
-
-            if template:
-                matches = re.findall(r"{([^}]+)}", template)   #splitting template is not so easy but we try
-                if matches:
-                    subject = str(template)
-                    subject_type = "template"
-                    subject_id = str(matches[-1])
-                else:
-                    subject = str(template)
-                    subject_type = "template"
-                    subject_id = str(template)
-
-            elif constant:
-                subject = str(constant)
-                subject_type = "constant"
-                subject_id = str(split_uri(constant)[1])
-
-            elif reference:
-                subject = str(reference)
-                subject_type = "reference"
-                subject_id = str(reference)
-
-            st.session_state["subject_dict"][tm_label] = [subject, subject_id, subject_type, subject_label]   # add to dict
-#___________________________________________
-
-
-#___________________________________________________________________________________
-#Functions to get the file name and path of the data source files  HERE FIX
-
-def get_ds_full_path(filename):
-    folder_path = get_ds_folder_path()
-    full_path = os.path.join(folder_path, filename)
-    return full_path
-
-def get_ds_folder_path():
-    folder_path = os.path.abspath(".\\data_sources")
-    return folder_path
-
-def get_g_full_path(filename):
-    folder_path = get_g_folder_path()
-    full_path = os.path.join(folder_path, filename)
-    return full_path
-
-def get_g_folder_path():
-    folder_path = os.path.abspath(".\\saved_mappings")
-    return folder_path
-
-def show_ds_file_path_success():   #FIX HERE
-    graph_filename = get_filename()
-    st.markdown(
-    f"""<span style="color:grey; font-size:16px;">
-    <div style="line-height: 1.5;border: 1px solid blue; padding: 10px; border-radius: 5px;">
-    You are currently working with the file
-    <span style="color:blue; font-weight:bold;">{graph_filename}</span>.
-    To change the file go to \"Select graph\".</div></span>
-    """,
-    unsafe_allow_html=True)
-
-#___________________________________________
 
 
 

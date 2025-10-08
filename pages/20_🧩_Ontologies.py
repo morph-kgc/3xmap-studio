@@ -95,9 +95,17 @@ RML, RR, QL = utils.get_required_ns().values()
 
 # TAB1
 def load_ontology_from_link():
+    # load ontology
     st.session_state["g_ontology"] = st.session_state["g_ontology_from_link_candidate"]  # consolidate ontology graph
     st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_link=st.session_state["key_ontology_link"])
-    #store information___________________________
+    # bind ontology namespaces
+    ontology_ns_dict = utils.get_ontology_ns_dict()
+    mapping_ns_dict = utils.get_mapping_ns_dict()
+    for prefix in ontology_ns_dict:
+        if prefix not in mapping_ns_dict:
+            st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
+            st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
+    # store information___________________________
     st.session_state["g_ontology_loaded_ok_flag"] = True
     st.session_state["g_ontology_components_dict"][st.session_state["g_ontology_label"]]=st.session_state["g_ontology"]
     # reset fields___________________________
@@ -105,9 +113,17 @@ def load_ontology_from_link():
     st.session_state["ontology_link"] = ""
 
 def load_ontology_from_file():
+    # load ontology
     st.session_state["g_ontology"] = st.session_state["g_ontology_from_file_candidate"]  # consolidate ontology graph
     st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_file=st.session_state["ontology_file"])
-    #store information___________________________
+    # bind ontology namespaces
+    ontology_ns_dict = utils.get_ontology_ns_dict()
+    mapping_ns_dict = utils.get_mapping_ns_dict()
+    for prefix in ontology_ns_dict:
+        if prefix not in mapping_ns_dict:
+            st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
+            st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
+    # store information___________________________
     st.session_state["g_ontology_loaded_ok_flag"] = True
     st.session_state["g_ontology_components_dict"][st.session_state["g_ontology_label"]]=st.session_state["g_ontology"]
     # reset fields___________________________
@@ -115,8 +131,16 @@ def load_ontology_from_file():
     st.session_state["ontology_file"] = None
 
 def extend_ontology_from_link():
+    # load ontology
     g_ontology_new_part = st.session_state["g_ontology_from_link_candidate"]
     g_ontology_new_part_label = utils.get_ontology_human_readable_name(g_ontology_new_part, source_link=st.session_state["key_ontology_link"])
+    # bind ontology namespaces
+    ontology_ns_dict = utils.get_ontology_component_ns_dict(g_ontology_new_part)
+    mapping_ns_dict = utils.get_mapping_ns_dict()
+    for prefix in ontology_ns_dict:
+        if prefix not in mapping_ns_dict:
+            st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
+            st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
     #store information___________________________
     st.session_state["g_ontology_loaded_ok_flag"] = True
     st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
@@ -131,11 +155,19 @@ def extend_ontology_from_link():
     st.session_state["key_extend_ontology_selected_option"] = "🌐 URL"
 
 def extend_ontology_from_file():
+    # load ontology
     g_ontology_new_part = st.session_state["g_ontology_from_file_candidate"]
     g_ontology_new_part_label = utils.get_ontology_human_readable_name(g_ontology_new_part, source_file=st.session_state["ontology_file"])
     #store information___________________________
     st.session_state["g_ontology_loaded_ok_flag"] = True
     st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
+    # bind ontology namespaces
+    ontology_ns_dict = utils.get_ontology_component_ns_dict(g_ontology_new_part)
+    mapping_ns_dict = utils.get_mapping_ns_dict()
+    for prefix in ontology_ns_dict:
+        if prefix not in mapping_ns_dict:
+            st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
+            st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
     # merge both ontologies___________________
     for triple in g_ontology_new_part:
         st.session_state["g_ontology"].add(triple)
@@ -261,13 +293,15 @@ with tab1[0]:
                 st.session_state["g_ontology_from_link_candidate_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_from_link_candidate"], source_link=st.session_state["ontology_link"])
 
                 if not utils.is_valid_ontology(g_candidate):
-                    with col1b:
+                    with col1a:
                         st.markdown(f"""<div class="error-message">
                             ❌ URL <b>does not</b> link to a valid ontology.
                         </div>""", unsafe_allow_html=True)
                         st.write("")
 
                 else:
+                    with col1:
+                        col1a, col1b = st.columns(2)
 
                     with col1b:
                         st.markdown(f"""<div class="success-message">
@@ -276,6 +310,7 @@ with tab1[0]:
                                 <small>(parsed successfully with format
                                 <b>{st.session_state["g_ontology_from_link_candidate_fmt"]}.</b>)</small>
                             </div>""", unsafe_allow_html=True)
+
                     with col1a:
                         st.button("Add", key="key_load_ontology_from_link_button", on_click=load_ontology_from_link)
 
@@ -344,21 +379,25 @@ with tab1[0]:
                 st.session_state["g_ontology_from_link_candidate_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_from_link_candidate"], source_link=st.session_state["ontology_link"])
 
                 if not utils.is_valid_ontology(g_candidate):
-                    with col1b:
+                    with col1a:
                         st.markdown(f"""<div class="error-message">
                             ❌ URL <b>does not</b> link to a valid ontology.
                         </div>""", unsafe_allow_html=True)
 
                 elif st.session_state["g_ontology_from_link_candidate_label"] in st.session_state["g_ontology_components_dict"]:
-                    with col1b:
+                    with col1a:
                         st.markdown(f"""<div class="error-message">
-                                ⚠️ The ontology <b>
+                                ❌ The ontology <b>
                                 {st.session_state["g_ontology_from_link_candidate_label"]}</b>
                                 has been already imported.
                             </div>""", unsafe_allow_html=True)
 
                 else:
+                    with col1:
+                        col1a, col1b, col1c = st.columns([1,1.8,1.8])
                     with col1a:
+                        st.button("Add", key="key_extend_ontology_from_link_button", on_click=extend_ontology_from_link)
+                    with col1c:
                         st.markdown(f"""<div class="success-message">
                                 ✔️ <b>Valid ontology:</b> <b style="color:#F63366;">
                                 {st.session_state["g_ontology_from_link_candidate_label"]}</b>
@@ -369,11 +408,11 @@ with tab1[0]:
                     if utils.check_ontology_overlap(st.session_state["g_ontology_from_link_candidate"], st.session_state["g_ontology"]):
                         with col1b:
                             st.markdown(f"""<div class="warning-message">
-                                    ⚠️ <b>Ontologies overlap</b>. <small>Check your ontologies
+                                    ⚠️ <b>Ontologies overlap</b>. <small>Check them
                                     externally to make sure they are aligned and compatible.</small>
                                 </div>""", unsafe_allow_html=True)
-                    with col1a:
-                        st.button("Add", key="key_extend_ontology_from_link_button", on_click=extend_ontology_from_link)
+                    # with col1a:
+                    #     st.button("Add", key="key_extend_ontology_from_link_button", on_click=extend_ontology_from_link)
 
 
 
@@ -395,17 +434,14 @@ with tab1[0]:
 
                 if not utils.is_valid_ontology(g_candidate):
                     with col1b:
-                        st.write("")
-                        st.write("")
                         st.markdown(f"""<div class="error-message">
                             ❌ File <b>does not</b> contain a valid ontology.
                         </div>""", unsafe_allow_html=True)
-                        st.write("")
 
                 elif st.session_state["g_ontology_from_file_candidate_label"] in st.session_state["g_ontology_components_dict"]:
                     with col1b:
                         st.markdown(f"""<div class="error-message">
-                                ⚠️ The ontology <b>
+                                ❌ The ontology <b>
                                 {st.session_state["g_ontology_from_file_candidate_label"]}</b>
                                 has been already imported.
                             </div>""", unsafe_allow_html=True)
@@ -414,7 +450,6 @@ with tab1[0]:
                     with col1a:
                         st.button("Add", key="key_extend_ontology_from_file_button", on_click=extend_ontology_from_file)
                     with col1b:
-                        st.write("")
                         st.markdown(f"""<div class="success-message">
                                 ✔️ <b>Valid ontology:</b> <b style="color:#F63366;">
                                 {st.session_state["g_ontology_from_file_candidate_label"]}</b><br>
@@ -424,9 +459,8 @@ with tab1[0]:
 
                     if utils.check_ontology_overlap(st.session_state["g_ontology_from_file_candidate"], st.session_state["g_ontology"]):
                         with col1b:
-                            st.write("")
                             st.markdown(f"""<div class="warning-message">
-                                    ⚠️ <b>Ontologies overlap</b>. <small>Check your ontologies
+                                    ⚠️ <b>Ontologies overlap</b>. <small>Check them
                                     externally to make sure they are aligned and compatible.</small>
                                 </div>""", unsafe_allow_html=True)
                             st.write("")
@@ -452,20 +486,21 @@ with tab1[0]:
                 key="key_ontologies_to_drop_list")
 
         if ontologies_to_drop_list:
-            with col1a:
-                if "Select all" in ontologies_to_drop_list:
+            if "Select all" in ontologies_to_drop_list:
+                with col1b:
                     st.markdown(f"""<div class="warning-message">
                         ⚠️ You are deleting <b>all ontologies ({len(st.session_state["g_ontology_components_dict"])})</b>.
                         <small>Make sure you want to go ahead.</small>
                     </div>""", unsafe_allow_html=True)
-                    st.write("")
+                with col1a:
                     reduce_ontology_checkbox = st.checkbox(
-                    ":gray-badge[⚠️ I am sure I want to drop all the ontologies]",
+                    f"""🔒 I am sure I want to drop all the ontologies""",
                     key="key_reduce_ontology_checkbox")
-                    ontologies_to_drop_list = list(st.session_state["g_ontology_components_dict"].keys())
-                else:
+                ontologies_to_drop_list = list(st.session_state["g_ontology_components_dict"].keys())
+            else:
+                with col1a:
                     reduce_ontology_checkbox = st.checkbox(
-                    ":gray-badge[⚠️ I am sure I want to drop the selected ontologies]",
+                    f"""🔒 I am sure I want to drop the selected ontologies""",
                     key="key_reduce_ontology_checkbox")
 
             if reduce_ontology_checkbox:

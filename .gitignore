@@ -1,11 +1,7 @@
 __pycache__/
 
-examples/
-
 /*_cache__.pkl
 
 saved_mappings/
-
 saved_sessions/
-
-data_sources
+data_sources/
