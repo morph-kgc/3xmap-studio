@@ -707,7 +707,7 @@ with tab2:
         # PURPLE HEADING - ADD A NEW NAMESPACE
         with col1:
             st.markdown("""<div class="purple-heading">
-                    🆕 Add a New Namespace
+                    🆕 Add New Namespace
                 </div>""", unsafe_allow_html=True)
             st.write("")
 
@@ -853,7 +853,7 @@ with tab2:
 
         elif add_ns_selected_option == "🧩 Ontology":
             with col1:
-                col1a, col1b = st.columns([2,1])
+                col1a, col1b = st.columns(2)
 
             there_are_ontology_ns_unbound_flag = False
             ontology_ns_dict = utils.get_ontology_ns_dict()
@@ -869,6 +869,38 @@ with tab2:
                     </div>""", unsafe_allow_html=True)
                     st.write("")
             else:
+                default_ns = list(utils.get_default_ns_dict())
+                prefixes = [prefix for prefix, _ in st.session_state["g_ontology"].namespace_manager.namespaces() if prefix not in default_ns]
+                st.write("HERE", "complete ont", len(prefixes), prefixes)
+
+
+                for ont_label, ont in st.session_state["g_ontology_components_dict"].items():
+                    default_ns = list(utils.get_default_ns_dict())
+                    prefixes = [prefix for prefix, _ in ont.namespace_manager.namespaces() if prefix not in default_ns]
+                    st.write("HERE", ont_label, len(prefixes), prefixes)
+
+
+                g_ont_components_w_unbound_ns = []
+                g_ont_components_wo_unbound_ns = []
+                for ont_label, ont in st.session_state["g_ontology_components_dict"].items():
+                    for prefix, ns in ont.namespace_manager.namespaces():
+                        if prefix not in default_ns:
+                            if not prefix in mapping_ns_dict:
+                                g_ont_components_w_unbound_ns.append(utils.get_ontology_tag(ont_label))
+                                break
+                for ont_label in st.session_state["g_ontology_components_dict"]:
+                    if ont_label not in g_ont_components_w_unbound_ns:
+                        g_ont_components_wo_unbound_ns.append(utils.get_ontology_tag(ont_label))
+
+                with col1a:
+                    st.markdown(f"""<div class="info-message-gray">
+                        🔒 Ontologies with all <b>namespaces bound</b>:
+                        {utils.format_list_for_markdown(g_ont_components_wo_unbound_ns)}
+                    </div>""", unsafe_allow_html=True)
+
+                with col1a:
+                    ontology_filter_for_ns = st.multiselect("🖱️ Filter by ontologies (optional):", g_ont_components_w_unbound_ns,
+                        key="key_ontology_filter_for_ns")
 
                 with col1a:
                     ontology_ns_list = [key for key in ontology_ns_dict if key not in mapping_ns_dict]
