@@ -934,15 +934,13 @@ def get_ontology_human_readable_name(g, source_link=None, source_file=None):
 def get_ontology_tag(g_label):
 
     g = st.session_state["g_ontology_components_dict"][g_label]
-    g_intology_label = get_ontology_human_readable_name(g)
     g_ontology_iri = next(g.subjects(RDF.type, OWL.Ontology), None)
-
 
     if g_ontology_iri:
         prefix = g.namespace_manager.compute_qname(g_ontology_iri)[0]
         return prefix
 
-    return g_ontology_label[:4]
+    return g_label[:4]
 #___________________________________________________________________________________
 
 #___________________________________________________________________________________
