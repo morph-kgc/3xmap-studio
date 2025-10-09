@@ -870,14 +870,14 @@ with tab2:
                     st.write("")
             else:
                 default_ns = list(utils.get_default_ns_dict())
-                prefixes = [prefix for prefix, _ in st.session_state["g_ontology"].namespace_manager.namespaces() if prefix not in default_ns]
-                st.write("HERE", "complete ont", len(prefixes), prefixes)
+                # prefixes = [prefix for prefix, _ in st.session_state["g_ontology"].namespace_manager.namespaces() if prefix not in default_ns]
+                # st.write("HERE", "complete ont", len(prefixes), prefixes)
 
 
-                for ont_label, ont in st.session_state["g_ontology_components_dict"].items():
-                    default_ns = list(utils.get_default_ns_dict())
-                    prefixes = [prefix for prefix, _ in ont.namespace_manager.namespaces() if prefix not in default_ns]
-                    st.write("HERE", ont_label, len(prefixes), prefixes)
+                # for ont_label, ont in st.session_state["g_ontology_components_dict"].items():
+                #     default_ns = list(utils.get_default_ns_dict())
+                #     prefixes = [prefix for prefix, _ in ont.namespace_manager.namespaces() if prefix not in default_ns]
+                #     st.write("HERE", ont_label, len(prefixes), prefixes)
 
 
                 g_ont_components_w_unbound_ns = []
@@ -888,9 +888,12 @@ with tab2:
                             if not prefix in mapping_ns_dict:
                                 g_ont_components_w_unbound_ns.append(utils.get_ontology_tag(ont_label))
                                 break
+
                 for ont_label in st.session_state["g_ontology_components_dict"]:
-                    if ont_label not in g_ont_components_w_unbound_ns:
+                    if utils.get_ontology_tag(ont_label) not in g_ont_components_w_unbound_ns:
                         g_ont_components_wo_unbound_ns.append(utils.get_ontology_tag(ont_label))
+
+                st.write("HERE", g_ont_components_w_unbound_ns, g_ont_components_wo_unbound_ns)
 
                 with col1a:
                     st.markdown(f"""<div class="info-message-gray">
