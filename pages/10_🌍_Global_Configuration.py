@@ -238,17 +238,7 @@ def bind_ontology_namespaces():
     # reset fields_____________________________
     st.session_state["key_ontology_ns_to_bind_multiselect"] = []
     st.session_state["key_add_ns_radio"] = "🧩 Ontology"
-
-def bind_all_ontology_namespaces():
-    # bind and store information___________________________
-    for prefix in ontology_ns_dict:
-        if prefix not in mapping_ns_dict:
-            st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
-            st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
-    st.session_state["ns_bound_ok_flag"] = True   # for success message
-    # reset fields_____________________________
-    st.session_state["key_add_ns_radio"] = "🧩 Ontology"
-    # st.session_state["key_add_ns_radio"] = "✏️ Custom"
+    st.session_state["key_ontology_filter_for_ns"] = "Select ontology"
 
 def change_structural_ns():
     # unbind original namespace________________________
@@ -853,7 +843,7 @@ with tab2:
 
         elif add_ns_selected_option == "🧩 Ontology":
             with col1:
-                col1a, col1b = st.columns(2)
+                col1a, col1b = st.columns([1,1.5])
 
             there_are_ontology_ns_unbound_flag = False
             ontology_ns_dict = utils.get_ontology_ns_dict()
@@ -881,7 +871,6 @@ with tab2:
 
 
                 g_ont_components_w_unbound_ns = []
-                g_ont_components_wo_unbound_ns = []
                 for ont_label, ont in st.session_state["g_ontology_components_dict"].items():
                     for prefix, ns in ont.namespace_manager.namespaces():
                         if prefix not in default_ns:
@@ -889,34 +878,70 @@ with tab2:
                                 g_ont_components_w_unbound_ns.append(utils.get_ontology_tag(ont_label))
                                 break
 
-                for ont_label in st.session_state["g_ontology_components_dict"]:
-                    if utils.get_ontology_tag(ont_label) not in g_ont_components_w_unbound_ns:
-                        g_ont_components_wo_unbound_ns.append(utils.get_ontology_tag(ont_label))
-
-                st.write("HERE", g_ont_components_w_unbound_ns, g_ont_components_wo_unbound_ns)
 
                 with col1a:
-                    st.markdown(f"""<div class="info-message-gray">
-                        🔒 Ontologies with all <b>namespaces bound</b>:
-                        {utils.format_list_for_markdown(g_ont_components_wo_unbound_ns)}
-                    </div>""", unsafe_allow_html=True)
-
-                with col1a:
-                    ontology_filter_for_ns = st.multiselect("🖱️ Filter by ontologies (optional):", g_ont_components_w_unbound_ns,
+                    list_to_choose = [utils.get_ontology_tag(ont_label)
+                        for ont_label in reversed(st.session_state["g_ontology_components_dict"])]
+                    list_to_choose.insert(0, "Select ontology")
+                    ontology_filter_for_ns = st.selectbox("🖱️ Filter by ontologies (optional):", list_to_choose,
                         key="key_ontology_filter_for_ns")
 
-                with col1a:
-                    ontology_ns_list = [key for key in ontology_ns_dict if key not in mapping_ns_dict]
-                    if len(ontology_ns_list) > 1:
-                        ontology_ns_list.insert(0, "Select all")
-                    ontology_ns_to_bind_list = st.multiselect("🖱️ Select ontology namespaces:*", ontology_ns_list, key="key_ontology_ns_to_bind_multiselect")
+                if ontology_filter_for_ns == "Select ontology":
+                    with col1b:
+                        list_to_choose = [key for key in ontology_ns_dict if key not in mapping_ns_dict]
+                        if len(list_to_choose) > 1:
+                            list_to_choose.insert(0, "Select all")
+                        ontology_ns_to_bind_list = st.multiselect("🖱️ Select ontology namespaces:*", list_to_choose,
+                            key="key_ontology_ns_to_bind_multiselect")
 
-                # Information messages
-                if ontology_ns_to_bind_list and "Select all" not in ontology_ns_to_bind_list:
-                    # create a single info message
+                else:
+                    if ontology_filter_for_ns not in g_ont_components_w_unbound_ns:
+                        with col1b:
+                            st.write("")
+                            st.markdown(f"""<div class="info-message-gray">
+                                🔒 All <b>namespaces</b> of the <b style="color:#F63366;">{ontology_filter_for_ns}</b> ontology are already bound.
+                            </div>""", unsafe_allow_html=True)
+                            st.write("")
+                        ontology_ns_to_bind_list = []
+                    else:
+
+                        for ont_label in st.session_state["g_ontology_components_dict"]:
+                            if utils.get_ontology_tag(ont_label) == ontology_filter_for_ns:
+                                ont = st.session_state["g_ontology_components_dict"][ont_label]
+                        ontology_component_ns_dict = utils.get_ontology_component_ns_dict(ont)
+                        list_to_choose = [key for key in ontology_component_ns_dict if key not in mapping_ns_dict]
+                        if len(list_to_choose) > 1:
+                            list_to_choose.insert(0, "Select all")
+                        with col1b:
+                            ontology_ns_to_bind_list = st.multiselect("🖱️ Select ontology namespaces:*", list_to_choose,
+                                key="key_ontology_ns_to_bind_multiselect")
+
+                if ontology_ns_to_bind_list:
+                    if "Select all" not in ontology_ns_to_bind_list:   # "Select all" not selected
+                        with col1:
+                            st.button("Bind", key="key_bind_ontology_ns_button", on_click=bind_ontology_namespaces)
+                    else:
+                        if ontology_filter_for_ns == "Select ontology":
+                            ontology_ns_to_bind_list = list(ontology_ns_dict)
+
+                        else:
+                            for ont_label in st.session_state["g_ontology_components_dict"]:
+                                if utils.get_ontology_tag(ont_label) == ontology_filter_for_ns:
+                                    ont = st.session_state["g_ontology_components_dict"][ont_label]
+                            ontology_ns_to_bind_list = list(utils.get_ontology_component_ns_dict(ont))
+
+                        with col1:
+                            bind_all_ontology_ns_checkbox = st.checkbox(
+                            "🔒 I am sure I want to bind all the namespaces in the ontology/ies",
+                            key="key_bind_all_ontology_ns_checkbox")
+                            if bind_all_ontology_ns_checkbox:
+                                st.button("Bind", key="key_bind_ontology_ns_button", on_click=bind_ontology_namespaces)
+
+                    if ontology_filter_for_ns != "Select ontology":
+                        ontology_ns_dict = utils.get_ontology_component_ns_dict(ont)
+
                     inner_html = ""
                     max_length = utils.get_max_length_for_display()[4]
-
                     for prefix in ontology_ns_to_bind_list:
                         inner_html += f"""<div style="margin-bottom:6px;">
                             <b>🔗 {prefix}</b> → {ontology_ns_dict[prefix]}
@@ -926,35 +951,7 @@ with tab2:
                         inner_html += f"""<div style="margin-bottom:6px;">
                             🔗 ... <b>(+{len(ontology_ns_to_bind_list[max_length:])})</b>
                         </div>"""
-
-
-                elif ontology_ns_to_bind_list:
-                    # create a single info message
-                    inner_html = ""
-                    max_length = utils.get_max_length_for_display()[4]
-
-                    for prefix in list(ontology_ns_dict)[:max_length]:
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            <b>🔗 {prefix}</b> → {ontology_ns_dict[prefix]}
-                        </div>"""
-
-                    if len(ontology_ns_dict) > max_length:
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            🔗 ... <b>(+{len(list(ontology_ns_dict)[max_length:])})</b>
-                        </div>"""
-
-                if ontology_ns_to_bind_list:
-                    if "Select all" not in ontology_ns_to_bind_list:   # "Select all" not selected
-                        with col1a:
-                            st.button("Bind", key="key_bind_ontology_ns_button", on_click=bind_ontology_namespaces)
-                    else:
-                        with col1a:
-                            bind_all_ontology_ns_checkbox = st.checkbox(
-                            "🔒 I want to bind all ontology namespaces",
-                            key="key_bind_all_ontology_ns_checkbox")
-                            if bind_all_ontology_ns_checkbox:
-                                st.button("Bind", key="key_bind_all_ontology_ns_button", on_click=bind_all_ontology_namespaces)
-                    with col1a:
+                    with col1:
                         st.markdown(f"""<div class="info-message-gray">
                                 <small>{inner_html}</small>
                             </div>""", unsafe_allow_html=True)
