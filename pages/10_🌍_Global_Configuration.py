@@ -134,16 +134,23 @@ if "structural_ns" not in st.session_state and st.session_state["g_label"]:
 # Define on_click functions-------------------------------------------------
 #TAB1
 def create_new_g_mapping():
+    # create mapping
     st.session_state["g_label"] = st.session_state["g_label_temp_new"]   # consolidate g_label
     st.session_state["g_mapping"] = Graph()   # create a new empty mapping
     # store information_____________
     st.session_state["g_mapping_source_cache"] = ["scratch", ""]   #cache info on the mapping source
     st.session_state["new_g_mapping_created_ok_flag"] = True   #flag for success mesagge
     utils.empty_last_added_lists()
+    # bind ontology namespaces
+    ontology_ns_dict = utils.get_ontology_ns_dict()
+    for prefix in ontology_ns_dict:
+        st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
+        st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
     # reset fields__________________
     st.session_state["key_g_label_temp_new"] = ""
 
 def load_existing_g_mapping():
+    # load mapping
     st.session_state["g_label"] = st.session_state["g_label_temp_existing"]   # consolidate g_label
     st.session_state["original_g_size_cache"] = utils.get_number_of_tm(st.session_state["candidate_g_mapping"])
     st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]   # consolidate the loaded mapping
@@ -151,6 +158,13 @@ def load_existing_g_mapping():
     st.session_state["g_mapping_source_cache"] = ["file", selected_load_file.name]
     st.session_state["existing_g_mapping_loaded_ok_flag"] = True
     utils.empty_last_added_lists()
+    # bind ontology namespaces
+    ontology_ns_dict = utils.get_ontology_ns_dict()
+    mapping_ns_dict = utils.get_mapping_ns_dict()
+    for prefix in ontology_ns_dict:
+        if prefix not in mapping_ns_dict:
+            st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
+            st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
     # reset fields___________________________
     st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
     st.session_state["key_g_label_temp_existing"] = ""
