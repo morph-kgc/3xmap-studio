@@ -17,6 +17,7 @@ import oracledb
 import pyodbc
 import sqlglot
 import requests
+import base64
 
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 
@@ -28,6 +29,40 @@ from urllib.parse import urlparse
 
 
 # AESTHETICS-------------------------------------------------------------------------------------
+
+#________________________________________________
+# Function to import Logo
+def get_base64_image(image_path):
+    with open(image_path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+#__________________________________________________
+
+#________________________________________________
+# Function to render headers
+def render_header(title, description, dark_mode: bool = False):
+    image_path = "logo/logo_inverse.png" if dark_mode else "logo/logo.png"
+    image_base64 = get_base64_image(image_path)
+
+    bg_color = "#1e1e1e" if dark_mode else "#f0f0f0"
+    title_color = "#d8c3f0" if dark_mode else "#511D66"
+    desc_color = "#999999" if dark_mode else "#555"
+
+    return f"""
+    <div style="display:flex; align-items:center; background-color:{bg_color}; padding:16px 20px;
+                border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
+        <img src="data:image/png;base64,{image_base64}" alt="Logo"
+             style="height:74px; margin-right:70px; border-radius:8px;" />
+        <div style="display:flex; flex-direction:column;">
+            <div style="font-size:1.4rem; font-weight:600; color:{title_color}; margin-bottom:4px;">
+                {title}
+            </div>
+            <div style="font-size:0.95rem; color:{desc_color};">
+                {description}
+            </div>
+        </div>
+    </div>
+    """
+#________________________________________________
 
 #________________________________________________
 # Function to import style
@@ -221,7 +256,7 @@ def import_st_aesthetics_dark_mode():
     #TIME FOR MESSAGES
     st.session_state["success_display_time"] = 2
 
-    st.markdown("""<style>
+    return """<style>
 
     /* TABS - dark mode*/
         /* Style tab buttons inside stTabs */
@@ -403,7 +438,7 @@ def import_st_aesthetics_dark_mode():
     .title-row td {font-size: 0.9rem; font-weight: bold; text-align: center;
         padding-bottom: 6px;}
 
-    </style>""", unsafe_allow_html=True)
+    </style>"""
 
 
 #_______________________________________________________

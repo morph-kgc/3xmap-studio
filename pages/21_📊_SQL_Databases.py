@@ -10,47 +10,23 @@ import oracledb
 import pyodbc
 import io
 
-st.set_page_config(layout="wide")
-
-# Header
+# Config-----------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
-    st.markdown("""<div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
-        border-radius:8px; margin-bottom:16px;">
-        <span style="font-size:1.7rem; margin-right:18px;">📊</span><div>
-            <h3 style="margin:0; font-size:1.75rem;">
-                <span style="color:#511D66; font-weight:bold; margin-right:12px;">◽◽◽◽◽</span>
-                SQL Databases
-                <span style="color:#511D66; font-weight:bold; margin-left:12px;">◽◽◽◽◽</span>
-            </h3>
-            <p style="margin:0; font-size:0.95rem; color:#555;">
-                Manage the connections to <b>relational data sources</b>, <b>consult the data</b>
-                and <b>save views</b>.
-            </p>
-        </div></div>""", unsafe_allow_html=True)
-
+    st.set_page_config(page_title="3Xmap Studio", layout="wide",
+        page_icon="logo/fav-icon.png")
 else:
-    st.markdown("""
-    <div style="display:flex; align-items:center; background-color:#1e1e1e; padding:12px 18px;
-                border-radius:8px; border-left:4px solid #999999; margin-bottom:16px;">
-        <span style="font-size:1.7rem; margin-right:18px; color:#dddddd;">📊️</span>
-        <div>
-            <h3 style="margin:0; font-size:1.75rem; color:#dddddd;">
-                <span style="color:#bbbbbb; font-weight:bold; margin-right:12px;">◽◽◽◽◽</span>
-                SQL Databases
-                <span style="color:#bbbbbb; font-weight:bold; margin-left:12px;">◽◽◽◽◽</span>
-            </h3>
-            <p style="margin:0; font-size:0.95rem; color:#cccccc;">
-                Manage the connections to <b>relational data sources</b>, <b>consult the data</b>
-                and <b>save views</b>.
-            </p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.set_page_config(page_title="3Xmap Studio", layout="wide",
+        page_icon="logo/fav-icon-inverse.png")
 
-#____________________________________________
-#PRELIMINARY
+# Header-----------------------------------
+dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
+header_html = utils.render_header(title="SQL Databases",
+    description="""Manage the connections to <b>relational data sources</b>, consult the data
+                    and <b>save views</b>.""",
+    dark_mode=dark_mode)
+st.markdown(header_html, unsafe_allow_html=True)
 
-# Import style
+# Import style----------------------------------------------
 style_container = st.empty()
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
     style_container.markdown(utils.import_st_aesthetics(), unsafe_allow_html=True)
@@ -58,9 +34,7 @@ else:
     style_container.markdown(utils.import_st_aesthetics_dark_mode(), unsafe_allow_html=True)
 
 
-
-
-# Initialise session state variables
+# Initialise session state variables------------------------------------
 #TAB1
 if "db_connections_dict" not in st.session_state:
     st.session_state["db_connections_dict"] = {}
@@ -79,7 +53,7 @@ if "sql_query_saved_ok_flag" not in st.session_state:
 if "sql_query_removed_ok_flag" not in st.session_state:
     st.session_state["sql_query_removed_ok_flag"] = False
 
-#define on_click functions
+#define on_click functions-----------------------------------------
 # TAB1
 def update_db_connections():
     for connection_label in st.session_state["db_connections_dict"]:

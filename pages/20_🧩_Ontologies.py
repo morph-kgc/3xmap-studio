@@ -12,45 +12,20 @@ import uuid   # to handle uploader keys
 import io
 from io import IOBase
 
-st.set_page_config(layout="wide")
+# Config-----------------------------------
+if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
+    st.set_page_config(page_title="3Xmap Studio", layout="wide",
+        page_icon="logo/fav-icon.png")
+else:
+    st.set_page_config(page_title="3Xmap Studio", layout="wide",
+        page_icon="logo/fav-icon-inverse.png")
 
 # Header-----------------------------------
-if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
-    st.markdown("""
-    <div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
-                border-radius:8px; margin-bottom:16px;">
-        <span style="font-size:1.7rem; margin-right:18px;">🧩</span>
-        <div>
-            <h3 style="margin:0; font-size:1.75rem;">
-                <span style="color:#511D66; font-weight:bold; margin-right:12px;">◽◽◽◽◽</span>
-                Ontologies
-                <span style="color:#511D66; font-weight:bold; margin-left:12px;">◽◽◽◽◽</span>
-            </h3>
-            <p style="margin:0; font-size:0.95rem; color:#555;">
-                Import <b>ontologies</b> from link or file.
-            </p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-else:
-    st.markdown("""
-    <div style="display:flex; align-items:center; background-color:#1e1e1e; padding:12px 18px;
-                border-radius:8px; margin-bottom:16px; border-left:4px solid #999999;">
-        <span style="font-size:1.7rem; margin-right:18px; color:#dddddd;">🧩</span>
-        <div>
-            <h3 style="margin:0; font-size:1.75rem; color:#dddddd;">
-                <span style="color:#bbbbbb; font-weight:bold; margin-right:12px;">◽◽◽◽◽</span>
-                Ontologies
-                <span style="color:#bbbbbb; font-weight:bold; margin-left:12px;">◽◽◽◽◽</span>
-            </h3>
-            <p style="margin:0; font-size:0.95rem; color:#cccccc;">
-                Import <b>ontologies</b> from link or file.
-            </p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-
+dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
+header_html = utils.render_header(title="Ontologies",
+    description="Import <b>ontologies</b> from link or file.",
+    dark_mode=dark_mode)
+st.markdown(header_html, unsafe_allow_html=True)
 
 # Import style-----------------------------
 style_container = st.empty()

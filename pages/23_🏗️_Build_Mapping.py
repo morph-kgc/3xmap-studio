@@ -13,50 +13,23 @@ import io
 from io import IOBase
 import sqlglot
 
-st.set_page_config(layout="wide")
-
-# Header
+# Config-----------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
-    st.markdown("""
-    <div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
-                border-radius:8px;">
-        <span style="font-size:1.7rem; margin-right:18px;">🏗️</span>
-        <div>
-            <h3 style="margin:0; font-size:1.75rem;">
-                <span style="color:#511D66; font-weight:bold; margin-right:12px;">◽◽◽◽◽</span>
-                Build mapping
-                <span style="color:#511D66; font-weight:bold; margin-left:12px;">◽◽◽◽◽</span>
-            </h3>
-            <p style="margin:0; font-size:0.95rem; color:#555;">
-                Build your mapping by adding <b>Triple Maps</b>, <b>Subject Maps</b>, and <b>Predicate-Object Maps</b>.
-            </p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
+    st.set_page_config(page_title="3Xmap Studio", layout="wide",
+        page_icon="logo/fav-icon.png")
 else:
-    st.markdown("""
-    <div style="display:flex; align-items:center; background-color:#1e1e1e; padding:12px 18px;
-                border-radius:8px; border-left:4px solid #999999;">
-        <span style="font-size:1.7rem; margin-right:18px; color:#dddddd;">🏗️</span>
-        <div>
-            <h3 style="margin:0; font-size:1.75rem; color:#dddddd;">
-                <span style="color:#bbbbbb; font-weight:bold; margin-right:12px;">◽◽◽◽◽</span>
-                Build mapping
-                <span style="color:#bbbbbb; font-weight:bold; margin-left:12px;">◽◽◽◽◽</span>
-            </h3>
-            <p style="margin:0; font-size:0.95rem; color:#cccccc;">
-                Build your mapping by adding <b>Triple Maps</b>, <b>Subject Maps</b>, and <b>Predicate-Object Maps</b>.
-            </p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.set_page_config(page_title="3Xmap Studio", layout="wide",
+        page_icon="logo/fav-icon-inverse.png")
 
+# Header-----------------------------------
+dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
+header_html = utils.render_header(title="Build mapping",
+    description="""Build your mapping by adding <b>Triple Maps</b>,
+        <b>Subject Maps</b>, and <b>Predicate-Object Maps</b>.""",
+    dark_mode=dark_mode)
+st.markdown(header_html, unsafe_allow_html=True)
 
-#____________________________________________
-#PRELIMINARY
-
-# Import style
+# Import style--------------------------------------------------
 style_container = st.empty()
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
     style_container.markdown(utils.import_st_aesthetics(), unsafe_allow_html=True)
@@ -64,11 +37,11 @@ else:
     style_container.markdown(utils.import_st_aesthetics_dark_mode(), unsafe_allow_html=True)
 
 
-# Namespaces
+# Namespaces---------------------------------------------------------
 RML, RR, QL = utils.get_required_ns().values()
 
 
-# Initialise session state variables
+# Initialise session state variables--------------------------------------
 # OTHER PAGES
 if "ds_files_dict" not in st.session_state:
     st.session_state["ds_files_dict"] = {}
@@ -130,7 +103,7 @@ if "pom_deleted_ok_flag" not in st.session_state:
     st.session_state["pom_deleted_ok_flag"] = False
 
 
-#define on_click functions
+#define on_click functions-----------------------------------------------
 # TAB1
 def save_tm_w_existing_ls():
     # add triples___________________
@@ -713,7 +686,7 @@ with tab1:
         st.rerun()
 
     with col1:
-        col1a, col1b = st.columns([1.5,1])
+        col1a, col1b = st.columns([1,1.5])
     with col1a:
         tm_label = st.text_input("⌨️ Enter label for the new TriplesMap:*", key="key_tm_label_input")    #user-friendly name for the TriplesMap
         st.session_state["tm_label"] = tm_label
@@ -753,11 +726,14 @@ with tab1:
 
             if ls_options_list:
                 with col1b:
-                    ls_option = st.radio("🖱️ Choose the Logical Source option:*", ls_options_list, horizontal=False)
+                    ls_option = st.radio("🖱️ Logical Source option:*", ls_options_list, horizontal=True,
+                        key="key_ls_option")
             else:
                 ls_option = None
 
             if ls_option == "📑 Existing Logical Source":
+                with col1:
+                    col1a, col1b = st.columns([2,1])
 
                 with col1a:
                     list_to_choose = list(reversed(labelled_ls_list))
@@ -770,6 +746,9 @@ with tab1:
 
 
             if ls_option == "📊 SQL Database":
+
+                with col1:
+                    col1a, col1b = st.columns([2,1])
 
                 with col1a:
                     list_to_choose = list(reversed(st.session_state["db_connections_dict"].keys()))
@@ -798,10 +777,12 @@ with tab1:
                                     query_for_selected_db_list.insert(0, query_label)   # only include queries of the selected connection
 
                             with col1b:
-                                label_ls_checkbox = st.checkbox("♻️ Reuse Logical Source (optional)",
-                                    key="label_ls_checkbox")
+                                # label_ls_checkbox = st.checkbox("♻️ Reuse Logical Source (optional)",
+                                #     key="label_ls_checkbox")
+                                label_ls_option = st.selectbox("♻️ Reuse Logical Source:",
+                                    ["No", "Yes (add label)"], key="key_label_ls_option")
 
-                                if label_ls_checkbox:
+                                if label_ls_option == "Yes (add label)":
                                     with col1a:
                                         ls_label = st.text_input("⌨️ Enter label for the Logical Source:*")
                                         if ls_label in labelled_ls_list:
@@ -845,7 +826,7 @@ with tab1:
 
                                     if sql_query_ok_flag:
 
-                                        if label_ls_checkbox:
+                                        if label_ls_option == "Yes (add label)":
                                             if ls_label and ls_label not in labelled_ls_list:
                                                 with col1a:
                                                     st.button("Save", key="key_save_tm_w_saved_query", on_click=save_tm_w_query)
@@ -929,11 +910,14 @@ with tab1:
 
                                 if selected_table_for_ls != "Select a table":
 
-                                    if (label_ls_checkbox and ls_label) or not label_ls_checkbox:
+                                    if (label_ls_option == "Yes (add label)" and ls_label) or label_ls_option == "No":
                                         with col1a:
                                             st.button("Save", key="key_save_tm_w_table_name", on_click=save_tm_w_table_name)
 
             if ls_option == "🛢️ Tabular data":
+
+                with col1:
+                    col1a, col1b = st.columns([2,1])
 
                 with col1a:
                     list_to_choose = list(reversed(st.session_state["ds_files_dict"].keys()))
@@ -945,10 +929,12 @@ with tab1:
                     ds_file = st.session_state["ds_files_dict"][ds_filename_for_tm]
 
                 with col1b:
-                    label_ls_checkbox = st.checkbox("♻️ Reuse Logical Source (optional)",
-                        key="label_ls_checkbox")
+                    # label_ls_checkbox = st.checkbox("♻️ Reuse Logical Source (optional)",
+                    #     key="label_ls_checkbox")
+                    label_ls_option = st.selectbox("♻️ Reuse Logical Source:",
+                        ["No", "Yes (add label)"], key="key_label_ls_option")
 
-                    if label_ls_checkbox:
+                    if label_ls_option == "Yes (add label)":
                         with col1a:
                             ls_label = st.text_input("⌨️ Enter label for the Logical Source:*")
                             if ls_label in labelled_ls_list:
@@ -962,7 +948,7 @@ with tab1:
                         ls_label = ""
 
                     with col1a:
-                        if label_ls_checkbox:
+                        if label_ls_option == "Yes (add label)":
                             if ls_label and ls_label not in labelled_ls_list:
                                 if ds_filename_for_tm != "Select file":
                                     st.button("Save", key="key_save_tm_w_non_relational_ls", on_click=save_tm_w_non_relational_ls)
