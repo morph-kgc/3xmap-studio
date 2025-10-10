@@ -10,6 +10,7 @@ import oracledb
 import pyodbc
 import uuid   # to handle uploader keys
 import io
+from streamlit_js_eval import streamlit_js_eval
 
 # Config-----------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
@@ -18,6 +19,11 @@ if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_f
 else:
     st.set_page_config(page_title="3Xmap Studio", layout="wide",
         page_icon="logo/fav_icon_inverse.png")
+
+# Automatic detection of dark mode-------------------------
+if "dark_mode_flag" not in st.session_state or st.session_state["dark_mode_flag"] is None:
+    st.session_state["dark_mode_flag"] = streamlit_js_eval(js_expressions="window.matchMedia('(prefers-color-scheme: dark)').matches",
+        key="dark_mode")
 
 # Header-----------------------------------
 dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
