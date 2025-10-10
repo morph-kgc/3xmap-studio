@@ -738,10 +738,9 @@ with tab2:
             add_ns_options = ["✏️ Custom", "📋 Predefined", "🏛️ Base"]
 
         with col1:
-            add_ns_selected_option = st.radio("🖱️ Select an option:*", add_ns_options, key="key_add_ns_radio", horizontal=True)
+            add_ns_selected_option = st.radio("🖱️ Select an option:*", add_ns_options, key="key_add_ns_radio",
+                label_visibility="collapsed", horizontal=True)
 
-        with col1:
-            col1a, col1b = st.columns([2,1])
         predefined_ns_dict = utils.get_predefined_ns_dict()
         default_ns_dict = utils.get_default_ns_dict()
         default_structural_ns = utils.get_default_structural_ns()
