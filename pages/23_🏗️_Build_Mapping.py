@@ -148,7 +148,7 @@ def save_tm_w_non_relational_ls():
         st.session_state["g_mapping"].add((ls_iri, QL.referenceFormulation, QL.Parquet))
     elif file_extension.lower() == "orc":
         st.session_state["g_mapping"].add((ls_iri, QL.referenceFormulation, QL.ORC))
-    st.session_state["g_mapping"].add((tm_iri, RDF.type, RR.TriplesMap))   #HEREIGO
+    st.session_state["g_mapping"].add((tm_iri, RDF.type, RR.TriplesMap))
     # store information____________________
     st.session_state["tm_saved_ok_flag"] = True  # for success message
     st.session_state["last_added_tm_list"].insert(0, st.session_state["tm_label"])    # to display last added tm
@@ -425,7 +425,6 @@ def save_pom_template():
         st.session_state["g_mapping"].add((om_iri, RR.termType, RR.BlankNode))
     if add_om_graph_map_option == "Add Graph Map":
         st.session_state["g_mapping"].add((om_iri, RR.graphMap, om_graph))
-        #HEREIGO
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
     st.session_state["last_added_pom_list"].insert(0, [st.session_state["pom_iri_to_create"], st.session_state["tm_iri_for_pom"]])
@@ -1859,22 +1858,10 @@ with tab3:
 
         if tm_label_for_pom != "Select a TriplesMap":
 
-
             ns_needed_for_pom_flag = False
 
             tm_iri_for_pom = tm_dict[tm_label_for_pom]
             column_list = utils.get_column_list(tm_iri_for_pom)
-
-            sm_dict = utils.get_sm_dict()
-
-            if not tm_label_for_pom in tm_w_sm_list:   # HERE I LEAVE THIS FOR THE TABLE DISPLAYING SM PREDICATE POM
-                sm_label_for_pom = ""
-            else:
-                for sm in sm_dict:
-                    if tm_label_for_pom in sm_dict[sm][4]:
-                        sm_label_for_pom = sm_dict[sm][0]
-                        break
-                    sm_label_for_pom = ""
 
             om_generation_rule_list = ["Template 📐", "Constant 🔒", "Reference 📊"]
 
@@ -2028,7 +2015,7 @@ with tab3:
                         st.write("")
 
                 with col1b:
-                    om_term_type_template = st.radio(label="🖱️ Select term type:*", options=["🌐 IRI", "📘 Literal", "👻 BNode"],
+                    om_term_type_template = st.radio("🆔 Select term type:*", ["🌐 IRI", "📘 Literal", "👻 BNode"],
                         horizontal=True, key="om_term_type_template")
 
                 with col1:
@@ -2054,10 +2041,10 @@ with tab3:
             if om_generation_rule == "Constant 🔒":
 
                 with col1a:
-                    om_constant = st.text_input("⌨️ Enter constant:*", key="key_om_constant")
+                    om_constant = st.text_input("⌨️ Enter Object Map constant:*", key="key_om_constant")
 
                 with col1b:
-                    om_term_type_constant = st.radio(label="🖱️ Select term type:*", options=["📘 Literal", "🌐 IRI"], horizontal=True,
+                    om_term_type_constant = st.radio(label="🆔 Select term type:*", options=["📘 Literal", "🌐 IRI"], horizontal=True,
                         key="om_term_type_constant")
 
                 mapping_ns_dict = utils.get_mapping_ns_dict()
@@ -2070,11 +2057,6 @@ with tab3:
 
                 elif om_term_type_constant == "🌐 IRI":
                     ns_needed_for_pom_flag = True
-                    # with col1a:
-                    #     st.markdown(f"""<div class="error-message">
-                    #             ❌ Term type is <b>🌐 IRI</b>. <small>You must add at least one namespace in
-                    #             the <b>Global Configuration</b> page.</small>
-                    #         </div>""", unsafe_allow_html=True)
 
                 if om_term_type_constant == "📘 Literal":
                     rdf_datatypes = list(utils.get_datatypes_dict().keys())
@@ -2111,14 +2093,12 @@ with tab3:
                             key="key_om_column_name")
 
                 with col1b:
-                    om_term_type_reference = st.radio(label="🖱️ Select Term type:*", options=["📘 Literal", "🌐 IRI", "👻 BNode"],
+                    om_term_type_reference = st.radio(label="🆔 Select Term type:*", options=["📘 Literal", "🌐 IRI", "👻 BNode"],
                         horizontal=True, key="om_term_type_reference")
 
                 if om_term_type_reference == "📘 Literal":
                     rdf_datatypes = list(utils.get_datatypes_dict().keys())
 
-                    with col1:
-                        col1a, col1b = st.columns(2)
                     with col1a:
                         om_datatype_reference = st.selectbox("🖱️ Select datatype (optional):", rdf_datatypes,
                         key="key_om_datatype_reference")
@@ -2210,7 +2190,7 @@ with tab3:
                         inner_html_error += "<small>· You must select a <b>🌐 language tag</b>.</small><br>"
 
             # OBJECT MAP - CONSTANT____________________________________________
-            if om_generation_rule == "Constant 🔒":   #HEREIGO
+            if om_generation_rule == "Constant 🔒":
                 if not om_constant:
                     pom_complete_flag = False
                     inner_html_error += "<small>· You must enter a <b>constant</b>.</small><br>"
@@ -2282,7 +2262,56 @@ with tab3:
 
 
             if pom_complete_flag:
-                with col1a:
+
+                # LOOK FOR SM   HEREIGO
+                sm_iri_for_pom = next(st.session_state["g_mapping"].objects(tm_iri, RR.subjectMap), None)
+
+                if sm_iri_for_pom:
+                    template_sm_for_pom = next(st.session_state["g_mapping"].objects(sm_iri_for_pom, RR.template), None)
+                    constant_sm_for_pom = next(st.session_state["g_mapping"].objects(sm_iri_for_pom, RR.constant), None)
+                    reference_sm_for_pom = next(st.session_state["g_mapping"].objects(sm_iri_for_pom, RML.reference), None)
+
+                    if template_sm_for_pom:
+                        sm_rule = template_sm_for_pom
+                    elif constant_sm_for_pom:
+                        sm_rule = constant_sm_for_pom
+                    elif reference_sm_for_pom:
+                        sm_rule = reference_sm_for_pom
+
+                else:
+                    sm_rule = "No Subject Map"
+
+                if om_generation_rule == "Template 📐":
+                    om_iri_for_display = Literal(om_template)
+
+                elif om_generation_rule == "Constant 🔒":
+                    if om_term_type_constant == "🌐 IRI":
+                        om_constant_ns = mapping_ns_dict[om_constant_ns_prefix]
+                        NS = Namespace(om_constant_ns)
+                        om_iri_for_display = NS[om_constant]
+                    elif om_term_type_constant == "📘 Literal":
+                        om_iri_for_display = Literal(om_constant)
+
+                elif om_generation_rule == "Reference 📊":
+                    om_iri_for_display = Literal(om_column_name)
+
+                with col1:
+                    # st.markdown(f"""<div class="gray-preview-message" style="word-wrap:break-word; overflow-wrap:anywhere;">
+                    #         <small><b style="color:#F63366;">🔍 Subject Map → Predicate → Object Map</b></small><br>
+                    #     <div style="margin-top:0.2em; margin-left:20px; font-size:15px;">
+                    #             <small><b> <span style="font-size:1.4em;">🆂</span> {sm_rule} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; → &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    #             🅿️ {selected_p_iri} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    #              → &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🅾️ {om_iri_for_display}</b></small>
+                    #     </div></div>""", unsafe_allow_html=True)
+                    st.markdown(f"""<div class="gray-preview-message" style="word-wrap:break-word; overflow-wrap:anywhere;">
+                            <small><b style="color:#F63366;">🔍 Subject Map → Predicate → Object Map</b></small><br>
+                        <div style="margin-top:0.2em; margin-left:20px; font-size:15px;">
+                                <small><b> {sm_rule} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; → &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                {selected_p_iri} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                 → &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {om_iri_for_display}</b></small>
+                        </div></div>""", unsafe_allow_html=True)
+
+                with col1:
                     st.write("")
                     st.session_state["pom_iri_to_create"] = pom_iri    # otherwise it will change value in the on_click function
                     st.session_state["tm_iri_for_pom"] = tm_iri_for_pom
