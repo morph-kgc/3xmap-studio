@@ -81,6 +81,8 @@ if "sm_template_prefix" not in st.session_state:
     st.session_state["sm_template_prefix"] = ""
 if "sm_template_variable_part_flag" not in st.session_state:
     st.session_state["sm_template_variable_part_flag"] = False
+if not "multiple_subject_class_list" in st.session_state:
+    st.session_state["multiple_subject_class_list"] = []
 
 # TAB3
 if "key_ds_uploader_for_pom" not in st.session_state:
@@ -251,7 +253,7 @@ def save_sm_template_variable_part():
     st.session_state["key_build_template_action_sm"] = "🔒 Add fixed part"
 
 def reset_sm_template():
-    # reset template
+    # reset template___________________-
     st.session_state["sm_template_list"] = []
     # store information____________________
     st.session_state["sm_template_prefix"] = ""
@@ -259,6 +261,25 @@ def reset_sm_template():
     st.session_state["sm_template_variable_part_flag"] = False
     # reset fields_____________
     st.session_state["key_build_template_action_sm"] = "🔒 Add fixed part"
+
+def add_subject_class():
+    # add subject class____________________
+    st.session_state["multiple_subject_class_list"].append(subject_class_iri)
+    # reset fields___________________
+    st.session_state["key_add_subject_class_option"] = "🔢 Multiple Classes"
+    st.session_state["key_add_multiple_subject_class_option"] = "✔️ Ready"
+
+def key_remove_multiple_subject_classes():
+    # remove subject classes____________________
+    if "Select all" in subject_class_to_remove_list:
+        st.session_state["multiple_subject_class_list"] = []
+    else:
+        for class_iri in st.session_state["multiple_subject_class_list"]:
+            if split_uri(class_iri)[1] in subject_class_to_remove_list:
+                st.session_state["multiple_subject_class_list"].remove(class_iri)
+    # reset fields___________________
+    st.session_state["key_add_subject_class_option"] = "🔢 Multiple Classes"
+    st.session_state["key_add_multiple_subject_class_option"] = "✔️ Ready" if st.session_state["multiple_subject_class_list"] else "🧩 Add Ontology Class"
 
 def save_sm_template():   #function to save subject map (template option)
     # add triples____________________
@@ -271,7 +292,10 @@ def save_sm_template():   #function to save subject map (template option)
     st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, sm_iri))
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RR.SubjectMap))
     st.session_state["g_mapping"].add((sm_iri, RR.template, Literal(sm_template)))
-    if add_subject_class_option != "No Class" and subject_class:
+    if add_subject_class_option == "🔢 Multiple Classes":
+        for subject_class_iri in st.session_state["multiple_subject_class_list"]:
+            st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
+    elif add_subject_class_option != "No Class":
         st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
     if add_sm_graph_map_option == "Add Graph Map" and subject_graph:
         st.session_state["g_mapping"].add((sm_iri, RR["graph"], subject_graph))
@@ -283,6 +307,7 @@ def save_sm_template():   #function to save subject map (template option)
     st.session_state["last_added_sm_list"].insert(0, [sm_iri, tm_label_for_sm])
     st.session_state["sm_saved_ok_flag"] = True
     # reset fields____________________
+    st.session_state["multiple_subject_class_list"] = []
     st.session_state["sm_template_list"] = []
     st.session_state["sm_template_prefix"] = ""
     st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
@@ -301,7 +326,10 @@ def save_sm_constant():   #function to save subject map (constant option)
     NS = Namespace(sm_constant_ns)
     sm_constant_iri = NS[sm_constant]
     st.session_state["g_mapping"].add((sm_iri, RML.constant, sm_constant_iri))
-    if add_subject_class_option != "No Class" and subject_class:
+    if add_subject_class_option == "🔢 Multiple Classes":
+        for subject_class_iri in st.session_state["multiple_subject_class_list"]:
+            st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
+    elif add_subject_class_option != "No Class":
         st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
     if add_sm_graph_map_option == "Add Graph Map" and subject_graph:
         st.session_state["g_mapping"].add((sm_iri, RR["graph"], subject_graph))
@@ -310,6 +338,7 @@ def save_sm_constant():   #function to save subject map (constant option)
     st.session_state["last_added_sm_list"].insert(0, [sm_iri, tm_label_for_sm])
     st.session_state["sm_saved_ok_flag"] = True
     # reset fields_________________________
+    st.session_state["multiple_subject_class_list"] = []
     st.session_state["sm_template_list"] = []   # in case it is not empty
     st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
 
@@ -324,7 +353,10 @@ def save_sm_reference():   #function to save subject map (reference option)
     st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, sm_iri))
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RR.SubjectMap))
     st.session_state["g_mapping"].add((sm_iri, RML.reference, Literal(sm_column_name)))    #HERE change to RR.column in R2RML
-    if add_subject_class_option != "No Class" and subject_class:
+    if add_subject_class_option == "🔢 Multiple Classes":
+        for subject_class_iri in st.session_state["multiple_subject_class_list"]:
+            st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
+    elif add_subject_class_option != "No Class":
         st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
     if add_sm_graph_map_option == "Add Graph Map" and subject_graph:
         st.session_state["g_mapping"].add((sm_iri, RR["graph"], subject_graph))
@@ -336,6 +368,7 @@ def save_sm_reference():   #function to save subject map (reference option)
     st.session_state["last_added_sm_list"].insert(0, [sm_iri, tm_label_for_sm])
     st.session_state["sm_saved_ok_flag"] = True
     # reset fields____________________
+    st.session_state["multiple_subject_class_list"] = []
     st.session_state["sm_template_list"] = []   # in case it is not empty
     st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
 
@@ -519,7 +552,7 @@ def unassign_sm():
     for tm in tm_to_unassign_sm_list:
         tm_iri = tm_dict[tm]
         sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RR.subjectMap)
-        other_tm_with_sm = [split_uri(s)[1] for s, p, o in st.session_state["g_mapping"].triples((None, RR.subjectMap, sm)) if s != tm_iri]
+        other_tm_with_sm = [split_uri(s)[1] for s, p, o in st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)) if s != tm_iri]
         if len(other_tm_with_sm) != 0:       # just unassign sm from tm (don't remove)
             st.session_state["g_mapping"].remove((tm_iri, RR.subjectMap, None))
         else:       # completely remove sm
@@ -692,7 +725,7 @@ with tab1:
         st.rerun()
 
     with col1:
-        col1a, col1b = st.columns([1,1.5])
+        col1a, col1b = st.columns([1.5,1])
     with col1a:
         tm_label = st.text_input("⌨️ Enter label for the new TriplesMap:*", key="key_tm_label_input")    #user-friendly name for the TriplesMap
         st.session_state["tm_label"] = tm_label
@@ -1202,7 +1235,7 @@ with tab2:
                                 st.markdown(f"""
                                     <div class="gray-preview-message" style="word-wrap:break-word; overflow-wrap:anywhere;">
                                         📐 <b>Your <b style="color:#F63366;">template</b> so far:</b><br>
-                                    <div style="margin-top:0.2em; font-size:15px;">
+                                    <div style="margin-top:0.2em; margin-left:20px; font-size:15px;">
                                             {sm_template}
                                     </div></div>""", unsafe_allow_html=True)
                                 st.write("")
@@ -1311,18 +1344,18 @@ with tab2:
                         if not isinstance(s, BNode):
                             ontology_classes_dict[split_uri(s)[1]] = s
 
-                    # dictionary for superclasses
-                    superclass_dict = {}
-                    for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, None)))):
-                        if not isinstance(o, BNode) and o not in superclass_dict.values():
-                            superclass_dict[o.split("/")[-1].split("#")[-1]] = o
+                    # # dictionary for superclasses
+                    # superclass_dict = {}
+                    # for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, None)))):
+                    #     if not isinstance(o, BNode) and o not in superclass_dict.values():
+                    #         superclass_dict[o.split("/")[-1].split("#")[-1]] = o
 
 
                     # ONLY SHOW OPTIONS IF THE ONTOLOGY HAS THEM
                     if ontology_classes_dict:   # if the ontology includes at least one class
-                        list_to_choose = ["No Class", "🧩 Ontology Class", "🚫 Class outside Ontology"]
+                        list_to_choose = ["No Class", "🧩 Ontology Class", "🚫 Class outside Ontology", "🔢 Multiple Classes"]
                     else:
-                        list_to_choose = ["No Class", "🚫 Class outside Ontology"]
+                        list_to_choose = ["No Class", "🚫 Class outside Ontology", "🔢 Multiple Classes"]
 
                     with col1a:
                         add_subject_class_option = st.selectbox("🏷️ Subject Class (optional):",
@@ -1330,6 +1363,33 @@ with tab2:
 
                     #ONTOLOGY CLASS
                     if add_subject_class_option == "🧩 Ontology Class":
+
+                        # Filter by ontology
+                        if len(st.session_state["g_ontology_components_dict"]) > 1:
+                            with col1a:
+                                list_to_choose = []
+                                for ont_label in st.session_state["g_ontology_components_dict"]:
+                                    list_to_choose.append(utils.get_ontology_tag(ont_label))
+                                list_to_choose.insert(0, "Select ontology")
+                                ontology_filter_for_subject_class = st.selectbox("🖱️ Filter by ontology (optional):",
+                                    list_to_choose, key="key_ontology_filter_for_subject_class")
+
+                            if ontology_filter_for_subject_class == "Select ontology":
+                                ontology_filter_for_subject_class = st.session_state["g_ontology"]
+                            else:
+                                for ont_label in st.session_state["g_ontology_components_dict"]:
+                                    if ontology_filter_for_subject_class == utils.get_ontology_tag(ont_label):
+                                        ontology_filter_for_subject_class = st.session_state["g_ontology_components_dict"][ont_label]
+                                        break
+
+                        else:
+                            ontology_filter_for_subject_class = st.session_state["g_ontology"]
+
+                        # dictionary for superclasses
+                        superclass_dict = {}
+                        for s, p, o in list(set(ontology_filter_for_subject_class.triples((None, RDFS.subClassOf, None)))):
+                            if not isinstance(o, BNode) and o not in superclass_dict.values():
+                                superclass_dict[o.split("/")[-1].split("#")[-1]] = o
 
                         # Class selection
                         if superclass_dict:   # there exists at least one superclass (show superclass filter)
@@ -1347,28 +1407,27 @@ with tab2:
                                 class_list = list(classes_in_superclass_dict.keys())
                                 class_list.insert(0, "Select a class")
                                 with col1a:
-                                    subject_class = st.selectbox("🖱️ Select a class:*", class_list,
+                                    subject_class = st.selectbox("🖱️ Select class:", class_list,
                                         key="key_subject_class")   #class label
 
                             else:  #no superclass selected (list all classes)
                                 class_list = list(ontology_classes_dict.keys())
                                 class_list.insert(0, "Select a class")
                                 with col1a:
-                                    subject_class = st.selectbox("🖱️ Select a class:*", class_list,
+                                    subject_class = st.selectbox("🖱️ Select class:*", class_list,
                                         key="key_subject_class")   #class label
 
                         else:     #no superclasses exist (no superclass filter)
                             class_list = list(ontology_classes_dict.keys())
                             class_list.insert(0, "Select a class")
                             with col1a:
-                                subject_class = st.selectbox("🖱️ Select a class:*", class_list,
+                                subject_class = st.selectbox("🖱️ Select class:*", class_list,
                                     key="key_subject_class")   #class label
 
                         if subject_class != "Select a class":
                             subject_class_iri = ontology_classes_dict[subject_class] #we get the superclass iri
                         else:
                             subject_class_iri = ""
-
 
                     #CLASS OUTSIDE ONTOLOGY
                     if add_subject_class_option == "🚫 Class outside Ontology":
@@ -1382,14 +1441,6 @@ with tab2:
                             subject_class_prefix = st.selectbox("🖱️ Select a namespace:*", subject_class_prefix_list,
                                 key="key_subject_class_prefix")
 
-                        # if not mapping_ns_dict:
-                        #     with col1a:
-                        #         st.write("")
-                        #         st.markdown(f"""<div class="error-message">
-                        #                 ❌ No namespaces available. You can add namespaces in the
-                        #                  <b>Global Configuration</b> page.
-                        #             </div>""", unsafe_allow_html=True)
-                        # else:
                         ns_needed_for_sm_flag = True
                         if subject_class_prefix != "Select a namespace":
                             NS = Namespace(mapping_ns_dict[subject_class_prefix])
@@ -1399,6 +1450,137 @@ with tab2:
                             subject_class_iri = NS[subject_class_input]
                         else:
                             subject_class_iri = ""
+
+                    #MULTIPLE SUBJECT CLASSES
+                    if add_subject_class_option == "🔢 Multiple Classes":
+
+                        if ontology_classes_dict:   # if the ontology includes at least one class
+                            with col1a:
+                                list_to_choose = ["🧩 Add Ontology Class", "🚫 Add Class outside Ontology"]
+                                if st.session_state["multiple_subject_class_list"]:
+                                    list_to_choose.insert(0, "✔️ Ready")
+                                    list_to_choose.append("🗑️ Remove Class")
+                                add_class_option = st.selectbox("🖱️ Select an option:*", list_to_choose,
+                                    key="key_add_multiple_subject_class_option")
+
+                        else:
+                            add_class_option == "🚫 Add Class outside Ontology"
+
+                        if add_class_option == "🧩 Add Ontology Class":
+
+                            # Filter by ontology
+                            if len(st.session_state["g_ontology_components_dict"]) > 1:
+                                with col1a:
+                                    list_to_choose = []
+                                    for ont_label in st.session_state["g_ontology_components_dict"]:
+                                        list_to_choose.append(utils.get_ontology_tag(ont_label))
+                                    list_to_choose.insert(0, "Select ontology")
+                                    ontology_filter_for_subject_class = st.selectbox("🖱️ Filter by ontology (optional):",
+                                        list_to_choose, key="key_ontology_filter_for_subject_class")
+
+                                if ontology_filter_for_subject_class == "Select ontology":
+                                    ontology_filter_for_subject_class = st.session_state["g_ontology"]
+                                else:
+                                    for ont_label in st.session_state["g_ontology_components_dict"]:
+                                        if ontology_filter_for_subject_class == utils.get_ontology_tag(ont_label):
+                                            ontology_filter_for_subject_class = st.session_state["g_ontology_components_dict"][ont_label]
+                                            break
+
+                            else:
+                                ontology_filter_for_subject_class = st.session_state["g_ontology"]
+
+                            # dictionary for superclasses
+                            superclass_dict = {}
+                            for s, p, o in list(set(ontology_filter_for_subject_class.triples((None, RDFS.subClassOf, None)))):
+                                if not isinstance(o, BNode) and o not in superclass_dict.values():
+                                    superclass_dict[o.split("/")[-1].split("#")[-1]] = o
+
+                            # Class selection
+                            if superclass_dict:   # there exists at least one superclass (show superclass filter)
+                                classes_in_superclass_dict = {}
+                                with col1a:
+                                    superclass_list = list(superclass_dict.keys())
+                                    superclass_list.insert(0, "Select a superclass")
+                                    superclass = st.selectbox("🖱️ Filter by superclass (optional):", superclass_list,
+                                        key="key_superclass")   #superclass label
+                                if superclass != "Select a superclass":   # a superclass has been selected (filter)
+                                    classes_in_superclass_dict[superclass] = superclass_dict[superclass]
+                                    superclass = superclass_dict[superclass] #we get the superclass iri
+                                    for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, superclass)))):
+                                        classes_in_superclass_dict[split_uri(s)[1]] = s
+                                    class_list = list(classes_in_superclass_dict.keys())
+                                    class_list.insert(0, "Select a class")
+                                    with col1a:
+                                        subject_class = st.selectbox("🖱️ Select class:", class_list,
+                                            key="key_subject_class")   #class label
+
+                                else:  #no superclass selected (list all classes)
+                                    class_list = list(ontology_classes_dict.keys())
+                                    class_list.insert(0, "Select a class")
+                                    with col1a:
+                                        subject_class = st.selectbox("🖱️ Select class:*", class_list,
+                                            key="key_subject_class")   #class label
+
+                            else:     #no superclasses exist (no superclass filter)
+                                class_list = list(ontology_classes_dict.keys())
+                                class_list.insert(0, "Select a class")
+                                with col1a:
+                                    subject_class = st.selectbox("🖱️ Select class:*", class_list,
+                                        key="key_subject_class")   #class label
+
+                            if subject_class != "Select a class":
+                                subject_class_iri = ontology_classes_dict[subject_class] #we get the superclass iri
+                                with col1a:
+                                    st.button("Add", key="key_add_subject_class_button", on_click=add_subject_class)
+
+                        if add_class_option == "🚫 Add Class outside Ontology":
+
+                            mapping_ns_dict = utils.get_mapping_ns_dict()
+
+                            subject_class_prefix_list = list(mapping_ns_dict.keys())
+                            with col1a:
+                                subject_class_prefix_list = list_to_choose = list(reversed(list(mapping_ns_dict.keys())))
+                                subject_class_prefix_list.insert(0,"Select a namespace")
+                                subject_class_prefix = st.selectbox("🖱️ Select a namespace:*", subject_class_prefix_list,
+                                    key="key_subject_class_prefix")
+
+                            ns_needed_for_sm_flag = True
+                            if subject_class_prefix != "Select a namespace":
+                                NS = Namespace(mapping_ns_dict[subject_class_prefix])
+                            with col1a:
+                                subject_class_input = st.text_input("⌨️ Enter subject class:*", key="key_subject_class_input")
+
+                            if subject_class_input and subject_class_prefix != "Select a namespace":
+                                subject_class_iri = NS[subject_class_input]
+                                with col1a:
+                                    st.button("Add", key="key_add_subject_class_button", on_click=add_subject_class)
+
+                        if add_class_option == "🗑️ Remove Class":
+                            list_to_choose = []
+                            for class_iri in st.session_state["multiple_subject_class_list"]:
+                                list_to_choose.append(split_uri(class_iri)[1])
+                            if len(list_to_choose) > 1:
+                                list_to_choose.insert(0, "Select all")
+                            with col1a:
+                                subject_class_to_remove_list = st.multiselect("🖱️ Select classes:*", list_to_choose,
+                                    key="key_subject_class_to_remove_list")
+                            if subject_class_to_remove_list:
+                                with col1a:
+                                    st.button("Remove", key="key_remove_multiple_subject_classes_button",
+                                        on_click=key_remove_multiple_subject_classes)
+
+                        if st.session_state["multiple_subject_class_list"]:
+                            list_for_display = []
+                            for class_iri in st.session_state["multiple_subject_class_list"]:
+                                list_for_display.append(split_uri(class_iri)[1])
+                            with col1a:
+                                st.markdown(f"""
+                                    <div class="gray-preview-message" style="word-wrap:break-word; overflow-wrap:anywhere;">
+                                        🏷️ <b style="color:#F63366;">Subject classes:</b><br>
+                                     <div style="margin-top:0.2em; margin-left:20px; font-size:15px;">
+                                            <small><b>{utils.format_list_for_markdown(list_for_display)}</b></small>
+                                    </div></div>""", unsafe_allow_html=True)
+
 
                     # GRAPH MAP
                     with col1b:
@@ -1416,13 +1598,6 @@ with tab2:
                             subject_graph_prefix = st.selectbox("🖱️ Select a namespace:*", subject_graph_prefix_list,
                                 key="key_subject_graph_prefix")
 
-                            # if not mapping_ns_dict:
-                            #     st.write("")
-                            #     st.markdown(f"""<div class="error-message">
-                            #             ❌ No namespaces available. You can add namespaces in the
-                            #              <b>Global Configuration</b> page.
-                            #         </div>""", unsafe_allow_html=True)
-                            # else:
                             ns_needed_for_sm_flag = True
                             with col1b:
                                 subject_graph_input = st.text_input("🖱️ Enter Graph Map:*", key="key_subject_graph_input")
@@ -1442,7 +1617,7 @@ with tab2:
                     inner_html_error = ""
                     inner_html_warning = ""
 
-                    if ns_needed_for_sm_flag:
+                    if ns_needed_for_sm_flag and not utils.get_mapping_ns_dict():
                         inner_html_error += f"""<small>· <b>No namespaces available.</b> Go to the
                             <b>Global Configuration</b> page to add them.</small><br>"""
 
@@ -1495,6 +1670,10 @@ with tab2:
                             sm_complete_flag = False
                             inner_html_error += """<small>· The <b>Subject class</b> (and/or its namespace)
                                 has not been given.</small><br>"""
+                    if add_subject_class_option == "🔢 Multiple Classes":
+                        if not st.session_state["multiple_subject_class_list"]:
+                            sm_complete_flag = False
+                            inner_html_error += """<small>· You must add at least one <b>Subject class</b>.</small><br>"""
 
                     if add_sm_graph_map_option == "Add Graph Map":
                         if subject_graph_prefix == "Select a namespace" or not subject_graph_input:
@@ -1838,7 +2017,7 @@ with tab3:
                         st.markdown(f"""
                             <div class="gray-preview-message" style="word-wrap:break-word; overflow-wrap:anywhere;">
                                 📐 <b>Your <b style="color:#F63366;">template</b> so far:</b><br>
-                            <div style="margin-top:0.2em; font-size:15px; color:#333;">
+                            <div style="margin-top:0.2em; margin-left:20px; font-size:15px;">
                                     {om_template}
                             </div></div>""", unsafe_allow_html=True)
                         st.write("")
