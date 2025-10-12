@@ -159,12 +159,16 @@ with tab1:
 
                 selected_tm_for_display_list = list(tm_dict) if not selected_tm_for_display_list else selected_tm_for_display_list
                 if tm_label in selected_tm_for_display_list:
-                    df_data.append({"TriplesMap": tm_label, "Logical Source": ls_label,
+                    row_dict = {"TriplesMap": tm_label, "Logical Source": ls_label,
                         "Logical Table": lt_label, "Source": source,
                         "Table Name": table_name, "SQL Query": sql_query,
                          "Reference Formulation": reference_formulation,
                         "TriplesMap (complete)": tm, "Logical Source (complete)": logical_source,
-                        "Logical Table (complete)": logical_table})
+                        "Logical Table (complete)": logical_table}
+
+                    # Remove keys with empty string values
+                    filtered_row = {k: v for k, v in row_dict.items() if v}
+                    df_data.append(filtered_row)
 
             df = pd.DataFrame(df_data)
 
@@ -234,17 +238,9 @@ with tab1:
         for row in results:
             tm = row.tm if row.tm else ""
             subject_map = row.subjectMap if row.subjectMap else ""
-            value_type = ""
-            value_content = ""
-            if row.template:
-                value_type = "Template"
-                value_content = str(row.template)
-            elif row.constant:
-                value_type = "Constant"
-                value_content = split_uri(str(row.constant))[1]
-            elif row.reference:
-                value_type = "Reference"
-                value_content = str(row.reference)
+            template = str(row.template) if row.template else ""
+            constant = str(row.constant) if row.constant else ""
+            reference = str(row.reference) if row.reference else ""
             raw_classes = str(row["classes"]) if row["classes"] else ""
             class_list = [split_uri(c.strip())[1] for c in raw_classes.split(",") if c.strip()]
             class_ = ", ".join(class_list)
@@ -257,9 +253,14 @@ with tab1:
 
             selected_tm_for_display_list = list(tm_dict) if not selected_tm_for_display_list else selected_tm_for_display_list
             if tm_label in selected_tm_for_display_list:
-                df_data.append({"SubjectMap": sm_label, "TriplesMap": tm_label,
-                    value_type: value_content, "Class": class_, "TermType": term_type,
-                    "Graph": graph, "SubjectMap (complete)": subject_map})
+                row_dict = {"SubjectMap": sm_label, "TriplesMap": tm_label,
+                    "Template": template, "Constant": constant, "Reference": reference, "Class": class_, "TermType": term_type,
+                    "Graph": graph, "SubjectMap (complete)": subject_map}
+
+                # Remove keys with empty string values
+                filtered_row = {k: v for k, v in row_dict.items() if v}
+                df_data.append(filtered_row)
+
 
         with col1:
             st.write("")
@@ -358,12 +359,16 @@ with tab1:
                 all_pom_list = list(utils.get_pom_dict())
                 selected_pom_for_display_list = all_pom_list if not selected_pom_for_display_list else selected_pom_for_display_list
                 if pom in selected_pom_for_display_list:
-                    df_data.append({"Predicate-Object Map": pom_label,
+                    row_dict = {"Predicate-Object Map": pom_label,
                         "Predicate": predicate, "Object Map": om_label,
                         "Template": template, "Constant": constant, "Reference": column,
                         "TermType": term_type, "Datatype": datatype, "Language": language,
                         "Graph Map": graph_map, "Predicate-Object Map (complete)": pom,
-                        "Object Map (complete)": object_map})
+                        "Object Map (complete)": object_map}
+
+                    # Remove keys with empty string values
+                    filtered_row = {k: v for k, v in row_dict.items() if v}
+                    df_data.append(filtered_row)
 
             df = pd.DataFrame(df_data)
             with col1:
@@ -648,8 +653,7 @@ with tab1:
                 graph_map = g.value(subject=sm, predicate=RR["graphMap"])
                 reference = g.value(subject=sm, predicate=RML["reference"])
 
-                df_data.append({
-                    "Subject Map": sm_label,
+                row_dict = {"Subject Map": sm_label,
                     "Class": utils.get_node_label(rdf_class) if rdf_class else "",
                     "Template": str(template) if template else "",
                     "Constant": str(constant) if constant else "",
@@ -657,7 +661,11 @@ with tab1:
                     "Term Type": str(term_type) if term_type else "",
                     "Graph Map": str(graph_map) if graph_map else "",
                     "Reference": str(reference) if reference else "",
-                    "Subject Map (complete)": sm,})
+                    "Subject Map (complete)": sm,}
+
+                # Remove keys with empty string values
+                filtered_row = {k: v for k, v in row_dict.items() if v}
+                df_data.append(filtered_row)
 
             df = pd.DataFrame(df_data)
 
@@ -665,7 +673,7 @@ with tab1:
                 if not df.empty:
                     st.markdown(f"""<div class="info-message-blue">
                         <b>RESULTS ({len(df)}):</b><br>
-                        <small>Possible Subject Maps not used by any TriplesMap.</small>
+                        <small>[Possible Subject Maps not used by any TriplesMap.]</small>
                     </div>""", unsafe_allow_html=True)
                     st.dataframe(df, hide_index=True)
                 else:
@@ -674,6 +682,7 @@ with tab1:
                     </div>""", unsafe_allow_html=True)
 
         if selected_orphaned_node_type == "Predicate-Object Maps":
+
             query = """SELECT DISTINCT ?pom WHERE {
               {
                 ?pom <http://www.w3.org/ns/r2rml#predicate> ?p .
@@ -704,10 +713,12 @@ with tab1:
                 pom_label = utils.get_node_label(pom)
                 predicate = st.session_state["g_mapping"].value(subject=pom, predicate=RR["predicate"])
 
-                df_data.append({
-                    "Predicate-Object Map": pom_label,
-                    "Predicate": predicate,
-                    "Predicate-Object Map (complete)": pom,})
+                row_dict = {"Predicate-Object Map": pom_label,
+                    "Predicate": predicate, "Predicate-Object Map (complete)": pom,}
+
+                # Remove keys with empty string values
+                filtered_row = {k: v for k, v in row_dict.items() if v}
+                df_data.append(filtered_row)
 
             df = pd.DataFrame(df_data)
 
@@ -724,6 +735,7 @@ with tab1:
                     </div>""", unsafe_allow_html=True)
 
         if selected_orphaned_node_type == "Object Maps":
+
             query = """SELECT DISTINCT ?om WHERE {
               {
                 ?om <http://www.w3.org/ns/r2rml#constant> ?c .
@@ -779,7 +791,7 @@ with tab1:
                 join_condition = g.value(subject=om, predicate=RR["joinCondition"])
                 reference = g.value(subject=om, predicate=RML["reference"])
 
-                df_data.append({"Object Map": om_label,
+                row_dict = {"Object Map": om_label,
                         "Constant": str(constant) if constant else "",
                         "Column": str(column) if column else "",
                         "Template": str(template) if template else "",
@@ -789,7 +801,11 @@ with tab1:
                         "Parent TriplesMap": str(parent_tm) if parent_tm else "",
                         "Join Condition": str(join_condition) if join_condition else "",
                         "Reference": str(reference) if reference else "",
-                        "Object Map (complete)": str(om) if om else ""})
+                        "Object Map (complete)": str(om) if om else ""}
+
+                # Remove keys with empty string values
+                filtered_row = {k: v for k, v in row_dict.items() if v}
+                df_data.append(filtered_row)
 
             df = pd.DataFrame(df_data)
 
