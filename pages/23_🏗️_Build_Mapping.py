@@ -292,11 +292,9 @@ def save_sm_template():   #function to save subject map (template option)
     st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, sm_iri))
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RR.SubjectMap))
     st.session_state["g_mapping"].add((sm_iri, RR.template, Literal(sm_template)))
-    if add_subject_class_option == "🔢 Multiple Classes":
+    if add_subject_class_option != "No Class":
         for subject_class_iri in st.session_state["multiple_subject_class_list"]:
             st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
-    elif add_subject_class_option != "No Class":
-        st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
     if add_sm_graph_map_option == "Add Graph Map" and subject_graph:
         st.session_state["g_mapping"].add((sm_iri, RR["graph"], subject_graph))
     if sm_term_type_template == "🌐 IRI":
@@ -326,11 +324,9 @@ def save_sm_constant():   #function to save subject map (constant option)
     NS = Namespace(sm_constant_ns)
     sm_constant_iri = NS[sm_constant]
     st.session_state["g_mapping"].add((sm_iri, RR.constant, sm_constant_iri))
-    if add_subject_class_option == "🔢 Multiple Classes":
+    if add_subject_class_option != "No Class":
         for subject_class_iri in st.session_state["multiple_subject_class_list"]:
             st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
-    elif add_subject_class_option != "No Class":
-        st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
     if add_sm_graph_map_option == "Add Graph Map" and subject_graph:
         st.session_state["g_mapping"].add((sm_iri, RR["graph"], subject_graph))
     st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.IRI))
@@ -353,11 +349,9 @@ def save_sm_reference():   #function to save subject map (reference option)
     st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, sm_iri))
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RR.SubjectMap))
     st.session_state["g_mapping"].add((sm_iri, RML.reference, Literal(sm_column_name)))    #HERE change to RR.column in R2RML
-    if add_subject_class_option == "🔢 Multiple Classes":
+    if add_subject_class_option != "No Class":
         for subject_class_iri in st.session_state["multiple_subject_class_list"]:
             st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
-    elif add_subject_class_option != "No Class":
-        st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
     if add_sm_graph_map_option == "Add Graph Map" and subject_graph:
         st.session_state["g_mapping"].add((sm_iri, RR["graph"], subject_graph))
     if sm_term_type_reference == "🌐 IRI":
@@ -1426,6 +1420,7 @@ with tab2:
 
                         if subject_class != "Select a class":
                             subject_class_iri = ontology_classes_dict[subject_class] #we get the superclass iri
+                            st.session_state["multiple_subject_class_list"] = [subject_class_iri]
                         else:
                             subject_class_iri = ""
 
@@ -1446,8 +1441,10 @@ with tab2:
                             NS = Namespace(mapping_ns_dict[subject_class_prefix])
                         with col1a:
                             subject_class_input = st.text_input("⌨️ Enter subject class:*", key="key_subject_class_input")
+
                         if subject_class_input and subject_class_prefix != "Select a namespace":
                             subject_class_iri = NS[subject_class_input]
+                            st.session_state["multiple_subject_class_list"] = [subject_class_iri]
                         else:
                             subject_class_iri = ""
 

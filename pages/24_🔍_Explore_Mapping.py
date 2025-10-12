@@ -81,12 +81,15 @@ with tab1:
     with col1:
         col1a, col1b = st.columns([2,1])
 
-    predefined_searches_list = ["Select search", "TriplesMaps", "Subject Maps", "Predicate-Object Maps",
+    predefined_searches_list = ["Select search", "Rules", "TriplesMaps", "Subject Maps", "Predicate-Object Maps",
         "Used Classes", "Incomplete Nodes", "Orphaned Nodes", "All Triples"]
 
     with col1a:
         selected_predefined_search = st.selectbox("🖱️ Select search:*", predefined_searches_list,
             key="key_selected_predefined_search")
+
+    if selected_predefined_search == "Rules":
+        pass
 
     if selected_predefined_search == "TriplesMaps":
 
@@ -672,7 +675,7 @@ with tab1:
             with col1:
                 if not df.empty:
                     st.markdown(f"""<div class="info-message-blue">
-                        <b>RESULTS ({len(df)}):</b><br>
+                        <b>RESULTS ({len(df)}):</b>
                         <small>[Possible Subject Maps not used by any TriplesMap.]</small>
                     </div>""", unsafe_allow_html=True)
                     st.dataframe(df, hide_index=True)
