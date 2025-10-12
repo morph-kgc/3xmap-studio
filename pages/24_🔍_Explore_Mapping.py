@@ -20,7 +20,7 @@ else:
 if "dark_mode_flag" not in st.session_state or st.session_state["dark_mode_flag"] is None:
     st.session_state["dark_mode_flag"] = streamlit_js_eval(js_expressions="window.matchMedia('(prefers-color-scheme: dark)').matches",
         key="dark_mode")
-        
+
 # Header-----------------------------------
 dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
 header_html = utils.render_header(title="Explore Mapping",
@@ -203,14 +203,17 @@ with tab1:
             order_clause = st.selectbox("⌨️ Enter order (optional):", list_to_choose,
                 key="key_order_clause")
 
-        query = f"""SELECT ?tm ?subjectMap ?template ?class ?termType ?graph WHERE {{
+        query = f"""SELECT ?tm ?subjectMap ?template ?constant ?reference ?column ?termType ?graph (GROUP_CONCAT(?class; separator=", ") AS ?classes) WHERE {{
               ?tm a <http://www.w3.org/ns/r2rml#TriplesMap> ;
                   <http://www.w3.org/ns/r2rml#subjectMap> ?subjectMap .
               OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#template> ?template }}
+              OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#constant> ?constant }}
+              OPTIONAL {{ ?subjectMap <http://semweb.mmlab.be/ns/rml#reference> ?reference }}
               OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#class> ?class }}
               OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#termType> ?termType }}
               OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#graph> ?graph }}
             }}
+            GROUP BY ?tm ?subjectMap ?template ?reference ?column ?termType ?graph
         """
 
         if order_clause == "Ascending":
@@ -231,8 +234,20 @@ with tab1:
         for row in results:
             tm = row.tm if row.tm else ""
             subject_map = row.subjectMap if row.subjectMap else ""
-            template = str(row.template) if row.template else ""
-            class_ = str(row["class"]) if row["class"] else ""
+            value_type = ""
+            value_content = ""
+            if row.template:
+                value_type = "Template"
+                value_content = str(row.template)
+            elif row.constant:
+                value_type = "Constant"
+                value_content = split_uri(str(row.constant))[1]
+            elif row.reference:
+                value_type = "Reference"
+                value_content = str(row.reference)
+            raw_classes = str(row["classes"]) if row["classes"] else ""
+            class_list = [split_uri(c.strip())[1] for c in raw_classes.split(",") if c.strip()]
+            class_ = ", ".join(class_list)
             term_type = str(row.termType) if row.termType else ""
             term_type = split_uri(term_type)[1] if term_type else ""
             graph = str(row.graph) if row.graph else ""
@@ -243,7 +258,7 @@ with tab1:
             selected_tm_for_display_list = list(tm_dict) if not selected_tm_for_display_list else selected_tm_for_display_list
             if tm_label in selected_tm_for_display_list:
                 df_data.append({"SubjectMap": sm_label, "TriplesMap": tm_label,
-                    "Template": template, "Class": class_, "TermType": term_type,
+                    value_type: value_content, "Class": class_, "TermType": term_type,
                     "Graph": graph, "SubjectMap (complete)": subject_map})
 
         with col1:

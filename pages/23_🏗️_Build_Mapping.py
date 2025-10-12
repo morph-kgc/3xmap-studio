@@ -325,7 +325,7 @@ def save_sm_constant():   #function to save subject map (constant option)
     sm_constant_ns = mapping_ns_dict[sm_constant_ns_prefix]
     NS = Namespace(sm_constant_ns)
     sm_constant_iri = NS[sm_constant]
-    st.session_state["g_mapping"].add((sm_iri, RML.constant, sm_constant_iri))
+    st.session_state["g_mapping"].add((sm_iri, RR.constant, sm_constant_iri))
     if add_subject_class_option == "🔢 Multiple Classes":
         for subject_class_iri in st.session_state["multiple_subject_class_list"]:
             st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
