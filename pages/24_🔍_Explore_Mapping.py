@@ -89,7 +89,111 @@ with tab1:
             key="key_selected_predefined_search")
 
     if selected_predefined_search == "Rules":
-        pass
+        with col1b:
+            tm_dict = utils.get_tm_dict()
+            list_to_choose = list(reversed(list(tm_dict)))
+            if len(list_to_choose) > 1:
+                selected_tm_for_display_list = st.multiselect("🖱️ Filter TriplesMaps (optional):", list_to_choose,
+                    key="key_selected_tm_for_display_list_1")
+            else:
+                selected_tm_for_display_list = []
+
+        with col1:
+            col1a, col1b, col1c = st.columns(3)
+
+        with col1a:
+            limit = st.text_input("⌨️ Enter limit (optional):", key="key_limit")
+        with col1b:
+            offset = st.text_input("⌨️ Enter offset (optional):", key="key_offset")
+        with col1c:
+            list_to_choose = ["No order", "Ascending", "Descending"]
+            order_clause = st.selectbox("⌨️ Enter order (optional):", list_to_choose,
+                key="key_order_clause")
+
+            query = """PREFIX rr: <http://www.w3.org/ns/r2rml#>
+                PREFIX rml: <http://semweb.mmlab.be/ns/rml#>
+
+                SELECT DISTINCT ?tm ?sm ?pom ?om ?subject_value ?predicate ?object_value WHERE {
+                  ?tm rr:subjectMap ?sm .
+                  ?tm rr:predicateObjectMap ?pom .
+                  ?pom rr:predicate ?predicate .
+                  ?pom rr:objectMap ?om .
+
+                  OPTIONAL { ?sm rr:template ?subject_value . }
+                  OPTIONAL { ?sm rr:constant ?subject_value . }
+                  OPTIONAL { ?sm rml:reference ?subject_value . }
+
+                  OPTIONAL { ?om rr:template ?object_value . }
+                  OPTIONAL { ?om rr:constant ?object_value . }
+                  OPTIONAL { ?om rml:reference ?object_value . }
+                }"""
+
+            if order_clause == "Ascending":
+                query += f"ORDER BY ASC(?tm) "
+            elif order_clause == "Descending":
+                query += f"ORDER BY DESC(?tm) "
+
+            if limit:
+                query += f"LIMIT {limit} "
+
+            if offset:
+                query += f"OFFSET {offset}"
+
+            results = st.session_state["g_mapping"].query(query)
+
+            df_data = []
+
+            for row in results:
+                tm = row.tm if hasattr(row, "tm") and row.tm else ""
+                sm = row.sm if hasattr(row, "sm") and row.sm else ""
+                pom = row.pom if hasattr(row, "pom") and row.pom else ""
+                om = row.om if hasattr(row, "om") and row.om else ""
+
+                subject = row.subject_value if hasattr(row, "subject_value") and row.subject_value else ""
+                predicate = row.predicate if hasattr(row, "predicate") and row.predicate else ""
+                object_ = row.object_value if hasattr(row, "object_value") and row.object_value else ""
+
+                # Optional: apply label formatting
+                tm_label = utils.get_node_label(tm)
+                sm_label = utils.get_node_label(sm)
+                pom_label = utils.get_node_label(pom)
+                om_label = utils.get_node_label(om)
+                subject_label = utils.get_node_label(subject)
+                predicate_label = utils.get_node_label(predicate)
+                object_label = utils.get_node_label(object_)
+
+                selected_tm_for_display_list = list(tm_dict) if not selected_tm_for_display_list else selected_tm_for_display_list
+                if tm_label in selected_tm_for_display_list:
+                    row_dict = {
+                        "Subject": subject_label,
+                        "Predicate": predicate_label,
+                        "Object": object_label,
+                        "TriplesMap": tm_label,
+                        "SubjectMap": sm_label,
+                        "PredicateObjectMap": pom_label,
+                        "ObjectMap": om_label
+                    }
+                    df_data.append(row_dict)
+
+            # Create DataFrame
+            df = pd.DataFrame(df_data)
+
+            # Drop empty columns
+            df = df.loc[:, df.apply(lambda col: col.replace('', pd.NA).notna().any())]
+
+            # Display
+            with col1:
+                if not df.empty:
+                    st.markdown(f"""<div class="info-message-blue">
+                        <b>RESULTS ({len(df)}):</b>
+                    </div>""", unsafe_allow_html=True)
+                    st.dataframe(df, hide_index=True)
+                else:
+                    st.markdown(f"""<div class="warning-message">
+                        ⚠️ No results.
+                    </div>""", unsafe_allow_html=True)
+
+            # for row in results:
 
     if selected_predefined_search == "TriplesMaps":
 
@@ -114,8 +218,7 @@ with tab1:
             order_clause = st.selectbox("⌨️ Enter order (optional):", list_to_choose,
                 key="key_order_clause")
 
-            query = """
-            SELECT ?tm ?logicalTable ?tableName ?sqlQuery ?logicalSource ?source ?referenceFormulation ?iterator WHERE {
+            query = """SELECT ?tm ?logicalTable ?tableName ?sqlQuery ?logicalSource ?source ?referenceFormulation ?iterator WHERE {
               {
                 ?tm a <http://www.w3.org/ns/r2rml#TriplesMap> ;
                     <http://www.w3.org/ns/r2rml#logicalTable> ?logicalTable .
@@ -148,40 +251,43 @@ with tab1:
             df_data = []
 
             for row in results:
-                tm = row.tm if row.tm else ""
+                tm = row.tm if hasattr(row, "tm") and row.tm else ""
                 logical_table = row.logicalTable if hasattr(row, "logicalTable") and row.logicalTable else ""
+                table_name = row.tableName if hasattr(row, "tableName") and row.tableName else ""
+                sql_query = row.sqlQuery if hasattr(row, "sqlQuery") and row.sqlQuery else ""
                 logical_source = row.logicalSource if hasattr(row, "logicalSource") and row.logicalSource else ""
-                table_name = str(row.tableName) if hasattr(row, "tableName") and row.tableName else ""
-                sql_query = str(row.sqlQuery) if hasattr(row, "sqlQuery") and row.sqlQuery else ""
-                source = str(row.source) if hasattr(row, "source") and row.source else ""
+                source = row.source if hasattr(row, "source") and row.source else ""
                 reference_formulation = str(row.referenceFormulation) if hasattr(row, "referenceFormulation") and row.referenceFormulation else ""
 
                 tm_label = utils.get_node_label(tm)
-                ls_label = utils.get_node_label(logical_source)
                 lt_label = utils.get_node_label(logical_table)
+                ls_label = utils.get_node_label(logical_source)
 
                 selected_tm_for_display_list = list(tm_dict) if not selected_tm_for_display_list else selected_tm_for_display_list
                 if tm_label in selected_tm_for_display_list:
-                    row_dict = {"TriplesMap": tm_label, "Logical Source": ls_label,
-                        "Logical Table": lt_label, "Source": source,
-                        "Table Name": table_name, "SQL Query": sql_query,
-                         "Reference Formulation": reference_formulation,
-                        "TriplesMap (complete)": tm, "Logical Source (complete)": logical_source,
-                        "Logical Table (complete)": logical_table}
+                    row_dict = {"TriplesMap label": tm_label,
+                        "Source": source,
+                        "Logical Table": lt_label,
+                        "Table Name": table_name,
+                        "SQL Query": sql_query,
+                        "Reference Formulation": reference_formulation,
+                        "Logical Source": logical_source}
+                    df_data.append(row_dict)
 
-                    # Remove keys with empty string values
-                    filtered_row = {k: v for k, v in row_dict.items() if v}
-                    df_data.append(filtered_row)
 
+            # Create DataFrame
             df = pd.DataFrame(df_data)
 
+            # Drop empty columns
+            df = df.loc[:, df.apply(lambda col: col.replace('', pd.NA).notna().any())]
+
+            # Display
             with col1:
                 if not df.empty:
                     st.markdown(f"""<div class="info-message-blue">
                         <b>RESULTS ({len(df)}):</b>
                     </div>""", unsafe_allow_html=True)
                     st.dataframe(df, hide_index=True)
-
                 else:
                     st.markdown(f"""<div class="warning-message">
                         ⚠️ No results.
@@ -244,6 +350,18 @@ with tab1:
             template = str(row.template) if row.template else ""
             constant = str(row.constant) if row.constant else ""
             reference = str(row.reference) if row.reference else ""
+            if template:
+                sm_rule_type = "Template"
+                sm_rule = template
+            elif constant:
+                sm_rule_type = "Constant"
+                sm_rule = constant
+            elif reference:
+                sm_rule_type = "Reference"
+                sm_rule = reference
+            else:
+                sm_rule_type = ""
+                sm_rule = ""
             raw_classes = str(row["classes"]) if row["classes"] else ""
             class_list = [split_uri(c.strip())[1] for c in raw_classes.split(",") if c.strip()]
             class_ = ", ".join(class_list)
@@ -256,18 +374,18 @@ with tab1:
 
             selected_tm_for_display_list = list(tm_dict) if not selected_tm_for_display_list else selected_tm_for_display_list
             if tm_label in selected_tm_for_display_list:
-                row_dict = {"SubjectMap": sm_label, "TriplesMap": tm_label,
-                    "Template": template, "Constant": constant, "Reference": reference, "Class": class_, "TermType": term_type,
-                    "Graph": graph, "SubjectMap (complete)": subject_map}
+                row_dict = {"Type": sm_rule_type, "Rule": sm_rule,
+                "Class": class_, "Term Type": term_type, "TriplesMap label": tm_label,
+                    "Graph": graph, "Subject Map": subject_map}
+                df_data.append(row_dict)
 
-                # Remove keys with empty string values
-                filtered_row = {k: v for k, v in row_dict.items() if v}
-                df_data.append(filtered_row)
+        df = pd.DataFrame(df_data)
+        # Drop columns that are entirely empty (all values are NaN or empty strings)
+        df = df.loc[:, df.apply(lambda col: col.replace('', pd.NA).notna().any())]
 
 
         with col1:
             st.write("")
-            df = pd.DataFrame(df_data)
 
             if not df.empty:
                 st.markdown(f"""<div class="info-message-blue">
@@ -313,14 +431,14 @@ with tab1:
                     key="key_order_clause")
 
             query = f"""
-                SELECT ?pom ?predicate ?objectMap ?template ?constant ?column ?termType ?datatype ?language ?graphMap WHERE {{
+                SELECT ?pom ?predicate ?objectMap ?template ?constant ?reference ?termType ?datatype ?language ?graphMap WHERE {{
                   <{tm_iri_for_search}> a <http://www.w3.org/ns/r2rml#TriplesMap> ;
                                          <http://www.w3.org/ns/r2rml#predicateObjectMap> ?pom .
                   OPTIONAL {{ ?pom <http://www.w3.org/ns/r2rml#predicate> ?predicate }}
                   OPTIONAL {{ ?pom <http://www.w3.org/ns/r2rml#objectMap> ?objectMap }}
                   OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#template> ?template }}
                   OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#constant> ?constant }}
-                  OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#reference> ?column }}
+                  OPTIONAL {{ ?objectMap <http://semweb.mmlab.be/ns/rml#reference> ?reference }}
                   OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#termType> ?termType }}
                   OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#datatype> ?datatype }}
                   OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#language> ?language }}
@@ -349,7 +467,19 @@ with tab1:
                 object_map = row.objectMap if row.objectMap else ""
                 template = str(row.template) if row.template else ""
                 constant = str(row.constant) if row.constant else ""
-                column = str(row.column) if row.column else ""
+                reference = str(row.reference) if row.reference else ""
+                if template:
+                    pom_rule_type = "Template"
+                    pom_rule = template
+                elif constant:
+                    pom_rule_type = "Constant"
+                    pom_rule = constant
+                elif reference:
+                    pom_rule_type = "Reference"
+                    pom_rule = reference
+                else:
+                    pom_rule_type = ""
+                    pom_rule = ""
                 term_type = str(row.termType) if row.termType else ""
                 term_type = split_uri(term_type)[1] if term_type else ""
                 datatype = str(row.datatype) if row.datatype else ""
@@ -362,18 +492,17 @@ with tab1:
                 all_pom_list = list(utils.get_pom_dict())
                 selected_pom_for_display_list = all_pom_list if not selected_pom_for_display_list else selected_pom_for_display_list
                 if pom in selected_pom_for_display_list:
-                    row_dict = {"Predicate-Object Map": pom_label,
-                        "Predicate": predicate, "Object Map": om_label,
-                        "Template": template, "Constant": constant, "Reference": column,
+                    row_dict = {"Predicate": predicate,
+                        "Type": pom_rule_type, "Rule": pom_rule,
                         "TermType": term_type, "Datatype": datatype, "Language": language,
-                        "Graph Map": graph_map, "Predicate-Object Map (complete)": pom,
-                        "Object Map (complete)": object_map}
+                        "Graph Map": graph_map, "Predicate-Object Map": pom,
+                        "Object Map": object_map}
 
-                    # Remove keys with empty string values
-                    filtered_row = {k: v for k, v in row_dict.items() if v}
-                    df_data.append(filtered_row)
-
+                    df_data.append(row_dict)
             df = pd.DataFrame(df_data)
+            # Drop columns that are entirely empty (all values are NaN or empty strings)
+            df = df.loc[:, df.apply(lambda col: col.replace('', pd.NA).notna().any())]
+
             with col1:
                 if not df.empty:
                     st.markdown(f"""<div class="info-message-blue">
@@ -444,12 +573,12 @@ with tab1:
 
             selected_classes_for_display_list = list_to_choose_classes if not selected_classes_for_display_list else selected_classes_for_display_list
             if class_label in selected_classes_for_display_list:
-                df_data.append({"Subject Map": sm_label,"TriplesMap": tm_label,
-                    "Class": class_label,
-                    "Class (complete)": rdf_class
-                })
+                df_data.append({"Class": class_label, "TriplesMap label": tm_label,
+                    "Subject Map": sm_label, "Class (complete)": rdf_class})
 
         df = pd.DataFrame(df_data)
+        # Drop columns that are entirely empty (all values are NaN or empty strings)
+        df = df.loc[:, df.apply(lambda col: col.replace('', pd.NA).notna().any())]
 
         with col1:
             if not df.empty:
@@ -514,12 +643,15 @@ with tab1:
                 has_sm = bool(list(st.session_state["g_mapping"].objects(subject=tm, predicate=RR["subjectMap"])))
                 has_pom = bool(list(st.session_state["g_mapping"].objects(subject=tm, predicate=RR["predicateObjectMap"])))
 
-                df_data.append({"TriplesMap": tm_label,
+                df_data.append({"TriplesMap label": tm_label,
                     "Has Subject Map": "❌" if not has_sm else "✔️",
-                    "Has Predicate ObjectMap": "❌" if not has_pom else "✔️",
+                    "Has Predicate-Object Map": "❌" if not has_pom else "✔️",
                     "TriplesMap (complete)": str(tm) if tm else ""})
 
             df = pd.DataFrame(df_data)
+            # Drop columns that are entirely empty (all values are NaN or empty strings)
+            df = df.loc[:, df.apply(lambda col: col.replace('', pd.NA).notna().any())]
+
 
             with col1:
                 if not df.empty:
@@ -571,6 +703,8 @@ with tab1:
                     "Predicate-Object Map (complete)": str(pom) if pom else ""})
 
             df = pd.DataFrame(df_data)
+            # Drop columns that are entirely empty (all values are NaN or empty strings)
+            df = df.loc[:, df.apply(lambda col: col.replace('', pd.NA).notna().any())]
 
             with col1:
                 if not df.empty:
@@ -604,25 +738,19 @@ with tab1:
                 key="key_order_clause")
 
         if selected_orphaned_node_type == "Subject Maps":
-            query = """SELECT DISTINCT ?sm WHERE {
-              {
-                ?sm <http://www.w3.org/ns/r2rml#template> ?template .
-              } UNION {
-                ?sm <http://www.w3.org/ns/r2rml#class> ?class .
-              } UNION {
-                ?sm <http://www.w3.org/ns/r2rml#constant> ?constant .
-              } UNION {
-                ?sm <http://www.w3.org/ns/r2rml#column> ?column .
-              } UNION {
-                ?sm <http://www.w3.org/ns/r2rml#termType> ?termType .
-              } UNION {
-                ?sm <http://www.w3.org/ns/r2rml#graphMap> ?graphMap .
-              } UNION {
-                ?sm <http://semweb.mmlab.be/ns/rml#reference> ?reference .
-              }
-              FILTER NOT EXISTS {
-                ?tm <http://www.w3.org/ns/r2rml#subjectMap> ?sm .
-              }}"""
+            query = """SELECT DISTINCT ?sm WHERE {{
+              {{?sm <http://www.w3.org/ns/r2rml#template> ?template .
+              }} UNION {{?sm <http://www.w3.org/ns/r2rml#class> ?class .
+              }} UNION {{?sm <http://www.w3.org/ns/r2rml#constant> ?constant .
+              }} UNION {{?sm <http://www.w3.org/ns/r2rml#column> ?column .
+              }} UNION {{?sm <http://www.w3.org/ns/r2rml#termType> ?termType .
+              }} UNION {{?sm <http://www.w3.org/ns/r2rml#graphMap> ?graphMap .
+              }} UNION {{?sm <http://semweb.mmlab.be/ns/rml#reference> ?reference .}}
+
+              FILTER NOT EXISTS {{?tm <http://www.w3.org/ns/r2rml#subjectMap> ?sm .}}
+              FILTER NOT EXISTS {{?pom <http://www.w3.org/ns/r2rml#predicateObjectMap> ?sm .}}
+              FILTER NOT EXISTS {{?om <http://www.w3.org/ns/r2rml#objectMap> ?sm .}}
+            }}"""
 
             if order_clause == "Ascending":
                 query += f"ORDER BY ASC(?sm) "
@@ -649,34 +777,42 @@ with tab1:
                 RML = Namespace("http://semweb.mmlab.be/ns/rml#")
 
                 template = g.value(subject=sm, predicate=RR["template"])
-                rdf_class = g.value(subject=sm, predicate=RR["class"])
                 constant = g.value(subject=sm, predicate=RR["constant"])
-                column = g.value(subject=sm, predicate=RR["column"])
+                reference = g.value(subject=sm, predicate=RML["reference"])
+                if template:
+                    sm_rule_type = "Template"
+                    sm_rule = template
+                elif constant:
+                    sm_rule_type = "Constant"
+                    sm_rule = constant
+                elif reference:
+                    sm_rule_type = "Reference"
+                    sm_rule = reference
+                else:
+                    sm_rule_type = ""
+                    sm_rule = ""
+                rdf_class = g.value(subject=sm, predicate=RR["class"])
                 term_type = g.value(subject=sm, predicate=RR["termType"])
                 graph_map = g.value(subject=sm, predicate=RR["graphMap"])
-                reference = g.value(subject=sm, predicate=RML["reference"])
 
                 row_dict = {"Subject Map": sm_label,
+                    "Type": str(sm_rule_type),
+                    "Rule": str(sm_rule),
                     "Class": utils.get_node_label(rdf_class) if rdf_class else "",
-                    "Template": str(template) if template else "",
-                    "Constant": str(constant) if constant else "",
-                    "Column": str(column) if column else "",
                     "Term Type": str(term_type) if term_type else "",
                     "Graph Map": str(graph_map) if graph_map else "",
-                    "Reference": str(reference) if reference else "",
-                    "Subject Map (complete)": sm,}
+                    "Subject Map (complete)": sm}
 
-                # Remove keys with empty string values
-                filtered_row = {k: v for k, v in row_dict.items() if v}
-                df_data.append(filtered_row)
-
+                df_data.append(row_dict)
             df = pd.DataFrame(df_data)
+            df = df.loc[:, df.apply(lambda col: col.replace('', pd.NA).notna().any())]
+
 
             with col1:
                 if not df.empty:
                     st.markdown(f"""<div class="info-message-blue">
                         <b>RESULTS ({len(df)}):</b>
-                        <small>[Possible Subject Maps not used by any TriplesMap.]</small>
+                        <small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Possible Subject Maps not used by any TriplesMap]</small>
                     </div>""", unsafe_allow_html=True)
                     st.dataframe(df, hide_index=True)
                 else:
@@ -719,17 +855,16 @@ with tab1:
                 row_dict = {"Predicate-Object Map": pom_label,
                     "Predicate": predicate, "Predicate-Object Map (complete)": pom,}
 
-                # Remove keys with empty string values
-                filtered_row = {k: v for k, v in row_dict.items() if v}
-                df_data.append(filtered_row)
+                df_data.append(row_dict)
 
             df = pd.DataFrame(df_data)
+            df = df.loc[:, df.apply(lambda col: col.replace('', pd.NA).notna().any())]
 
             with col1:
                 if not df.empty:
                     st.markdown(f"""<div class="info-message-blue">
-                        <b>RESULTS ({len(df)}):</b><br>
-                        <small>Possible Predicate-Object Maps not used by any TriplesMap.
+                        <b>RESULTS ({len(df)}):</b>
+                        <small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Possible Predicate-Object Maps not used by any TriplesMap]
                     </div>""", unsafe_allow_html=True)
                     st.dataframe(df, hide_index=True)
                 else:
@@ -739,30 +874,21 @@ with tab1:
 
         if selected_orphaned_node_type == "Object Maps":
 
-            query = """SELECT DISTINCT ?om WHERE {
-              {
-                ?om <http://www.w3.org/ns/r2rml#constant> ?c .
-              } UNION {
-                ?om <http://www.w3.org/ns/r2rml#column> ?col .
-              } UNION {
-                ?om <http://www.w3.org/ns/r2rml#template> ?tpl .
-              } UNION {
-                ?om <http://www.w3.org/ns/r2rml#termType> ?tt .
-              } UNION {
-                ?om <http://www.w3.org/ns/r2rml#datatype> ?dt .
-              } UNION {
-                ?om <http://www.w3.org/ns/r2rml#language> ?lang .
-              } UNION {
-                ?om <http://www.w3.org/ns/r2rml#parentTriplesMap> ?ptm .
-              } UNION {
-                ?om <http://www.w3.org/ns/r2rml#joinCondition> ?jc .
-              } UNION {
-                ?om <http://semweb.mmlab.be/ns/rml#reference> ?ref .
-              }
-              FILTER NOT EXISTS {
-                ?pom <http://www.w3.org/ns/r2rml#objectMap> ?om .
-              }
-            }"""
+            query = """SELECT DISTINCT ?om WHERE {{
+              {{?om <http://www.w3.org/ns/r2rml#constant> ?c .
+              }} UNION {{?om <http://www.w3.org/ns/r2rml#column> ?col .
+              }} UNION {{?om <http://www.w3.org/ns/r2rml#template> ?tpl .
+              }} UNION {{?om <http://www.w3.org/ns/r2rml#termType> ?tt .
+              }} UNION {{?om <http://www.w3.org/ns/r2rml#datatype> ?dt .
+              }} UNION {{?om <http://www.w3.org/ns/r2rml#language> ?lang .
+              }} UNION {{?om <http://www.w3.org/ns/r2rml#parentTriplesMap> ?ptm .
+              }} UNION {{?om <http://www.w3.org/ns/r2rml#joinCondition> ?jc .
+              }} UNION {{?om <http://semweb.mmlab.be/ns/rml#reference> ?ref .}}
+
+              FILTER NOT EXISTS {{?pom <http://www.w3.org/ns/r2rml#objectMap> ?om .}}
+              FILTER NOT EXISTS {{?tm <http://www.w3.org/ns/r2rml#subjectMap> ?om .}}
+            }}
+            """
 
             if order_clause == "Ascending":
                 query += f"ORDER BY ASC(?om) "
@@ -784,39 +910,48 @@ with tab1:
                 om_label = utils.get_node_label(om)
 
                 g = st.session_state["g_mapping"]
-                constant = g.value(subject=om, predicate=RR["constant"])
-                column = g.value(subject=om, predicate=RR["column"])
-                template = g.value(subject=om, predicate=RR["template"])
+
+                template = g.value(subject=sm, predicate=RR["template"])
+                constant = g.value(subject=sm, predicate=RR["constant"])
+                reference = g.value(subject=sm, predicate=RML["reference"])
+                if template:
+                    om_rule_type = "Template"
+                    om_rule = template
+                elif constant:
+                    om_rule_type = "Constant"
+                    om_rule = constant
+                elif reference:
+                    om_rule_type = "Reference"
+                    om_rule = reference
+                else:
+                    om_rule_type = ""
+                    om_rule = ""
                 term_type = g.value(subject=om, predicate=RR["termType"])
                 datatype = g.value(subject=om, predicate=RR["datatype"])
                 language = g.value(subject=om, predicate=RR["language"])
                 parent_tm = g.value(subject=om, predicate=RR["parentTriplesMap"])
                 join_condition = g.value(subject=om, predicate=RR["joinCondition"])
-                reference = g.value(subject=om, predicate=RML["reference"])
 
                 row_dict = {"Object Map": om_label,
-                        "Constant": str(constant) if constant else "",
-                        "Column": str(column) if column else "",
-                        "Template": str(template) if template else "",
+                        "Type": str(om_rule_type),
+                        "Rule": str(om_rule),
                         "Term Type": str(term_type) if term_type else "",
                         "Datatype": str(datatype) if datatype else "",
                         "Language": str(language) if language else "",
                         "Parent TriplesMap": str(parent_tm) if parent_tm else "",
                         "Join Condition": str(join_condition) if join_condition else "",
-                        "Reference": str(reference) if reference else "",
                         "Object Map (complete)": str(om) if om else ""}
 
-                # Remove keys with empty string values
-                filtered_row = {k: v for k, v in row_dict.items() if v}
-                df_data.append(filtered_row)
+                df_data.append(row_dict)
 
             df = pd.DataFrame(df_data)
+            df = df.loc[:, df.apply(lambda col: col.replace('', pd.NA).notna().any())]
 
             with col1:
                 if not df.empty:
                     st.markdown(f"""<div class="info-message-blue">
-                        <b>RESULTS ({len(df)}):</b><br>
-                        <small>Possible Object Maps not used by any Predicate-Object Map.
+                        <b>RESULTS ({len(df)}):</b>
+                        <small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Possible Object Maps not used by any Predicate-Object Map]
                     </div>""", unsafe_allow_html=True)
                     st.dataframe(df, hide_index=True)
                 else:
@@ -865,11 +1000,12 @@ with tab1:
                 p_label = utils.get_node_label(p)
                 o_label = utils.get_node_label(o)
 
-                df_data.append({"Subject": s_label, "Predicate": p_label,
-                    "Object": o_label, "Subject (complete)": str(s),
+                df_data.append({"Subject label": s_label, "Predicate label": p_label,
+                    "Object label": o_label, "Subject (complete)": str(s),
                     "Predicate (complete)": str(p), "Object (complete)": str(o)})
 
             df = pd.DataFrame(df_data)
+            df = df.loc[:, df.apply(lambda col: col.replace('', pd.NA).notna().any())]
 
             with col1:
                 if not df.empty:
