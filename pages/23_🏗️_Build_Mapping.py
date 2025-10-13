@@ -2264,7 +2264,7 @@ with tab3:
             if pom_complete_flag:
 
                 # LOOK FOR SM   HEREIGO
-                sm_iri_for_pom = next(st.session_state["g_mapping"].objects(tm_iri, RR.subjectMap), None)
+                sm_iri_for_pom = next(st.session_state["g_mapping"].objects(tm_iri_for_pom, RR.subjectMap), None)
 
                 if sm_iri_for_pom:
                     template_sm_for_pom = next(st.session_state["g_mapping"].objects(sm_iri_for_pom, RR.template), None)
@@ -2296,6 +2296,7 @@ with tab3:
                     om_iri_for_display = Literal(om_column_name)
 
                 with col1:
+
                     # st.markdown(f"""<div class="gray-preview-message" style="word-wrap:break-word; overflow-wrap:anywhere;">
                     #         <small><b style="color:#F63366;">🔍 Subject Map → Predicate → Object Map</b></small><br>
                     #     <div style="margin-top:0.2em; margin-left:20px; font-size:15px;">
@@ -2303,13 +2304,24 @@ with tab3:
                     #             🅿️ {selected_p_iri} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                     #              → &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🅾️ {om_iri_for_display}</b></small>
                     #     </div></div>""", unsafe_allow_html=True)
-                    st.markdown(f"""<div class="gray-preview-message" style="word-wrap:break-word; overflow-wrap:anywhere;">
-                            <small><b style="color:#F63366;">🔍 Subject Map → Predicate → Object Map</b></small><br>
-                        <div style="margin-top:0.2em; margin-left:20px; font-size:15px;">
-                                <small><b> {sm_rule} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; → &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                {selected_p_iri} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                 → &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {om_iri_for_display}</b></small>
-                        </div></div>""", unsafe_allow_html=True)
+
+
+                    st.markdown(f"""<div class="gray-preview-message" style="margin-top:0px; padding-top:4px;">
+                        <small><b style="color:#F63366; font-size:10px; margin-top:0px;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small><br>
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:6px;">
+                            <div style="flex:1; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px;">
+                                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{sm_rule}</b></div>
+                            </div>
+                            <div style="flex:0; font-size:18px;">🡆</div>
+                            <div style="flex:1; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px;">
+                                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{selected_p_iri}</b></div>
+                            </div>
+                            <div style="flex:0; font-size:18px;">🡆</div>
+                            <div style="flex:1; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px;">
+                                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{om_iri_for_display}</b></div>
+                            </div>
+                        </div>
+                    </div>""", unsafe_allow_html=True)
 
                 with col1:
                     st.write("")
