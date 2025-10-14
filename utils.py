@@ -158,6 +158,10 @@ def import_st_aesthetics():
             .gray-preview-message {background-color:#f9f9f9; padding:0.7em; border-radius:5px;
             color:#333333; border:1px solid #e0e0e0; font-size: 0.92em; word-wrap: break-word;}
 
+    /* BLUE PREVIEW MESSAGE */
+            .blue-preview-message {background-color: #eaf4ff; padding:0.7em; border-radius:5px;
+            color:#0c5460; border:1px solid #d0e4ff; font-size: 0.92em; word-wrap: break-word;}
+
     /* BLUE STATUS MESSAGE */
             .blue-status-message {background-color: #eaf4ff; padding: 0.6em;
             border-radius: 5px; color: #0c5460; border-left: 4px solid #0c5460;
@@ -364,6 +368,9 @@ def import_st_aesthetics_dark_mode():
           border-radius: 5px; color: #dddddd; border: 1px solid #444444; font-size: 0.92em;
           word-wrap: break-word;}
 
+    /* BLUE PREVIEW MESSAGE - Dark Mode*/
+            .blue-preview-message {background-color: #0b1c2d; padding:0.7em; border-radius:5px;
+            color:#b3d9ff; border:1px solid #060e1a; font-size: 0.92em; word-wrap: break-word;}
 
     /* BLUE STATUS MESSAGE — Dark Mode */
         .blue-status-message {background-color: #0b1c2d; padding: 0.6em;
@@ -1469,6 +1476,28 @@ def get_ontology_defined_p():
     return sorted(list(p_set))
 #______________________________________________
 
+#________________________________________________________
+# Funtion to get the predicates defined by the ontology
+def get_ontology_component_defined_p(ont):
+    ontology_base_iri_list = get_ontology_base_iri()
+    p_types_list = [RDF.Property, OWL.ObjectProperty, OWL.DatatypeProperty]
+    p_exclusion_list = [RDFS.label, RDFS.comment, OWL.versionInfo, OWL.deprecated, RDF.type]
+
+    p_set = set()
+
+    for s, p, o in ont.triples((None, RDF.type, None)):
+        if o in p_types_list:
+            if ontology_base_iri_list:
+                if str(s).startswith(tuple(ontology_base_iri_list)) and s not in p_exclusion_list:
+                    p_set.add(s)
+            else:
+                if s not in p_exclusion_list:
+                    p_set.add(s)
+
+    return sorted(list(p_set))
+#______________________________________________
+
+
 #______________________________________________
 # Funtion to get list of datatypes
 def get_datatypes_dict():
@@ -2110,6 +2139,7 @@ def is_valid_url_mapping(mapping_url, show_info):
     return mapping_url_ok_flag
 
 #_________________________________________________
+
 #HEREIGO
 
 
