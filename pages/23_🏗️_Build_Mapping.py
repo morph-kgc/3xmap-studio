@@ -2263,7 +2263,7 @@ with tab3:
 
             if pom_complete_flag:
 
-                # LOOK FOR SM   HEREIGO
+                # Prepare subject for display
                 sm_iri_for_pom = next(st.session_state["g_mapping"].objects(tm_iri_for_pom, RR.subjectMap), None)
 
                 if sm_iri_for_pom:
@@ -2278,9 +2278,24 @@ with tab3:
                     elif reference_sm_for_pom:
                         sm_rule = reference_sm_for_pom
 
-                else:
-                    sm_rule = "No Subject Map"
+                    if isinstance(sm_rule, URIRef):
+                        sm_rule_ns = URIRef(split_uri(sm_rule)[0])
+                        sm_rule_prefix = st.session_state["g_mapping"].namespace_manager.store.prefix(sm_rule_ns)
+                        if sm_rule_prefix:
+                            sm_rule = f"{sm_rule_prefix}: {split_uri(sm_rule)[1]}"
 
+                else:
+                    sm_rule = """No Subject Map"""
+
+                # Prepare predicate for display
+                selected_p_ns = URIRef(split_uri(selected_p_iri)[0])
+                selected_p_prefix = st.session_state["g_mapping"].namespace_manager.store.prefix(selected_p_ns)
+                if selected_p_prefix:
+                    selected_p_for_display = f"{selected_p_prefix}: {split_uri(selected_p_iri)[1]}"
+                else:
+                    selected_p_for_display = selected_p_iri
+
+                # Prepare object for display
                 if om_generation_rule == "Template 📐":
                     om_iri_for_display = Literal(om_template)
 
@@ -2295,17 +2310,14 @@ with tab3:
                 elif om_generation_rule == "Reference 📊":
                     om_iri_for_display = Literal(om_column_name)
 
+                if isinstance(om_iri_for_display, URIRef):
+                    om_iri_ns = URIRef(split_uri(om_iri_for_display)[0])
+                    om_iri_prefix = st.session_state["g_mapping"].namespace_manager.store.prefix(om_iri_ns)
+                    if om_iri_prefix:
+                        om_iri_for_display = f"{om_iri_prefix}: {split_uri(om_iri_for_display)[1]}"
+
+                # display rule
                 with col1:
-
-                    # st.markdown(f"""<div class="gray-preview-message" style="word-wrap:break-word; overflow-wrap:anywhere;">
-                    #         <small><b style="color:#F63366;">🔍 Subject Map → Predicate → Object Map</b></small><br>
-                    #     <div style="margin-top:0.2em; margin-left:20px; font-size:15px;">
-                    #             <small><b> <span style="font-size:1.4em;">🆂</span> {sm_rule} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; → &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                    #             🅿️ {selected_p_iri} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                    #              → &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🅾️ {om_iri_for_display}</b></small>
-                    #     </div></div>""", unsafe_allow_html=True)
-
-
                     st.markdown(f"""<div class="gray-preview-message" style="margin-top:0px; padding-top:4px;">
                         <small><b style="color:#F63366; font-size:10px; margin-top:0px;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small><br>
                         <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:6px;">
@@ -2314,14 +2326,12 @@ with tab3:
                             </div>
                             <div style="flex:0; font-size:18px;">🡆</div>
                             <div style="flex:1; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px;">
-                                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{selected_p_iri}</b></div>
+                                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{selected_p_for_display}</b></div>
                             </div>
                             <div style="flex:0; font-size:18px;">🡆</div>
                             <div style="flex:1; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px;">
                                 <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{om_iri_for_display}</b></div>
-                            </div>
-                        </div>
-                    </div>""", unsafe_allow_html=True)
+                            </div></div></div>""", unsafe_allow_html=True)
 
                 with col1:
                     st.write("")
