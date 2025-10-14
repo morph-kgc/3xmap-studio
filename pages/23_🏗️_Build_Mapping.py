@@ -1234,7 +1234,7 @@ with tab2:
                     elif build_template_action_sm in ["🏷️ Add Namespace*", "🏷️ Add Namespace"]:
                         with col1b:
                             mapping_ns_dict = utils.get_mapping_ns_dict()
-                            list_to_choose = list(reversed(list(mapping_ns_dict.keys())))
+                            list_to_choose = sorted(mapping_ns_dict.keys())
                             list_to_choose.insert(0, "Select a namespace")
                             sm_template_ns_prefix = st.selectbox("🖱️ Select a namespace for the template:", list_to_choose,
                                 label_visibility="collapsed", key="key_sm_template_ns_prefix")
@@ -1263,7 +1263,7 @@ with tab2:
                         sm_constant = st.text_input("⌨️ Enter constant:*", key="key_sm_constant")
 
                     mapping_ns_dict = utils.get_mapping_ns_dict()
-                    list_to_choose = list(mapping_ns_dict.keys())
+                    list_to_choose = sorted(mapping_ns_dict.keys())
                     list_to_choose.insert(0, "Select a namespace")
                     with col1a:
                         sm_constant_ns_prefix = st.selectbox("🖱️ Namespace for constant:*", list_to_choose,
@@ -1380,7 +1380,7 @@ with tab2:
                     if superclass_dict:   # there exists at least one superclass (show superclass filter)
                         classes_in_superclass_dict = {}
                         with col1a:
-                            superclass_list = list(superclass_dict.keys())
+                            superclass_list = sorted(superclass_dict.keys())
                             superclass_list.insert(0, "Select a superclass")
                             superclass = st.selectbox("🖱️ Filter by superclass (optional):", superclass_list,
                                 key="key_superclass")   #superclass label
@@ -1389,21 +1389,21 @@ with tab2:
                             superclass = superclass_dict[superclass] #we get the superclass iri
                             for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, superclass)))):
                                 classes_in_superclass_dict[split_uri(s)[1]] = s
-                            class_list = list(classes_in_superclass_dict.keys())
+                            class_list = sorted(classes_in_superclass_dict.keys())
                             class_list.insert(0, "Select a class")
                             with col1a:
                                 subject_class = st.selectbox("🖱️ Select class:", class_list,
                                     key="key_subject_class")   #class label
 
                         else:  #no superclass selected (list all classes)
-                            class_list = list(ontology_classes_dict.keys())
+                            class_list = sorted(ontology_classes_dict.keys())
                             class_list.insert(0, "Select a class")
                             with col1a:
                                 subject_class = st.selectbox("🖱️ Select class:*", class_list,
                                     key="key_subject_class")   #class label
 
                     else:     #no superclasses exist (no superclass filter)
-                        class_list = list(ontology_classes_dict.keys())
+                        class_list = sorted(ontology_classes_dict.keys())
                         class_list.insert(0, "Select a class")
                         with col1a:
                             subject_class = st.selectbox("🖱️ Select class:*", class_list,
@@ -1422,9 +1422,9 @@ with tab2:
 
                     subject_class_prefix_list = list(mapping_ns_dict.keys())
                     with col1a:
-                        subject_class_prefix_list = list_to_choose = list(reversed(list(mapping_ns_dict.keys())))
-                        subject_class_prefix_list.insert(0,"Select a namespace")
-                        subject_class_prefix = st.selectbox("🖱️ Select a namespace:*", subject_class_prefix_list,
+                        list_to_choose = sorted(mapping_ns_dict.keys())
+                        list_to_choose.insert(0,"Select a namespace")
+                        subject_class_prefix = st.selectbox("🖱️ Select a namespace:*", list_to_choose,
                             key="key_subject_class_prefix")
 
                     ns_needed_for_sm_flag = True
@@ -1487,30 +1487,30 @@ with tab2:
                         if superclass_dict:   # there exists at least one superclass (show superclass filter)
                             classes_in_superclass_dict = {}
                             with col1a:
-                                superclass_list = list(superclass_dict.keys())
-                                superclass_list.insert(0, "Select a superclass")
-                                superclass = st.selectbox("🖱️ Filter by superclass (optional):", superclass_list,
+                                list_to_choose = sorted(superclass_dict.keys())
+                                list_to_choose.insert(0, "Select a superclass")
+                                superclass = st.selectbox("🖱️ Filter by superclass (optional):", list_to_choose,
                                     key="key_superclass")   #superclass label
                             if superclass != "Select a superclass":   # a superclass has been selected (filter)
                                 classes_in_superclass_dict[superclass] = superclass_dict[superclass]
                                 superclass = superclass_dict[superclass] #we get the superclass iri
                                 for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, superclass)))):
                                     classes_in_superclass_dict[split_uri(s)[1]] = s
-                                class_list = list(classes_in_superclass_dict.keys())
-                                class_list.insert(0, "Select a class")
+                                list_to_choose = sorted(classes_in_superclass_dict.keys())
+                                list_to_choose.insert(0, "Select a class")
                                 with col1a:
-                                    subject_class = st.selectbox("🖱️ Select class:", class_list,
+                                    subject_class = st.selectbox("🖱️ Select class:", list_to_choose,
                                         key="key_subject_class")   #class label
 
                             else:  #no superclass selected (list all classes)
-                                class_list = list(ontology_classes_dict.keys())
-                                class_list.insert(0, "Select a class")
+                                list_to_choose = sorted(ontology_classes_dict.keys())
+                                list_to_choose.insert(0, "Select a class")
                                 with col1a:
-                                    subject_class = st.selectbox("🖱️ Select class:*", class_list,
+                                    subject_class = st.selectbox("🖱️ Select class:*", list_to_choose,
                                         key="key_subject_class")   #class label
 
                         else:     #no superclasses exist (no superclass filter)
-                            class_list = list(ontology_classes_dict.keys())
+                            class_list = sorted(ontology_classes_dict.keys())
                             class_list.insert(0, "Select a class")
                             with col1a:
                                 subject_class = st.selectbox("🖱️ Select class:*", class_list,
@@ -1527,9 +1527,9 @@ with tab2:
 
                         subject_class_prefix_list = list(mapping_ns_dict.keys())
                         with col1a:
-                            subject_class_prefix_list = list_to_choose = list(reversed(list(mapping_ns_dict.keys())))
-                            subject_class_prefix_list.insert(0,"Select a namespace")
-                            subject_class_prefix = st.selectbox("🖱️ Select a namespace:*", subject_class_prefix_list,
+                            list_to_choose = sorted(mapping_ns_dict.keys())
+                            list_to_choose.insert(0,"Select a namespace")
+                            subject_class_prefix = st.selectbox("🖱️ Select a namespace:*", list_to_choose,
                                 key="key_subject_class_prefix")
 
                         ns_needed_for_sm_flag = True
@@ -1581,9 +1581,9 @@ with tab2:
 
                     with col1b:
                         mapping_ns_dict = utils.get_mapping_ns_dict()
-                        subject_graph_prefix_list = list(reversed(list(mapping_ns_dict.keys())))
-                        subject_graph_prefix_list.insert(0,"Select a namespace")
-                        subject_graph_prefix = st.selectbox("🖱️ Select a namespace:*", subject_graph_prefix_list,
+                        list_to_choose = sorted(mapping_ns_dict.keys())
+                        list_to_choose.insert(0,"Select a namespace")
+                        subject_graph_prefix = st.selectbox("🖱️ Select a namespace:*", list_to_choose,
                             key="key_subject_graph_prefix")
 
                         ns_needed_for_sm_flag = True
@@ -1881,7 +1881,7 @@ with tab3:
                         for ont_label in st.session_state["g_ontology_components_dict"]:
                             list_to_choose.append(utils.get_ontology_tag(ont_label))
                         list_to_choose.insert(0, "Select ontology")
-                        ontology_filter_for_predicate = st.selectbox("🖱️ Filter by ontology (optional):",
+                        ontology_filter_for_predicate = st.selectbox("🖱️ Filter predicate by ontology (optional):",
                             list_to_choose, key="key_ontology_filter_for_predicate")
 
                     if ontology_filter_for_predicate == "Select ontology":
@@ -1893,15 +1893,13 @@ with tab3:
                                 break
 
                 else:
-                    ontology_filter_for_subject_class = st.session_state["g_ontology"]
+                    ontology_filter_for_predicate = st.session_state["g_ontology"]
 
-
-
-
+                ontology_p_list = utils.get_ontology_component_defined_p(ontology_filter_for_predicate)
                 ontology_p_dict = {split_uri(p)[1]: p for p in ontology_p_list}
 
                 with col1b:
-                    list_to_choose = list(ontology_p_dict.keys())
+                    list_to_choose = sorted(ontology_p_dict.keys())
                     list_to_choose.insert(0, "Select a predicate")
                     selected_p_label = st.selectbox("🖱️ Select a predicate:*", list_to_choose, key="key_selected_p_label")
 
@@ -1918,7 +1916,7 @@ with tab3:
                     ns_needed_for_pom_flag = True
 
                 with col1a:
-                    list_to_choose = list(reversed(list(mapping_ns_dict.keys())))
+                    list_to_choose = sorted(mapping_ns_dict.keys())
                     list_to_choose.insert(0, "Select a namespace")
                     manual_p_ns_prefix = st.selectbox("🖱️ Select a namespace (for the predicate):*", list_to_choose, key="key_manual_p_ns_prefix")
                 with col1b:
@@ -2018,7 +2016,7 @@ with tab3:
                 elif build_template_action_om == "🏷️ Add Namespace":
                     with col1b:
                         mapping_ns_dict = utils.get_mapping_ns_dict()
-                        list_to_choose = list(reversed(list(mapping_ns_dict.keys())))
+                        list_to_choose = sorted(mapping_ns_dict.keys())
                         list_to_choose.insert(0, "Select a namespace")
                         om_template_ns_prefix = st.selectbox("🖱️ Select a namespace:", list_to_choose,
                             label_visibility="collapsed", key="key_om_template_ns_prefix")
@@ -2078,7 +2076,7 @@ with tab3:
 
                 mapping_ns_dict = utils.get_mapping_ns_dict()
                 if om_term_type_constant == "🌐 IRI" and mapping_ns_dict:
-                    list_to_choose = list(mapping_ns_dict.keys())
+                    list_to_choose = sorted(mapping_ns_dict.keys())
                     list_to_choose.insert(0, "Select a namespace")
                     with col1c:
                         om_constant_ns_prefix = st.selectbox("🖱️ Namespace for the constant:*", list_to_choose,
@@ -2154,7 +2152,7 @@ with tab3:
                     ns_needed_for_pom_flag = True
                 with col1a:
                     mapping_ns_dict = utils.get_mapping_ns_dict()
-                    list_to_choose = list(reversed(list(mapping_ns_dict.keys())))
+                    list_to_choose = sorted(mapping_ns_dict.keys())
                     list_to_choose.insert(0,"Select a namespace")
                     om_graph_prefix = st.selectbox("🖱️ Namespace for Graph Map:*", list_to_choose,
                         key="key_om_graph_prefix")
