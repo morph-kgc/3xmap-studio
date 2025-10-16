@@ -78,17 +78,23 @@ RML, RR, QL = utils.get_required_ns().values()
 # Define on_click functions-------------------------------------------------
 
 # TAB1
-def load_ontology_from_link():
+def load_ontology_from_link():  #HEREIGONS
     # load ontology
     st.session_state["g_ontology"] = st.session_state["g_ontology_from_link_candidate"]  # consolidate ontology graph
     st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_link=st.session_state["key_ontology_link"])
     # bind ontology namespaces
     ontology_ns_dict = utils.get_ontology_ns_dict()
     mapping_ns_dict = utils.get_mapping_ns_dict()
-    for prefix in ontology_ns_dict:
-        if prefix not in mapping_ns_dict:
+    for prefix, namespace in ontology_ns_dict.items():
+        if namespace not in mapping_ns_dict.values():
             st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
-            st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
+        actual_prefix = None            # find the actual prefix that was bound to this namespace (it might have been renamed)
+        for prefix, ns in st.session_state["g_mapping"].namespace_manager.namespaces():
+            if str(ns) == namespace:
+                actual_prefix = prefix
+                break
+        if actual_prefix:
+            st.session_state["last_added_ns_list"].insert(0, actual_prefix)
     # store information___________________________
     st.session_state["g_ontology_loaded_ok_flag"] = True
     st.session_state["g_ontology_components_dict"][st.session_state["g_ontology_label"]] = st.session_state["g_ontology"]

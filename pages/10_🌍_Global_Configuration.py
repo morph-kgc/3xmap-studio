@@ -122,7 +122,7 @@ def create_new_g_mapping():
     st.session_state["g_mapping_source_cache"] = ["scratch", ""]   #cache info on the mapping source
     st.session_state["new_g_mapping_created_ok_flag"] = True   #flag for success mesagge
     utils.empty_last_added_lists()
-    # bind ontology namespaces
+    # # bind ontology namespaces
     ontology_ns_dict = utils.get_ontology_ns_dict()
     for prefix in ontology_ns_dict:
         st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
@@ -205,9 +205,12 @@ def bind_custom_namespace():
 
 def bind_predefined_namespaces():
     # bind and store information___________________________
-    for prefix in predefined_ns_to_bind_list:
-        st.session_state["g_mapping"].bind(prefix, predefined_ns_dict[prefix])  # bind the new namespace
-        st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
+    for requested_prefix in predefined_ns_to_bind_list:
+        namespace = predefined_ns_dict[requested_prefix]
+        st.session_state["g_mapping"].bind(requested_prefix, namespace)
+        actual_prefix = utils.get_actual_bound_prefix(namespace)
+        if actual_prefix:
+            st.session_state["last_added_ns_list"].insert(0, actual_prefix)
     st.session_state["ns_bound_ok_flag"] = True    #for success message
     # reset fields_____________________________
     st.session_state["key_predefined_ns_to_bind_multiselect"] = []
@@ -215,10 +218,12 @@ def bind_predefined_namespaces():
 
 def bind_all_predefined_namespaces():
     # bind and store information___________________________
-    for prefix in predefined_ns_dict:
-        if prefix not in mapping_ns_dict:
-            st.session_state["g_mapping"].bind(prefix, predefined_ns_dict[prefix])  # bind the new namespace
-            st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
+    for requested_prefix in predefined_ns_dict:
+        namespace = predefined_ns_dict[requested_prefix]
+        st.session_state["g_mapping"].bind(requested_prefix, namespace)
+        actual_prefix = utils.get_actual_bound_prefix(namespace)
+        if actual_prefix:
+            st.session_state["last_added_ns_list"].insert(0, actual_prefix)
     st.session_state["ns_bound_ok_flag"] = True   #for success message
     # reset fields_____________________________
     st.session_state["key_add_ns_radio"] = "📋 Predefined"
@@ -227,8 +232,11 @@ def bind_all_predefined_namespaces():
 def bind_ontology_namespaces():
     # bind and store information___________________________
     for prefix in ontology_ns_to_bind_list:
+        namespace = ontology_ns_dict[prefix]
         st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
-        st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
+        actual_prefix = utils.get_actual_bound_prefix(namespace)
+        if actual_prefix:
+            st.session_state["last_added_ns_list"].insert(0, actual_prefix)
     st.session_state["ns_bound_ok_flag"] = True   # for success message
     # reset fields_____________________________
     st.session_state["key_ontology_ns_to_bind_multiselect"] = []
@@ -250,28 +258,31 @@ def change_structural_ns():
     st.session_state["key_add_ns_radio"] = "🏛️ Base"
 
 def unbind_namespaces():
-    # unbind and store information___________________________
+    # # unbind and store information___________________________
+    # for prefix in ns_to_unbind_list:
+    #     st.session_state["g_mapping"].namespace_manager.bind(prefix, None, replace=True)
+    #     if prefix in st.session_state["last_added_ns_list"]:
+    #         st.session_state["last_added_ns_list"].remove(prefix)   # to remove from last added if it is there
+
+    # namespaces cannot be removed, so the mapping is rebuilt completely
+    old_graph = st.session_state["g_mapping"]
+    ns_to_remove = set(ns_to_unbind_list)
+    new_graph = Graph()   # create a new graph and copy triples
+    for triple in old_graph:
+        new_graph.add(triple)
+
+    for prefix, ns in old_graph.namespace_manager.namespaces():      # rebind the namespaces without the deleted ones
+        if prefix not in ns_to_remove:
+            new_graph.namespace_manager.bind(prefix, ns, replace=True)
+
+    st.session_state["g_mapping"] = new_graph        # replace the old graph with the new one
+    # store information
     for prefix in ns_to_unbind_list:
-        st.session_state["g_mapping"].namespace_manager.bind(prefix, None, replace=True)
         if prefix in st.session_state["last_added_ns_list"]:
-            st.session_state["last_added_ns_list"].remove(prefix)   # to remove from last added if it is there
+            st.session_state["last_added_ns_list"].remove(prefix)
     st.session_state["ns_unbound_ok_flag"] = True
     # reset fields_____________________________
     st.session_state["key_unbind_multiselect"] = []
-
-# def unbind_namespaces():
-#     # unbind and store information___________________________
-#     for prefix in ns_to_unbind_list:
-#         ns_mgr = st.session_state["g_mapping"].namespace_manager
-#         if prefix in ns_mgr.namespaces():
-#             del ns_mgr._prefix[ns_mgr.store.prefix(prefix)]    # remove from internal prefix-to-namespace mapping
-#             del ns_mgr.store._prefix[ns_mgr.store.prefix(prefix)]
-#             del ns_mgr.store._namespace[prefix]
-#         if prefix in st.session_state["last_added_ns_list"]:
-#             st.session_state["last_added_ns_list"].remove(prefix)
-#     st.session_state["ns_unbound_ok_flag"] = True
-#     # reset fields_____________________________
-#     st.session_state["key_unbind_multiselect"] = []
 
 def unbind_all_namespaces():
     # unbind and store information___________________________
@@ -279,6 +290,23 @@ def unbind_all_namespaces():
         st.session_state["g_mapping"].namespace_manager.bind(prefix, None, replace=True)
         if prefix in st.session_state["last_added_ns_list"]:
             st.session_state["last_added_ns_list"].remove(prefix)    # to remove from last added if it is there
+
+    # namespaces cannot be removed, so the mapping is rebuilt completely
+    old_graph = st.session_state["g_mapping"]
+    ns_to_remove = set(mapping_ns_dict_wo_structural_ns)
+    new_graph = Graph()   # create a new graph and copy triples
+    for triple in old_graph:
+        new_graph.add(triple)
+
+    for prefix, ns in old_graph.namespace_manager.namespaces():      # rebind the namespaces without the deleted ones
+        if prefix not in ns_to_remove:
+            new_graph.namespace_manager.bind(prefix, ns, replace=True)
+
+    st.session_state["g_mapping"] = new_graph        # replace the old graph with the new one
+    # store information
+    for prefix in mapping_ns_dict_wo_structural_ns:
+        if prefix in st.session_state["last_added_ns_list"]:
+            st.session_state["last_added_ns_list"].remove(prefix)
     st.session_state["ns_unbound_ok_flag"] = True
     # reset fields_____________________________
     st.session_state["key_unbind_multiselect"] = []
@@ -836,8 +864,6 @@ with tab2:
                         st.button("Bind", key="key_bind_custom_ns_button", on_click=bind_custom_namespace)
 
         elif add_ns_selected_option == "🧩 Ontology":
-            with col1:
-                col1a, col1b = st.columns([1,1.5])
 
             there_are_ontology_ns_unbound_flag = False
             ontology_ns_dict = utils.get_ontology_ns_dict()
@@ -847,6 +873,8 @@ with tab2:
                     continue
 
             if not there_are_ontology_ns_unbound_flag:
+                with col1:
+                    col1a, col1b = st.columns([2,1])
                 with col1a:
                     st.markdown(f"""<div class="info-message-gray">
                         🔒 All <b>ontology namespaces</b> are already bound.
@@ -854,15 +882,6 @@ with tab2:
                     st.write("")
             else:
                 default_ns = list(utils.get_default_ns_dict())
-                # prefixes = [prefix for prefix, _ in st.session_state["g_ontology"].namespace_manager.namespaces() if prefix not in default_ns]
-                # st.write("HERE", "complete ont", len(prefixes), prefixes)
-
-
-                # for ont_label, ont in st.session_state["g_ontology_components_dict"].items():
-                #     default_ns = list(utils.get_default_ns_dict())
-                #     prefixes = [prefix for prefix, _ in ont.namespace_manager.namespaces() if prefix not in default_ns]
-                #     st.write("HERE", ont_label, len(prefixes), prefixes)
-
 
                 g_ont_components_w_unbound_ns = []
                 for ont_label, ont in st.session_state["g_ontology_components_dict"].items():
@@ -872,43 +891,59 @@ with tab2:
                                 g_ont_components_w_unbound_ns.append(utils.get_ontology_tag(ont_label))
                                 break
 
+                if len(st.session_state["g_ontology_components_dict"]) == 1:
+                    with col1:
+                        col1a, col1b = st.columns([2,1])
 
-                with col1a:
-                    list_to_choose = [utils.get_ontology_tag(ont_label)
-                        for ont_label in reversed(st.session_state["g_ontology_components_dict"])]
-                    list_to_choose.insert(0, "Select ontology")
-                    ontology_filter_for_ns = st.selectbox("🖱️ Filter by ontologies (optional):", list_to_choose,
-                        key="key_ontology_filter_for_ns")
+                    ontology_filter_for_ns = "Select ontology"
 
-                if ontology_filter_for_ns == "Select ontology":
-                    with col1b:
+                    with col1a:
                         list_to_choose = [key for key in ontology_ns_dict if key not in mapping_ns_dict]
                         if len(list_to_choose) > 1:
                             list_to_choose.insert(0, "Select all")
                         ontology_ns_to_bind_list = st.multiselect("🖱️ Select ontology namespaces:*", list_to_choose,
                             key="key_ontology_ns_to_bind_multiselect")
 
-                else:
-                    if ontology_filter_for_ns not in g_ont_components_w_unbound_ns:
-                        with col1b:
-                            st.write("")
-                            st.markdown(f"""<div class="info-message-gray">
-                                🔒 All <b>namespaces</b> of the <b style="color:#F63366;">{ontology_filter_for_ns}</b> ontology are already bound.
-                            </div>""", unsafe_allow_html=True)
-                            st.write("")
-                        ontology_ns_to_bind_list = []
-                    else:
 
-                        for ont_label in st.session_state["g_ontology_components_dict"]:
-                            if utils.get_ontology_tag(ont_label) == ontology_filter_for_ns:
-                                ont = st.session_state["g_ontology_components_dict"][ont_label]
-                        ontology_component_ns_dict = utils.get_ontology_component_ns_dict(ont)
-                        list_to_choose = [key for key in ontology_component_ns_dict if key not in mapping_ns_dict]
-                        if len(list_to_choose) > 1:
-                            list_to_choose.insert(0, "Select all")
+                else:
+                    with col1:
+                        col1a, col1b = st.columns([1,2])
+                    with col1a:
+                        list_to_choose = [utils.get_ontology_tag(ont_label)
+                            for ont_label in reversed(st.session_state["g_ontology_components_dict"])]
+                        list_to_choose.insert(0, "Select ontology")
+                        ontology_filter_for_ns = st.selectbox("➖ Filter by ontology (optional):", list_to_choose,
+                            key="key_ontology_filter_for_ns")
+
+                    if ontology_filter_for_ns == "Select ontology":
                         with col1b:
+                            list_to_choose = [key for key in ontology_ns_dict if key not in mapping_ns_dict]
+                            if len(list_to_choose) > 1:
+                                list_to_choose.insert(0, "Select all")
                             ontology_ns_to_bind_list = st.multiselect("🖱️ Select ontology namespaces:*", list_to_choose,
                                 key="key_ontology_ns_to_bind_multiselect")
+
+                    else:
+                        if ontology_filter_for_ns not in g_ont_components_w_unbound_ns:
+                            with col1b:
+                                st.write("")
+                                st.markdown(f"""<div class="info-message-gray">
+                                    🔒 All <b>namespaces</b> of the <b style="color:#F63366;">{ontology_filter_for_ns}</b> ontology are already bound.
+                                </div>""", unsafe_allow_html=True)
+                                st.write("")
+                            ontology_ns_to_bind_list = []
+                        else:
+
+                            for ont_label in st.session_state["g_ontology_components_dict"]:
+                                if utils.get_ontology_tag(ont_label) == ontology_filter_for_ns:
+                                    ont = st.session_state["g_ontology_components_dict"][ont_label]
+                            ontology_component_ns_dict = utils.get_ontology_component_ns_dict(ont)
+                            list_to_choose = [k for k, v in ontology_component_ns_dict.items() if v not in mapping_ns_dict.values()]
+                            if len(list_to_choose) > 1:
+                                list_to_choose.insert(0, "Select all")
+                            with col1b:
+                                ontology_ns_to_bind_list = st.multiselect("🖱️ Select ontology namespaces:*", list_to_choose,
+                                    key="key_ontology_ns_to_bind_multiselect")
 
                 if ontology_ns_to_bind_list:
                     if "Select all" not in ontology_ns_to_bind_list:   # "Select all" not selected
@@ -970,7 +1005,8 @@ with tab2:
             else:
 
                 with col1a:
-                    predefined_ns_list = [key for key in predefined_ns_dict if key not in mapping_ns_dict]
+                    # predefined_ns_list = [key for key in predefined_ns_dict if key not in mapping_ns_dict]
+                    predefined_ns_list = [k for k, v in predefined_ns_dict.items() if v not in mapping_ns_dict.values()]
                     if len(predefined_ns_list) > 1:
                         predefined_ns_list.insert(0, "Select all")
                     predefined_ns_to_bind_list = st.multiselect("🖱️ Select predefined namespaces:*", predefined_ns_list, key="key_predefined_ns_to_bind_multiselect")
@@ -1141,7 +1177,7 @@ with tab2:
             st.rerun()
 
         # PURPLE HEADING - UNBIND NS (if there are bound ns)
-        if mapping_ns_dict:
+        if mapping_ns_dict and mapping_ns_dict != {st.session_state["structural_ns"][0]: st.session_state["structural_ns"][1]}:
             with col1:
                 st.write("______")
                 st.markdown("""<div class="purple-heading">
@@ -1161,14 +1197,13 @@ with tab2:
                 time.sleep(st.session_state["success_display_time"])
                 st.rerun()
 
-            mapping_ns_dict = utils.get_mapping_ns_dict()
-            list_to_choose = list(reversed(list(mapping_ns_dict.keys())))
-            if len(list_to_choose) > 1:
-                list_to_choose.insert(0, "Select all")
-
             with col1:
                 col1a, col1b = st.columns([2,1])
             with col1a:
+                mapping_ns_dict = utils.get_mapping_ns_dict()
+                list_to_choose = list(reversed(list(mapping_ns_dict.keys())))
+                if len(list_to_choose) > 1:
+                    list_to_choose.insert(0, "Select all")
                 if st.session_state["structural_ns"][0] in list_to_choose:
                     list_to_choose.remove(st.session_state["structural_ns"][0])
                 ns_to_unbind_list = st.multiselect("🖱️ Select namespaces to unbind:*", list_to_choose, key="key_unbind_multiselect")

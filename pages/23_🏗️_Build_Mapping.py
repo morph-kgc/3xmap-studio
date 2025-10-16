@@ -788,6 +788,23 @@ with tab1:
                     db_connection_for_ls = st.selectbox("🖱️ Select connection to Database:*", list_to_choose,
                         key="key_db_connection_for_ls")
 
+                with col1b:
+                    label_ls_option = st.selectbox("♻️ Reuse Logical Source:",
+                        ["No", "Yes (add label)"], key="key_label_ls_option")
+                    if label_ls_option == "Yes (add label)":
+                        with col1a:
+                            ls_label = st.text_input("⌨️ Enter label for the Logical Source:*")
+                            if ls_label in labelled_ls_list:
+                                with col1b:
+                                    st.markdown(f"""<div class="error-message">
+                                            ❌ The logical source label <b>{ls_label}</b>
+                                            is already in use. <small>Please, pick a different label.</small>
+                                        </div>""", unsafe_allow_html=True)
+                                    st.write("")
+                    else:
+                        ls_label = ""
+
+                with col1a:
                     if db_connection_for_ls != "Select a connection":
                         connection_ok_flag = True
                         try:
@@ -807,25 +824,6 @@ with tab1:
                             for query_label, [connection_label, query] in st.session_state["sql_queries_dict"].items():
                                 if connection_label == db_connection_for_ls:
                                     query_for_selected_db_list.insert(0, query_label)   # only include queries of the selected connection
-
-                            with col1b:
-                                # label_ls_checkbox = st.checkbox("♻️ Reuse Logical Source (optional)",
-                                #     key="label_ls_checkbox")
-                                label_ls_option = st.selectbox("♻️ Reuse Logical Source:",
-                                    ["No", "Yes (add label)"], key="key_label_ls_option")
-
-                                if label_ls_option == "Yes (add label)":
-                                    with col1a:
-                                        ls_label = st.text_input("⌨️ Enter label for the Logical Source:*")
-                                        if ls_label in labelled_ls_list:
-                                            with col1b:
-                                                st.markdown(f"""<div class="error-message">
-                                                        ❌ The logical source label <b>{ls_label}</b>
-                                                        is already in use. <small>Please, pick a different label.</small>
-                                                    </div>""", unsafe_allow_html=True)
-                                                st.write("")
-                                else:
-                                    ls_label = ""
 
                             with col1:
                                 col1a, col1b = st.columns(2)
@@ -961,8 +959,6 @@ with tab1:
                     ds_file = st.session_state["ds_files_dict"][ds_filename_for_tm]
 
                 with col1b:
-                    # label_ls_checkbox = st.checkbox("♻️ Reuse Logical Source (optional)",
-                    #     key="label_ls_checkbox")
                     label_ls_option = st.selectbox("♻️ Reuse Logical Source:",
                         ["No", "Yes (add label)"], key="key_label_ls_option")
 
@@ -1356,7 +1352,7 @@ with tab2:
                             for ont_label in st.session_state["g_ontology_components_dict"]:
                                 list_to_choose.append(utils.get_ontology_tag(ont_label))
                             list_to_choose.insert(0, "Select ontology")
-                            ontology_filter_for_subject_class = st.selectbox("🖱️ Filter by ontology (optional):",
+                            ontology_filter_for_subject_class = st.selectbox("➖ Filter by ontology (optional):",
                                 list_to_choose, key="key_ontology_filter_for_subject_class")
 
                         if ontology_filter_for_subject_class == "Select ontology":
@@ -1382,7 +1378,7 @@ with tab2:
                         with col1a:
                             superclass_list = sorted(superclass_dict.keys())
                             superclass_list.insert(0, "Select a superclass")
-                            superclass = st.selectbox("🖱️ Filter by superclass (optional):", superclass_list,
+                            superclass = st.selectbox("➖ Filter by superclass (opt):", superclass_list,
                                 key="key_superclass")   #superclass label
                         if superclass != "Select a superclass":   # a superclass has been selected (filter)
                             classes_in_superclass_dict[superclass] = superclass_dict[superclass]
@@ -1463,7 +1459,7 @@ with tab2:
                                 for ont_label in st.session_state["g_ontology_components_dict"]:
                                     list_to_choose.append(utils.get_ontology_tag(ont_label))
                                 list_to_choose.insert(0, "Select ontology")
-                                ontology_filter_for_subject_class = st.selectbox("🖱️ Filter by ontology (optional):",
+                                ontology_filter_for_subject_class = st.selectbox("➖ Filter by ontology (optional):",
                                     list_to_choose, key="key_ontology_filter_for_subject_class")
 
                             if ontology_filter_for_subject_class == "Select ontology":
@@ -1489,7 +1485,7 @@ with tab2:
                             with col1a:
                                 list_to_choose = sorted(superclass_dict.keys())
                                 list_to_choose.insert(0, "Select a superclass")
-                                superclass = st.selectbox("🖱️ Filter by superclass (optional):", list_to_choose,
+                                superclass = st.selectbox("➖ Filter by superclass (optional):", list_to_choose,
                                     key="key_superclass")   #superclass label
                             if superclass != "Select a superclass":   # a superclass has been selected (filter)
                                 classes_in_superclass_dict[superclass] = superclass_dict[superclass]
@@ -1881,7 +1877,7 @@ with tab3:
                         for ont_label in st.session_state["g_ontology_components_dict"]:
                             list_to_choose.append(utils.get_ontology_tag(ont_label))
                         list_to_choose.insert(0, "Select ontology")
-                        ontology_filter_for_predicate = st.selectbox("🖱️ Filter predicate by ontology (optional):",
+                        ontology_filter_for_predicate = st.selectbox("➖ Filter predicate by ontology (optional):",
                             list_to_choose, key="key_ontology_filter_for_predicate")
 
                     if ontology_filter_for_predicate == "Select ontology":

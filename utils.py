@@ -579,7 +579,7 @@ def get_default_ns_dict():
     "qb": Namespace("http://purl.org/linked-data/cube#"),
     "rdf": Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
     "rdfs": Namespace("http://www.w3.org/2000/01/rdf-schema#"),
-    "sdo": Namespace("https://schema.org/"),
+    "schema": Namespace("https://schema.org/"),
     "sh": Namespace("http://www.w3.org/ns/shacl#"),
     "skos": Namespace("http://www.w3.org/2004/02/skos/core#"),
     "sosa": Namespace("http://www.w3.org/ns/sosa/"),
@@ -587,11 +587,9 @@ def get_default_ns_dict():
     "time": Namespace("http://www.w3.org/2006/time#"),
     "vann": Namespace("http://purl.org/vocab/vann/"),
     "void": Namespace("http://rdfs.org/ns/void#"),
+    "wgs": Namespace("https://www.w3.org/2003/01/geo/wgs84_pos#"),
     "xml": Namespace("http://www.w3.org/XML/1998/namespace"),
-    "xsd": Namespace("http://www.w3.org/2001/XMLSchema#"),
-    "schema": Namespace("https://schema.org/"),
-    "wgs": Namespace("https://www.w3.org/2003/01/geo/wgs84_pos#")
-    }
+    "xsd": Namespace("http://www.w3.org/2001/XMLSchema#")}
 #________________________________________________________
 
 #_________________________________________________________
@@ -602,26 +600,15 @@ def get_default_ns_dict():
 def get_predefined_ns_dict():
 
     all_predefined_ns_dict = {
-        "rml": Namespace("http://semweb.mmlab.be/ns/rml#"),
-        "ql": Namespace("http://semweb.mmlab.be/ns/ql#"),
-        "rr": Namespace("http://www.w3.org/ns/r2rml#"),
-        "xsd": Namespace("http://www.w3.org/2001/XMLSchema#"),
-        "rdf": Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
-        "rdfs": Namespace("http://www.w3.org/2000/01/rdf-schema#"),
-        "owl": Namespace("http://www.w3.org/2000/01/rdf-schema#"),
-        "skos": Namespace("	http://www.w3.org/2004/02/skos/core#"),
-        "sh": Namespace("http://www.w3.org/ns/shacl#"),
-        "prov": Namespace("http://www.w3.org/ns/prov#"),
-        "foaf": Namespace("http://xmlns.com/foaf/0.1/"),
-        "schema": Namespace("http://schema.org/"),
-        "dct": Namespace("http://purl.org/dc/terms/"),
-        "vann": Namespace("http://purl.org/vocab/vann/"),
-        "qb": Namespace("http://purl.org/linked-data/cube#"),
-        "void": Namespace("http://rdfs.org/ns/void#"),
-        "map": Namespace(get_3xmap_base_iri() + "/mapping#"),
         "class": Namespace(get_3xmap_base_iri() + "/class#"),
+        "gtfs": Namespace("http://vocab.gtfs.org/terms2#"),
+        "ql": Namespace("http://semweb.mmlab.be/ns/ql#"),
+        "logicalSource": Namespace(get_3xmap_base_iri() + "/logicalSource#"),
+        "map": Namespace(get_3xmap_base_iri() + "/mapping#"),
         "resource": Namespace(get_3xmap_base_iri() + "/resource#"),
-        "logicalSource": Namespace(get_3xmap_base_iri() + "/logicalSource#")}
+        "rml": Namespace("http://semweb.mmlab.be/ns/rml#"),
+        "rr": Namespace("http://www.w3.org/ns/r2rml#"),
+        "schema1": Namespace("http://schema.org2/")}
 
     default_ns_dict = get_default_ns_dict()
     predefined_ns_dict = {k: Namespace(v) for k, v in all_predefined_ns_dict.items() if (k not in default_ns_dict)}
@@ -691,6 +678,20 @@ def get_mapping_ns_dict_w_default():
 
     return mapping_ns_dict
 #_________________________________________________________
+
+#_________________________________________________________
+# Funtion to get the actual prefix assigned to a namespace
+# When binding, rdflib will rename the prefix if it is repeated
+def get_actual_bound_prefix(namespace):
+
+    for prefix, ns in st.session_state["g_mapping"].namespace_manager.namespaces():
+        if str(ns) == namespace:
+            return prefix
+            actual_prefix = prefix
+
+    return None
+#_________________________________________________________
+
 
 #_________________________________________________
 #Function to check whether an IRI is valid
@@ -891,8 +892,7 @@ def get_ontology_base_iri():
 #Function to parse an ontology to an initially empty graph
 @st.cache_resource
 def parse_ontology(source):
-
-    # if source is a file-like object
+    # If source is a file-like object
     if isinstance(source, IOBase):
         content = source.read()
         source.seek(0)  # reset index so that file can be reused
@@ -904,9 +904,17 @@ def parse_ontology(source):
                     return [g, fmt]
             except:
                 continue
+        # Try auto-detecting format
+        try:
+            g = Graph()
+            g.parse(data=content, format=None)
+            if len(g) != 0:
+                return [g, "auto"]
+        except:
+            pass
         return [Graph(), None]
 
-    # If source is a string (either raw RDF or a file path/URL) - Just URL in our case
+    # If source is a string (URL or raw RDF)
     for fmt in ["xml", "turtle", "jsonld", "ntriples", "trig", "trix"]:
         g = Graph()
         try:
@@ -915,18 +923,34 @@ def parse_ontology(source):
                 return [g, fmt]
         except:
             continue
+    # Try auto-detecting format
+    try:
+        g = Graph()
+        g.parse(source, format=None)
+        if len(g) != 0:
+            return [g, "auto"]
+    except:
+        pass
 
-    # If it fails, we try to parse downloading the content using requests
-    # (it automatically handles HTTP compression)
+    # Try downloading the content and parsing from raw bytes
     for fmt in ["xml", "turtle", "jsonld", "ntriples", "trig", "trix"]:
         try:
             response = requests.get(source)
-            response.encoding = 'utf-8'  # Ensure correct decoding
             g = Graph()
-            g.parse(data=response.text, format=fmt)
-            return [g, fmt]
+            g.parse(data=response.content, format=fmt)  # use raw bytes
+            if len(g) != 0:
+                return [g, fmt]
         except:
             continue
+    # Final fallback: auto-detect from downloaded content
+    try:
+        response = requests.get(source)
+        g = Graph()
+        g.parse(data=response.content, format=None)
+        if len(g) != 0:
+            return [g, "auto"]
+    except:
+        pass
 
     return [Graph(), None]
 
