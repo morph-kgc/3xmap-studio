@@ -600,12 +600,13 @@ def get_default_ns_dict():
 def get_predefined_ns_dict():
 
     all_predefined_ns_dict = {
-        "class": Namespace(get_3xmap_base_iri() + "/class#"),
-        "gtfs": Namespace("http://vocab.gtfs.org/terms2#"),
+        get_default_structural_ns()[0]: get_default_structural_ns()[1],
+        "class": Namespace(get_3xmap_base_iri() + "class#"),
+        "gtfs": Namespace("http://vocab.gtfs.org/terms#"),   #DELETE
         "ql": Namespace("http://semweb.mmlab.be/ns/ql#"),
         "logicalSource": Namespace(get_3xmap_base_iri() + "/logicalSource#"),
-        "map": Namespace(get_3xmap_base_iri() + "/mapping#"),
-        "resource": Namespace(get_3xmap_base_iri() + "/resource#"),
+        "map": Namespace(get_3xmap_base_iri() + "mapping#"),
+        "resource": Namespace(get_3xmap_base_iri() + "resource#"),
         "rml": Namespace("http://semweb.mmlab.be/ns/rml#"),
         "rr": Namespace("http://www.w3.org/ns/r2rml#"),
         "schema1": Namespace("http://schema.org2/")}
@@ -680,7 +681,7 @@ def get_mapping_ns_dict_w_default():
 #_________________________________________________________
 
 #_________________________________________________________
-# Funtion to get the actual prefix assigned to a namespace
+# Funtion to get the actual prefix assigned to a namespace   DELETE
 # When binding, rdflib will rename the prefix if it is repeated
 def get_actual_bound_prefix(namespace):
 
@@ -691,6 +692,70 @@ def get_actual_bound_prefix(namespace):
 
     return None
 #_________________________________________________________
+
+#__________________________________________________________
+# Function to unbind namespaces from g mapping
+# Duplicated prefixes will be renamed, duplicated namespaces will be ignored
+# namespaces cannot be removed, so the mapping is rebuilt completely
+def unbind_namespaces(ns_to_unbind_list):
+
+    if ns_to_unbind_list:
+        old_graph = st.session_state["g_mapping"]
+        ns_to_remove = set(ns_to_unbind_list)
+        new_graph = Graph()   # create a new graph and copy triples
+        for triple in old_graph:
+            new_graph.add(triple)
+
+        for prefix, ns in old_graph.namespace_manager.namespaces():      # rebind the namespaces without the deleted ones
+            if prefix not in ns_to_remove:
+                new_graph.namespace_manager.bind(prefix, ns, replace=True)
+
+        st.session_state["g_mapping"] = new_graph        # replace the old graph with the new one
+
+        for prefix in ns_to_unbind_list:         # update last added list
+            if prefix in st.session_state["last_added_ns_list"]:
+                st.session_state["last_added_ns_list"].remove(prefix)
+#____________________________________________________________
+
+#__________________________________________________________
+# Function to bind namespaces to g mapping
+# Duplicated prefixes will be renamed, duplicated namespaces will be ignored
+def bind_namespace(prefix, namespace):
+
+    mapping_ns_dict = get_mapping_ns_dict()
+
+    # if namespace already bound to a different prefix, unbind it
+    if namespace in mapping_ns_dict.values():
+        old_prefix_list = [k for k, v in mapping_ns_dict.items() if v == namespace]
+        unbind_namespaces(old_prefix_list)
+
+    # bind the new namespace
+    st.session_state["g_mapping"].bind(prefix, namespace)
+
+    # find actual prefix (it might have been auto-renamed)
+    actual_prefix = None
+    for pr, ns in st.session_state["g_mapping"].namespace_manager.namespaces():
+        if str(ns) == namespace:
+            actual_prefix = pr
+            break
+    if actual_prefix:
+        st.session_state["last_added_ns_list"].insert(0, actual_prefix)
+
+
+
+
+    # mapping_ns_dict = get_mapping_ns_dict()
+    #
+    # if namespace not in mapping_ns_dict.values():
+    #     st.session_state["g_mapping"].bind(prefix, namespace)  # bind the new namespace
+    #     actual_prefix = None            # find the actual prefix that was bound to this namespace (it might have been renamed)
+    #     for pr, ns in st.session_state["g_mapping"].namespace_manager.namespaces():
+    #         if str(ns) == namespace:
+    #             actual_prefix = pr
+    #             break
+    #     if actual_prefix:
+    #         st.session_state["last_added_ns_list"].insert(0, actual_prefix)
+#____________________________________________________________
 
 
 #_________________________________________________
