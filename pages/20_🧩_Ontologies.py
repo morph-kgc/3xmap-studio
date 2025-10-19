@@ -490,14 +490,22 @@ with tab1[0]:
         with col1:
             col1a, col1b = st.columns([2,1])
         with col1a:
-            list_to_choose = list(reversed(list(st.session_state["g_ontology_components_dict"].keys())))
+            list_to_choose = []
+            for ont_label in st.session_state["g_ontology_components_dict"]:
+                list_to_choose.insert(0, utils.get_ontology_tag(ont_label))
+            # list_to_choose = list(reversed(list(st.session_state["g_ontology_components_dict"].keys())))
             if len(list_to_choose) > 1:
                 list_to_choose.insert(0, "Select all")
-            ontologies_to_drop_list = st.multiselect("🖱️ Select ontologies to be dropped:*", list_to_choose,
+            ontologies_to_drop_list_tags = st.multiselect("🖱️ Select ontologies to be dropped:*", list_to_choose,
                 key="key_ontologies_to_drop_list")
+            ontologies_to_drop_list = []
+            for ont_label in st.session_state["g_ontology_components_dict"]:
+                if utils.get_ontology_tag(ont_label) in ontologies_to_drop_list_tags:
+                    ontologies_to_drop_list.append(ont_label)
 
-        if ontologies_to_drop_list:
-            if "Select all" in ontologies_to_drop_list:
+
+        if ontologies_to_drop_list_tags:
+            if "Select all" in ontologies_to_drop_list_tags:
                 with col1b:
                     st.markdown(f"""<div class="warning-message">
                         ⚠️ You are deleting <b>all ontologies ({len(st.session_state["g_ontology_components_dict"])})</b>.
