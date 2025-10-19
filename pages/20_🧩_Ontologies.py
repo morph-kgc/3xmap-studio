@@ -84,18 +84,8 @@ def load_ontology_from_link():  #HEREIGONS
     st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_link=st.session_state["key_ontology_link"])
     # bind ontology namespaces
     ontology_ns_dict = utils.get_ontology_ns_dict()
-    # mapping_ns_dict = utils.get_mapping_ns_dict()
     for prefix, namespace in ontology_ns_dict.items():
-        utils.bind_namespace(prefix, namespace)
-        # if namespace not in mapping_ns_dict.values():
-        #     st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
-        # actual_prefix = None            # find the actual prefix that was bound to this namespace (it might have been renamed)
-        # for prefix, ns in st.session_state["g_mapping"].namespace_manager.namespaces():
-        #     if str(ns) == namespace:
-        #         actual_prefix = prefix
-        #         break
-        # if actual_prefix:
-        #     st.session_state["last_added_ns_list"].insert(0, actual_prefix)
+        utils.bind_namespace_wo_overwriting(prefix, namespace)
     # store information___________________________
     st.session_state["g_ontology_loaded_ok_flag"] = True
     st.session_state["g_ontology_components_dict"][st.session_state["g_ontology_label"]] = st.session_state["g_ontology"]
@@ -109,11 +99,8 @@ def load_ontology_from_file():
     st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_file=st.session_state["ontology_file"])
     # bind ontology namespaces
     ontology_ns_dict = utils.get_ontology_ns_dict()
-    mapping_ns_dict = utils.get_mapping_ns_dict()
-    for prefix in ontology_ns_dict:
-        if prefix not in mapping_ns_dict:
-            st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
-            st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
+    for prefix, namespace in ontology_ns_dict.items():
+        utils.bind_namespace_wo_overwriting(prefix, namespace)
     # store information___________________________
     st.session_state["g_ontology_loaded_ok_flag"] = True
     st.session_state["g_ontology_components_dict"][st.session_state["g_ontology_label"]]=st.session_state["g_ontology"]
@@ -130,11 +117,8 @@ def extend_ontology_from_link():
     st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
     # bind ontology namespaces
     ontology_ns_dict = utils.get_ontology_component_ns_dict(g_ontology_new_part)
-    mapping_ns_dict = utils.get_mapping_ns_dict()
-    for prefix in ontology_ns_dict:
-        if prefix not in mapping_ns_dict:
-            st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
-            st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
+    for prefix, namespace in ontology_ns_dict.items():
+        utils.bind_namespace_wo_overwriting(prefix, namespace)
     # merge ontologies components___________________
     st.session_state["g_ontology"] = Graph()
     for ont_label, ont in st.session_state["g_ontology_components_dict"].items():
@@ -155,11 +139,8 @@ def extend_ontology_from_file():
     st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
     # bind ontology namespaces
     ontology_ns_dict = utils.get_ontology_component_ns_dict(g_ontology_new_part)
-    mapping_ns_dict = utils.get_mapping_ns_dict()
-    for prefix in ontology_ns_dict:
-        if prefix not in mapping_ns_dict:
-            st.session_state["g_mapping"].bind(prefix, ontology_ns_dict[prefix])  # bind the new namespace
-            st.session_state["last_added_ns_list"].insert(0, prefix)   # to display last added ns
+    for prefix, namespace in ontology_ns_dict.items():
+        utils.bind_namespace_wo_overwriting(prefix, namespace)
     # merge ontologies components___________________
     st.session_state["g_ontology"] = Graph()
     for ont_label, ont in st.session_state["g_ontology_components_dict"].items():
@@ -172,14 +153,14 @@ def extend_ontology_from_file():
     st.session_state["key_extend_ontology_selected_option"] = "📁 File"
 
 def reduce_ontology():
-    st.session_state["g_ontology_reduced_ok_flag"] = True
     #store information___________________________
-    # (drop the given ontology components from the dictionary)
+    st.session_state["g_ontology_reduced_ok_flag"] = True
+    # drop the given ontology components from the dictionary_______________________
     st.session_state["g_ontology_components_dict"] = {label: ont for label, ont in st.session_state["g_ontology_components_dict"].items() if label not in ontologies_to_drop_list}
-    # merge remaining ontology components
+    # merge remaining ontology components_______________________________
     st.session_state["g_ontology"] = Graph()
     for label, ont in st.session_state["g_ontology_components_dict"].items():
-        st.session_state["g_ontology"] += ont  # merge the graphs using RDFLib's += operator
+        st.session_state["g_ontology"] += ont
         for prefix, namespace in ont.namespaces():
             st.session_state["g_ontology"].bind(prefix, namespace)
 
@@ -309,6 +290,40 @@ with tab1[0]:
                                 <b>{st.session_state["g_ontology_from_link_candidate_fmt"]}</b>).</small>
                             </div>""", unsafe_allow_html=True)
 
+                    ontology_ns_dict = utils.get_ontology_component_ns_dict(st.session_state["g_ontology_from_link_candidate"])
+                    mapping_ns_dict = utils.get_mapping_ns_dict()
+                    already_used_prefix_list = []
+                    already_bound_ns_list = []
+                    for pr, ns in ontology_ns_dict.items():
+                        if ns in mapping_ns_dict.values() and (pr not in mapping_ns_dict or mapping_ns_dict[pr] != ns):
+                            already_bound_ns_list.append(ns)
+                        elif pr in mapping_ns_dict and str(ns) != mapping_ns_dict[pr]:
+                            already_used_prefix_list.append(pr)
+
+                    if already_used_prefix_list and already_bound_ns_list:
+                        with col1a:
+                            st.markdown(f"""<div class="warning-message">
+                                ⚠️ <small><b>Some prefixes ({len(already_used_prefix_list)}) are already in use</b>
+                                and will be auto-renamed.
+                                <b>Some namespaces ({len(already_bound_ns_list)}) are already bound</b>
+                                to other prefixes and will be ignored.</small>
+                            </div>""", unsafe_allow_html=True)
+                    elif already_used_prefix_list:
+                        with col1a:
+                            st.markdown(f"""<div class="warning-message">
+                                ⚠️ <b>Some prefixes ({len(already_used_prefix_list)}) are already in use</b>
+                                <small>and will be auto-renamed with a numeric suffix.</small><br>
+                            </div>""", unsafe_allow_html=True)
+                    elif already_bound_ns_list:
+                        with col1a:
+                            st.markdown(f"""<div class="warning-message">
+                                <b>Some namespaces ({len(already_bound_ns_list)}) are already bound</b>
+                                <small>to other prefixes and will be ignored.</small>
+                            </div>""", unsafe_allow_html=True)
+
+
+
+
                     with col1a:
                         st.button("Add", key="key_load_ontology_from_link_button", on_click=load_ontology_from_link)
 
@@ -409,8 +424,6 @@ with tab1[0]:
                                     ⚠️ <b>Ontologies overlap</b>. <small>Check them
                                     externally to make sure they are aligned and compatible.</small>
                                 </div>""", unsafe_allow_html=True)
-                    # with col1a:
-                    #     st.button("Add", key="key_extend_ontology_from_link_button", on_click=extend_ontology_from_link)
 
 
 

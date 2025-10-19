@@ -118,14 +118,17 @@ def create_new_g_mapping():
     # create mapping
     st.session_state["g_label"] = st.session_state["g_label_temp_new"]   # consolidate g_label
     st.session_state["g_mapping"] = Graph()   # create a new empty mapping
-    # store information_____________
-    st.session_state["g_mapping_source_cache"] = ["scratch", ""]   #cache info on the mapping source
-    st.session_state["new_g_mapping_created_ok_flag"] = True   #flag for success mesagge
-    utils.empty_last_added_lists()
+    # bind default namespaces
+    for prefix, namespace in utils.get_default_ns_dict().items():
+        utils.bind_namespace(prefix, namespace)
     # bind ontology namespaces
     ontology_ns_dict = utils.get_ontology_ns_dict()
     for prefix, namespace in ontology_ns_dict.items():
         utils.bind_namespace(prefix, namespace)
+    # store information_____________
+    st.session_state["g_mapping_source_cache"] = ["scratch", ""]   #cache info on the mapping source
+    st.session_state["new_g_mapping_created_ok_flag"] = True   #flag for success mesagge
+    utils.empty_last_added_lists()
     # reset fields__________________
     st.session_state["key_g_label_temp_new"] = ""
 
@@ -134,14 +137,17 @@ def load_existing_g_mapping():
     st.session_state["g_label"] = st.session_state["g_label_temp_existing"]   # consolidate g_label
     st.session_state["original_g_size_cache"] = utils.get_number_of_tm(st.session_state["candidate_g_mapping"])
     st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]   # consolidate the loaded mapping
-    # store information________________________
-    st.session_state["g_mapping_source_cache"] = ["file", selected_load_file.name]
-    st.session_state["existing_g_mapping_loaded_ok_flag"] = True
-    utils.empty_last_added_lists()
+    # bind default namespaces
+    for prefix, namespace in utils.get_default_ns_dict().items():
+        utils.bind_namespace(prefix, namespace)
     # bind ontology namespaces
     ontology_ns_dict = utils.get_ontology_ns_dict()
     for prefix, namespace in ontology_ns_dict.items():
         utils.bind_namespace(prefix, namespace)
+    # store information________________________
+    st.session_state["g_mapping_source_cache"] = ["file", selected_load_file.name]
+    st.session_state["existing_g_mapping_loaded_ok_flag"] = True
+    utils.empty_last_added_lists()
     # reset fields___________________________
     st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
     st.session_state["key_g_label_temp_existing"] = ""
@@ -311,6 +317,7 @@ tab1, tab2, tab3, tab4 = st.tabs(["Select Mapping",
 with tab1:
     st.write("")
     st.write("")
+
 
     # OPTION: Create new mapping------------------------------
     col1,col2,col3 = st.columns([2,0.5, 1])
@@ -621,15 +628,9 @@ with tab2:
 
         col1,col2 = st.columns([2,1.5])
 
-        # with col2:
-        #     col2a,col2b = st.columns([1,2])
-        # with col2b:
-        #     utils.get_corner_status_message()
-
-
         # Display last added namespaces in dataframe (also option to show all ns)
         mapping_ns_dict = utils.get_mapping_ns_dict()
-        all_mapping_ns_dict = utils.get_mapping_ns_dict_w_default()
+        used_mapping_ns_dict = utils.get_used_mapping_ns_dict()
 
         with col2:
             col2a, col2b = st.columns([0.5, 2])
@@ -640,7 +641,7 @@ with tab2:
             last_added_ns_df = pd.DataFrame({
                 "Prefix": st.session_state["last_added_ns_list"],
                 "Namespace": [mapping_ns_dict.get(prefix, "") for prefix in st.session_state["last_added_ns_list"]]})
-            last_last_added_ns_df = last_added_ns_df.head(10)
+            last_last_added_ns_df = last_added_ns_df.head(utils.get_max_length_for_display()[1])
 
             if st.session_state["last_added_ns_list"]:
                 st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
@@ -653,17 +654,19 @@ with tab2:
                 st.write("")
 
             mapping_ns_df = pd.DataFrame(list(mapping_ns_dict.items()), columns=["Prefix", "Namespace"]).iloc[::-1]
-            all_ns_df = pd.DataFrame(list(all_mapping_ns_dict.items()), columns=["Prefix", "Namespace"]).iloc[::-1]
+            used_mapping_ns_df = pd.DataFrame(list(used_mapping_ns_dict.items()), columns=["Prefix", "Namespace"]).iloc[::-1]
 
             #Option to show bound namespaces
             with st.expander("🔎 Show all namespaces"):
                 st.write("")
                 st.dataframe(mapping_ns_df, hide_index=True)
 
-            #Option to show all namespaces (including default)
-            with st.expander("🔎 Show all namespaces (including default)"):
+            #Option to show used bound namespaces
+            with st.expander("🔎 Show used namespaces"):
                 st.write("")
-                st.dataframe(all_ns_df, hide_index=True)
+                st.dataframe(used_mapping_ns_df, hide_index=True)
+
+
 
         # PURPLE HEADING - ADD A NEW NAMESPACE
         with col1:
