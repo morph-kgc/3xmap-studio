@@ -105,7 +105,7 @@ if "g_ontology" not in st.session_state:
 
 
 # Namespaces-----------------------------------
-RML, RR, QL = utils.get_required_ns().values()
+RML, RR, QL = utils.get_required_ns_dict().values()
 
 if "structural_ns" not in st.session_state and st.session_state["g_label"]:
     st.session_state["structural_ns"] = utils.get_default_structural_ns()
@@ -115,17 +115,22 @@ if "structural_ns" not in st.session_state and st.session_state["g_label"]:
 # Define on_click functions-------------------------------------------------
 #TAB1
 def create_new_g_mapping():
-    # create mapping
+    # clear cache (delete everything)_____________________
+    #HEREIGO delete by hand, emptying things (DS, etc) and extend to load_existing_g_mapping
+    # create mapping__________________________________
     st.session_state["g_label"] = st.session_state["g_label_temp_new"]   # consolidate g_label
     st.session_state["g_mapping"] = Graph()   # create a new empty mapping
-    # bind default namespaces
+    # bind default namespaces__________________________
     for prefix, namespace in utils.get_default_ns_dict().items():
         utils.bind_namespace(prefix, namespace)
-    # bind ontology namespaces
+    # bind required namespaces___________________________
+    for prefix, namespace in utils.get_required_ns_dict().items():
+        utils.bind_namespace(prefix, namespace)
+    # bind ontology namespaces______________________________
     ontology_ns_dict = utils.get_ontology_ns_dict()
     for prefix, namespace in ontology_ns_dict.items():
         utils.bind_namespace(prefix, namespace)
-    # store information_____________
+    # store information________________________________
     st.session_state["g_mapping_source_cache"] = ["scratch", ""]   #cache info on the mapping source
     st.session_state["new_g_mapping_created_ok_flag"] = True   #flag for success mesagge
     utils.empty_last_added_lists()
@@ -133,14 +138,17 @@ def create_new_g_mapping():
     st.session_state["key_g_label_temp_new"] = ""
 
 def load_existing_g_mapping():
-    # load mapping
+    # load mapping_____________________________________
     st.session_state["g_label"] = st.session_state["g_label_temp_existing"]   # consolidate g_label
     st.session_state["original_g_size_cache"] = utils.get_number_of_tm(st.session_state["candidate_g_mapping"])
     st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]   # consolidate the loaded mapping
-    # bind default namespaces
+    # bind default namespaces____________________________
     for prefix, namespace in utils.get_default_ns_dict().items():
         utils.bind_namespace(prefix, namespace)
-    # bind ontology namespaces
+    # bind required namespaces______________________________
+    for prefix, namespace in utils.get_required_ns_dict().items():
+        utils.bind_namespace(prefix, namespace)
+    # bind ontology namespaces_____________________________
     ontology_ns_dict = utils.get_ontology_ns_dict()
     for prefix, namespace in ontology_ns_dict.items():
         utils.bind_namespace(prefix, namespace)
@@ -1108,8 +1116,13 @@ with tab2:
 
         # unbind ns success message - show here if "Unbind" purple heading is not going to be shown
         mapping_ns_dict = utils.get_mapping_ns_dict()
+        default_ns_dict = utils.get_default_ns_dict()
+        required_ns_dict = utils.get_required_ns_dict()
+        list_to_choose = [k for k in mapping_ns_dict if (k not in default_ns_dict and k not in required_ns_dict)]
+        if st.session_state["structural_ns"][0] in list_to_choose:
+            list_to_choose.remove(st.session_state["structural_ns"][0])
 
-        if not mapping_ns_dict or mapping_ns_dict == {st.session_state["structural_ns"][0]: st.session_state["structural_ns"][1]}:
+        if not list_to_choose:
             if st.session_state["ns_unbound_ok_flag"]:
                 with col1:
                     col1a, col1b = st.columns([2,1])
@@ -1124,7 +1137,7 @@ with tab2:
                 st.rerun()
 
         # PURPLE HEADING - UNBIND NS (if there are bound ns)
-        if mapping_ns_dict and mapping_ns_dict != {st.session_state["structural_ns"][0]: st.session_state["structural_ns"][1]}:
+        if list_to_choose:
             with col1:
                 st.write("______")
                 st.markdown("""<div class="purple-heading">
@@ -1148,7 +1161,10 @@ with tab2:
                 col1a, col1b = st.columns([2,1])
             with col1a:
                 mapping_ns_dict = utils.get_mapping_ns_dict()
-                list_to_choose = sorted(mapping_ns_dict.keys())
+                default_ns_dict = utils.get_default_ns_dict()
+                required_ns_dict = utils.get_required_ns_dict()
+                list_to_choose = [k for k in mapping_ns_dict if (k not in default_ns_dict and k not in required_ns_dict)]
+                list_to_choose = sorted(list_to_choose)
                 if st.session_state["structural_ns"][0] in list_to_choose:
                     list_to_choose.remove(st.session_state["structural_ns"][0])
                 if len(list_to_choose) > 1:

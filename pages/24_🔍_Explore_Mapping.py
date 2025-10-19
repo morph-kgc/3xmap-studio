@@ -37,7 +37,7 @@ else:
 
 
 # Namespaces------------------------------------------------------------
-RML, RR, QL = utils.get_required_ns().values()
+RML, RR, QL = utils.get_required_ns_dict().values()
 
 # START PAGE_____________________________________________________________________
 

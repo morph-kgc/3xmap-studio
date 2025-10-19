@@ -558,7 +558,7 @@ def get_default_structural_ns():
 
 #_________________________________________________________
 # Funtion to get dictionary with default namespaces
-# The default namespaces are automatically bound to g by rdflib (DO NOT MODIFY LIST)
+# Default namespaces are automatically added to the g namespace manager by rdflib (DO NOT MODIFY LIST)
 def get_default_ns_dict():
     return {
     "brick": Namespace("https://brickschema.org/schema/Brick#"),
@@ -595,11 +595,10 @@ def get_default_ns_dict():
 #_________________________________________________________
 # Dictionary with predefined namespaces
 # These are predefined so that they can be easily bound
-# It will ignore the default namespaces
 # LIST CAN BE CHANGED but should keep the namespaces used in get_required_ns()
 def get_predefined_ns_dict():
 
-    all_predefined_ns_dict = {
+    predefined_ns_dict = {
         get_default_structural_ns()[0]: get_default_structural_ns()[1],
         "class": Namespace(get_3xmap_base_iri() + "class#"),
         "gtfs": Namespace("http://vocab.gtfs.org/terms#"),   #DELETE
@@ -611,22 +610,19 @@ def get_predefined_ns_dict():
         "rr": Namespace("http://www.w3.org/ns/r2rml#"),
         "schema1": Namespace("http://schema.org2/")}
 
-    default_ns_dict = get_default_ns_dict()
-    predefined_ns_dict = {k: Namespace(v) for k, v in all_predefined_ns_dict.items() if (k not in default_ns_dict)}
-
     return predefined_ns_dict
 #________________________________________________________
 
 #________________________________________________________
 # Function to retrieve namespaces which are needed for our code
-def get_required_ns():
+def get_required_ns_dict():
     ns = get_predefined_ns_dict()
-    return {"RML": ns["rml"], "RR": ns["rr"], "QL": ns["ql"]}
+    return {"rml": ns["rml"], "rr": ns["rr"], "ql": ns["ql"]}
 #_______________________________________________________
 
 #________________________________________________________
 # retrieving necessary namespaces for this page here
-RML, RR, QL = get_required_ns().values()
+RML, RR, QL = get_required_ns_dict().values()
 #________________________________________________________
 
 
@@ -635,9 +631,8 @@ RML, RR, QL = get_required_ns().values()
 # It will ignore the default namespaces
 def get_ontology_ns_dict():
 
-    default_ns_dict = get_default_ns_dict()
     all_ontology_ns_dict = dict(st.session_state["g_ontology"].namespace_manager.namespaces())
-    ontology_ns_dict = {k: Namespace(v) for k, v in all_ontology_ns_dict.items() if (k not in default_ns_dict)}
+    ontology_ns_dict = {k: Namespace(v) for k, v in all_ontology_ns_dict.items()}
 
     return ontology_ns_dict
 #_________________________________________________________
@@ -647,9 +642,8 @@ def get_ontology_ns_dict():
 # It will ignore the default namespaces
 def get_ontology_component_ns_dict(g_ont_component):
 
-    default_ns_dict = get_default_ns_dict()
     ontology_component_ns_dict = dict(g_ont_component.namespace_manager.namespaces())
-    ontology_component_ns_dict = {k: Namespace(v) for k, v in ontology_component_ns_dict.items() if (k not in default_ns_dict)}
+    ontology_component_ns_dict = {k: Namespace(v) for k, v in ontology_component_ns_dict.items()}
 
     return ontology_component_ns_dict
 #_________________________________________________________
@@ -660,6 +654,7 @@ def get_ontology_component_ns_dict(g_ont_component):
 def get_mapping_ns_dict():
 
     mapping_ns_dict = dict(st.session_state["g_mapping"].namespace_manager.namespaces())
+    mapping_ns_dict = {k: Namespace(v) for k, v in mapping_ns_dict.items()}
 
     return mapping_ns_dict
 #_________________________________________________________
@@ -794,6 +789,7 @@ def is_valid_iri(iri):
 
 
 # GLOBAL CONFIGURATION - SELECT MAPPING -------------------------------------------------------------
+
 #_______________________________________________________
 # List of allowed mapping file format
 # HERE expand options, now reduced version
