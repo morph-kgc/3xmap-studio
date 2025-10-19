@@ -70,8 +70,6 @@ if "g_label_changed_ok_flag" not in st.session_state:
     st.session_state["g_label_changed_ok_flag"] = False
 
 # TAB2
-if "ns_dict" not in st.session_state:
-    st.session_state["ns_dict"] = {}
 if "ns_bound_ok_flag" not in st.session_state:
     st.session_state["ns_bound_ok_flag"] = False
 if "structural_ns_changed_ok_flag" not in st.session_state:
@@ -115,8 +113,9 @@ if "structural_ns" not in st.session_state and st.session_state["g_label"]:
 # Define on_click functions-------------------------------------------------
 #TAB1
 def create_new_g_mapping():
-    # clear cache (delete everything)_____________________
-    #HEREIGO delete by hand, emptying things (DS, etc) and extend to load_existing_g_mapping
+    # optional reset (clear everything)_____________________
+    if overwrite_g_mapping_and_session_checkbox:
+        utils.full_reset()
     # create mapping__________________________________
     st.session_state["g_label"] = st.session_state["g_label_temp_new"]   # consolidate g_label
     st.session_state["g_mapping"] = Graph()   # create a new empty mapping
@@ -138,6 +137,9 @@ def create_new_g_mapping():
     st.session_state["key_g_label_temp_new"] = ""
 
 def load_existing_g_mapping():
+    # optional reset (clear everything)_____________________
+    if overwrite_g_mapping_and_session_checkbox:
+        utils.full_reset()
     # load mapping_____________________________________
     st.session_state["g_label"] = st.session_state["g_label_temp_existing"]   # consolidate g_label
     st.session_state["original_g_size_cache"] = utils.get_number_of_tm(st.session_state["candidate_g_mapping"])
@@ -268,7 +270,7 @@ def unbind_namespaces():
 
 def unbind_all_namespaces():
     # unbind and store information___________________________
-    utils.unbind_namespaces(mapping_ns_dict_wo_structural_ns)
+    utils.unbind_namespaces(mapping_ns_dict_available_to_unbind)
     st.session_state["ns_unbound_ok_flag"] = True
     # reset fields_____________________________
     st.session_state["key_unbind_multiselect"] = []
@@ -355,23 +357,28 @@ with tab1:
     if not st.session_state["g_label"]:   #a mapping has not been loaded yet
 
         if st.session_state["g_label_temp_new"]:  #after a new label has been given
-            with col1a:
+
+            if st.session_state["db_connections_dict"] or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]:
+                with col1:
+                    overwrite_g_mapping_and_session_checkbox = st.checkbox(
+                        f"""🗑️ I want to clear the ontologies and/or data sources""",
+                        key="key_overwrite_g_mapping_and_session_checkbox_new")
+            else:
+                overwrite_g_mapping_and_session_checkbox = False
+
+            with col1:
                 st.button("Create", on_click=create_new_g_mapping, key="key_create_new_g_mapping_button_1")
 
 
     # A mapping is currently loaded__________
     else:  #a mapping is currently loaded (ask if overwrite)
-        with col1:
-            col1a, col1b = st.columns([2,1])
         if st.session_state["g_label_temp_new"]:   #after a label and file have been given
-            with col1:
+
+            with col1b:
                 st.markdown(f"""<div class="warning-message">
-                        ⚠️ If you continue:<br>
-                        <small><div style="margin-left:1.5em;">
-                        🗑️ Mapping <b>{st.session_state["g_label"]}</b> will be overwritten.<br>
-                        🆕 Mapping <b>{st.session_state["g_label_temp_new"]}</b> will be created.<br>
-                        </div>
-                        You can export the current mapping or save the session in
+                        ⚠️ <b>Mapping {st.session_state["g_label_temp_new"]} will be created
+                        and mapping {st.session_state["g_label"]} will be overwritten.</b>
+                        <small>You can export the current mapping or save the session in
                         the <b>Save Mapping </b> pannel.</small>
                     </div>""", unsafe_allow_html=True)
 
@@ -380,9 +387,18 @@ with tab1:
                     f"""🔒 I am sure I want to overwrite mapping {st.session_state["g_label"]}""",
                     key="key_overwrite_g_mapping_checkbox_new")
 
-                if overwrite_g_mapping_checkbox:
-                    with col1a:
-                        st.button(f"""Overwrite and create""", on_click=create_new_g_mapping, key="key_create_new_g_mapping_button_2")
+
+            if st.session_state["db_connections_dict"] or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]:
+                with col1a:
+                    overwrite_g_mapping_and_session_checkbox = st.checkbox(
+                        f"""🗑️ I also want to clear the ontologies and/or data sources""",
+                        key="key_overwrite_g_mapping_and_session_checkbox_new")
+            else:
+                overwrite_g_mapping_and_session_checkbox = False
+
+            if overwrite_g_mapping_checkbox:
+                with col1a:
+                    st.button(f"""Create""", on_click=create_new_g_mapping, key="key_create_new_g_mapping_button_2")
 
     with col1:
         st.write("______")
@@ -391,7 +407,7 @@ with tab1:
     # OPTION: Import existing mapping--------------------------------------
     with col1:
         st.markdown("""<div class="purple-heading">
-                📁 Load Existing Mapping
+                📁 Import Existing Mapping
             </div>""", unsafe_allow_html=True)
         st.write("")
 
@@ -427,30 +443,28 @@ with tab1:
 
     # A mapping has not been loaded yet__________
     if not st.session_state["g_label"]:   # a mapping has not been loaded yet
-        with col1:
-            col1a, col1b = st.columns([2,1])
 
         if st.session_state["g_label_temp_existing"] and selected_load_file:  # after a label and file have been given
+            if st.session_state["db_connections_dict"] or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]:
+                with col1:
+                    overwrite_g_mapping_and_session_checkbox = st.checkbox(
+                        f"""🗑️ I want to clear the ontologies and/or data sources""",
+                        key="key_overwrite_g_mapping_and_session_checkbox_existing")
+            else:
+                overwrite_g_mapping_and_session_checkbox = False
             with col1:
-                col1a, col1b = st.columns([1,2])
-            with col1a:
-                st.button("Load", on_click=load_existing_g_mapping, key="key_load_existing_g_mapping_button_2")
+                st.button("Import", on_click=load_existing_g_mapping, key="key_load_existing_g_mapping_button_2")
 
 
     # A mapping is currently loaded__________
     else:  #a mapping is currently loaded (ask if overwrite or save)
-        with col1:
-            col1a, col1b = st.columns([2,1])
         if st.session_state["g_label_temp_existing"] and selected_load_file:   #after a label and file have been given
-            with col1:
+            with col1b:
                 st.markdown(f"""<div class="warning-message">
-                        ⚠️ If you continue:<br>
-                        <small><div style="margin-left:1.5em;">
-                        🗑️ Mapping <b>{st.session_state["g_label"]}</b> will be overwritten.<br>
-                        🆕 Mapping <b>{st.session_state["g_label_temp_existing"]}</b> will be created.<br>
-                        </div>
+                        ⚠️ <b>Mapping {st.session_state["g_label_temp_existing"]} will be imported
+                        and mapping {st.session_state["g_label"]} will be overwritten.</b>
                         <small>You can export the current mapping or save the session in
-                        the <b>Save Mapping </b> pannel.
+                        the <b>Save Mapping </b> pannel.</small>
                     </div>""", unsafe_allow_html=True)
 
             with col1a:
@@ -458,8 +472,17 @@ with tab1:
                     f"""🔒 I am sure I want to overwrite mapping {st.session_state["g_label"]}""",
                     key="key_overwrite_g_mapping_checkbox_existing")
 
-                if overwrite_g_mapping_checkbox:
-                    st.button(f"""Overwrite and create""", on_click=load_existing_g_mapping, key="key_load_existing_g_mapping_button_2")
+            if st.session_state["db_connections_dict"] or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]:
+                with col1a:
+                    overwrite_g_mapping_and_session_checkbox = st.checkbox(
+                        f"""🗑️ I also want to clear the ontologies and/or data sources""",
+                        key="key_overwrite_g_mapping_and_session_checkbox_existing")
+            else:
+                overwrite_g_mapping_and_session_checkbox = False
+
+            if overwrite_g_mapping_checkbox:
+                with col1a:
+                    st.button(f"""Import""", on_click=load_existing_g_mapping, key="key_load_existing_g_mapping_button_2")
 
     # OPTION: Retrieve session--------------------------------------
     folder_name = "saved_sessions"
@@ -826,7 +849,7 @@ with tab2:
 
                     with col1a:
                         ontology_ns_list_not_duplicated = [k for k, v in ontology_ns_dict.items() if v not in mapping_ns_dict.values()]
-                        list_to_choose = ontology_ns_list_not_duplicated.copy()
+                        list_to_choose = sorted(ontology_ns_list_not_duplicated.copy())
                         if len(list_to_choose) > 1:
                             list_to_choose.insert(0, "Select all")
                         ontology_ns_to_bind_list = st.multiselect("🖱️ Select ontology namespaces:*", list_to_choose,
@@ -949,7 +972,7 @@ with tab2:
 
                 with col1a:
                     predefined_ns_list_not_duplicated = [k for k, v in predefined_ns_dict.items() if v not in mapping_ns_dict.values()]
-                    list_to_choose = predefined_ns_list_not_duplicated.copy()
+                    list_to_choose = sorted(predefined_ns_list_not_duplicated.copy())
                     if len(list_to_choose) > 1:
                         list_to_choose.insert(0, "Select all")
                     predefined_ns_to_bind_list = st.multiselect("🖱️ Select predefined namespaces:*", list_to_choose,
@@ -1207,17 +1230,19 @@ with tab2:
                 # create a single info message
                 inner_html = ""
                 max_length = utils.get_max_length_for_display()[4]
-                mapping_ns_dict_wo_structural_ns = {k: v for k, v in mapping_ns_dict.items() if k != st.session_state["structural_ns"][0]}
+                mapping_ns_dict_available_to_unbind = {k: v for k, v in mapping_ns_dict.items() if
+                    (k not in default_ns_dict and k not in required_ns_dict) and k != st.session_state["structural_ns"][0]}
+                # mapping_ns_dict_wo_structural_ns = {k: v for k, v in mapping_ns_dict.items() if k != st.session_state["structural_ns"][0]}
 
-                for prefix in list(mapping_ns_dict_wo_structural_ns)[:max_length]:
+                for prefix in list(mapping_ns_dict_available_to_unbind)[:max_length]:
                     if prefix != "Select all":
                         inner_html += f"""<div style="margin-bottom:6px;">
-                            🔗 <b>{prefix}</b> → {mapping_ns_dict_wo_structural_ns[prefix]}
+                            🔗 <b>{prefix}</b> → {mapping_ns_dict_available_to_unbind[prefix]}
                         </div>"""
 
-                if len(mapping_ns_dict_wo_structural_ns) > max_length:   # many sm to remove
+                if len(mapping_ns_dict_available_to_unbind) > max_length:   # many sm to remove
                     inner_html += f"""<div style="margin-bottom:2px;">
-                        🔗 ... <b>(+{len(list(mapping_ns_dict_wo_structural_ns)[:max_length])})</b>
+                        🔗 ... <b>(+{len(list(mapping_ns_dict_available_to_unbind)[:max_length])})</b>
                     </div>"""
 
                 with col1b:

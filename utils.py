@@ -560,36 +560,39 @@ def get_default_structural_ns():
 # Funtion to get dictionary with default namespaces
 # Default namespaces are automatically added to the g namespace manager by rdflib (DO NOT MODIFY LIST)
 def get_default_ns_dict():
-    return {
-    "brick": Namespace("https://brickschema.org/schema/Brick#"),
-    "csvw": Namespace("http://www.w3.org/ns/csvw#"),
-    "dc": Namespace("http://purl.org/dc/elements/1.1/"),
-    "dcam": Namespace("http://purl.org/dc/dcam/"),
-    "dcat": Namespace("http://www.w3.org/ns/dcat#"),
-    "dcmitype": Namespace("http://purl.org/dc/dcmitype/"),
-    "dcterms": Namespace("http://purl.org/dc/terms/"),
-    "doap": Namespace("http://usefulinc.com/ns/doap#"),
-    "foaf": Namespace("http://xmlns.com/foaf/0.1/"),
-    "geo": Namespace("http://www.opengis.net/ont/geosparql#"),
-    "odrl": Namespace("http://www.w3.org/ns/odrl/2/"),
-    "org": Namespace("http://www.w3.org/ns/org#"),
-    "owl": Namespace("http://www.w3.org/2002/07/owl#"),
-    "prof": Namespace("http://www.w3.org/ns/dx/prof/"),
-    "prov": Namespace("http://www.w3.org/ns/prov#"),
-    "qb": Namespace("http://purl.org/linked-data/cube#"),
-    "rdf": Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
-    "rdfs": Namespace("http://www.w3.org/2000/01/rdf-schema#"),
-    "schema": Namespace("https://schema.org/"),
-    "sh": Namespace("http://www.w3.org/ns/shacl#"),
-    "skos": Namespace("http://www.w3.org/2004/02/skos/core#"),
-    "sosa": Namespace("http://www.w3.org/ns/sosa/"),
-    "ssn": Namespace("http://www.w3.org/ns/ssn/"),
-    "time": Namespace("http://www.w3.org/2006/time#"),
-    "vann": Namespace("http://purl.org/vocab/vann/"),
-    "void": Namespace("http://rdfs.org/ns/void#"),
-    "wgs": Namespace("https://www.w3.org/2003/01/geo/wgs84_pos#"),
-    "xml": Namespace("http://www.w3.org/XML/1998/namespace"),
-    "xsd": Namespace("http://www.w3.org/2001/XMLSchema#")}
+    
+    default_ns_dict = {
+        "brick": Namespace("https://brickschema.org/schema/Brick#"),
+        "csvw": Namespace("http://www.w3.org/ns/csvw#"),
+        "dc": Namespace("http://purl.org/dc/elements/1.1/"),
+        "dcam": Namespace("http://purl.org/dc/dcam/"),
+        "dcat": Namespace("http://www.w3.org/ns/dcat#"),
+        "dcmitype": Namespace("http://purl.org/dc/dcmitype/"),
+        "dcterms": Namespace("http://purl.org/dc/terms/"),
+        "doap": Namespace("http://usefulinc.com/ns/doap#"),
+        "foaf": Namespace("http://xmlns.com/foaf/0.1/"),
+        "geo": Namespace("http://www.opengis.net/ont/geosparql#"),
+        "odrl": Namespace("http://www.w3.org/ns/odrl/2/"),
+        "org": Namespace("http://www.w3.org/ns/org#"),
+        "owl": Namespace("http://www.w3.org/2002/07/owl#"),
+        "prof": Namespace("http://www.w3.org/ns/dx/prof/"),
+        "prov": Namespace("http://www.w3.org/ns/prov#"),
+        "qb": Namespace("http://purl.org/linked-data/cube#"),
+        "rdf": Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
+        "rdfs": Namespace("http://www.w3.org/2000/01/rdf-schema#"),
+        "schema": Namespace("https://schema.org/"),
+        "sh": Namespace("http://www.w3.org/ns/shacl#"),
+        "skos": Namespace("http://www.w3.org/2004/02/skos/core#"),
+        "sosa": Namespace("http://www.w3.org/ns/sosa/"),
+        "ssn": Namespace("http://www.w3.org/ns/ssn/"),
+        "time": Namespace("http://www.w3.org/2006/time#"),
+        "vann": Namespace("http://purl.org/vocab/vann/"),
+        "void": Namespace("http://rdfs.org/ns/void#"),
+        "wgs": Namespace("https://www.w3.org/2003/01/geo/wgs84_pos#"),
+        "xml": Namespace("http://www.w3.org/XML/1998/namespace"),
+        "xsd": Namespace("http://www.w3.org/2001/XMLSchema#")}
+
+    return default_ns_dict
 #________________________________________________________
 
 #_________________________________________________________
@@ -599,16 +602,24 @@ def get_default_ns_dict():
 def get_predefined_ns_dict():
 
     predefined_ns_dict = {
-        get_default_structural_ns()[0]: get_default_structural_ns()[1],
-        "class": Namespace(get_3xmap_base_iri() + "class#"),
-        "gtfs": Namespace("http://vocab.gtfs.org/terms#"),   #DELETE
-        "ql": Namespace("http://semweb.mmlab.be/ns/ql#"),
-        "logicalSource": Namespace(get_3xmap_base_iri() + "/logicalSource#"),
-        "map": Namespace(get_3xmap_base_iri() + "mapping#"),
-        "resource": Namespace(get_3xmap_base_iri() + "resource#"),
-        "rml": Namespace("http://semweb.mmlab.be/ns/rml#"),
-        "rr": Namespace("http://www.w3.org/ns/r2rml#"),
-        "schema1": Namespace("http://schema.org2/")}
+        "fnml": "http://semweb.mmlab.be/ns/fnml#",
+        "fno": "https://w3id.org/function/ontology#",
+        "idlab-fn": "http://example.com/idlab/function#",
+        "ex": "http://example.org/",
+        "vcard": "http://www.w3.org/2006/vcard/ns#",
+        "geo": "http://www.w3.org/2003/01/geo/wgs84_pos#",
+        "xhv": "http://www.w3.org/1999/xhtml/vocab#",
+        "gr": "http://purl.org/goodrelations/v1#",
+        "event": "http://purl.org/NET/c4dm/event.owl#",
+        "bioc": "http://purl.org/bioc#",
+        "mo": "http://purl.org/ontology/mo/",
+        "bibo": "http://purl.org/ontology/bibo/",
+        "org": "http://www.w3.org/ns/org#",
+        "cnt": "http://www.w3.org/2008/content#",
+        "doap": "http://usefulinc.com/ns/doap#",
+        "media": "http://purl.org/media#",
+        "oa": "http://www.w3.org/ns/oa#",
+        "time": "http://www.w3.org/2006/time#",}
 
     return predefined_ns_dict
 #________________________________________________________
@@ -616,15 +627,20 @@ def get_predefined_ns_dict():
 #________________________________________________________
 # Function to retrieve namespaces which are needed for our code
 def get_required_ns_dict():
-    ns = get_predefined_ns_dict()
-    return {"rml": ns["rml"], "rr": ns["rr"], "ql": ns["ql"]}
+
+    required_ns_dict = {
+        "ql": Namespace("http://semweb.mmlab.be/ns/ql#"),
+        "rml": Namespace("http://semweb.mmlab.be/ns/rml#"),
+        "rr": Namespace("http://www.w3.org/ns/r2rml#")}
+
+    return required_ns_dict
+
 #_______________________________________________________
 
 #________________________________________________________
 # retrieving necessary namespaces for this page here
 RML, RR, QL = get_required_ns_dict().values()
 #________________________________________________________
-
 
 #_________________________________________________________
 # Funtion to get dictionary {prefix: namespace} bound in the ontology
@@ -808,6 +824,20 @@ def empty_last_added_lists():
     st.session_state["last_added_tm_list"] = []
     st.session_state["last_added_sm_list"] = []
     st.session_state["last_added_pom_list"] = []
+#_____________________________________________________
+
+#_______________________________________________________
+# Function to empty all lists that store last added stuff
+def full_reset():
+    # data sources________________________________
+    st.session_state["db_connections_dict"] = {}
+    st.session_state["db_connection_status_dict"] = {}
+    st.session_state["sql_queries_dict"] = {}
+    st.session_state["ds_files_dict"] = {}
+    # ontology___________________________
+    st.session_state["g_ontology_components_dict"] = {}
+    st.session_state["g_ontology"] = Graph()
+#_____________________________________________________
 
 #_______________________________________________________
 #Funcion to load mapping from file

@@ -304,21 +304,21 @@ with tab1[0]:
                         with col1a:
                             st.markdown(f"""<div class="warning-message">
                                 ⚠️ <small><b>Some prefixes ({len(already_used_prefix_list)}) are already in use</b>
-                                and will be auto-renamed.
+                                (or reserved) and will be auto-renamed.
                                 <b>Some namespaces ({len(already_bound_ns_list)}) are already bound</b>
-                                to other prefixes and will be ignored.</small>
+                                (or reserved) to other prefixes and will be ignored.</small>
                             </div>""", unsafe_allow_html=True)
                     elif already_used_prefix_list:
                         with col1a:
                             st.markdown(f"""<div class="warning-message">
                                 ⚠️ <b>Some prefixes ({len(already_used_prefix_list)}) are already in use</b>
-                                <small>and will be auto-renamed with a numeric suffix.</small><br>
+                                <small>(or reserved) and will be auto-renamed with a numeric suffix.</small><br>
                             </div>""", unsafe_allow_html=True)
                     elif already_bound_ns_list:
                         with col1a:
                             st.markdown(f"""<div class="warning-message">
                                 <b>Some namespaces ({len(already_bound_ns_list)}) are already bound</b>
-                                <small>to other prefixes and will be ignored.</small>
+                                <small>to other prefixes (or reserved) and will be ignored.</small>
                             </div>""", unsafe_allow_html=True)
 
 
