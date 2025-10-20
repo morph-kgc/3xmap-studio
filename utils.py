@@ -560,7 +560,7 @@ def get_default_structural_ns():
 # Funtion to get dictionary with default namespaces
 # Default namespaces are automatically added to the g namespace manager by rdflib (DO NOT MODIFY LIST)
 def get_default_ns_dict():
-    
+
     default_ns_dict = {
         "brick": Namespace("https://brickschema.org/schema/Brick#"),
         "csvw": Namespace("http://www.w3.org/ns/csvw#"),
@@ -803,8 +803,146 @@ def is_valid_iri(iri):
     return True
 #__________________________________________________
 
+#_________________________________________________
+#Function to check whether a prefix is valid
+def is_valid_prefix(prefix):
+
+    if not prefix:
+        return False
+
+    valid_letters = ["a","b","c","d","e","f","g","h","i","j","k","l","m",
+        "n","o","p","q","r","s","t","u","v","w","x","y","z",
+        "A","B","C","D","E","F","G","H","I","J","K","L","M",
+        "N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
+
+    valid_digits = ["0","1","2","3","4","5","6","7","8","9","_"]
+
+    if re.search(r"[ \t\n\r]", prefix):    # disallow spaces
+        st.markdown(f"""<div class="error-message">
+            ❌ <b> Invalid prefix.</b>
+            <small>Please make sure it does not contain any spaces.</small>
+        </div>""", unsafe_allow_html=True)
+        return False
+
+    for letter in prefix:
+        if letter not in valid_letters and letter not in valid_digits:
+            st.markdown(f"""<div class="error-message">
+                ❌ <b> Invalid prefix. </b>
+                <small>Please make sure it only contains safe characters (a-z, A-Z, 0-9, _).</small>
+            </div>""", unsafe_allow_html=True)
+            return False
+
+    if prefix[0] not in valid_letters:
+        st.markdown(f"""<div class="error-message">
+            ❌ <b> Invalid prefix. </b>
+            <small>Please start with a letter.</small>
+        </div>""", unsafe_allow_html=True)
+        return False
+
+    inner_html = ""
+    if len(prefix) > 10:
+        inner_html += f"""A shorter prefix is recommended. """
+    if prefix.lower() != prefix:
+        inner_html += f"""The use of uppercase letters is discouraged."""
+
+    if inner_html:
+        st.markdown(f"""<div class="warning-message">
+            ⚠️ {inner_html}
+        </div>""", unsafe_allow_html=True)
+
+    return True
+#__________________________________________________
+
 
 # GLOBAL CONFIGURATION - SELECT MAPPING -------------------------------------------------------------
+#_________________________________________________
+#Function to check whether a label is valid
+def is_valid_label(label):
+
+    if not label:
+        return False
+
+    valid_letters = ["a","b","c","d","e","f","g","h","i","j","k","l","m",
+        "n","o","p","q","r","s","t","u","v","w","x","y","z",
+        "A","B","C","D","E","F","G","H","I","J","K","L","M",
+        "N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
+
+    valid_digits = ["0","1","2","3","4","5","6","7","8","9","_","-"]
+
+
+    if re.search(r"[ \t\n\r]", label):    # disallow spaces
+        st.markdown(f"""<div class="error-message">
+            ❌ <b> Invalid label. </b>
+            <small>Please make sure it does not contain any spaces.</small>
+        </div>""", unsafe_allow_html=True)
+        return False
+
+    if re.search(r"[<>\"{}|\\^`]", label):    # disallow unescaped characters
+        st.markdown(f"""<div class="error-message">
+            ❌ <b> Invalid label. </b>
+            <small>Please make sure it does not contain any invalid characters (&lt;&gt;"{{}}|\\^`).</small>
+        </div>""", unsafe_allow_html=True)
+        return False
+
+    inner_html = ""
+    if len(label) > 20:
+        st.markdown(f"""<div class="warning-message">
+            ⚠️ A <b>shorter label</b> is recommended.
+        </div>""", unsafe_allow_html=True)
+
+    return True
+#__________________________________________________
+
+#_________________________________________________
+#Function to check whether a label is valid
+def is_valid_label_hard(label, display_option=True):
+
+    if not label:
+        return False
+
+    valid_letters = ["a","b","c","d","e","f","g","h","i","j","k","l","m",
+        "n","o","p","q","r","s","t","u","v","w","x","y","z",
+        "A","B","C","D","E","F","G","H","I","J","K","L","M",
+        "N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
+
+    valid_digits = ["0","1","2","3","4","5","6","7","8","9","_","-"]
+
+
+    if re.search(r"[ \t\n\r]", label):    # disallow spaces
+        if display_option:
+            st.markdown(f"""<div class="error-message">
+                ❌ <b> Invalid label. </b>
+                <small>Please make sure it does not contain any spaces.</small>
+            </div>""", unsafe_allow_html=True)
+        return False
+
+    for letter in label:
+        if letter not in valid_letters and letter not in valid_digits:
+            if display_option:
+                st.markdown(f"""<div class="error-message">
+                    ❌ <b> Invalid label. </b>
+                    <small>Please make sure it contains only safe characters (a-z, A-Z, 0-9, -, _).</small>
+                </div>""", unsafe_allow_html=True)
+            return False
+
+    if label.endswith("_") or label.endswith("-"):    # disallow trailing puntuation
+        if display_option:
+            st.markdown(f"""<div class="error-message">
+                ❌ <b> Invalid label. </b>
+                <small>Please make sure it does not end with puntuation.</small>
+            </div>""", unsafe_allow_html=True)
+        return False
+
+    inner_html = ""
+    if len(label) > 20:
+        if display_option:
+            st.markdown(f"""<div class="warning-message">
+                ⚠️ A <b>shorter label</b> is recommended.
+            </div>""", unsafe_allow_html=True)
+            inner_html += f"""A shorter label is recommended. """
+
+    return True
+#__________________________________________________
 
 #_______________________________________________________
 # List of allowed mapping file format

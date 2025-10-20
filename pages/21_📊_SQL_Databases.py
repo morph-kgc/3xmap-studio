@@ -223,12 +223,14 @@ with tab1:
         db_engine = st.selectbox("🖱️ Select a database engine:*", db_engine_list, key="key_db_engine")
     with col1b:
         conn_label = st.text_input("⌨️ Enter label:*", key="key_conn_label")
-        if conn_label in st.session_state["db_connections_dict"]:
+        valid_conn_label = utils.is_valid_label(conn_label)
+        if valid_conn_label and conn_label in st.session_state["db_connections_dict"]:
             with col1a:
                 st.markdown(f"""<div class="error-message">
                     ❌ Label <b>{conn_label}</b> is already in use.<br>
                     You must choose a different label for this connection.
                         </div>""", unsafe_allow_html=True)
+                valid_conn_label = False
                 st.write("")
 
     if db_engine != "Select an engine":
@@ -250,8 +252,7 @@ with tab1:
             else:
                 database = st.text_input("⌨️ Enter service name:*")
 
-        if (conn_label and host and port and database
-            and user and password and conn_label not in st.session_state["db_connections_dict"]):
+        if (valid_conn_label and host and port and database and user and password):
             with col1:
                 connection_ok_flag = utils.try_connection(db_engine, host, port, database, user, password)
                 if connection_ok_flag:
@@ -352,7 +353,7 @@ with tab1:
 
             with col1a:
                 delete_all_connections_checkbox = st.checkbox(
-                "🔒 I am sure I want to delete all connections",
+                "🔒 I am sure I want to remove all connections",
                 key="key_delete_all_connections_checkbox")
                 if delete_all_connections_checkbox:
                     st.button("Remove", key="key_remove_connection_button", on_click=remove_connection)
@@ -403,7 +404,7 @@ with tab1:
                 if connection_labels_to_remove_list:
                     st.write("")
                     delete_all_cross_connections_checkbox= st.checkbox(
-                    "🔒 I am sure I want to delete the connections",
+                    "🔒 I am sure I want to remove the selected connections",
                     key="key_delete_all_cross_connections_checkbox")
                     if delete_all_cross_connections_checkbox:
                         st.button("Remove", key="key_remove_connection_button", on_click=remove_connection)
@@ -429,7 +430,7 @@ with tab1:
 
             with col1a:
                 delete_connections_checkbox= st.checkbox(
-                "🔒 I am sure I want to delete the connections",
+                "🔒 I am sure I want to remove the selected connections",
                 key="key_delete_connections_checkbox")
                 if delete_connections_checkbox:
                     st.button("Remove", key="key_remove_connection_button", on_click=remove_connection)
@@ -776,6 +777,7 @@ with tab3:
             with col1b:
                 sql_query_label = st.text_input("⌨️ Enter label for the view (to save it):*",
                     key="key_sql_query_label")
+                valid_sql_query_label = utils.is_valid_label(sql_query_label)
                 if sql_query_label and sql_query_label not in st.session_state["sql_queries_dict"]:
                     sql_query_label_ok_flag = True
                 elif sql_query_label:
@@ -922,12 +924,12 @@ with tab3:
                     </div>""", unsafe_allow_html=True)
                     st.write("")
                     remove_views_checkbox = st.checkbox(
-                    "🔒 I am sure I want to delete all views",
+                    "🔒 I am sure I want to remove all views",
                     key="key_remove_views_checkbox")
                     queries_to_drop_list = list(st.session_state["sql_queries_dict"].keys())
                 else:
                     remove_views_checkbox = st.checkbox(
-                    "🔒 I am sure I want to delete the selected views",
+                    "🔒 I am sure I want to remove the selected views",
                     key="key_remove_views_checkbox")
 
             if remove_views_checkbox:

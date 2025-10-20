@@ -722,6 +722,7 @@ with tab1:
     with col1a:
         tm_label = st.text_input("⌨️ Enter label for the new TriplesMap:*", key="key_tm_label_input")    #user-friendly name for the TriplesMap
         st.session_state["tm_label"] = tm_label
+        valid_tm_label = utils.is_valid_label_hard(st.session_state["tm_label"])
 
     tm_dict = utils.get_tm_dict()
     labelled_ls_list = []      #existing labelled logical sources
@@ -730,7 +731,7 @@ with tab1:
             labelled_ls_list.append(split_uri(o)[1])
 
 
-    if tm_label:   #after a label has been given
+    if valid_tm_label:   #after a valid label has been given
         if tm_label in tm_dict:   #if label is already in use
             with col1a:
                 st.markdown(f"""<div class="error-message">
@@ -794,15 +795,16 @@ with tab1:
                     if label_ls_option == "Yes (add label)":
                         with col1a:
                             ls_label = st.text_input("⌨️ Enter label for the Logical Source:*")
-                            if ls_label in labelled_ls_list:
-                                with col1b:
-                                    st.markdown(f"""<div class="error-message">
-                                            ❌ The logical source label <b>{ls_label}</b>
-                                            is already in use. <small>Please, pick a different label.</small>
-                                        </div>""", unsafe_allow_html=True)
-                                    st.write("")
+                        with col1b:
+                            valid_ls_label = utils.is_valid_label_hard(ls_label)
+                            if valid_ls_label and ls_label in labelled_ls_list:
+                                st.markdown(f"""<div class="error-message">
+                                        ❌ The logical source label <b>{ls_label}</b>
+                                        is already in use. <small>Please, pick a different label.</small>
+                                    </div>""", unsafe_allow_html=True)
+                                valid_ls_label = False
                     else:
-                        ls_label = ""
+                        valid_ls_label = False
 
                 with col1a:
                     if db_connection_for_ls != "Select a connection":
@@ -857,7 +859,7 @@ with tab1:
                                     if sql_query_ok_flag:
 
                                         if label_ls_option == "Yes (add label)":
-                                            if ls_label and ls_label not in labelled_ls_list:
+                                            if valid_ls_label:
                                                 with col1a:
                                                     st.button("Save", key="key_save_tm_w_saved_query", on_click=save_tm_w_query)
 
@@ -940,7 +942,7 @@ with tab1:
 
                                 if selected_table_for_ls != "Select a table":
 
-                                    if (label_ls_option == "Yes (add label)" and ls_label) or label_ls_option == "No":
+                                    if (label_ls_option == "Yes (add label)" and valid_ls_label) or label_ls_option == "No":
                                         with col1a:
                                             st.button("Save", key="key_save_tm_w_table_name", on_click=save_tm_w_table_name)
 
@@ -1317,6 +1319,7 @@ with tab2:
                 if label_sm_option == "Yes (add label)":
                     with col1c:
                         sm_label = st.text_input("🔖 Enter Subject Map label:*", key="key_sm_label_new")
+                        valid_sm_label = utils.is_valid_label_hard(sm_label, display_option=False)
                 else:
                     sm_label = ""
                     sm_iri = BNode()
@@ -1682,6 +1685,10 @@ with tab2:
                         sm_complete_flag = False
                         inner_html_error += """<small>· The <b>Subject Map label</b>
                             has not been given.</small><br>"""
+                    elif not valid_sm_label:
+                        sm_complete_flag = False
+                        inner_html_error += """<small>· The <b>Subject Map label</b>
+                            is not valid (only safe characters allowed and cannot end with puntuation).</small><br>"""
                     else:
                         NS = st.session_state["structural_ns"][1]
                         sm_iri = BNode() if not sm_label else NS[sm_label]
@@ -2867,7 +2874,7 @@ with tab4:
             col1a, col1b = st.columns([1.5,1])
         with col1a:
             clean_g_mapping_checkbox = st.checkbox(
-            f"🔒 I am sure I want to clean the mapping {st.session_state["g_label"]}",
+            f"🔒 I am sure I want to clean mapping {st.session_state["g_label"]}",
             key="key_clean_g_mapping_checkbox")
         if clean_g_mapping_checkbox:
             with col1a:

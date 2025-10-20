@@ -352,11 +352,12 @@ with tab1:
     with col1a:
         st.session_state["g_label_temp_new"] = st.text_input("⌨️ Enter mapping label:*", # just a candidate until confirmed
         key="key_g_label_temp_new")
+        valid_mapping_label = utils.is_valid_label_hard(st.session_state["g_label_temp_new"])
 
     # A mapping has not been loaded yet__________
     if not st.session_state["g_label"]:   #a mapping has not been loaded yet
 
-        if st.session_state["g_label_temp_new"]:  #after a new label has been given
+        if valid_mapping_label:  #after a new label has been given
 
             if st.session_state["db_connections_dict"] or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]:
                 with col1:
@@ -372,7 +373,7 @@ with tab1:
 
     # A mapping is currently loaded__________
     else:  #a mapping is currently loaded (ask if overwrite)
-        if st.session_state["g_label_temp_new"]:   #after a label and file have been given
+        if valid_mapping_label:   #after a label has been given
 
             with col1b:
                 st.markdown(f"""<div class="warning-message">
@@ -433,18 +434,24 @@ with tab1:
 
     with col1b:
         if selected_load_file:
+
+            suggested_mapping_label = os.path.splitext(selected_load_file.name)[0]
+            suggested_mapping_label = suggested_mapping_label.replace(' ', '_')
+            suggested_mapping_label = re.sub(r'[<>"{}|\\^`]', '', suggested_mapping_label)
+            suggested_mapping_label = re.sub(r'[.-]+$', '', suggested_mapping_label)
+            suggested_mapping_label = re.sub(r'[^A-Za-z0-9_]', '', suggested_mapping_label)
+
             st.session_state["g_label_temp_existing"] = st.text_input("⌨️ Enter mapping label:*",   #just candidate until confirmed
-                key="key_g_label_temp_existing", value=os.path.splitext(selected_load_file.name)[0])
+                key="key_g_label_temp_existing", value=suggested_mapping_label)
+            valid_mapping_label = utils.is_valid_label_hard(st.session_state["g_label_temp_existing"])
 
-    if selected_load_file:
-        st.session_state["candidate_g_mapping"] = utils.load_mapping_from_file(
-            selected_load_file)   #we load the mapping as a candidate (until confirmed)
-
+            st.session_state["candidate_g_mapping"] = utils.load_mapping_from_file(
+                selected_load_file)   #we load the mapping as a candidate (until confirmed)
 
     # A mapping has not been loaded yet__________
     if not st.session_state["g_label"]:   # a mapping has not been loaded yet
 
-        if st.session_state["g_label_temp_existing"] and selected_load_file:  # after a label and file have been given
+        if valid_mapping_label and selected_load_file:  # after a label and file have been given
             if st.session_state["db_connections_dict"] or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]:
                 with col1:
                     overwrite_g_mapping_and_session_checkbox = st.checkbox(
@@ -458,7 +465,7 @@ with tab1:
 
     # A mapping is currently loaded__________
     else:  #a mapping is currently loaded (ask if overwrite or save)
-        if st.session_state["g_label_temp_existing"] and selected_load_file:   #after a label and file have been given
+        if valid_mapping_label and selected_load_file:   #after a label and file have been given
             with col1b:
                 st.markdown(f"""<div class="warning-message">
                         ⚠️ <b>Mapping {st.session_state["g_label_temp_existing"]} will be imported
@@ -632,8 +639,9 @@ with tab1:
                 key="key_change_mapping_label_checkbox")
             if change_g_label_checkbox:
                 g_label_candidate = st.text_input("⌨️ Enter new mapping label:*")
+                valid_candidate_valid_label = utils.is_valid_label_hard(g_label_candidate)
 
-                if g_label_candidate:
+                if valid_candidate_valid_label:
                     st.button("Change", key="key_change_g_label_button", on_click=change_g_label)
                     st.markdown(f"""<div class="info-message-gray">
                             ℹ️ Mapping label will be changed to <b style="color:#F63366;">
@@ -758,6 +766,7 @@ with tab2:
 
             with col1a:           # prefix and iri input
                 prefix_input = st.text_input("⌨️ Enter prefix*: ", key = "key_prefix_input")
+
             with col1b:
                 iri_input = st.text_input("⌨️ Enter an IRI for the new namespace:*", key="key_iri_input")
             st.session_state["new_ns_prefix"] = prefix_input if prefix_input else ""
@@ -765,7 +774,7 @@ with tab2:
 
             with col1a:
                 if prefix_input:
-                    valid_prefix_input = False
+                    valid_prefix_input = utils.is_valid_prefix(prefix_input)
                     if prefix_input in mapping_ns_dict:
                         bound_prefix = "Namespace not bound"
                         for pr, ns in mapping_ns_dict.items():
@@ -777,9 +786,6 @@ with tab2:
                                 ⚠️ <b>Prefix is already in use.</b>
                                 <small>The chosen prefix will be auto-renamed with a numeric suffix.</small>
                             </div>""", unsafe_allow_html=True)
-                            valid_prefix_input = True
-                    else:
-                        valid_prefix_input = True
 
             with col1b:
                 if iri_input:
@@ -1069,7 +1075,7 @@ with tab2:
 
             with col1a:
                 if structural_ns_prefix_candidate:
-                    valid_prefix_input = False
+                    valid_prefix_input = utils.is_valid_prefix(structural_ns_prefix_candidate)
                     if structural_ns_prefix_candidate in mapping_ns_dict:
                         bound_prefix = "Namespace not bound"
                         for pr, ns in mapping_ns_dict.items():
@@ -1081,9 +1087,6 @@ with tab2:
                                 ⚠️ <b>Prefix is already in use.</b>
                                 <small>The chosen prefix will be auto-renamed with a numeric suffix.</small>
                             </div>""", unsafe_allow_html=True)
-                            valid_prefix_input = True
-                    else:
-                        valid_prefix_input = True
 
             with col1b:
 
