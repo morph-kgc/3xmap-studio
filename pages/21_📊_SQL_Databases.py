@@ -9,48 +9,30 @@ import pymysql    # another option mysql-connector-python
 import oracledb
 import pyodbc
 import io
+from streamlit_js_eval import streamlit_js_eval
 
-st.set_page_config(layout="wide")
-
-# Header
+# Config-----------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
-    st.markdown("""<div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
-        border-radius:8px; margin-bottom:16px;">
-        <span style="font-size:1.7rem; margin-right:18px;">📊</span><div>
-            <h3 style="margin:0; font-size:1.75rem;">
-                <span style="color:#511D66; font-weight:bold; margin-right:12px;">◽◽◽◽◽</span>
-                SQL Databases
-                <span style="color:#511D66; font-weight:bold; margin-left:12px;">◽◽◽◽◽</span>
-            </h3>
-            <p style="margin:0; font-size:0.95rem; color:#555;">
-                Manage the connections to <b>relational data sources</b>, <b>consult the data</b>
-                and <b>save views</b>.
-            </p>
-        </div></div>""", unsafe_allow_html=True)
-
+    st.set_page_config(page_title="3Xmap Studio", layout="wide",
+        page_icon="logo/fav_icon.png")
 else:
-    st.markdown("""
-    <div style="display:flex; align-items:center; background-color:#1e1e1e; padding:12px 18px;
-                border-radius:8px; border-left:4px solid #999999; margin-bottom:16px;">
-        <span style="font-size:1.7rem; margin-right:18px; color:#dddddd;">📊️</span>
-        <div>
-            <h3 style="margin:0; font-size:1.75rem; color:#dddddd;">
-                <span style="color:#bbbbbb; font-weight:bold; margin-right:12px;">◽◽◽◽◽</span>
-                SQL Databases
-                <span style="color:#bbbbbb; font-weight:bold; margin-left:12px;">◽◽◽◽◽</span>
-            </h3>
-            <p style="margin:0; font-size:0.95rem; color:#cccccc;">
-                Manage the connections to <b>relational data sources</b>, <b>consult the data</b>
-                and <b>save views</b>.
-            </p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.set_page_config(page_title="3Xmap Studio", layout="wide",
+        page_icon="logo/fav_icon_inverse.png")
 
-#____________________________________________
-#PRELIMINARY
+# Automatic detection of dark mode-------------------------
+if "dark_mode_flag" not in st.session_state or st.session_state["dark_mode_flag"] is None:
+    st.session_state["dark_mode_flag"] = streamlit_js_eval(js_expressions="window.matchMedia('(prefers-color-scheme: dark)').matches",
+        key="dark_mode")
 
-# Import style
+# Header-----------------------------------
+dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
+header_html = utils.render_header(title="SQL Databases",
+    description="""Manage the connections to <b>relational data sources</b>, consult the data
+                    and <b>save views</b>.""",
+    dark_mode=dark_mode)
+st.markdown(header_html, unsafe_allow_html=True)
+
+# Import style----------------------------------------------
 style_container = st.empty()
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
     style_container.markdown(utils.import_st_aesthetics(), unsafe_allow_html=True)
@@ -58,9 +40,7 @@ else:
     style_container.markdown(utils.import_st_aesthetics_dark_mode(), unsafe_allow_html=True)
 
 
-
-
-# Initialise session state variables
+# Initialise session state variables------------------------------------
 #TAB1
 if "db_connections_dict" not in st.session_state:
     st.session_state["db_connections_dict"] = {}
@@ -79,7 +59,7 @@ if "sql_query_saved_ok_flag" not in st.session_state:
 if "sql_query_removed_ok_flag" not in st.session_state:
     st.session_state["sql_query_removed_ok_flag"] = False
 
-#define on_click functions
+#define on_click functions-----------------------------------------
 # TAB1
 def update_db_connections():
     for connection_label in st.session_state["db_connections_dict"]:
@@ -243,12 +223,14 @@ with tab1:
         db_engine = st.selectbox("🖱️ Select a database engine:*", db_engine_list, key="key_db_engine")
     with col1b:
         conn_label = st.text_input("⌨️ Enter label:*", key="key_conn_label")
-        if conn_label in st.session_state["db_connections_dict"]:
+        valid_conn_label = utils.is_valid_label(conn_label)
+        if valid_conn_label and conn_label in st.session_state["db_connections_dict"]:
             with col1a:
                 st.markdown(f"""<div class="error-message">
                     ❌ Label <b>{conn_label}</b> is already in use.<br>
                     You must choose a different label for this connection.
                         </div>""", unsafe_allow_html=True)
+                valid_conn_label = False
                 st.write("")
 
     if db_engine != "Select an engine":
@@ -270,8 +252,7 @@ with tab1:
             else:
                 database = st.text_input("⌨️ Enter service name:*")
 
-        if (conn_label and host and port and database
-            and user and password and conn_label not in st.session_state["db_connections_dict"]):
+        if (valid_conn_label and host and port and database and user and password):
             with col1:
                 connection_ok_flag = utils.try_connection(db_engine, host, port, database, user, password)
                 if connection_ok_flag:
@@ -372,7 +353,7 @@ with tab1:
 
             with col1a:
                 delete_all_connections_checkbox = st.checkbox(
-                "🔒 I am sure I want to delete all connections",
+                "🔒 I am sure I want to remove all connections",
                 key="key_delete_all_connections_checkbox")
                 if delete_all_connections_checkbox:
                     st.button("Remove", key="key_remove_connection_button", on_click=remove_connection)
@@ -423,7 +404,7 @@ with tab1:
                 if connection_labels_to_remove_list:
                     st.write("")
                     delete_all_cross_connections_checkbox= st.checkbox(
-                    "🔒 I am sure I want to delete the connections",
+                    "🔒 I am sure I want to remove the selected connections",
                     key="key_delete_all_cross_connections_checkbox")
                     if delete_all_cross_connections_checkbox:
                         st.button("Remove", key="key_remove_connection_button", on_click=remove_connection)
@@ -449,7 +430,7 @@ with tab1:
 
             with col1a:
                 delete_connections_checkbox= st.checkbox(
-                "🔒 I am sure I want to delete the connections",
+                "🔒 I am sure I want to remove the selected connections",
                 key="key_delete_connections_checkbox")
                 if delete_connections_checkbox:
                     st.button("Remove", key="key_remove_connection_button", on_click=remove_connection)
@@ -796,6 +777,7 @@ with tab3:
             with col1b:
                 sql_query_label = st.text_input("⌨️ Enter label for the view (to save it):*",
                     key="key_sql_query_label")
+                valid_sql_query_label = utils.is_valid_label(sql_query_label)
                 if sql_query_label and sql_query_label not in st.session_state["sql_queries_dict"]:
                     sql_query_label_ok_flag = True
                 elif sql_query_label:
@@ -942,12 +924,12 @@ with tab3:
                     </div>""", unsafe_allow_html=True)
                     st.write("")
                     remove_views_checkbox = st.checkbox(
-                    "🔒 I am sure I want to delete all views",
+                    "🔒 I am sure I want to remove all views",
                     key="key_remove_views_checkbox")
                     queries_to_drop_list = list(st.session_state["sql_queries_dict"].keys())
                 else:
                     remove_views_checkbox = st.checkbox(
-                    "🔒 I am sure I want to delete the selected views",
+                    "🔒 I am sure I want to remove the selected views",
                     key="key_remove_views_checkbox")
 
             if remove_views_checkbox:

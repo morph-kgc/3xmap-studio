@@ -15,46 +15,29 @@ import requests
 from morph_kgc import materialize
 from sqlalchemy import create_engine
 from streamlit.runtime.uploaded_file_manager import UploadedFile
+from streamlit_js_eval import streamlit_js_eval
 
-st.set_page_config(layout="wide")
-
-# Header
+# Config-----------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
-    st.markdown("""<div style="display:flex; align-items:center; background-color:#f0f0f0; padding:12px 18px;
-        border-radius:8px; margin-bottom:16px;">
-        <span style="font-size:1.7rem; margin-right:18px;">🔮</span><div>
-            <h3 style="margin:0; font-size:1.75rem;">
-                <span style="color:#511D66; font-weight:bold; margin-right:12px;">◽◽◽◽◽</span>
-                Materialise Graph
-                <span style="color:#511D66; font-weight:bold; margin-left:12px;">◽◽◽◽◽</span>
-            </h3>
-            <p style="margin:0; font-size:0.95rem; color:#555;">
-                Use <b>Morph-KGC</b> to materialise a graph from <b>mappings</b> and <b>data sources</b>.
-            </p>
-        </div></div>""", unsafe_allow_html=True)
-
+    st.set_page_config(page_title="3Xmap Studio", layout="wide",
+        page_icon="logo/fav_icon.png")
 else:
-    st.markdown("""
-    <div style="display:flex; align-items:center; background-color:#1e1e1e; padding:12px 18px;
-                border-radius:8px; border-left:4px solid #999999; margin-bottom:16px;">
-        <span style="font-size:1.7rem; margin-right:18px; color:#dddddd;">🔮</span>
-        <div>
-            <h3 style="margin:0; font-size:1.75rem; color:#dddddd;">
-                <span style="color:#bbbbbb; font-weight:bold; margin-right:12px;">◽◽◽◽◽</span>
-                Materialise Graph
-                <span style="color:#bbbbbb; font-weight:bold; margin-left:12px;">◽◽◽◽◽</span>
-            </h3>
-            <p style="margin:0; font-size:0.95rem; color:#cccccc;">
-                Use <b>Morph-KGC</b> to materialise a graph from <b>mappings</b> and <b>data sources</b>.
-            </p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.set_page_config(page_title="3Xmap Studio", layout="wide",
+        page_icon="logo/fav_icon_inverse.png")
 
-#____________________________________________
-#PRELIMINARY
+# Automatic detection of dark mode-------------------------
+if "dark_mode_flag" not in st.session_state or st.session_state["dark_mode_flag"] is None:
+    st.session_state["dark_mode_flag"] = streamlit_js_eval(js_expressions="window.matchMedia('(prefers-color-scheme: dark)').matches",
+        key="dark_mode")
 
-# Import style
+# Header-----------------------------------
+dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
+header_html = utils.render_header(title="Materialise Graph",
+    description="""Use <b>Morph-KGC</b> to materialise a graph from <b>mappings</b> and <b>data sources</b>.""",
+    dark_mode=dark_mode)
+st.markdown(header_html, unsafe_allow_html=True)
+
+# Import style--------------------------------------------
 style_container = st.empty()
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
     style_container.markdown(utils.import_st_aesthetics(), unsafe_allow_html=True)
@@ -62,13 +45,13 @@ else:
     style_container.markdown(utils.import_st_aesthetics_dark_mode(), unsafe_allow_html=True)
 
 
-# Namespaces
-RML, RR, QL = utils.get_required_ns().values()
+# Namespaces------------------------------------------
+RML, RR, QL = utils.get_required_ns_dict().values()
 
-# Temporal folder to put everything
+# Temporal folder to put everything-----------------------
 temp_folder_path = os.path.join(os.getcwd(), "materialising_mapping_temp")
 
-# Initialise session state variables
+# Initialise session state variables--------------------------
 # OTHER PAGES
 if "g_label" not in st.session_state:
     st.session_state["g_label"] = ""
@@ -111,7 +94,7 @@ if "graph_materialised_ok_flag" not in st.session_state:
 if "materialisation_page_reset_ok_flag" not in st.session_state:
     st.session_state["materialisation_page_reset_ok_flag"] = False
 
-#define on_click functions
+#define on_click functions--------------------------------------------
 # TAB1
 def save_sql_ds_for_mk():
     # add to config dict___________________
