@@ -44,7 +44,7 @@ else:
 
 
 # Namespaces---------------------------------------------------------
-RML, RR, QL = utils.get_required_ns_dict().values()
+QL, RML, RR = utils.get_required_ns_dict().values()
 
 
 # Initialise session state variables--------------------------------------
@@ -621,11 +621,9 @@ def clean_g_mapping():
 col1, col2 = st.columns([2,1.5])
 if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
     with col1:
-        st.markdown(f"""<div class="error-message">
-            ❗ You need to create or load a mapping. <small>Please go to the
-            <b style="color:#a94442;">Global Configuration page</b>.</small>
-        </div>
-        """, unsafe_allow_html=True)
+        st.write("")
+        st.write("")
+        utils.get_missing_g_mapping_error_message_different_page()
         st.stop()
 
 
@@ -646,7 +644,7 @@ with tab1:
     with col2:
         col2a,col2b = st.columns([1,2])
     # with col2b:
-    #     utils.get_corner_status_message()
+    #     utils.get_corner_status_message_mapping()
 
     # Display last added namespaces in dataframe (also option to show all ns)
     tm_dict = utils.get_tm_dict()
@@ -1018,7 +1016,7 @@ with tab2:
     with col2:
         col2a,col2b = st.columns([1,2])
     # with col2b:
-    #     utils.get_corner_status_message()
+    #     utils.get_corner_status_message_mapping()
 
     # Display last added namespaces in dataframe (also option to show all ns)
     tm_dict = utils.get_tm_dict()
@@ -1793,8 +1791,7 @@ with tab3:
     with col2:
         col2a, col2b = st.columns([1,2])
     # with col2b:
-    #     utils.get_corner_status_message()
-    #     st.write("")
+    #     utils.get_corner_status_message_mapping()
 
     with col2:
         col2a, col2b = st.columns([0.5, 2])   #HEREHERE

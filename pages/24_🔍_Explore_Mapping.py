@@ -35,6 +35,12 @@ if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_f
 else:
     style_container.markdown(utils.import_st_aesthetics_dark_mode(), unsafe_allow_html=True)
 
+# Initialise session state variables----------------------------------------
+# OTHER PAGES
+if not "g_label" in st.session_state:
+    st.session_state["g_label"] = ""
+if not "g_mapping" in st.session_state:
+    st.session_state["g_mapping"] = Graph()
 
 # Namespaces------------------------------------------------------------
 RML, RR, QL = utils.get_required_ns_dict().values()
@@ -45,11 +51,9 @@ RML, RR, QL = utils.get_required_ns_dict().values()
 col1, col2 = st.columns([2,1.5])
 if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
     with col1:
-        st.markdown(f"""<div class="error-message">
-            ❗ You need to create or load a mapping. Please go to the
-            <b style="color:#a94442;">Global Configuration page</b>.
-        </div>
-        """, unsafe_allow_html=True)
+        st.write("")
+        st.write("")
+        utils.get_missing_g_mapping_error_message_different_page()
         st.stop()
 
 
@@ -68,8 +72,8 @@ with tab1:
 
     with col2:
         col2a,col2b = st.columns([1,2])
-    # with col2b:
-    #     utils.get_corner_status_message()
+    with col2b:
+        utils.get_corner_status_message_mapping()
 
     #PURPLE HEADING - ADD NEW TRIPLESMAP
     with col1:
@@ -1030,8 +1034,8 @@ with tab2:
 
     with col2:
         col2a,col2b = st.columns([1,2])
-    # with col2b:
-    #     utils.get_corner_status_message()
+    with col2b:
+        utils.get_corner_status_message_mapping()
 
     #PURPLE HEADING - ADD NEW TRIPLESMAP
     with col1:
@@ -1095,8 +1099,8 @@ with tab3:
 
     with col2:
         col2a,col2b = st.columns([1,2])
-    # with col2b:
-    #     utils.get_corner_status_message()
+    with col2b:
+        utils.get_corner_status_message_mapping()
 
     #PURPLE HEADING - PREVIEW
     with col1:
@@ -1110,19 +1114,12 @@ with tab3:
 
 
     list_to_choose = list(utils.get_g_mapping_file_formats_dict())
-    list_to_choose.insert(0, "Select format")
     list_to_choose.remove("jsonld")
 
-    with col1b:
-        preview_format = st.selectbox("🖱️ Select format:*", list_to_choose, key="key_export_format_selectbox")
-
     with col1a:
-        st.markdown(f"""<div class="gray-preview-message">
-                <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-                style="vertical-align:middle; margin-right:8px; height:18px;">
-                 Mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b><br>
-                <small style="margin-left:26px;">{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps </small>
-            </div>""", unsafe_allow_html=True)
+        preview_format = st.selectbox("🖱️ Select format:*", list_to_choose,
+            key="key_export_format_selectbox")
+
 
     if preview_format != "Select format":
         serialised_data = st.session_state["g_mapping"].serialize(format=preview_format)

@@ -43,6 +43,8 @@ else:
 
 # Initialise session state variables----------------------------------------
 # OTHER PAGES
+if not "g_label" in st.session_state:
+    st.session_state["g_label"] = ""
 if not "g_mapping" in st.session_state:
     st.session_state["g_mapping"] = Graph()
 if not "last_added_ns_list" in st.session_state:
@@ -72,7 +74,7 @@ if "g_ontology_reduced_ok_flag" not in st.session_state:
 
 
 # Namespaces-----------------------------------
-RML, RR, QL = utils.get_required_ns_dict().values()
+QL, RML, RR = utils.get_required_ns_dict().values()
 
 
 # Define on_click functions-------------------------------------------------
@@ -167,11 +169,11 @@ def reduce_ontology():
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
 
-tab1 = st.tabs(["Import Ontology"])
+tab1, tab2 = st.tabs(["Import Ontology", "View Ontology"])
 
 #________________________________________________
 # PANEL: "IMPORT ONTOLOGY"
-with tab1[0]:
+with tab1:
 
     col1, col2 = st.columns([2,1.5])
 
@@ -205,36 +207,13 @@ with tab1[0]:
         with col2b:
             st.write("")
             st.write("")
-
-            if st.session_state["g_ontology"]:
-                if len(st.session_state["g_ontology_components_dict"]) > 1:
-                    ontology_items = '\n'.join([f"""<li><b>{ont}
-                    <b style="color:#F63366;">[{utils.get_ontology_tag(ont)}]</b>
-                    </b></li>""" for ont in st.session_state["g_ontology_components_dict"]])
-                    st.markdown(f"""<div class="blue-status-message">
-                            🧩 You are working with the <b>ontologies</b>:
-                        <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
-                            {ontology_items}
-                        </ul></div>""", unsafe_allow_html=True)
-                else:
-                    ont = next(iter(st.session_state["g_ontology_components_dict"]))
-                    st.markdown(f"""<div class="blue-status-message">
-                            🧩 The ontology <b>
-                            {ont}</b>
-                            <b style="color:#F63366;">[{utils.get_ontology_tag(ont)}]</b>
-                            is loaded.
-                        </div>""", unsafe_allow_html=True)
-            else:
-                st.markdown(f"""<div class="gray-status-message">
-                        🚫 <b>No ontology</b> has been imported.
-                    </div>
-                """, unsafe_allow_html=True)
+            utils.get_corner_status_message_ontology()
 
     with col2:
         col2a,col2b = st.columns([2,1.5])
     with col2b:
         st.write("")
-        st.markdown("""<div class="info-message-gray">
+        st.markdown("""<div class="info-message-blue">
         🐢 Certain options in this panel can be a bit slow. <small> Some patience may be required.</small>
             </div>""", unsafe_allow_html=True)
 
@@ -527,4 +506,75 @@ with tab1[0]:
                     st.button("Drop", key="key_reduce_ontology_button", on_click=reduce_ontology)
 
 
-#_____________________________________________
+#________________________________________________
+# VIEW ONTOLOGY
+with tab2:
+    st.write("")
+    st.write("")
+
+    col1, col2 = st.columns([2,1.5])
+
+    with col2:
+        col2a,col2b = st.columns([1,2])
+    with col2b:
+        utils.get_corner_status_message_ontology()
+
+    #PURPLE HEADING - PREVIEW
+    with col1:
+        st.markdown("""<div class="purple-heading">
+                🔍 View Ontology
+            </div>""", unsafe_allow_html=True)
+        st.write("")
+
+    list_to_choose = list(utils.get_g_mapping_file_formats_dict())
+    list_to_choose.remove("jsonld")
+
+    if not st.session_state["g_ontology_components_dict"]:
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.markdown(f"""<div class="error-message">
+                ❌ You need to import at least one ontology in the <b>Import Ontology</b> pannel.
+            </div>""", unsafe_allow_html=True)
+    else:
+        with col1:
+            col1a, col1b = st.columns(2)
+        with col1a:
+            preview_format = st.selectbox("🖱️ Select format:*", list_to_choose,
+                key="key_export_format_selectbox")
+        if len(st.session_state["g_ontology_components_dict"]) > 1:
+            with col1b:
+                list_to_choose = []
+                for ont in st.session_state["g_ontology_components_dict"]:
+                    list_to_choose.append(utils.get_ontology_tag(ont))
+                list_to_choose.insert(0, "All ontologies")
+                ontology_component_for_preview_tag = st.selectbox("Select ontology (optional):", list_to_choose,
+                    key="key_ontology_component_for_preview")
+            if ontology_component_for_preview_tag == "All ontologies":
+                ontology_for_preview = st.session_state["g_ontology"]
+            else:
+                for ont in st.session_state["g_ontology_components_dict"]:
+                    if utils.get_ontology_tag(ont) == ontology_component_for_preview_tag:
+                        ontology_for_preview = st.session_state["g_ontology_components_dict"][ont]
+
+        else:
+            ontology_for_preview = st.session_state["g_ontology"]
+
+        serialised_data = ontology_for_preview.serialize(format=preview_format)
+        max_length = 100000
+        st.code(serialised_data[:max_length])
+
+        if len(serialised_data) > max_length:
+            with col2b:
+                if len(serialised_data) < 10**6:
+                    len_for_display = f"{int(len(serialised_data) / 1000)}k"
+                elif len(serialised_data) < 10*10**6:
+                    len_for_display = f"{round(len(serialised_data) / 10**6, 1)}M"
+                else:
+                    len_for_display = f"{round(int(serialised_data)/ 10**6)}M"
+                st.markdown(f"""<div class="warning-message">
+                    ⚠️ <b>Your ontology is quite large</b>.
+                    <small>Showing only the first {int(max_length/1000)}k characters
+                    (out of {len_for_display}) to avoid performance issues.</small>
+                </div>""", unsafe_allow_html=True)
+                st.write("")

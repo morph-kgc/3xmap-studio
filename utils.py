@@ -453,10 +453,19 @@ def import_st_aesthetics_dark_mode():
 def get_missing_g_mapping_error_message():
     st.markdown(f"""<div class="error-message">
         ❌ You need to create or load a mapping in the
-        <b style="color:#a94442;">Select mapping option</b>.
-    </div>
-    """, unsafe_allow_html=True)
+        <b>Select Mapping pannel</b>.
+    </div>""", unsafe_allow_html=True)
 #_______________________________________________________
+
+#_______________________________________________________
+# Function to get error message to indicate a g_mapping must be loaded
+def get_missing_g_mapping_error_message_different_page():
+    st.markdown(f"""<div class="error-message">
+        ❌ You need to create or load a mapping in the
+        <b>Global Configuration</b> page <small>(Select Mapping pannel).</small>
+    </div>""", unsafe_allow_html=True)
+#_______________________________________________________
+
 
 #_______________________________________________________
 # Function to get the corner status message in the different panels
@@ -490,26 +499,58 @@ def get_corner_status_message():
                 style="vertical-align:middle; margin-right:8px; height:20px;">
                 You are working with mapping
                 <b>{st.session_state["g_label"]}</b>.<br> <br>
-                🚫 <b>No ontology</b> is loaded.
+                🚫 <b>No ontology</b> has been imported.
             </div>
         """, unsafe_allow_html=True)
 
 #_______________________________________________________
 
-#__________________________________________________
-def get_corner_status_message_or_error():
-    if not st.session_state["g_label"]:
-        col1, col2 = st.columns([2,1.5])
-        with col1:
-            utils.get_missing_g_mapping_error_message()
+#_______________________________________________________
+# Function to get the mapping corner status message
+def get_corner_status_message_mapping():
+    if st.session_state["g_label"]:
+        st.markdown(f"""<div class="gray-preview-message">
+                <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
+                style="vertical-align:middle; margin-right:8px; height:18px;">
+                 Mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b><br>
+                <small style="margin-left:26px;">{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps </small>
+            </div>""", unsafe_allow_html=True)
+    else:
+        st.markdown(f"""<div class="gray-preview-message">
+                <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
+                style="vertical-align:middle; margin-right:8px; height:20px;">
+                🚫 <b>No mapping</b> is loaded.
+            </div>
+        """, unsafe_allow_html=True)
 
-    else:   #only allow to continue if mapping is loaded
-        col1,col2 = st.columns([2,1.5])
+#_______________________________________________________
 
-        with col2:
-            col2a,col2b = st.columns([1,2])
-        with col2b:
-            utils.get_corner_status_message()
+#_______________________________________________________
+# Function to get the ontology status message in the different panels
+def get_corner_status_message_ontology():
+    if st.session_state["g_ontology"]:
+        if len(st.session_state["g_ontology_components_dict"]) > 1:
+            ontology_items = '\n'.join([f"""<li><b>{ont}
+            <b style="color:#F63366;">[{utils.get_ontology_tag(ont)}]</b>
+            </b></li>""" for ont in st.session_state["g_ontology_components_dict"]])
+            st.markdown(f"""<div class="gray-preview-message">
+                    🧩 <b>Ontologies</b>:
+                <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
+                    {ontology_items}
+                </ul></div>""", unsafe_allow_html=True)
+        else:
+            ont = next(iter(st.session_state["g_ontology_components_dict"]))
+            st.markdown(f"""<div class="gray-preview-message">
+                    🧩 Ontology: <b><br>
+                    {ont}</b>
+                    <b style="color:#F63366;">[{utils.get_ontology_tag(ont)}]</b>.
+                </div>""", unsafe_allow_html=True)
+    else:
+        st.markdown(f"""<div class="gray-preview-message">
+                🚫 <b>No ontology</b> has been imported.
+            </div>
+        """, unsafe_allow_html=True)
+
 #_______________________________________________________
 
 #_______________________________________________________
@@ -639,7 +680,7 @@ def get_required_ns_dict():
 
 #________________________________________________________
 # retrieving necessary namespaces for this page here
-RML, RR, QL = get_required_ns_dict().values()
+QL, RML, RR = get_required_ns_dict().values()
 #________________________________________________________
 
 #_________________________________________________________

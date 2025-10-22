@@ -103,7 +103,7 @@ if "g_ontology" not in st.session_state:
 
 
 # Namespaces-----------------------------------
-RML, RR, QL = utils.get_required_ns_dict().values()
+QL, RML, RR = utils.get_required_ns_dict().values()
 
 if "structural_ns" not in st.session_state and st.session_state["g_label"]:
     st.session_state["structural_ns"] = utils.get_default_structural_ns()
@@ -579,22 +579,22 @@ with tab1:
     with col3:
         if st.session_state["g_label"]:
             if st.session_state["g_mapping_source_cache"][0] == "file":
-                st.markdown(f"""<div class="blue-status-message">
+                st.markdown(f"""<div class="gray-preview-message">
                         <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                         style="vertical-align:middle; margin-right:8px; height:20px;">
                         You are working with mapping
-                        <b>{st.session_state["g_label"]}</b>.
+                        <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
                         <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
                             <li>Mapping was loaded from file <b>{st.session_state["g_mapping_source_cache"][1]}</b></li>
                             <li>When loaded, mapping had <b>{st.session_state["original_g_size_cache"]} TriplesMaps</b></li>
                             <li>Now mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps<b/></li>
                         </ul></div>""", unsafe_allow_html=True)
             else:
-                st.markdown(f"""<div class="blue-status-message">
+                st.markdown(f"""<div class="gray-preview-message">
                         <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                         style="vertical-align:middle; margin-right:8px; height:20px;">
                         You are working with mapping
-                        <b>{st.session_state["g_label"]}</b>.
+                        <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
                         <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
                             <li>Mapping was created <b>from scratch</b></li>
                             <li>Mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps<b/></li>
@@ -643,7 +643,7 @@ with tab1:
 
                 if valid_candidate_valid_label:
                     st.button("Change", key="key_change_g_label_button", on_click=change_g_label)
-                    st.markdown(f"""<div class="info-message-gray">
+                    st.markdown(f"""<div class="info-message-blue">
                             ℹ️ Mapping label will be changed to <b style="color:#F63366;">
                             {g_label_candidate}</b> (currently <b>{st.session_state["g_label"]}</b>).
                         </span></div>""", unsafe_allow_html=True)
