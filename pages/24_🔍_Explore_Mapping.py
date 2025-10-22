@@ -1110,16 +1110,18 @@ with tab3:
         st.write("")
 
     with col1:
-        col1a, col1b = st.columns(2)
+        col1a, col1b = st.columns([2,1])
 
 
     list_to_choose = list(utils.get_g_mapping_file_formats_dict())
     list_to_choose.remove("jsonld")
 
     with col1a:
-        preview_format = st.selectbox("🖱️ Select format:*", list_to_choose,
-            key="key_export_format_selectbox")
-
+        format_options_dict = {"🐢 turtle": "turtle", "3️⃣ ntriples": "nt",
+            "📐 trig": "trig"}
+        preview_format_display = st.radio("🖱️ Select format:*", format_options_dict,
+            horizontal=True, label_visibility="collapsed", key="key_export_format_selectbox")
+        preview_format = format_options_dict[preview_format_display]
 
     if preview_format != "Select format":
         serialised_data = st.session_state["g_mapping"].serialize(format=preview_format)

@@ -169,7 +169,7 @@ def reduce_ontology():
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
 
-tab1, tab2 = st.tabs(["Import Ontology", "View Ontology"])
+tab1, tab2, tab3 = st.tabs(["Import Ontology", "Explore Ontology", "View Ontology"])
 
 #________________________________________________
 # PANEL: "IMPORT ONTOLOGY"
@@ -505,9 +505,8 @@ with tab1:
                 with col1a:
                     st.button("Drop", key="key_reduce_ontology_button", on_click=reduce_ontology)
 
-
-#________________________________________________
-# VIEW ONTOLOGY
+#__________________________________________________
+# EXPLORE ONTOLOGY
 with tab2:
     st.write("")
     st.write("")
@@ -517,17 +516,205 @@ with tab2:
     with col2:
         col2a,col2b = st.columns([1,2])
     with col2b:
+        utils.get_corner_status_message_mapping()
+
+    #PURPLE HEADING - ADD NEW TRIPLESMAP
+    with col1:
+        st.markdown("""<div class="purple-heading">
+                🔍 Search Ontology
+            </div>""", unsafe_allow_html=True)
+        st.write("")
+
+    with col1:
+        col1a, col1b = st.columns([1.5, 1])
+
+    ontology_searches_list = ["Select search", "Classes", "Properties", "Superclasses", "Custom search"]
+
+    with col1a:
+        selected_ontology_search = st.selectbox("🖱️ Select search:*", ontology_searches_list,
+            key="key_selected_ontology_search")
+
+    if len(st.session_state["g_ontology_components_dict"]) > 1:
+        with col1b:
+            list_to_choose = []
+            for ont in st.session_state["g_ontology_components_dict"]:
+                list_to_choose.append(utils.get_ontology_tag(ont))
+            list_to_choose.insert(0, "All ontologies")
+            ontology_component_for_search_tag = st.selectbox("🖱️ Select ontology (optional):", list_to_choose,
+                key="key_ontology_component_for_search_tag")
+        if ontology_component_for_search_tag == "All ontologies":
+            ontology_for_search = st.session_state["g_ontology"]
+        else:
+            for ont in st.session_state["g_ontology_components_dict"]:
+                if utils.get_ontology_tag(ont) == ontology_component_for_search_tag:
+                    ontology_for_search = st.session_state["g_ontology_components_dict"][ont]
+
+    else:
+        ontology_for_search = st.session_state["g_ontology"]
+
+    if selected_ontology_search == "Classes":
+        with col1b:
+            tm_dict = utils.get_tm_dict()
+            list_to_choose = list(reversed(list(tm_dict)))
+            if len(list_to_choose) > 1:
+                selected_tm_for_display_list = st.multiselect("🖱️ Filter TriplesMaps (optional):", list_to_choose,
+                    key="key_selected_tm_for_display_list_1")
+            else:
+                selected_tm_for_display_list = []
+
+        with col1:
+            col1a, col1b, col1c = st.columns(3)
+
+        with col1a:
+            limit = st.text_input("⌨️ Enter limit (optional):", key="key_limit")
+        with col1b:
+            offset = st.text_input("⌨️ Enter offset (optional):", key="key_offset")
+        with col1c:
+            list_to_choose = ["No order", "Ascending", "Descending"]
+            order_clause = st.selectbox("⌨️ Enter order (optional):", list_to_choose,
+                key="key_order_clause")
+
+            query = """PREFIX rr: <http://www.w3.org/ns/r2rml#>
+                PREFIX rml: <http://semweb.mmlab.be/ns/rml#>
+
+                SELECT DISTINCT ?tm ?sm ?pom ?om ?subject_value ?predicate ?object_value WHERE {
+                  ?tm rr:subjectMap ?sm .
+                  ?tm rr:predicateObjectMap ?pom .
+                  ?pom rr:predicate ?predicate .
+                  ?pom rr:objectMap ?om .
+
+                  OPTIONAL { ?sm rr:template ?subject_value . }
+                  OPTIONAL { ?sm rr:constant ?subject_value . }
+                  OPTIONAL { ?sm rml:reference ?subject_value . }
+
+                  OPTIONAL { ?om rr:template ?object_value . }
+                  OPTIONAL { ?om rr:constant ?object_value . }
+                  OPTIONAL { ?om rml:reference ?object_value . }
+                }"""
+
+            if order_clause == "Ascending":
+                query += f"ORDER BY ASC(?tm) "
+            elif order_clause == "Descending":
+                query += f"ORDER BY DESC(?tm) "
+
+            if limit:
+                query += f"LIMIT {limit} "
+
+            if offset:
+                query += f"OFFSET {offset}"
+
+            results = st.session_state["g_mapping"].query(query)
+
+            df_data = []
+
+            for row in results:
+                tm = row.tm if hasattr(row, "tm") and row.tm else ""
+                sm = row.sm if hasattr(row, "sm") and row.sm else ""
+                pom = row.pom if hasattr(row, "pom") and row.pom else ""
+                om = row.om if hasattr(row, "om") and row.om else ""
+
+                subject = row.subject_value if hasattr(row, "subject_value") and row.subject_value else ""
+                predicate = row.predicate if hasattr(row, "predicate") and row.predicate else ""
+                object_ = row.object_value if hasattr(row, "object_value") and row.object_value else ""
+
+                # Optional: apply label formatting
+                tm_label = utils.get_node_label(tm)
+                sm_label = utils.get_node_label(sm)
+                pom_label = utils.get_node_label(pom)
+                om_label = utils.get_node_label(om)
+                subject_label = utils.get_node_label(subject)
+                predicate_label = utils.get_node_label(predicate)
+                object_label = utils.get_node_label(object_)
+
+                selected_tm_for_display_list = list(tm_dict) if not selected_tm_for_display_list else selected_tm_for_display_list
+                if tm_label in selected_tm_for_display_list:
+                    row_dict = {
+                        "Subject": subject_label,
+                        "Predicate": predicate_label,
+                        "Object": object_label,
+                        "TriplesMap": tm_label,
+                        "SubjectMap": sm_label,
+                        "PredicateObjectMap": pom_label,
+                        "ObjectMap": om_label
+                    }
+                    df_data.append(row_dict)
+
+            # Create DataFrame
+            df = pd.DataFrame(df_data)
+
+            # Drop empty columns
+            df = df.loc[:, df.apply(lambda col: col.replace('', pd.NA).notna().any())]
+
+            # Display
+            with col1:
+                if not df.empty:
+                    st.markdown(f"""<div class="info-message-blue">
+                        <b>RESULTS ({len(df)}):</b>
+                    </div>""", unsafe_allow_html=True)
+                    st.dataframe(df, hide_index=True)
+                else:
+                    st.markdown(f"""<div class="warning-message">
+                        ⚠️ No results.
+                    </div>""", unsafe_allow_html=True)
+
+    if selected_ontology_search == "Custom search":
+        with col1a:
+            query = st.text_area("⌨️ Enter query:*")
+
+        if query:
+            try:
+                results = ontology_for_search.query(query)
+                # Create and display the DataFrame (build rows dynamically)
+                rows = []
+                columns = set()
+
+                for row in results:
+                    row_dict = {}
+                    for var in row.labels:
+                        value = row[var]
+                        row_dict[str(var)] = str(value) if value else ""
+                        columns.add(str(var))
+                    rows.append(row_dict)
+
+                df = pd.DataFrame(rows, columns=sorted(columns))
+                if not df.empty:
+                    with col1:
+                        st.markdown(f"""<div class="info-message-blue">
+                            <b>RESULTS ({len(df)}):</b>
+                        </div>""", unsafe_allow_html=True)
+                        st.dataframe(df, hide_index=True)
+                else:
+                    with col1a:
+                        st.markdown(f"""<div class="warning-message">
+                            ⚠️ <b>No results.</b>
+                        </div>""", unsafe_allow_html=True)
+
+            except Exception as e:
+                with col1a:
+                    st.markdown(f"""<div class="error-message">
+                        ❌ <b> Failed to parse query. </b>
+                        <small><b>Complete error:</b> {e}Y</small>
+                    </div>""", unsafe_allow_html=True)
+
+#________________________________________________
+# VIEW ONTOLOGY
+with tab3:
+    st.write("")
+    st.write("")
+
+    col1, col2 = st.columns([2,1])
+
+    with col2:
+        col2a,col2b = st.columns([1,2])
+    with col2b:
         utils.get_corner_status_message_ontology()
 
     #PURPLE HEADING - PREVIEW
     with col1:
         st.markdown("""<div class="purple-heading">
-                🔍 View Ontology
+                🔍 View Ontologies
             </div>""", unsafe_allow_html=True)
         st.write("")
-
-    list_to_choose = list(utils.get_g_mapping_file_formats_dict())
-    list_to_choose.remove("jsonld")
 
     if not st.session_state["g_ontology_components_dict"]:
         with col1:
@@ -540,16 +727,19 @@ with tab2:
         with col1:
             col1a, col1b = st.columns(2)
         with col1a:
-            preview_format = st.selectbox("🖱️ Select format:*", list_to_choose,
-                key="key_export_format_selectbox")
+            format_options_dict = {"🐢 turtle": "turtle", "3️⃣ ntriples": "nt",
+                "📐 trig": "trig"}
+            preview_format_display = st.radio("🖱️ Select format:*", format_options_dict,
+                horizontal=True, key="key_export_format_selectbox")
+            preview_format = format_options_dict[preview_format_display]
         if len(st.session_state["g_ontology_components_dict"]) > 1:
             with col1b:
                 list_to_choose = []
                 for ont in st.session_state["g_ontology_components_dict"]:
                     list_to_choose.append(utils.get_ontology_tag(ont))
                 list_to_choose.insert(0, "All ontologies")
-                ontology_component_for_preview_tag = st.selectbox("Select ontology (optional):", list_to_choose,
-                    key="key_ontology_component_for_preview")
+                ontology_component_for_preview_tag = st.selectbox("🖱️ Select ontology (optional):", list_to_choose,
+                    key="key_ontology_component_for_preview_tag")
             if ontology_component_for_preview_tag == "All ontologies":
                 ontology_for_preview = st.session_state["g_ontology"]
             else:
