@@ -89,7 +89,7 @@ with tab1:
         "Used Classes", "Incomplete Nodes", "Orphaned Nodes", "All Triples"]
 
     with col1a:
-        selected_predefined_search = st.selectbox("🖱️ Select search:*", predefined_searches_list,
+        selected_predefined_search = st.selectbox("🔍 Select search:*", predefined_searches_list,
             key="key_selected_predefined_search")
 
     if selected_predefined_search == "Rules":
@@ -97,7 +97,7 @@ with tab1:
             tm_dict = utils.get_tm_dict()
             list_to_choose = list(reversed(list(tm_dict)))
             if len(list_to_choose) > 1:
-                selected_tm_for_display_list = st.multiselect("🖱️ Filter TriplesMaps (optional):", list_to_choose,
+                selected_tm_for_display_list = st.multiselect("➖ Filter by TriplesMaps (opt):", list_to_choose,
                     key="key_selected_tm_for_display_list_1")
             else:
                 selected_tm_for_display_list = []
@@ -111,7 +111,7 @@ with tab1:
             offset = st.text_input("⌨️ Enter offset (optional):", key="key_offset")
         with col1c:
             list_to_choose = ["No order", "Ascending", "Descending"]
-            order_clause = st.selectbox("⌨️ Enter order (optional):", list_to_choose,
+            order_clause = st.selectbox("🖱️ Select order (optional):", list_to_choose,
                 key="key_order_clause")
 
             query = """PREFIX rr: <http://www.w3.org/ns/r2rml#>
@@ -219,7 +219,7 @@ with tab1:
             offset = st.text_input("⌨️ Enter offset (optional):", key="key_offset")
         with col1c:
             list_to_choose = ["No order", "Ascending", "Descending"]
-            order_clause = st.selectbox("⌨️ Enter order (optional):", list_to_choose,
+            order_clause = st.selectbox("🖱️ Select order (optional):", list_to_choose,
                 key="key_order_clause")
 
             query = """SELECT ?tm ?logicalTable ?tableName ?sqlQuery ?logicalSource ?source ?referenceFormulation ?iterator WHERE {
@@ -317,7 +317,7 @@ with tab1:
             offset = st.text_input("⌨️ Enter offset (optional):", key="key_offset")
         with col1c:
             list_to_choose = ["No order", "Ascending", "Descending"]
-            order_clause = st.selectbox("⌨️ Enter order (optional):", list_to_choose,
+            order_clause = st.selectbox("🖱️ Select order (optional):", list_to_choose,
                 key="key_order_clause")
 
         query = f"""SELECT ?tm ?subjectMap ?template ?constant ?reference ?column ?termType ?graph (GROUP_CONCAT(?class; separator=", ") AS ?classes) WHERE {{
@@ -431,7 +431,7 @@ with tab1:
                 offset = st.text_input("⌨️ Enter offset (optional):", key="key_offset")
             with col1c:
                 list_to_choose = ["No order", "Ascending", "Descending"]
-                order_clause = st.selectbox("⌨️ Enter order (optional):", list_to_choose,
+                order_clause = st.selectbox("🖱️ Select order (optional):", list_to_choose,
                     key="key_order_clause")
 
             query = f"""
@@ -542,7 +542,7 @@ with tab1:
             offset = st.text_input("⌨️ Enter offset (optional):", key="key_offset")
         with col1c:
             list_to_choose = ["No order", "Ascending", "Descending"]
-            order_clause = st.selectbox("⌨️ Enter order (optional):", list_to_choose,
+            order_clause = st.selectbox("🖱️ Select order (optional):", list_to_choose,
                 key="key_order_clause")
 
         query = """SELECT DISTINCT ?tm ?sm ?class WHERE {
@@ -612,7 +612,7 @@ with tab1:
             offset = st.text_input("⌨️ Enter offset (optional):", key="key_offset")
         with col1c:
             list_to_choose = ["No order", "Ascending", "Descending"]
-            order_clause = st.selectbox("⌨️ Enter order (optional):", list_to_choose,
+            order_clause = st.selectbox("🖱️ Select order (optional):", list_to_choose,
                 key="key_order_clause")
 
         if selected_incomplete_node_type == "TriplesMaps":
@@ -738,7 +738,7 @@ with tab1:
             offset = st.text_input("⌨️ Enter offset (optional):", key="key_offset")
         with col1c:
             list_to_choose = ["No order", "Ascending", "Descending"]
-            order_clause = st.selectbox("⌨️ Enter order (optional):", list_to_choose,
+            order_clause = st.selectbox("🖱️ Select order (optional):", list_to_choose,
                 key="key_order_clause")
 
         if selected_orphaned_node_type == "Subject Maps":
@@ -974,7 +974,7 @@ with tab1:
             offset = st.text_input("⌨️ Enter offset (optional):", key="key_offset")
         with col1c:
             list_to_choose = ["No order", "Ascending", "Descending"]
-            order_clause = st.selectbox("⌨️ Enter order (optional):", list_to_choose,
+            order_clause = st.selectbox("🖱️ Select order (optional):", list_to_choose,
                 key="key_order_clause")
 
             query = """SELECT ?s ?p ?o WHERE {
@@ -1049,7 +1049,7 @@ with tab2:
 
 
     with col1a:
-        query = st.text_area("⌨️ Enter query:*")
+        query = st.text_area("⌨️ Enter SPARQL query:*")
 
     if query:
         try:
