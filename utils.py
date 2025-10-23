@@ -453,10 +453,19 @@ def import_st_aesthetics_dark_mode():
 def get_missing_g_mapping_error_message():
     st.markdown(f"""<div class="error-message">
         ❌ You need to create or load a mapping in the
-        <b style="color:#a94442;">Select mapping option</b>.
-    </div>
-    """, unsafe_allow_html=True)
+        <b>Select Mapping pannel</b>.
+    </div>""", unsafe_allow_html=True)
 #_______________________________________________________
+
+#_______________________________________________________
+# Function to get error message to indicate a g_mapping must be loaded
+def get_missing_g_mapping_error_message_different_page():
+    st.markdown(f"""<div class="error-message">
+        ❌ You need to create or load a mapping in the
+        <b>Global Configuration</b> page <small>(Select Mapping pannel).</small>
+    </div>""", unsafe_allow_html=True)
+#_______________________________________________________
+
 
 #_______________________________________________________
 # Function to get the corner status message in the different panels
@@ -490,26 +499,58 @@ def get_corner_status_message():
                 style="vertical-align:middle; margin-right:8px; height:20px;">
                 You are working with mapping
                 <b>{st.session_state["g_label"]}</b>.<br> <br>
-                🚫 <b>No ontology</b> is loaded.
+                🚫 <b>No ontology</b> has been imported.
             </div>
         """, unsafe_allow_html=True)
 
 #_______________________________________________________
 
-#__________________________________________________
-def get_corner_status_message_or_error():
-    if not st.session_state["g_label"]:
-        col1, col2 = st.columns([2,1.5])
-        with col1:
-            utils.get_missing_g_mapping_error_message()
+#_______________________________________________________
+# Function to get the mapping corner status message
+def get_corner_status_message_mapping():
+    if st.session_state["g_label"]:
+        st.markdown(f"""<div class="gray-preview-message">
+                <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
+                style="vertical-align:middle; margin-right:8px; height:18px;">
+                 Mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b><br>
+                <small style="margin-left:26px;">{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps </small>
+            </div>""", unsafe_allow_html=True)
+    else:
+        st.markdown(f"""<div class="gray-preview-message">
+                <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
+                style="vertical-align:middle; margin-right:8px; height:20px;">
+                🚫 <b>No mapping</b> is loaded.
+            </div>
+        """, unsafe_allow_html=True)
 
-    else:   #only allow to continue if mapping is loaded
-        col1,col2 = st.columns([2,1.5])
+#_______________________________________________________
 
-        with col2:
-            col2a,col2b = st.columns([1,2])
-        with col2b:
-            utils.get_corner_status_message()
+#_______________________________________________________
+# Function to get the ontology status message in the different panels
+def get_corner_status_message_ontology():
+    if st.session_state["g_ontology"]:
+        if len(st.session_state["g_ontology_components_dict"]) > 1:
+            ontology_items = '\n'.join([f"""<li><b>{ont}
+            <b style="color:#F63366;">[{st.session_state["g_ontology_components_tag_dict"][ont]}]</b>
+            </b></li>""" for ont in st.session_state["g_ontology_components_dict"]])
+            st.markdown(f"""<div class="gray-preview-message">
+                    🧩 <b>Ontologies</b>:
+                <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
+                    {ontology_items}
+                </ul></div>""", unsafe_allow_html=True)
+        else:
+            ont = next(iter(st.session_state["g_ontology_components_dict"]))
+            st.markdown(f"""<div class="gray-preview-message">
+                    🧩 Ontology: <b><br>
+                    {ont}</b>
+                    <b style="color:#F63366;">[{st.session_state["g_ontology_components_tag_dict"][ont]}]</b>.
+                </div>""", unsafe_allow_html=True)
+    else:
+        st.markdown(f"""<div class="gray-preview-message">
+                🚫 <b>No ontology</b> has been imported.
+            </div>
+        """, unsafe_allow_html=True)
+
 #_______________________________________________________
 
 #_______________________________________________________
@@ -524,7 +565,20 @@ def format_list_for_markdown(xlist):
         formatted_list = ", ".join(xlist[:-1]) + " and " + xlist[-1]
 
     return formatted_list
+#_______________________________________________________
 
+#_______________________________________________________
+# Function to format big numbers
+def format_big_number(number):
+
+    if number < 10**6:
+        number_for_display = f"{int(number / 1000)}k"
+    elif number < 10*10**6:
+        number_for_display = f"{round(number / 10**6, 1)}M"
+    else:
+        number_for_display = f"{round(int(number)/ 10**6)}M"
+
+    return number_for_display
 #_______________________________________________________
 
 #_______________________________________________________
@@ -640,7 +694,7 @@ def get_required_ns_dict():
 
 #________________________________________________________
 # retrieving necessary namespaces for this page here
-RML, RR, QL = get_required_ns_dict().values()
+QL, RML, RR = get_required_ns_dict().values()
 #________________________________________________________
 
 #_________________________________________________________
@@ -1234,14 +1288,33 @@ def get_ontology_human_readable_name(g, source_link=None, source_file=None):
 #Function to get the human-readable name of an ontology
 def get_ontology_tag(g_label):
 
+    forbidden_tags_beginning = [f"ns{i}" for i in range(1, 10)]
+
     g = st.session_state["g_ontology_components_dict"][g_label]
     g_ontology_iri = next(g.subjects(RDF.type, OWL.Ontology), None)
 
     if g_ontology_iri:
         prefix = g.namespace_manager.compute_qname(g_ontology_iri)[0]
-        return prefix
+        if not any(prefix.startswith(tag) for tag in forbidden_tags_beginning):
+            return prefix
 
     return g_label[:4]
+#___________________________________________________________________________________
+
+#___________________________________________________________________________________
+#Function to get the human-readable name of an ontology
+def get_unique_ontology_tag(g_label):
+
+    tag = get_ontology_tag(g_label)
+
+    if not tag in st.session_state["g_ontology_components_tag_dict"].values():
+        return tag
+
+    i = 1
+    while f"{tag}{i}" in st.session_state["g_ontology_components_tag_dict"].values():
+        i += 1
+
+    return f"{tag}{i}"
 #___________________________________________________________________________________
 
 #___________________________________________________________________________________
@@ -2331,8 +2404,22 @@ def get_node_label(node):
         label = ""
 
     return label
+#_________________________________________________
 
 #_________________________________________________
+# Funtion to get label of a node
+def get_node_label_w_prefix(node):
+
+    if isinstance(node, URIRef):
+        try:
+            prefix, ns, local = st.session_state["g_mapping"].namespace_manager.compute_qname(node)
+            return prefix + ": " + local
+        except Exception:
+            return get_node_label(node)
+
+    return get_node_label(node)   # return label without prefix
+#_________________________________________________
+
 
 #_________________________________________________
 # Funtion to check a mapping loaded from URL is ok

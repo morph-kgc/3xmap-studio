@@ -98,6 +98,8 @@ if "ds_files_dict" not in st.session_state:
     st.session_state["ds_files_dict"] = {}
 if "g_ontology_components_dict" not in st.session_state:
     st.session_state["g_ontology_components_dict"] = {}
+if "g_ontology_components_tag_dict" not in st.session_state:
+    st.session_state["g_ontology_components_tag_dict"] = {}
 if "g_ontology" not in st.session_state:
     st.session_state["g_ontology"] = Graph()
 
@@ -362,7 +364,7 @@ with tab1:
             if st.session_state["db_connections_dict"] or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]:
                 with col1:
                     overwrite_g_mapping_and_session_checkbox = st.checkbox(
-                        f"""🗑️ I want to clear the ontologies and/or data sources""",
+                        f"""🗑️ Start fresh: remove previously loaded ontologies and data sources""",
                         key="key_overwrite_g_mapping_and_session_checkbox_new")
             else:
                 overwrite_g_mapping_and_session_checkbox = False
@@ -392,8 +394,8 @@ with tab1:
             if st.session_state["db_connections_dict"] or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]:
                 with col1a:
                     overwrite_g_mapping_and_session_checkbox = st.checkbox(
-                        f"""🗑️ I also want to clear the ontologies and/or data sources""",
-                        key="key_overwrite_g_mapping_and_session_checkbox_new")
+                        f"""🗑️ Start fresh: remove previously loaded ontologies and data sources""",
+                        value=True, key="key_overwrite_g_mapping_and_session_checkbox_new")
             else:
                 overwrite_g_mapping_and_session_checkbox = False
 
@@ -455,7 +457,7 @@ with tab1:
             if st.session_state["db_connections_dict"] or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]:
                 with col1:
                     overwrite_g_mapping_and_session_checkbox = st.checkbox(
-                        f"""🗑️ I want to clear the ontologies and/or data sources""",
+                        f"""🗑️ Start fresh: remove previously loaded ontologies and data sources""",
                         key="key_overwrite_g_mapping_and_session_checkbox_existing")
             else:
                 overwrite_g_mapping_and_session_checkbox = False
@@ -482,7 +484,7 @@ with tab1:
             if st.session_state["db_connections_dict"] or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]:
                 with col1a:
                     overwrite_g_mapping_and_session_checkbox = st.checkbox(
-                        f"""🗑️ I also want to clear the ontologies and/or data sources""",
+                        f"""🗑️ Start fresh: remove previously loaded ontologies and data sources""",
                         key="key_overwrite_g_mapping_and_session_checkbox_existing")
             else:
                 overwrite_g_mapping_and_session_checkbox = False
@@ -579,22 +581,22 @@ with tab1:
     with col3:
         if st.session_state["g_label"]:
             if st.session_state["g_mapping_source_cache"][0] == "file":
-                st.markdown(f"""<div class="blue-status-message">
+                st.markdown(f"""<div class="gray-preview-message">
                         <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                         style="vertical-align:middle; margin-right:8px; height:20px;">
                         You are working with mapping
-                        <b>{st.session_state["g_label"]}</b>.
+                        <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
                         <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
                             <li>Mapping was loaded from file <b>{st.session_state["g_mapping_source_cache"][1]}</b></li>
                             <li>When loaded, mapping had <b>{st.session_state["original_g_size_cache"]} TriplesMaps</b></li>
                             <li>Now mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps<b/></li>
                         </ul></div>""", unsafe_allow_html=True)
             else:
-                st.markdown(f"""<div class="blue-status-message">
+                st.markdown(f"""<div class="gray-preview-message">
                         <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                         style="vertical-align:middle; margin-right:8px; height:20px;">
                         You are working with mapping
-                        <b>{st.session_state["g_label"]}</b>.
+                        <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
                         <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
                             <li>Mapping was created <b>from scratch</b></li>
                             <li>Mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps<b/></li>
@@ -643,7 +645,7 @@ with tab1:
 
                 if valid_candidate_valid_label:
                     st.button("Change", key="key_change_g_label_button", on_click=change_g_label)
-                    st.markdown(f"""<div class="info-message-gray">
+                    st.markdown(f"""<div class="info-message-blue">
                             ℹ️ Mapping label will be changed to <b style="color:#F63366;">
                             {g_label_candidate}</b> (currently <b>{st.session_state["g_label"]}</b>).
                         </span></div>""", unsafe_allow_html=True)
@@ -844,7 +846,7 @@ with tab2:
                 for ont_label, ont in st.session_state["g_ontology_components_dict"].items():
                     for pr, ns in utils.get_ontology_component_ns_dict(ont).items():
                         if not str(ns) in mapping_ns_dict.values():
-                            g_ont_components_w_unbound_ns.append(utils.get_ontology_tag(ont_label))
+                            g_ont_components_w_unbound_ns.append(st.session_state["g_ontology_components_tag_dict"][ont_label])
                             break
 
                 if len(st.session_state["g_ontology_components_dict"]) == 1:   # no ontolgoy filter
@@ -865,10 +867,9 @@ with tab2:
                     with col1:
                         col1a, col1b = st.columns([1,2])
                     with col1a:
-                        list_to_choose = [utils.get_ontology_tag(ont_label)
-                            for ont_label in reversed(st.session_state["g_ontology_components_dict"])]
+                        list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
                         list_to_choose.insert(0, "Select ontology")
-                        ontology_filter_for_ns = st.selectbox("➖ Filter by ontology (optional):", list_to_choose,
+                        ontology_filter_for_ns = st.selectbox("🔻 Filter by ontology (optional):", list_to_choose,
                             key="key_ontology_filter_for_ns")
 
                     if ontology_filter_for_ns == "Select ontology":
@@ -891,8 +892,8 @@ with tab2:
                                 st.write("")
                             ontology_ns_to_bind_list = []
                         else:
-                            for ont_label in st.session_state["g_ontology_components_dict"]:
-                                if utils.get_ontology_tag(ont_label) == ontology_filter_for_ns:
+                            for ont_label, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
+                                if ont_tag == ontology_filter_for_ns:
                                     ont = st.session_state["g_ontology_components_dict"][ont_label]
                             ontology_component_ns_dict = utils.get_ontology_component_ns_dict(ont)
                             ontology_ns_list_not_duplicated = [k for k, v in ontology_component_ns_dict.items() if v not in mapping_ns_dict.values()]
