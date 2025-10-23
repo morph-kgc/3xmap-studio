@@ -565,7 +565,20 @@ def format_list_for_markdown(xlist):
         formatted_list = ", ".join(xlist[:-1]) + " and " + xlist[-1]
 
     return formatted_list
+#_______________________________________________________
 
+#_______________________________________________________
+# Function to format big numbers
+def format_big_number(number):
+
+    if number < 10**6:
+        number_for_display = f"{int(number / 1000)}k"
+    elif number < 10*10**6:
+        number_for_display = f"{round(number / 10**6, 1)}M"
+    else:
+        number_for_display = f"{round(int(number)/ 10**6)}M"
+
+    return number_for_display
 #_______________________________________________________
 
 #_______________________________________________________
@@ -1274,12 +1287,15 @@ def get_ontology_human_readable_name(g, source_link=None, source_file=None):
 #Function to get the human-readable name of an ontology
 def get_ontology_tag(g_label):
 
+    forbidden_tags_beginning = [f"ns{i}" for i in range(1, 10)]
+
     g = st.session_state["g_ontology_components_dict"][g_label]
     g_ontology_iri = next(g.subjects(RDF.type, OWL.Ontology), None)
 
     if g_ontology_iri:
         prefix = g.namespace_manager.compute_qname(g_ontology_iri)[0]
-        return prefix
+        if not any(prefix.startswith(tag) for tag in forbidden_tags_beginning):
+            return prefix
 
     return g_label[:4]
 #___________________________________________________________________________________

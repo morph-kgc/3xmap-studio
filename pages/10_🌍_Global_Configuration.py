@@ -362,7 +362,7 @@ with tab1:
             if st.session_state["db_connections_dict"] or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]:
                 with col1:
                     overwrite_g_mapping_and_session_checkbox = st.checkbox(
-                        f"""🗑️ I want to clear the ontologies and/or data sources""",
+                        f"""🗑️ Start fresh: remove previously loaded ontologies and data sources""",
                         key="key_overwrite_g_mapping_and_session_checkbox_new")
             else:
                 overwrite_g_mapping_and_session_checkbox = False
@@ -392,8 +392,8 @@ with tab1:
             if st.session_state["db_connections_dict"] or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]:
                 with col1a:
                     overwrite_g_mapping_and_session_checkbox = st.checkbox(
-                        f"""🗑️ I also want to clear the ontologies and/or data sources""",
-                        key="key_overwrite_g_mapping_and_session_checkbox_new")
+                        f"""🗑️ Start fresh: remove previously loaded ontologies and data sources""",
+                        value=True, key="key_overwrite_g_mapping_and_session_checkbox_new")
             else:
                 overwrite_g_mapping_and_session_checkbox = False
 
@@ -455,7 +455,7 @@ with tab1:
             if st.session_state["db_connections_dict"] or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]:
                 with col1:
                     overwrite_g_mapping_and_session_checkbox = st.checkbox(
-                        f"""🗑️ I want to clear the ontologies and/or data sources""",
+                        f"""🗑️ Start fresh: remove previously loaded ontologies and data sources""",
                         key="key_overwrite_g_mapping_and_session_checkbox_existing")
             else:
                 overwrite_g_mapping_and_session_checkbox = False
@@ -482,7 +482,7 @@ with tab1:
             if st.session_state["db_connections_dict"] or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]:
                 with col1a:
                     overwrite_g_mapping_and_session_checkbox = st.checkbox(
-                        f"""🗑️ I also want to clear the ontologies and/or data sources""",
+                        f"""🗑️ Start fresh: remove previously loaded ontologies and data sources""",
                         key="key_overwrite_g_mapping_and_session_checkbox_existing")
             else:
                 overwrite_g_mapping_and_session_checkbox = False

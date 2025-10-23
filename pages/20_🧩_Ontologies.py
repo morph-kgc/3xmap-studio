@@ -562,6 +562,18 @@ with tab2:
         else:
             ontology_for_search = st.session_state["g_ontology"]
 
+        max_length = 10000
+        if len(ontology_for_search) > max_length:
+            with col2:
+                col2a, col2b = st.columns([1,3])
+            with col2b:
+                st.write("")
+                st.markdown(f"""<div class="warning-message">
+                    🐘 <b>Your ontology is quite large</b> ({utils.format_big_number(len(ontology_for_search))} triples).
+                    <small>Some patience may be required.</small>
+                </div>""", unsafe_allow_html=True)
+
+
         if selected_ontology_search == "🏷️ Classes":
             with col1b:
                 tm_dict = utils.get_tm_dict()
@@ -609,94 +621,92 @@ with tab2:
             list_to_choose.append("Class type")
             list_to_choose.append("Annotation")
 
-            if list_to_choose != ["No filter"]:   # HERE not really needed, since type always present
-
-                with col1d:
-                    class_filter_type = st.selectbox("🔻 Add filter (opt):", list_to_choose,
-                        key="key_class_filter_type")
+            with col1d:
+                class_filter_type = st.selectbox("🔻 Add filter (opt):", list_to_choose,
+                    key="key_class_filter_type")
 
 
-                if class_filter_type == "Superclass":
+            if class_filter_type == "Superclass":
 
-                    with col1:
-                        col1a, col1b = st.columns([2,1])
-                    with col1a:
-                        superclass_list = sorted(superclass_dict.keys())
-                        superclass_list.insert(0, "Select superclass")
-                        selected_superclass_filter = st.selectbox("🔻 Filter by superclass (optional):", superclass_list,
-                            key="key_selected_superclass_filter")   #superclass label
+                with col1:
+                    col1a, col1b = st.columns([2,1])
+                with col1a:
+                    superclass_list = sorted(superclass_dict.keys())
+                    superclass_list.insert(0, "Select superclass")
+                    selected_superclass_filter = st.selectbox("🔻 Filter by superclass (optional):", superclass_list,
+                        key="key_selected_superclass_filter")   #superclass label
 
-                    if selected_superclass_filter != "Select superclass":
-                        selected_superclass_iri = superclass_dict[selected_superclass_filter]
+                if selected_superclass_filter != "Select superclass":
+                    selected_superclass_iri = superclass_dict[selected_superclass_filter]
 
-                        query = f"""PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                    query = f"""PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                    PREFIX owl:  <http://www.w3.org/2002/07/owl#>
+                    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+                    SELECT DISTINCT ?class ?label ?comment ?type WHERE {{
+                      VALUES ?type {{ owl:Class rdfs:Class }}
+                      ?class rdf:type ?type .
+                      ?class rdfs:subClassOf <{selected_superclass_iri}> .
+                      FILTER (isIRI(?class))
+                      OPTIONAL {{ ?class rdfs:label ?label }}
+                      OPTIONAL {{ ?class rdfs:comment ?comment }} }}"""
+
+            if class_filter_type == "Class type":
+
+                with col1:
+                    col1a, col1b = st.columns([2,1])
+                with col1a:
+                    list_to_choose = ["Select class type", "owl:Class", "rdfs:Class"]
+                    selected_class_type = st.selectbox("🔻 Filter by class type (optional):", list_to_choose,
+                        key="key_selected_class_type")
+
+                if selected_class_type != "Select class type":
+
+                    query = f"""PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                    PREFIX owl:  <http://www.w3.org/2002/07/owl#>
+                    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+                    SELECT DISTINCT ?class ?label ?comment ?type WHERE {{
+                      ?class rdf:type ?type .
+                      FILTER (isIRI(?class))
+
+                      {"FILTER (?type = owl:Class)" if selected_class_type == "owl:Class" else
+                        "FILTER (?type = rdfs:Class)" if selected_class_type == "rdfs:Class" else
+                        "FILTER (?type = owl:Class || ?type = rdfs:Class)"}
+
+                      OPTIONAL {{ ?class rdfs:label ?label }}
+                      OPTIONAL {{ ?class rdfs:comment ?comment }} }}"""
+
+            if class_filter_type == "Annotation":
+
+                with col1:
+                    col1a, col1b = st.columns([2,1])
+                with col1a:
+                    annotation_options = ["Select annotation", "Has comment", "Has label", "Has comment or label"]
+                    selected_annotation_filter = st.selectbox("🔻 Filter by annotation presence (optional):", annotation_options,
+                        key="key_selected_annotation_filter")
+
+                if selected_annotation_filter != "Select annotation":
+
+                    base_query = """PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
                         PREFIX owl:  <http://www.w3.org/2002/07/owl#>
                         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-                        SELECT DISTINCT ?class ?label ?comment ?type WHERE {{
-                          VALUES ?type {{ owl:Class rdfs:Class }}
-                          ?class rdf:type ?type .
-                          ?class rdfs:subClassOf <{selected_superclass_iri}> .
-                          FILTER (isIRI(?class))
-                          OPTIONAL {{ ?class rdfs:label ?label }}
-                          OPTIONAL {{ ?class rdfs:comment ?comment }} }}"""
-
-                if class_filter_type == "Class type":
-
-                    with col1:
-                        col1a, col1b = st.columns([2,1])
-                    with col1a:
-                        list_to_choose = ["Select class type", "owl:Class", "rdfs:Class"]
-                        selected_class_type = st.selectbox("🔻 Filter by class type (optional):", list_to_choose,
-                            key="key_selected_class_type")
-
-                    if selected_class_type != "Select class type":
-
-                        query = f"""PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-                        PREFIX owl:  <http://www.w3.org/2002/07/owl#>
-                        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-
-                        SELECT DISTINCT ?class ?label ?comment ?type WHERE {{
+                        SELECT DISTINCT ?class ?label ?comment ?type WHERE {
+                          VALUES ?type { owl:Class rdfs:Class }
                           ?class rdf:type ?type .
                           FILTER (isIRI(?class))
+                          OPTIONAL { ?class rdfs:label ?label }
+                          OPTIONAL { ?class rdfs:comment ?comment }"""
 
-                          {"FILTER (?type = owl:Class)" if selected_class_type == "owl:Class" else
-                            "FILTER (?type = rdfs:Class)" if selected_class_type == "rdfs:Class" else
-                            "FILTER (?type = owl:Class || ?type = rdfs:Class)"}
-
-                          OPTIONAL {{ ?class rdfs:label ?label }}
-                          OPTIONAL {{ ?class rdfs:comment ?comment }} }}"""
-
-                if class_filter_type == "Annotation":
-
-                    with col1:
-                        col1a, col1b = st.columns([2,1])
-                    with col1a:
-                        annotation_options = ["Select annotation", "Has comment", "Has label", "Has comment or label"]
-                        selected_annotation_filter = st.selectbox("🔻 Filter by annotation presence (optional):", annotation_options,
-                            key="key_selected_annotation_filter")
-
-                    if selected_annotation_filter != "Select annotation":
-
-                        base_query = """PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-                            PREFIX owl:  <http://www.w3.org/2002/07/owl#>
-                            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-
-                            SELECT DISTINCT ?class ?label ?comment ?type WHERE {
-                              VALUES ?type { owl:Class rdfs:Class }
-                              ?class rdf:type ?type .
-                              FILTER (isIRI(?class))
-                              OPTIONAL { ?class rdfs:label ?label }
-                              OPTIONAL { ?class rdfs:comment ?comment }"""
-
-                        if selected_annotation_filter == "Has comment":
-                            query = base_query + "FILTER EXISTS { ?class rdfs:comment ?comment } }"
-                        elif selected_annotation_filter == "Has label":
-                            query = base_query + "FILTER EXISTS { ?class rdfs:label ?label } }"
-                        else:  # Has label or comment
-                            query = base_query + """
-                            FILTER (EXISTS { ?class rdfs:label ?label } ||
-                              EXISTS { ?class rdfs:comment ?comment } ) }"""
+                    if selected_annotation_filter == "Has comment":
+                        query = base_query + "FILTER EXISTS { ?class rdfs:comment ?comment } }"
+                    elif selected_annotation_filter == "Has label":
+                        query = base_query + "FILTER EXISTS { ?class rdfs:label ?label } }"
+                    else:  # Has label or comment
+                        query = base_query + """
+                        FILTER (EXISTS { ?class rdfs:label ?label } ||
+                          EXISTS { ?class rdfs:comment ?comment } ) }"""
 
             if order_clause == "Ascending":
                 query += f"ORDER BY ASC(?tm) "
@@ -714,18 +724,19 @@ with tab2:
             df_data = []
 
             for row in results:
-                class_uri = getattr(row, "class", "")
+                class_iri = getattr(row, "class", "")
                 label = getattr(row, "label", "")
                 comment = getattr(row, "comment", "")
                 class_type = getattr(row, "type", "")  # Extract the class type
 
-                if isinstance(class_uri, URIRef):  # filter out BNodes
+                if isinstance(class_iri, URIRef):  # filter out BNodes
                     df_data.append({
-                        "Class": utils.get_node_label_w_prefix(class_uri),
+                        "Class": utils.get_node_label_w_prefix(class_iri),
+                        "Label": label, "Comment": comment,
                         "Class Type": ("owl: Class" if str(class_type) == "http://www.w3.org/2002/07/owl#Class" else
                             "rdfs: Class" if str(class_type) == "http://www.w3.org/2000/01/rdf-schema#Class" else
                             str(class_type)),
-                        "Comment": comment, "Label": label, "URI": class_uri })
+                         "Class IRI": class_iri })
 
             # Create DataFrame
             df = pd.DataFrame(df_data)
@@ -759,15 +770,24 @@ with tab2:
                 order_clause = st.selectbox("🎚️ Select order (opt):", list_to_choose,
                     key="key_order_clause_prop")
 
-            # Domain and range filters
+            # Domain, range and other filters
             no_filters_query = """PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
                 PREFIX owl:  <http://www.w3.org/2002/07/owl#>
                 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-                SELECT DISTINCT ?property WHERE {
-                  VALUES ?type { rdf:Property owl:ObjectProperty owl:DatatypeProperty }
+                SELECT DISTINCT ?property ?label ?comment (GROUP_CONCAT(STR(?type); separator=", ") AS ?types) WHERE {
                   ?property rdf:type ?type .
-                  FILTER (isIRI(?property))}"""
+                  FILTER(?type IN (
+                    rdf:Property,
+                    owl:ObjectProperty,
+                    owl:DatatypeProperty,
+                    owl:AnnotationProperty
+                  ))
+                  FILTER (isIRI(?property))
+                  OPTIONAL { ?property rdfs:label ?label }
+                  OPTIONAL { ?property rdfs:comment ?comment }
+                }
+                GROUP BY ?property ?label ?comment"""
 
             query = no_filters_query
 
@@ -796,6 +816,8 @@ with tab2:
                 list_to_choose.append("Range")
             if superproperty_dict:
                 list_to_choose.append("Superproperty")
+            list_to_choose.append("Property type")
+            list_to_choose.append("Annotation")
 
             if list_to_choose != ["No filter"]:
 
@@ -821,13 +843,22 @@ with tab2:
                         PREFIX owl:  <http://www.w3.org/2002/07/owl#>
                         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-                        SELECT DISTINCT ?property WHERE {{
+                        SELECT DISTINCT ?property ?label ?comment (GROUP_CONCAT(STR(?type); separator=", ") AS ?types) WHERE {{
                           ?property rdf:type ?type .
-                          FILTER(?type IN (rdf:Property, owl:ObjectProperty, owl:DatatypeProperty))
+                          FILTER(?type IN (
+                            rdf:Property,
+                            owl:ObjectProperty,
+                            owl:DatatypeProperty,
+                            owl:AnnotationProperty
+                          ))
                           ?property rdfs:domain <{selected_domain_iri}> .
                           FILTER (isIRI(?property))
+                          OPTIONAL {{ ?property rdfs:label ?label }}
+                          OPTIONAL {{ ?property rdfs:comment ?comment }}
                         }}
+                        GROUP BY ?property ?label ?comment
                         """
+
 
                 if property_filter_type == "Range":
                     with col1:
@@ -846,12 +877,20 @@ with tab2:
                         PREFIX owl:  <http://www.w3.org/2002/07/owl#>
                         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-                        SELECT DISTINCT ?property WHERE {{
+                        SELECT DISTINCT ?property ?label ?comment (GROUP_CONCAT(STR(?type); separator=", ") AS ?types) WHERE {{
                           ?property rdf:type ?type .
-                          FILTER(?type IN (rdf:Property, owl:ObjectProperty, owl:DatatypeProperty))
+                          FILTER(?type IN (
+                            rdf:Property,
+                            owl:ObjectProperty,
+                            owl:DatatypeProperty,
+                            owl:AnnotationProperty
+                          ))
                           ?property rdfs:range <{selected_range_iri}> .
                           FILTER (isIRI(?property))
+                          OPTIONAL {{ ?property rdfs:label ?label }}
+                          OPTIONAL {{ ?property rdfs:comment ?comment }}
                         }}
+                        GROUP BY ?property ?label ?comment
                         """
 
                 if property_filter_type == "Superproperty":
@@ -867,18 +906,89 @@ with tab2:
                     if selected_superproperty_filter != "Select superproperty":
                         selected_superproperty_iri = superproperty_dict[selected_superproperty_filter]
 
-                        query = f"""
-                        PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                        query = f"""PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                            PREFIX owl:  <http://www.w3.org/2002/07/owl#>
+                            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+                            SELECT DISTINCT ?property ?label ?comment (GROUP_CONCAT(STR(?type); separator=", ") AS ?types) WHERE {{
+                              ?property rdf:type ?type .
+                              FILTER(?type IN (
+                                rdf:Property,
+                                owl:ObjectProperty,
+                                owl:DatatypeProperty,
+                                owl:AnnotationProperty
+                              ))
+                              ?property rdfs:subPropertyOf <{selected_superproperty_iri}> .
+                              FILTER (isIRI(?property))
+                              OPTIONAL {{ ?property rdfs:label ?label }}
+                              OPTIONAL {{ ?property rdfs:comment ?comment }}
+                            }}
+                            GROUP BY ?property ?label ?comment
+                            """
+
+
+                if property_filter_type == "Property type":
+                    with col1:
+                        col1a, col1b = st.columns([1.5,1])
+                    with col1a:
+                        property_type_dict = {"rdf: Property": "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property",
+                            "owl: ObjectProperty": "http://www.w3.org/2002/07/owl#ObjectProperty",
+                            "owl: DatatypeProperty": "http://www.w3.org/2002/07/owl#DatatypeProperty",
+                            "owl: AnnotationProperty": "http://www.w3.org/2002/07/owl#AnnotationProperty"}
+                        list_to_choose = list(property_type_dict)
+                        list_to_choose.insert(0, "Select type")
+                        selected_property_type = st.selectbox("🔻 Select property type:", list_to_choose,
+                            key="key_selected_property_type")
+
+                    if selected_property_type != "Select type":
+                        selected_property_type_iri = property_type_dict[selected_property_type]
+
+                        query = f"""PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
                         PREFIX owl:  <http://www.w3.org/2002/07/owl#>
                         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-                        SELECT DISTINCT ?property WHERE {{
+                        SELECT DISTINCT ?property ?label ?comment (GROUP_CONCAT(STR(?type); separator=", ") AS ?types) WHERE {{
                           ?property rdf:type ?type .
-                          FILTER(?type IN (rdf:Property, owl:ObjectProperty, owl:DatatypeProperty))
-                          ?property rdfs:subPropertyOf <{selected_superproperty_iri}> .
+                          FILTER(?type = <{selected_property_type_iri}>)
                           FILTER (isIRI(?property))
+                          OPTIONAL {{ ?property rdfs:label ?label }}
+                          OPTIONAL {{ ?property rdfs:comment ?comment }}
                         }}
+                        GROUP BY ?property ?label ?comment
                         """
+
+                if property_filter_type == "Annotation":
+
+                    with col1:
+                        col1a, col1b = st.columns([2, 1])
+                    with col1a:
+                        annotation_options = ["Select annotation", "Has comment", "Has label", "Has comment or label"]
+                        selected_annotation_filter = st.selectbox("🔻 Filter by annotation presence (optional):", annotation_options,
+                            key="key_selected_property_annotation_filter")
+
+                    if selected_annotation_filter != "Select annotation":
+
+                        query = """PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                        PREFIX owl:  <http://www.w3.org/2002/07/owl#>
+                        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+                        SELECT DISTINCT ?property ?label ?comment (GROUP_CONCAT(STR(?type); separator=", ") AS ?types) WHERE {
+                          ?property rdf:type ?type .
+                          FILTER(?type IN (
+                            rdf:Property,
+                            owl:ObjectProperty,
+                            owl:DatatypeProperty,
+                            owl:AnnotationProperty
+                          ))
+                          FILTER (isIRI(?property))
+                          OPTIONAL { ?property rdfs:label ?label }
+                          OPTIONAL { ?property rdfs:comment ?comment }
+                          FILTER (
+                            EXISTS { ?property rdfs:label ?label } ||
+                            EXISTS { ?property rdfs:comment ?comment }
+                          )
+                        }
+                        GROUP BY ?property ?label ?comment"""
 
             if order_clause == "Ascending":
                 query += "ORDER BY ASC(?property) "
@@ -893,15 +1003,28 @@ with tab2:
             results = ontology_for_search.query(query)
 
             df_data = []
-            for row in results:
-                prop_uri = getattr(row, "property", "")
-                prop_label = utils.get_node_label(prop_uri)
 
-                if prop_label and isinstance(prop_uri, URIRef):
-                    df_data.append({
-                        "Property": prop_label,
-                        "URI": prop_uri
-                    })
+            for row in results:
+                prop_iri = getattr(row, "property", "")
+                comment = getattr(row, "comment", "")
+                label = getattr(row, "label", "")
+
+                prop_types_iris_list = getattr(row, "types", "")
+                prop_types_iris_list = [t.strip() for t in prop_types_iris_list.split(",") if t.strip()]
+                prop_types_list = []
+                if "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property" in prop_types_iris_list:
+                    prop_types_list.append("rdf: Property")
+                if "http://www.w3.org/2002/07/owl#ObjectProperty" in prop_types_iris_list:
+                    prop_types_list.append("owl: ObjectProperty")
+                if "http://www.w3.org/2002/07/owl#DatatypeProperty" in prop_types_iris_list:
+                    prop_types_list.append("owl:DatatypeProperty")
+                if "http://www.w3.org/2002/07/owl#AnnotationProperty" in prop_types_iris_list:
+                    prop_types_list.append("owl: AnnotationProperty")
+                prop_types = utils.format_list_for_markdown(prop_types_list)
+
+                df_data.append({"Property": utils.get_node_label_w_prefix(prop_iri),
+                    "Label": label, "Comment": comment, "Property Type": prop_types,
+                     "Property IRI": prop_iri  })
 
             df = pd.DataFrame(df_data)
             df = df.loc[:, df.apply(lambda col: col.replace('', pd.NA).notna().any())]
@@ -992,6 +1115,7 @@ with tab3:
             preview_format_display = st.radio("🖱️ Select format:*", format_options_dict,
                 horizontal=True, key="key_export_format_selectbox")
             preview_format = format_options_dict[preview_format_display]
+
         if len(st.session_state["g_ontology_components_dict"]) > 1:
             with col1b:
                 list_to_choose = []
@@ -1012,21 +1136,12 @@ with tab3:
 
         serialised_data = ontology_for_preview.serialize(format=preview_format)
         max_length = 100000
-        st.code(serialised_data[:max_length])
-
         if len(serialised_data) > max_length:
-            with col2:
-                col2a, col2b = st.columns([1,3])
-            with col2b:
-                if len(serialised_data) < 10**6:
-                    len_for_display = f"{int(len(serialised_data) / 1000)}k"
-                elif len(serialised_data) < 10*10**6:
-                    len_for_display = f"{round(len(serialised_data) / 10**6, 1)}M"
-                else:
-                    len_for_display = f"{round(int(serialised_data)/ 10**6)}M"
+            with col1:
                 st.markdown(f"""<div class="warning-message">
-                    ⚠️ <b>Your ontology is quite large</b>.
-                    <small>Showing only the first {int(max_length/1000)}k characters
-                    (out of {len_for_display}) to avoid performance issues.</small>
+                    🐘 <b>Your ontology is quite large</b> ({utils.format_big_number(len(ontology_for_preview))} triples).
+                    <small>Showing only the first {utils.format_big_number(max_length)} characters
+                    (out of {utils.format_big_number(len(serialised_data))}) to avoid performance issues.</small>
                 </div>""", unsafe_allow_html=True)
-                st.write("")
+
+        st.code(serialised_data[:max_length])
