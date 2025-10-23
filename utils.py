@@ -2371,8 +2371,22 @@ def get_node_label(node):
         label = ""
 
     return label
+#_________________________________________________
 
 #_________________________________________________
+# Funtion to get label of a node
+def get_node_label_w_prefix(node):
+
+    if isinstance(node, URIRef):
+        try:
+            prefix, ns, local = st.session_state["g_mapping"].namespace_manager.compute_qname(node)
+            return prefix + ": " + local
+        except Exception:
+            return get_node_label(node)
+
+    return get_node_label(node)   # return label without prefix
+#_________________________________________________
+
 
 #_________________________________________________
 # Funtion to check a mapping loaded from URL is ok
