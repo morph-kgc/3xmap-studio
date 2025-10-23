@@ -98,6 +98,8 @@ if "ds_files_dict" not in st.session_state:
     st.session_state["ds_files_dict"] = {}
 if "g_ontology_components_dict" not in st.session_state:
     st.session_state["g_ontology_components_dict"] = {}
+if "g_ontology_components_tag_dict" not in st.session_state:
+    st.session_state["g_ontology_components_tag_dict"] = {}
 if "g_ontology" not in st.session_state:
     st.session_state["g_ontology"] = Graph()
 
@@ -844,7 +846,7 @@ with tab2:
                 for ont_label, ont in st.session_state["g_ontology_components_dict"].items():
                     for pr, ns in utils.get_ontology_component_ns_dict(ont).items():
                         if not str(ns) in mapping_ns_dict.values():
-                            g_ont_components_w_unbound_ns.append(utils.get_ontology_tag(ont_label))
+                            g_ont_components_w_unbound_ns.append(st.session_state["g_ontology_components_tag_dict"][ont_label])
                             break
 
                 if len(st.session_state["g_ontology_components_dict"]) == 1:   # no ontolgoy filter
@@ -865,10 +867,9 @@ with tab2:
                     with col1:
                         col1a, col1b = st.columns([1,2])
                     with col1a:
-                        list_to_choose = [utils.get_ontology_tag(ont_label)
-                            for ont_label in reversed(st.session_state["g_ontology_components_dict"])]
+                        list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
                         list_to_choose.insert(0, "Select ontology")
-                        ontology_filter_for_ns = st.selectbox("➖ Filter by ontology (optional):", list_to_choose,
+                        ontology_filter_for_ns = st.selectbox("🔻 Filter by ontology (optional):", list_to_choose,
                             key="key_ontology_filter_for_ns")
 
                     if ontology_filter_for_ns == "Select ontology":
@@ -891,8 +892,8 @@ with tab2:
                                 st.write("")
                             ontology_ns_to_bind_list = []
                         else:
-                            for ont_label in st.session_state["g_ontology_components_dict"]:
-                                if utils.get_ontology_tag(ont_label) == ontology_filter_for_ns:
+                            for ont_label, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
+                                if ont_tag == ontology_filter_for_ns:
                                     ont = st.session_state["g_ontology_components_dict"][ont_label]
                             ontology_component_ns_dict = utils.get_ontology_component_ns_dict(ont)
                             ontology_ns_list_not_duplicated = [k for k, v in ontology_component_ns_dict.items() if v not in mapping_ns_dict.values()]

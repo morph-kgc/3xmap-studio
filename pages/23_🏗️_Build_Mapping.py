@@ -1349,23 +1349,30 @@ with tab2:
                     # Filter by ontology
                     if len(st.session_state["g_ontology_components_dict"]) > 1:
                         with col1a:
-                            list_to_choose = []
-                            for ont_label in st.session_state["g_ontology_components_dict"]:
-                                list_to_choose.append(utils.get_ontology_tag(ont_label))
+                            list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
                             list_to_choose.insert(0, "Select ontology")
-                            ontology_filter_for_subject_class = st.selectbox("➖ Filter by ontology (optional):",
+                            ontology_filter_for_subject_class = st.selectbox("🔻 Filter by ontology (optional):",
                                 list_to_choose, key="key_ontology_filter_for_subject_class")
 
                         if ontology_filter_for_subject_class == "Select ontology":
                             ontology_filter_for_subject_class = st.session_state["g_ontology"]
                         else:
-                            for ont_label in st.session_state["g_ontology_components_dict"]:
-                                if ontology_filter_for_subject_class == utils.get_ontology_tag(ont_label):
+                            for ont_label, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
+                                if ont_tag == ontology_filter_for_subject_class:
                                     ontology_filter_for_subject_class = st.session_state["g_ontology_components_dict"][ont_label]
                                     break
 
                     else:
                         ontology_filter_for_subject_class = st.session_state["g_ontology"]
+
+                    # class dictionary filtered by ontology
+                    ontology_classes_dict = {}
+                    class_triples = set()
+                    class_triples |= set(ontology_filter_for_subject_class.triples((None, RDF.type, OWL.Class)))   #collect owl:Class definitions
+                    class_triples |= set(ontology_filter_for_subject_class.triples((None, RDF.type, RDFS.Class)))    # collect rdfs:Class definitions
+                    for s, p, o in class_triples:   #we add to dictionary removing the BNodes
+                        if not isinstance(s, BNode):
+                            ontology_classes_dict[split_uri(s)[1]] = s
 
                     # dictionary for superclasses
                     superclass_dict = {}
@@ -1379,7 +1386,7 @@ with tab2:
                         with col1a:
                             superclass_list = sorted(superclass_dict.keys())
                             superclass_list.insert(0, "Select a superclass")
-                            superclass = st.selectbox("➖ Filter by superclass (opt):", superclass_list,
+                            superclass = st.selectbox("🔻 Filter by superclass (opt):", superclass_list,
                                 key="key_superclass")   #superclass label
                         if superclass != "Select a superclass":   # a superclass has been selected (filter)
                             classes_in_superclass_dict[superclass] = superclass_dict[superclass]
@@ -1456,23 +1463,30 @@ with tab2:
                         # Filter by ontology
                         if len(st.session_state["g_ontology_components_dict"]) > 1:
                             with col1a:
-                                list_to_choose = []
-                                for ont_label in st.session_state["g_ontology_components_dict"]:
-                                    list_to_choose.append(utils.get_ontology_tag(ont_label))
+                                list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
                                 list_to_choose.insert(0, "Select ontology")
-                                ontology_filter_for_subject_class = st.selectbox("➖ Filter by ontology (optional):",
+                                ontology_filter_for_subject_class = st.selectbox("🔻 Filter by ontology (optional):",
                                     list_to_choose, key="key_ontology_filter_for_subject_class")
 
                             if ontology_filter_for_subject_class == "Select ontology":
                                 ontology_filter_for_subject_class = st.session_state["g_ontology"]
                             else:
-                                for ont_label in st.session_state["g_ontology_components_dict"]:
-                                    if ontology_filter_for_subject_class == utils.get_ontology_tag(ont_label):
+                                for ont_label, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
+                                    if ont_tag == ontology_filter_for_subject_class:
                                         ontology_filter_for_subject_class = st.session_state["g_ontology_components_dict"][ont_label]
                                         break
 
                         else:
                             ontology_filter_for_subject_class = st.session_state["g_ontology"]
+
+                        # class dictionary filtered by ontology
+                        ontology_classes_dict = {}
+                        class_triples = set()
+                        class_triples |= set(ontology_filter_for_subject_class.triples((None, RDF.type, OWL.Class)))   #collect owl:Class definitions
+                        class_triples |= set(ontology_filter_for_subject_class.triples((None, RDF.type, RDFS.Class)))    # collect rdfs:Class definitions
+                        for s, p, o in class_triples:   #we add to dictionary removing the BNodes
+                            if not isinstance(s, BNode):
+                                ontology_classes_dict[split_uri(s)[1]] = s
 
                         # dictionary for superclasses
                         superclass_dict = {}
@@ -1486,7 +1500,7 @@ with tab2:
                             with col1a:
                                 list_to_choose = sorted(superclass_dict.keys())
                                 list_to_choose.insert(0, "Select a superclass")
-                                superclass = st.selectbox("➖ Filter by superclass (optional):", list_to_choose,
+                                superclass = st.selectbox("🔻 Filter by superclass (optional):", list_to_choose,
                                     key="key_superclass")   #superclass label
                             if superclass != "Select a superclass":   # a superclass has been selected (filter)
                                 classes_in_superclass_dict[superclass] = superclass_dict[superclass]
@@ -1565,6 +1579,7 @@ with tab2:
                                  <div style="margin-top:0.2em; margin-left:20px; font-size:15px;">
                                         <small><b>{utils.format_list_for_markdown(list_for_display)}</b></small>
                                 </div></div>""", unsafe_allow_html=True)
+                            st.write("")
 
 
                 # GRAPH MAP
@@ -1877,18 +1892,16 @@ with tab3:
                 # Filter by ontology
                 if len(st.session_state["g_ontology_components_dict"]) > 1:
                     with col1a:
-                        list_to_choose = []
-                        for ont_label in st.session_state["g_ontology_components_dict"]:
-                            list_to_choose.append(utils.get_ontology_tag(ont_label))
+                        list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
                         list_to_choose.insert(0, "Select ontology")
-                        ontology_filter_for_predicate = st.selectbox("➖ Filter predicate by ontology (optional):",
+                        ontology_filter_for_predicate = st.selectbox("🔻 Filter predicate by ontology (optional):",
                             list_to_choose, key="key_ontology_filter_for_predicate")
 
                     if ontology_filter_for_predicate == "Select ontology":
                         ontology_filter_for_predicate = st.session_state["g_ontology"]
                     else:
-                        for ont_label in st.session_state["g_ontology_components_dict"]:
-                            if ontology_filter_for_predicate == utils.get_ontology_tag(ont_label):
+                        for ont_label, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
+                            if ont_tag == ontology_filter_for_predicate:
                                 ontology_filter_for_predicate = st.session_state["g_ontology_components_dict"][ont_label]
                                 break
 

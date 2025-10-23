@@ -531,7 +531,7 @@ def get_corner_status_message_ontology():
     if st.session_state["g_ontology"]:
         if len(st.session_state["g_ontology_components_dict"]) > 1:
             ontology_items = '\n'.join([f"""<li><b>{ont}
-            <b style="color:#F63366;">[{utils.get_ontology_tag(ont)}]</b>
+            <b style="color:#F63366;">[{st.session_state["g_ontology_components_tag_dict"][ont]}]</b>
             </b></li>""" for ont in st.session_state["g_ontology_components_dict"]])
             st.markdown(f"""<div class="gray-preview-message">
                     🧩 <b>Ontologies</b>:
@@ -543,7 +543,7 @@ def get_corner_status_message_ontology():
             st.markdown(f"""<div class="gray-preview-message">
                     🧩 Ontology: <b><br>
                     {ont}</b>
-                    <b style="color:#F63366;">[{utils.get_ontology_tag(ont)}]</b>.
+                    <b style="color:#F63366;">[{st.session_state["g_ontology_components_tag_dict"][ont]}]</b>.
                 </div>""", unsafe_allow_html=True)
     else:
         st.markdown(f"""<div class="gray-preview-message">
@@ -1298,6 +1298,22 @@ def get_ontology_tag(g_label):
             return prefix
 
     return g_label[:4]
+#___________________________________________________________________________________
+
+#___________________________________________________________________________________
+#Function to get the human-readable name of an ontology
+def get_unique_ontology_tag(g_label):
+
+    tag = get_ontology_tag(g_label)
+
+    if not tag in st.session_state["g_ontology_components_tag_dict"].values():
+        return tag
+
+    i = 1
+    while f"{tag}{i}" in st.session_state["g_ontology_components_tag_dict"].values():
+        i += 1
+
+    return f"{tag}{i}"
 #___________________________________________________________________________________
 
 #___________________________________________________________________________________

@@ -69,6 +69,8 @@ if "g_ontology_from_link_candidate" not in st.session_state:
     st.session_state["g_ontology_from_link_candidate"] = Graph()
 if "g_ontology_components_dict" not in st.session_state:
     st.session_state["g_ontology_components_dict"] = {}
+if "g_ontology_components_tag_dict" not in st.session_state:
+    st.session_state["g_ontology_components_tag_dict"] = {}
 if "g_ontology_reduced_ok_flag" not in st.session_state:
     st.session_state["g_ontology_reduced_ok_flag"] = False
 
@@ -91,6 +93,7 @@ def load_ontology_from_link():  #HEREIGONS
     # store information___________________________
     st.session_state["g_ontology_loaded_ok_flag"] = True
     st.session_state["g_ontology_components_dict"][st.session_state["g_ontology_label"]] = st.session_state["g_ontology"]
+    st.session_state["g_ontology_components_tag_dict"][st.session_state["g_ontology_label"]] = utils.get_unique_ontology_tag(st.session_state["g_ontology_label"])
     # reset fields___________________________
     st.session_state["key_ontology_link"] = ""
     st.session_state["ontology_link"] = ""
@@ -106,6 +109,7 @@ def load_ontology_from_file():
     # store information___________________________
     st.session_state["g_ontology_loaded_ok_flag"] = True
     st.session_state["g_ontology_components_dict"][st.session_state["g_ontology_label"]]=st.session_state["g_ontology"]
+    st.session_state["g_ontology_components_tag_dict"][st.session_state["g_ontology_label"]] = utils.get_unique_ontology_tag(st.session_state["g_ontology_label"])
     # reset fields___________________________
     st.session_state["key_ontology_uploader"] = str(uuid.uuid4())
     st.session_state["ontology_file"] = None
@@ -117,6 +121,7 @@ def extend_ontology_from_link():
     #store information___________________________
     st.session_state["g_ontology_loaded_ok_flag"] = True
     st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
+    st.session_state["g_ontology_components_tag_dict"][g_ontology_new_part_label] = utils.get_unique_ontology_tag(g_ontology_new_part_label)
     # bind ontology namespaces
     ontology_ns_dict = utils.get_ontology_component_ns_dict(g_ontology_new_part)
     for prefix, namespace in ontology_ns_dict.items():
@@ -139,6 +144,7 @@ def extend_ontology_from_file():
     #store information___________________________
     st.session_state["g_ontology_loaded_ok_flag"] = True
     st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
+    st.session_state["g_ontology_components_tag_dict"][g_ontology_new_part_label] = utils.get_unique_ontology_tag(g_ontology_new_part_label)
     # bind ontology namespaces
     ontology_ns_dict = utils.get_ontology_component_ns_dict(g_ontology_new_part)
     for prefix, namespace in ontology_ns_dict.items():
@@ -159,6 +165,7 @@ def reduce_ontology():
     st.session_state["g_ontology_reduced_ok_flag"] = True
     # drop the given ontology components from the dictionary_______________________
     st.session_state["g_ontology_components_dict"] = {label: ont for label, ont in st.session_state["g_ontology_components_dict"].items() if label not in ontologies_to_drop_list}
+    st.session_state["g_ontology_components_tag_dict"] = {label: ont for label, ont in st.session_state["g_ontology_components_tag_dict"].items() if label not in ontologies_to_drop_list}
     # merge remaining ontology components_______________________________
     st.session_state["g_ontology"] = Graph()
     for label, ont in st.session_state["g_ontology_components_dict"].items():
@@ -469,17 +476,14 @@ with tab1:
         with col1:
             col1a, col1b = st.columns([2,1])
         with col1a:
-            list_to_choose = []
-            for ont_label in st.session_state["g_ontology_components_dict"]:
-                list_to_choose.insert(0, utils.get_ontology_tag(ont_label))
-            # list_to_choose = list(reversed(list(st.session_state["g_ontology_components_dict"].keys())))
+            list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
             if len(list_to_choose) > 1:
                 list_to_choose.insert(0, "Select all")
             ontologies_to_drop_list_tags = st.multiselect("🖱️ Select ontologies to be dropped:*", list_to_choose,
                 key="key_ontologies_to_drop_list")
             ontologies_to_drop_list = []
-            for ont_label in st.session_state["g_ontology_components_dict"]:
-                if utils.get_ontology_tag(ont_label) in ontologies_to_drop_list_tags:
+            for ont_label, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
+                if ont_tag in ontologies_to_drop_list_tags:
                     ontologies_to_drop_list.append(ont_label)
 
 
@@ -546,17 +550,15 @@ with tab2:
 
         if len(st.session_state["g_ontology_components_dict"]) > 1:
             with col1b:
-                list_to_choose = []
-                for ont in st.session_state["g_ontology_components_dict"]:
-                    list_to_choose.append(utils.get_ontology_tag(ont))
+                list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
                 list_to_choose.insert(0, "All ontologies")
                 ontology_component_for_search_tag = st.selectbox("🧩 Select ontology (opt):", list_to_choose,
                     key="key_ontology_component_for_search_tag")
             if ontology_component_for_search_tag == "All ontologies":
                 ontology_for_search = st.session_state["g_ontology"]
             else:
-                for ont in st.session_state["g_ontology_components_dict"]:
-                    if utils.get_ontology_tag(ont) == ontology_component_for_search_tag:
+                for ont, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
+                    if ont_tag == ontology_component_for_search_tag:
                         ontology_for_search = st.session_state["g_ontology_components_dict"][ont]
 
         else:
@@ -1118,17 +1120,15 @@ with tab3:
 
         if len(st.session_state["g_ontology_components_dict"]) > 1:
             with col1b:
-                list_to_choose = []
-                for ont in st.session_state["g_ontology_components_dict"]:
-                    list_to_choose.append(utils.get_ontology_tag(ont))
+                list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
                 list_to_choose.insert(0, "All ontologies")
                 ontology_component_for_preview_tag = st.selectbox("🧩 Select ontology (optional):", list_to_choose,
                     key="key_ontology_component_for_preview_tag")
             if ontology_component_for_preview_tag == "All ontologies":
                 ontology_for_preview = st.session_state["g_ontology"]
             else:
-                for ont in st.session_state["g_ontology_components_dict"]:
-                    if utils.get_ontology_tag(ont) == ontology_component_for_preview_tag:
+                for ont, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
+                    if ont_tag == ontology_component_for_preview_tag:
                         ontology_for_preview = st.session_state["g_ontology_components_dict"][ont]
 
         else:
