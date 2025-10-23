@@ -46,7 +46,7 @@ else:
 
 
 # Namespaces------------------------------------------
-QL, RML, RR = utils.get_required_ns_dict().values()
+RML, RR, QL = utils.get_required_ns_dict().values()
 
 # Temporal folder to put everything-----------------------
 temp_folder_path = os.path.join(os.getcwd(), "materialising_mapping_temp")

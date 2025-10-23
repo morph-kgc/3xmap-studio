@@ -76,7 +76,7 @@ if "g_ontology_reduced_ok_flag" not in st.session_state:
 
 
 # Namespaces-----------------------------------
-QL, RML, RR = utils.get_required_ns_dict().values()
+RML, RR, QL = utils.get_required_ns_dict().values()
 
 
 # Define on_click functions-------------------------------------------------

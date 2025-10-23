@@ -105,7 +105,7 @@ if "g_ontology" not in st.session_state:
 
 
 # Namespaces-----------------------------------
-QL, RML, RR = utils.get_required_ns_dict().values()
+RML, RR, QL = utils.get_required_ns_dict().values()
 
 if "structural_ns" not in st.session_state and st.session_state["g_label"]:
     st.session_state["structural_ns"] = utils.get_default_structural_ns()

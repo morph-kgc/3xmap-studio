@@ -607,7 +607,7 @@ def get_default_structural_ns():
 
     default_structural_ns = utils.get_3xmap_base_iri()
 
-    return ["3xmap", Namespace(default_structural_ns)]
+    return ["map3x", Namespace(default_structural_ns)]
 #________________________________________________________
 
 #_________________________________________________________
@@ -683,9 +683,10 @@ def get_predefined_ns_dict():
 def get_required_ns_dict():
 
     required_ns_dict = {
-        "ql": Namespace("http://semweb.mmlab.be/ns/ql#"),
         "rml": Namespace("http://semweb.mmlab.be/ns/rml#"),
-        "rr": Namespace("http://www.w3.org/ns/r2rml#")}
+        "rr": Namespace("http://www.w3.org/ns/r2rml#"),
+        "ql": Namespace("http://semweb.mmlab.be/ns/ql#")
+        }
 
     return required_ns_dict
 

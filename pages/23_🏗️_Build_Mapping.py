@@ -44,7 +44,7 @@ else:
 
 
 # Namespaces---------------------------------------------------------
-QL, RML, RR = utils.get_required_ns_dict().values()
+RML, RR, QL = utils.get_required_ns_dict().values()
 
 
 # Initialise session state variables--------------------------------------
