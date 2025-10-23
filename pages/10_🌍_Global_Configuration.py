@@ -1124,7 +1124,7 @@ with tab2:
                 if structural_ns_iri_candidate and structural_ns_prefix_candidate:
                     if valid_iri_input and valid_prefix_input:
                         with col1:
-                            unbind_previous_base_ns_checkbox = st.checkbox(f"🗑️ Unbind {st.session_state["structural_ns"][0]} namespace",
+                            unbind_previous_base_ns_checkbox = st.checkbox(f"🗑️ Unbind {st.session_state['structural_ns'][0]} namespace",
                                 key="key_unbind_previous_base_ns_checkbox", value=True)
                             st.button("Confirm", key="key_change_structural_ns_button", on_click=change_structural_ns)
 
