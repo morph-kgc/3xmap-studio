@@ -470,39 +470,37 @@ def get_missing_g_mapping_error_message_different_page():
 #_______________________________________________________
 # Function to get the corner status message in the different panels
 def get_corner_status_message():
+    inner_html = ""
+
+    if st.session_state["g_label"]:
+        inner_html += f"""<img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
+                style="vertical-align:middle; margin-right:8px; height:18px;">
+                 Mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b><br>"""
+    else:
+        inner_html += f"""🚫 <b>No mapping</b> is loaded.<br>"""
+
+    inner_html += "<br>"
+
     if st.session_state["g_ontology"]:
         if len(st.session_state["g_ontology_components_dict"]) > 1:
-            ontology_items = '\n'.join([f"""<li><b>{ont}</b></li>""" for ont in st.session_state["g_ontology_components_dict"]])
-            st.markdown(f"""<div class="blue-status-message">
-                    <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-                    style="vertical-align:middle; margin-right:8px; height:20px;">
-                    You are working with mapping
-                    <b>{st.session_state["g_label"]}</b>.<br> <br>
-                    🧩 You are working with the <b>ontologies</b>:
-                    <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
-                <ul>
+            ontology_items = '\n'.join([f"""<li><b>{ont}
+            <b style="color:#F63366;">[{st.session_state["g_ontology_components_tag_dict"][ont]}]</b>
+            </b></li>""" for ont in st.session_state["g_ontology_components_dict"]])
+            inner_html += f"""🧩 <b>Ontologies</b>:
+                <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
                     {ontology_items}
-                </ul></div>""", unsafe_allow_html=True)
+                </ul>"""
         else:
-            st.markdown(f"""<div class="blue-status-message">
-                    <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-                    style="vertical-align:middle; margin-right:8px; height:20px;">
-                    You are working with mapping
-                    <b>{st.session_state["g_label"]}</b>.<br> <br>
-                    🧩 The ontology <b>
-                    {next(iter(st.session_state["g_ontology_components_dict"]))}</b>
-                    is loaded.
-                </div>""", unsafe_allow_html=True)
+            ont = next(iter(st.session_state["g_ontology_components_dict"]))
+            inner_html += f"""🧩 Ontology: <b><br>
+                    {ont}</b>
+                    <b style="color:#F63366;">[{st.session_state["g_ontology_components_tag_dict"][ont]}]</b>."""
     else:
-        st.markdown(f"""<div class="blue-status-message">
-                <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-                style="vertical-align:middle; margin-right:8px; height:20px;">
-                You are working with mapping
-                <b>{st.session_state["g_label"]}</b>.<br> <br>
-                🚫 <b>No ontology</b> has been imported.
-            </div>
-        """, unsafe_allow_html=True)
+        inner_html += f"""🚫 <b>No ontology</b> has been imported."""
 
+    st.markdown(f"""<div class="gray-preview-message">
+            {inner_html}
+        </div>""", unsafe_allow_html=True)
 #_______________________________________________________
 
 #_______________________________________________________
