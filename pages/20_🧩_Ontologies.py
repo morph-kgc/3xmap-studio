@@ -69,8 +69,6 @@ if "g_ontology_from_link_candidate" not in st.session_state:
     st.session_state["g_ontology_from_link_candidate"] = Graph()
 if "g_ontology_components_dict" not in st.session_state:
     st.session_state["g_ontology_components_dict"] = {}
-if "g_ontology_components_tag_dict" not in st.session_state:
-    st.session_state["g_ontology_components_tag_dict"] = {}
 if "g_ontology_reduced_ok_flag" not in st.session_state:
     st.session_state["g_ontology_reduced_ok_flag"] = False
 

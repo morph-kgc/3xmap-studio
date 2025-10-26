@@ -1092,6 +1092,7 @@ def save_project_state():
     project_state_list = []
     project_state_list.append(mapping_list)
     project_state_list.append(st.session_state["g_ontology_components_dict"])
+    project_state_list.append(st.session_state["g_ontology_components_tag_dict"])
     project_state_list.append(st.session_state["structural_ns"])
     project_state_list.append(st.session_state["db_connections_dict"])
     project_state_list.append(st.session_state["db_connection_status_dict"])
@@ -1109,11 +1110,12 @@ def retrieve_project_state(project_state_list):
     st.session_state["g_mapping"] = project_state_list[0][1]
     st.session_state["g_label"] = project_state_list[0][0]
     st.session_state["g_ontology_components_dict"] = project_state_list[1]
-    st.session_state["structural_ns"] = project_state_list[2]
-    st.session_state["db_connections_dict"] = project_state_list[3]
-    st.session_state["db_connection_status_dict"] = project_state_list[4]
-    st.session_state["ds_files_dict"] = project_state_list[5]
-    st.session_state["sql_queries_dict"] = project_state_list[6]
+    st.session_state["g_ontology_components_tag_dict"] = project_state_list[2]
+    st.session_state["structural_ns"] = project_state_list[3]
+    st.session_state["db_connections_dict"] = project_state_list[4]
+    st.session_state["db_connection_status_dict"] = project_state_list[5]
+    st.session_state["ds_files_dict"] = project_state_list[6]
+    st.session_state["sql_queries_dict"] = project_state_list[7]
 
 #______________________________________________________
 
