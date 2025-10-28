@@ -1748,11 +1748,46 @@ def get_sm_dict():
 
 #________________________________________________________
 # Funtion to get the dictionary of the superclasses in the ontology
-def get_ontology_superclass_dict():
-    pass
+def get_ontology_classes_dict(g):
 
+    ontology_classes_dict = {}
+    class_triples = set()
+    class_triples |= set(g.triples((None, RDF.type, OWL.Class)))   #collect owl:Class definitions
+    class_triples |= set(g.triples((None, RDF.type, RDFS.Class)))    # collect rdfs:Class definitions
+
+    for s, p, o in class_triples:   #we add to dictionary removing the BNodes
+        if not isinstance(s, BNode):
+            ontology_classes_dict[split_uri(s)[1]] = s
+
+    return ontology_classes_dict
+#________________________________________________________
 
 #________________________________________________________
+# Funtion to get the dictionary of the superclasses in the ontology
+def get_ontology_superclass_dict(g):
+
+    superclass_dict = {}
+    for s, p, o in list(set(g.triples((None, RDFS.subClassOf, None)))):
+        if not isinstance(o, BNode) and o not in superclass_dict.values():
+            superclass_dict[o.split("/")[-1].split("#")[-1]] = o
+
+    return superclass_dict
+#________________________________________________________
+
+#________________________________________________________
+# Funtion to get the dictionary of the superclasses in the ontology
+def get_ontology_used_classes_dict(g_ont):
+
+    ontology_classes_dict = get_ontology_classes_dict(g_ont)
+    ontology_used_classes_dict = {}
+
+    for class_label, class_iri in ontology_classes_dict.items():
+        if (None, RR["class"], URIRef(class_iri)) in st.session_state["g_mapping"]:
+            ontology_used_classes_dict[class_label] = class_iri
+
+    return ontology_used_classes_dict
+#________________________________________________________
+
 
 #________________________________________________________
 # Funtion to get exclusions when looking for predicates in an ontology
@@ -2485,6 +2520,52 @@ def is_valid_url_mapping(mapping_url, show_info):
     return mapping_url_ok_flag
 
 #_________________________________________________
+
+#________________________________________________
+# Function to format iri to prefix:label
+def format_iri_to_prefix_label(iri):
+
+        if isinstance(iri, URIRef):
+            iri_ns = URIRef(split_uri(iri)[0])
+            iri_prefix = st.session_state["g_mapping"].namespace_manager.store.prefix(iri_ns)
+            if iri_prefix:
+                return f"{iri_prefix}: {split_uri(iri)[1]}"
+        else:
+            return iri
+#________________________________________________
+
+#_________________________________________________
+# Funtion to get the rule associated to a subject map
+def get_rules_for_sm(sm_iri):
+
+    sm_rules_list = []
+
+    g = st.session_state["g_mapping"]
+
+    for pred in [RR.constant, RR.template, RML.reference]:
+        sm_for_display = g.value(subject=sm_iri, predicate=pred)
+        if sm_for_display:
+            break
+
+    tm = g.value(predicate=RR.subjectMap, object=sm_iri)
+
+    for pom in g.objects(subject=tm, predicate=RR.predicateObjectMap):
+        om = g.value(subject=pom, predicate=RR.objectMap)
+        p_for_display = g.value(subject=pom, predicate=RR.predicate)
+        for pred in [RR.constant, RR.template, RML.reference]:
+            om_for_display = g.value(subject=om, predicate=pred)
+            if om_for_display:
+                break
+
+        sm_for_display = format_iri_to_prefix_label(sm_for_display)
+        p_for_display = format_iri_to_prefix_label(p_for_display)
+        om_for_display = format_iri_to_prefix_label(om_for_display)
+
+        sm_rules_list.append([sm_for_display, p_for_display, om_for_display, split_uri(tm)[1]])
+
+    return sm_rules_list
+#_________________________________________________
+
 
 #HEREIGO
 

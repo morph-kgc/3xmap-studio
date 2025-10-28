@@ -1351,7 +1351,7 @@ with tab2:
                         with col1a:
                             list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
                             list_to_choose.insert(0, "Select ontology")
-                            ontology_filter_for_subject_class = st.selectbox("🔻 Filter by ontology (optional):",
+                            ontology_filter_for_subject_class = st.selectbox("⚙️ Filter by ontology (optional):",
                                 list_to_choose, key="key_ontology_filter_for_subject_class")
 
                         if ontology_filter_for_subject_class == "Select ontology":
@@ -1386,7 +1386,7 @@ with tab2:
                         with col1a:
                             superclass_list = sorted(superclass_dict.keys())
                             superclass_list.insert(0, "Select a superclass")
-                            superclass = st.selectbox("🔻 Filter by superclass (opt):", superclass_list,
+                            superclass = st.selectbox("⚙️ Filter by superclass (opt):", superclass_list,
                                 key="key_superclass")   #superclass label
                         if superclass != "Select a superclass":   # a superclass has been selected (filter)
                             classes_in_superclass_dict[superclass] = superclass_dict[superclass]
@@ -1465,7 +1465,7 @@ with tab2:
                             with col1a:
                                 list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
                                 list_to_choose.insert(0, "Select ontology")
-                                ontology_filter_for_subject_class = st.selectbox("🔻 Filter by ontology (optional):",
+                                ontology_filter_for_subject_class = st.selectbox("⚙️ Filter by ontology (optional):",
                                     list_to_choose, key="key_ontology_filter_for_subject_class")
 
                             if ontology_filter_for_subject_class == "Select ontology":
@@ -1500,7 +1500,7 @@ with tab2:
                             with col1a:
                                 list_to_choose = sorted(superclass_dict.keys())
                                 list_to_choose.insert(0, "Select a superclass")
-                                superclass = st.selectbox("🔻 Filter by superclass (optional):", list_to_choose,
+                                superclass = st.selectbox("⚙️ Filter by superclass (optional):", list_to_choose,
                                     key="key_superclass")   #superclass label
                             if superclass != "Select a superclass":   # a superclass has been selected (filter)
                                 classes_in_superclass_dict[superclass] = superclass_dict[superclass]
@@ -1894,7 +1894,7 @@ with tab3:
                     with col1a:
                         list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
                         list_to_choose.insert(0, "Select ontology")
-                        ontology_filter_for_predicate = st.selectbox("🔻 Filter predicate by ontology (optional):",
+                        ontology_filter_for_predicate = st.selectbox("⚙️ Filter predicate by ontology (optional):",
                             list_to_choose, key="key_ontology_filter_for_predicate")
 
                     if ontology_filter_for_predicate == "Select ontology":

@@ -84,30 +84,31 @@ with tab1:
 
     else:
 
-        #PURPLE HEADING - ADD NEW TRIPLESMAP
+        #PURPLE HEADING - ONTOLOGY USAGE
         with col1:
             st.markdown("""<div class="purple-heading">
-                    📈 Ontology Usage
+                    📈 Ontology Coverage
                 </div>""", unsafe_allow_html=True)
             st.write("")
 
         with col1:
-            col1a, col1b = st.columns(2)
+            col1a, col1b= st.columns(2)
+
 
         with col1a:
             list_to_choose = ["🏷️ Classes", "🔗 Properties"]
-            type_for_lens = st.radio("🖱️ Select an option:*", list_to_choose,
-                horizontal=True, key="key_type_for_lens")
+            type_for_lens = st.radio("🖱️ Select an option:*", list_to_choose, horizontal=True,
+                label_visibility="collapsed", key="key_type_for_lens")
 
         # Filter by ontology
         if len(st.session_state["g_ontology_components_dict"]) > 1:
             with col1b:
                 list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
-                list_to_choose.insert(0, "Select ontology")
-                ontology_filter_for_lens = st.selectbox("🔻 Filter by ontology (optional):",
+                list_to_choose.insert(0, "No filter")
+                ontology_filter_for_lens = st.selectbox("⚙️ Filter by ontology (optional):",
                     list_to_choose, key="key_ontology_filter_for_lens")
 
-            if ontology_filter_for_lens == "Select ontology":
+            if ontology_filter_for_lens == "No filter":
                 ontology_filter_for_lens = st.session_state["g_ontology"]
             else:
                 for ont_label, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
@@ -117,3 +118,147 @@ with tab1:
 
         else:
             ontology_filter_for_lens = st.session_state["g_ontology"]
+
+
+        if type_for_lens == "🏷️ Classes":
+
+            with col1:
+                col1a, col1b = st.columns(2)
+
+            ontology_classes_dict = utils.get_ontology_classes_dict(ontology_filter_for_lens)
+            ontology_used_classes_dict = utils.get_ontology_used_classes_dict(ontology_filter_for_lens)
+            superclass_dict = utils.get_ontology_superclass_dict(ontology_filter_for_lens)
+
+            with col1b:
+                list_to_choose = ["Stats", "Rules associated to class", "Class information"]
+                selected_class_search = st.selectbox("🖱️ Select an option:*", list_to_choose,
+                    key="key_class_search")
+
+            # Class selection
+            if superclass_dict:   # there exists at least one superclass (show superclass filter)
+                classes_in_superclass_dict = {}
+                with col1a:
+                    superclass_list = sorted(superclass_dict.keys())
+                    superclass_list.insert(0, "No filter")
+                    superclass = st.selectbox("⚙️ Filter by superclass (opt):", superclass_list,
+                        key="key_superclass")   #superclass label
+                if superclass != "No filter":   # a superclass has been selected (filter)
+                    classes_in_superclass_dict[superclass] = superclass_dict[superclass]
+                    superclass = superclass_dict[superclass] #we get the superclass iri
+                    for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, superclass)))):
+                        classes_in_superclass_dict[split_uri(s)[1]] = s
+                    class_list = sorted(classes_in_superclass_dict.keys())
+
+
+            if selected_class_search == "Stats":
+                with col1:
+                    percentage = len(ontology_used_classes_dict)/len(ontology_classes_dict)*100
+                    if percentage >= 10:
+                        percentage_for_display = int(percentage)
+                    elif percentage >= 1:
+                        percentage_for_display = round(percentage, 1)
+                    elif percentage >= 0.1:
+                        percentage_for_display = round(percentage, 2)
+                    elif percentage == 0:
+                        percentage_for_display = 0
+                    else:
+                        percentage_for_display = "< 0.1"
+
+                    with col1a:
+                        st.markdown("""<style>[data-testid="stMetricDelta"] svg {
+                                display: none;
+                            }</style>""", unsafe_allow_html=True)
+                        st.metric(label="Used classes", value=f"{len(ontology_used_classes_dict)}/{len(ontology_classes_dict)}",
+                            delta=f"({percentage_for_display}%)", delta_color="off")
+
+
+                    import plotly.express as px
+                    nb_used_clases = len(ontology_used_classes_dict)
+                    nb_unused_classes = len(ontology_classes_dict) - len(ontology_used_classes_dict)
+                    data = {"Category": ["Used", "Unused"],
+                        "Value": [nb_used_clases, nb_unused_classes]}
+
+                    fig = px.pie(names=data["Category"],
+                        values=data["Value"], hole=0.4)
+                    fig.update_traces(textinfo='label+value')
+                    fig.update_layout(
+                        width=250,  # adjust width
+                        height=250,  # adjust height
+                        margin=dict(t=10, b=10, l=10, r=10)  # optional: tighter margins
+                    )
+
+                    with col1b:
+                        st.plotly_chart(fig)
+
+            if selected_class_search == "Rules associated to class":
+
+                with col1:
+                    col1a, col1b = st.columns(2)
+
+                # Class selection
+                if superclass_dict:   # there exists at least one superclass (show superclass filter)
+                    # classes_in_superclass_dict = {}
+                    # with col1a:
+                    #     superclass_list = sorted(superclass_dict.keys())
+                    #     superclass_list.insert(0, "No filter")
+                    #     superclass = st.selectbox("⚙️ Filter by superclass (opt):", superclass_list,
+                    #         key="key_superclass")   #superclass label
+                    if superclass != "No filter":   # a superclass has been selected (filter)
+                    #     classes_in_superclass_dict[superclass] = superclass_dict[superclass]
+                    #     superclass = superclass_dict[superclass] #we get the superclass iri
+                    #     for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, superclass)))):
+                    #         classes_in_superclass_dict[split_uri(s)[1]] = s
+                    #     class_list = sorted(classes_in_superclass_dict.keys())
+                        list_to_choose = []
+                        for class_label in class_list:
+                            if class_label in ontology_used_classes_dict:
+                                list_to_choose.append(class_label)
+                        list_to_choose.insert(0, "Select a class")
+                        with col1b:
+                            subject_class = st.selectbox("🖱️ Select class:", list_to_choose,
+                                key="key_subject_class")   #class label
+
+                    else:  #no superclass selected (list all classes)
+                        list_to_choose = sorted(ontology_used_classes_dict.keys())
+                        list_to_choose.insert(0, "Select a class")
+                        with col1b:
+                            subject_class = st.selectbox("🖱️ Select class:*", list_to_choose,
+                                key="key_subject_class")   #class label
+
+                else:     #no superclasses exist (no superclass filter)
+                    list_to_choose = sorted(ontology_used_classes_dict.keys())
+                    list_to_choose.insert(0, "Select a class")
+                    with col1a:
+                        subject_class = st.selectbox("🖱️ Select class:*", list_to_choose,
+                            key="key_subject_class")   #class label
+
+                if subject_class != "Select a class":
+                    subject_class_iri = ontology_classes_dict[subject_class] #we get the superclass iri
+                    st.session_state["multiple_subject_class_list"] = [subject_class_iri]
+                else:
+                    subject_class_iri = ""
+
+
+                if subject_class_iri:
+                    # Get all subject maps with the selected class
+                    rule_list_for_class = []
+                    for s in st.session_state["g_mapping"].subjects(RR["class"], URIRef(subject_class_iri)):
+                        sm_rule_list = utils.get_rules_for_sm(s)
+                        for rule in sm_rule_list:
+                            rule_list_for_class.append(rule)
+
+                    df = pd.DataFrame(rule_list_for_class, columns=["Subject", "Predicate", "Object", "TriplesMap"])
+
+                    # Display
+                    with col1:
+                        if not df.empty:
+                            st.markdown(f"""<div class="info-message-blue">
+                                <b>RULES ({len(df)}):</b>
+                                &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+                                <small>🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>
+                            </div>""", unsafe_allow_html=True)
+                            st.dataframe(df, hide_index=True)
+                        else:
+                            st.markdown(f"""<div class="warning-message">
+                                ⚠️ No results.
+                            </div>""", unsafe_allow_html=True)
