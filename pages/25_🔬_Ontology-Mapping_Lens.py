@@ -23,8 +23,8 @@ if "dark_mode_flag" not in st.session_state or st.session_state["dark_mode_flag"
 
 # Header-----------------------------------
 dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
-header_html = utils.render_header(title="Explore Mapping",
-    description="""<b>Explore</b> your mapping and <b>query</b> it using <b>SPARQL</b>.""",
+header_html = utils.render_header(title="Ontology-Mapping Lens",
+    description="""Get information on how your <b>mapping</b> and your <b>ontology</b> interact.""",
     dark_mode=dark_mode)
 st.markdown(header_html, unsafe_allow_html=True)
 
@@ -90,3 +90,30 @@ with tab1:
                     📈 Ontology Usage
                 </div>""", unsafe_allow_html=True)
             st.write("")
+
+        with col1:
+            col1a, col1b = st.columns(2)
+
+        with col1a:
+            list_to_choose = ["🏷️ Classes", "🔗 Properties"]
+            type_for_lens = st.radio("🖱️ Select an option:*", list_to_choose,
+                horizontal=True, key="key_type_for_lens")
+
+        # Filter by ontology
+        if len(st.session_state["g_ontology_components_dict"]) > 1:
+            with col1b:
+                list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
+                list_to_choose.insert(0, "Select ontology")
+                ontology_filter_for_lens = st.selectbox("🔻 Filter by ontology (optional):",
+                    list_to_choose, key="key_ontology_filter_for_lens")
+
+            if ontology_filter_for_lens == "Select ontology":
+                ontology_filter_for_lens = st.session_state["g_ontology"]
+            else:
+                for ont_label, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
+                    if ont_tag == ontology_filter_for_lens:
+                        ontology_filter_for_lens = st.session_state["g_ontology_components_dict"][ont_label]
+                        break
+
+        else:
+            ontology_filter_for_lens = st.session_state["g_ontology"]

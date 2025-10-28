@@ -692,7 +692,7 @@ def get_required_ns_dict():
 
 #________________________________________________________
 # retrieving necessary namespaces for this page here
-QL, RML, RR = get_required_ns_dict().values()
+RML, RR, QL = get_required_ns_dict().values()
 #________________________________________________________
 
 #_________________________________________________________
