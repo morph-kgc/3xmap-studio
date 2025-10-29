@@ -4,6 +4,7 @@ odfpy
 openpyxl
 oracledb
 pandas
+plotly
 psycopg[binary]
 pyarrow
 PyMySQL

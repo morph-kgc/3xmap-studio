@@ -7,6 +7,7 @@ import pickle
 from rdflib.namespace import split_uri
 from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL, XSD
 from streamlit_js_eval import streamlit_js_eval
+import plotly.express as px
 
 # Config-----------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
@@ -60,10 +61,10 @@ if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
 
-tab1, tab2, tab3 = st.tabs(["Ontology Usage", "Mapping Density", "Domain/Range Validation"])
+tab1, tab2, tab3 = st.tabs(["Ontology Coverage", "Mapping Density", "Domain/Range Validation"])
 
 #________________________________________________
-# PREDEFINED SEARCHES
+# ONTOLOGY COVERAGE
 with tab1:
     st.write("")
     st.write("")
@@ -84,7 +85,7 @@ with tab1:
 
     else:
 
-        #PURPLE HEADING - ONTOLOGY USAGE
+        #PURPLE HEADING - ONTOLOGY COVERAGE
         with col1:
             st.markdown("""<div class="purple-heading">
                     📈 Ontology Coverage
@@ -92,20 +93,45 @@ with tab1:
             st.write("")
 
         with col1:
-            col1a, col1b= st.columns(2)
+            col1a, col1b, col1c = st.columns(3)
 
 
         with col1a:
-            list_to_choose = ["🏷️ Classes", "🔗 Properties"]
-            type_for_lens = st.radio("🖱️ Select an option:*", list_to_choose, horizontal=True,
+            list_to_choose = ["🗺️ Mapping", "🏷️ Classes", "🔗 Properties"]
+            type_for_lens = st.radio("🖱️ Select an option:*", list_to_choose,
                 label_visibility="collapsed", key="key_type_for_lens")
 
-        # Filter by ontology
-        if len(st.session_state["g_ontology_components_dict"]) > 1:
+        if type_for_lens == "🗺️ Mapping":
             with col1b:
+                list_to_choose = ["📊 Stats"]
+                selected_class_search = st.selectbox("🖱️ Select an option:*", list_to_choose,
+                    key="key_class_search")
+
+            with col1:
+                col1a, col1b, col1c, col1d = st.columns([1,1,0.5,0.5])
+            with col1a:
+                utils.get_mapping_composition_by_class_donut_chart()
+            with col1b:
+                utils.get_mapping_composition_by_property_donut_chart()
+            with col1d:
+                utils.get_tm_number_metric()
+                utils.get_rules_number_metric()
+
+
+
+        if type_for_lens == "🏷️ Classes":
+
+            with col1b:
+                list_to_choose = ["📊 Stats", "📐Rules", "ℹ️ Information"]
+                selected_class_search = st.selectbox("🖱️ Select an option:*", list_to_choose,
+                    key="key_class_search")
+
+            # Filter by ontology
+            with col1c:
                 list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
-                list_to_choose.insert(0, "No filter")
-                ontology_filter_for_lens = st.selectbox("⚙️ Filter by ontology (optional):",
+                if len(list_to_choose) > 1:
+                    list_to_choose.insert(0, "No filter")
+                ontology_filter_for_lens = st.selectbox("⚙️ Filter by ontology:",
                     list_to_choose, key="key_ontology_filter_for_lens")
 
             if ontology_filter_for_lens == "No filter":
@@ -116,81 +142,54 @@ with tab1:
                         ontology_filter_for_lens = st.session_state["g_ontology_components_dict"][ont_label]
                         break
 
-        else:
-            ontology_filter_for_lens = st.session_state["g_ontology"]
-
-
-        if type_for_lens == "🏷️ Classes":
-
-            with col1:
-                col1a, col1b = st.columns(2)
-
-            ontology_classes_dict = utils.get_ontology_classes_dict(ontology_filter_for_lens)
-            ontology_used_classes_dict = utils.get_ontology_used_classes_dict(ontology_filter_for_lens)
+            # Superclass filter
             superclass_dict = utils.get_ontology_superclass_dict(ontology_filter_for_lens)
-
-            with col1b:
-                list_to_choose = ["Stats", "Rules associated to class", "Class information"]
-                selected_class_search = st.selectbox("🖱️ Select an option:*", list_to_choose,
-                    key="key_class_search")
-
-            # Class selection
             if superclass_dict:   # there exists at least one superclass (show superclass filter)
                 classes_in_superclass_dict = {}
-                with col1a:
+                with col1c:
                     superclass_list = sorted(superclass_dict.keys())
                     superclass_list.insert(0, "No filter")
-                    superclass = st.selectbox("⚙️ Filter by superclass (opt):", superclass_list,
+                    superclass_filter_for_lens = st.selectbox("⚙️ Filter by superclass:", superclass_list,
                         key="key_superclass")   #superclass label
-                if superclass != "No filter":   # a superclass has been selected (filter)
-                    classes_in_superclass_dict[superclass] = superclass_dict[superclass]
-                    superclass = superclass_dict[superclass] #we get the superclass iri
-                    for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, superclass)))):
-                        classes_in_superclass_dict[split_uri(s)[1]] = s
-                    class_list = sorted(classes_in_superclass_dict.keys())
+            else:
+                superclass_filter_for_lens = "No filter"
 
+            if superclass_filter_for_lens != "No filter":   # a superclass has been selected (filter)
+                superclass_filter_for_lens = superclass_dict[superclass_filter_for_lens] #we get the superclass iri
 
-            if selected_class_search == "Stats":
+            with col1:
+                st.write("_____")
+
+            if selected_class_search == "📊 Stats":
+
                 with col1:
-                    percentage = len(ontology_used_classes_dict)/len(ontology_classes_dict)*100
-                    if percentage >= 10:
-                        percentage_for_display = int(percentage)
-                    elif percentage >= 1:
-                        percentage_for_display = round(percentage, 1)
-                    elif percentage >= 0.1:
-                        percentage_for_display = round(percentage, 2)
-                    elif percentage == 0:
-                        percentage_for_display = 0
-                    else:
-                        percentage_for_display = "< 0.1"
-
-                    with col1a:
-                        st.markdown("""<style>[data-testid="stMetricDelta"] svg {
-                                display: none;
-                            }</style>""", unsafe_allow_html=True)
-                        st.metric(label="Used classes", value=f"{len(ontology_used_classes_dict)}/{len(ontology_classes_dict)}",
-                            delta=f"({percentage_for_display}%)", delta_color="off")
+                    col1a, col1b, col1c, col1d = st.columns(4)
+                with col1a:
+                    utils.get_used_classes_metric(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens)
+                with col1b:
+                    utils.get_average_class_use_metric(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens)
+                with col1c:
+                    utils.get_class_mapping_density_metric(ontology_filter_for_lens)
 
 
-                    import plotly.express as px
-                    nb_used_clases = len(ontology_used_classes_dict)
-                    nb_unused_classes = len(ontology_classes_dict) - len(ontology_used_classes_dict)
-                    data = {"Category": ["Used", "Unused"],
-                        "Value": [nb_used_clases, nb_unused_classes]}
+                with col1:
+                    col1a, col1b = st.columns(2)
 
-                    fig = px.pie(names=data["Category"],
-                        values=data["Value"], hole=0.4)
-                    fig.update_traces(textinfo='label+value')
-                    fig.update_layout(
-                        width=250,  # adjust width
-                        height=250,  # adjust height
-                        margin=dict(t=10, b=10, l=10, r=10)  # optional: tighter margins
-                    )
+                with col1a:
+                    utils.get_used_classes_donut_chart(ontology_filter_for_lens)
 
-                    with col1b:
-                        st.plotly_chart(fig)
+                with col1:
+                    col1a, col1b = st.columns([2,1])
+                with col1b:
+                    ontology_used_classes_count_dict = utils.get_class_dictionaries_filtered_by_superclass(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens)[2]
+                    all_classes = list(ontology_used_classes_count_dict.keys())
+                    selected_classes = st.multiselect("🖱️ Select ontology classes to display (opt):", options=all_classes)
+                with col1a:
+                    utils.get_class_frequency_bar_plot(ontology_filter_for_lens, selected_classes)
 
-            if selected_class_search == "Rules associated to class":
+
+
+            if selected_class_search == "📐Rules":
 
                 with col1:
                     col1a, col1b = st.columns(2)

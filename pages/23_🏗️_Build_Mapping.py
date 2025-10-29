@@ -1873,9 +1873,9 @@ with tab3:
 
             # PREDICATE
             if st.session_state["g_ontology_components_dict"]:
-                ontology_p_list = utils.get_ontology_defined_p()
+                ontology_p_dict = utils.get_ontology_properties_dict(st.session_state["g_ontology"])
 
-                if ontology_p_list:   # if the ontology includes at least one predicate
+                if ontology_p_dict:   # if the ontology includes at least one predicate
                     p_type_option_list = ["🧩 Ontology predicate", "🚫 Predicate outside ontology"]
                     with col1b:
                         p_type = st.selectbox("🖱️ Select an option:*", p_type_option_list,
@@ -1908,8 +1908,7 @@ with tab3:
                 else:
                     ontology_filter_for_predicate = st.session_state["g_ontology"]
 
-                ontology_p_list = utils.get_ontology_component_defined_p(ontology_filter_for_predicate)
-                ontology_p_dict = {split_uri(p)[1]: p for p in ontology_p_list}
+                ontology_p_dict = utils.get_ontology_properties_dict(ontology_filter_for_predicate)
 
                 with col1b:
                     list_to_choose = sorted(ontology_p_dict.keys())

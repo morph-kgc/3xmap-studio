@@ -18,6 +18,8 @@ import pyodbc
 import sqlglot
 import requests
 import base64
+from collections import defaultdict
+import plotly.express as px
 
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 
@@ -569,7 +571,9 @@ def format_list_for_markdown(xlist):
 # Function to format big numbers
 def format_big_number(number):
 
-    if number < 10**6:
+    if number < 10**3:
+        number_for_display = f"{int(number)}"
+    elif number < 10**6:
         number_for_display = f"{int(number / 1000)}k"
     elif number < 10*10**6:
         number_for_display = f"{round(number / 10**6, 1)}M"
@@ -1162,9 +1166,9 @@ def is_valid_filename(filename):  #HEREIGO
 #_________________________________________________________
 # Function to get the ontology base iri
 # Returns a list because the ontology can have several components
-def get_ontology_base_iri():
+def get_ontology_base_iri(g_ont):
     base_iri_list = []
-    for s in st.session_state["g_ontology"].subjects(RDF.type, OWL.Ontology):
+    for s in g_ont.subjects(RDF.type, OWL.Ontology):
         try:
             split_uri(s)
             if is_valid_iri(split_uri(s)[0]):
@@ -1748,26 +1752,10 @@ def get_sm_dict():
 
 #________________________________________________________
 # Funtion to get the dictionary of the superclasses in the ontology
-def get_ontology_classes_dict(g):
-
-    ontology_classes_dict = {}
-    class_triples = set()
-    class_triples |= set(g.triples((None, RDF.type, OWL.Class)))   #collect owl:Class definitions
-    class_triples |= set(g.triples((None, RDF.type, RDFS.Class)))    # collect rdfs:Class definitions
-
-    for s, p, o in class_triples:   #we add to dictionary removing the BNodes
-        if not isinstance(s, BNode):
-            ontology_classes_dict[split_uri(s)[1]] = s
-
-    return ontology_classes_dict
-#________________________________________________________
-
-#________________________________________________________
-# Funtion to get the dictionary of the superclasses in the ontology
-def get_ontology_superclass_dict(g):
+def get_ontology_superclass_dict(g_ont):
 
     superclass_dict = {}
-    for s, p, o in list(set(g.triples((None, RDFS.subClassOf, None)))):
+    for s, p, o in list(set(g_ont.triples((None, RDFS.subClassOf, None)))):
         if not isinstance(o, BNode) and o not in superclass_dict.values():
             superclass_dict[o.split("/")[-1].split("#")[-1]] = o
 
@@ -1776,6 +1764,23 @@ def get_ontology_superclass_dict(g):
 
 #________________________________________________________
 # Funtion to get the dictionary of the superclasses in the ontology
+def get_ontology_classes_dict(g_ont):
+
+    ontology_classes_dict = {}
+    class_triples = set()
+    class_triples |= set(g_ont.triples((None, RDF.type, OWL.Class)))   #collect owl:Class definitions
+    class_triples |= set(g_ont.triples((None, RDF.type, RDFS.Class)))    # collect rdfs:Class definitions
+
+    for s, p, o in class_triples:   #we add to dictionary removing the BNodes
+        if not isinstance(s, BNode):
+            ontology_classes_dict[split_uri(s)[1]] = s
+
+    return ontology_classes_dict
+#________________________________________________________
+
+
+#________________________________________________________
+# Funtion to get the dictionary of the ontology classes used by the mapping
 def get_ontology_used_classes_dict(g_ont):
 
     ontology_classes_dict = get_ontology_classes_dict(g_ont)
@@ -1788,50 +1793,63 @@ def get_ontology_used_classes_dict(g_ont):
     return ontology_used_classes_dict
 #________________________________________________________
 
-
 #________________________________________________________
-# Funtion to get exclusions when looking for predicates in an ontology
-def get_exclusion_list_for_p_search():
+# Funtion to get the dictionary of the count of the ontology classes used by the mapping
+def get_ontology_used_classes_count_dict(g_ont):
 
-    excluded_types = {
-        # OWL structural types
-        OWL.Class, OWL.Ontology, OWL.Restriction, OWL.FunctionalProperty,
-        OWL.AnnotationProperty, OWL.ObjectProperty, OWL.DatatypeProperty,
-        OWL.SymmetricProperty, OWL.TransitiveProperty, OWL.InverseFunctionalProperty,
+    ontology_classes_dict = get_ontology_classes_dict(g_ont)
+    usage_count_dict = defaultdict(int)
 
-        # RDF/RDFS structural types
-        RDF.Property, RDF.Statement, RDF.List, RDF.Seq, RDF.Bag,
-        RDF.Alt, RDF.XMLLiteral, RDFS.Class, RDFS.Resource, RDFS.Container,
-        RDFS.ContainerMembershipProperty,
-        URIRef("http://www.w3.org/2000/01/rdf-schema#Datatype"),
+    for class_label, class_iri in ontology_classes_dict.items():
+        for triple in st.session_state["g_mapping"].triples((None, RR["class"], URIRef(class_iri))):
+            usage_count_dict[class_label] += 1
 
-        # Legacy or datatype URIs
-        XSD.string, XSD.integer, XSD.date, XSD.boolean, XSD.float, XSD.double}
-
-    return excluded_types
+    return dict(usage_count_dict)
 #________________________________________________________
 
-#________________________________________________________
-# Funtion to identify the ontology from which a predicate was taken
-def get_ontology_identifier(ns):
+# #________________________________________________________
+# # Funtion to get exclusions when looking for predicates in an ontology
+# def get_exclusion_list_for_p_search():
+#
+#     excluded_types = {
+#         # OWL structural types
+#         OWL.Class, OWL.Ontology, OWL.Restriction, OWL.FunctionalProperty,
+#         OWL.AnnotationProperty, OWL.ObjectProperty, OWL.DatatypeProperty,
+#         OWL.SymmetricProperty, OWL.TransitiveProperty, OWL.InverseFunctionalProperty,
+#
+#         # RDF/RDFS structural types
+#         RDF.Property, RDF.Statement, RDF.List, RDF.Seq, RDF.Bag,
+#         RDF.Alt, RDF.XMLLiteral, RDFS.Class, RDFS.Resource, RDFS.Container,
+#         RDFS.ContainerMembershipProperty,
+#         URIRef("http://www.w3.org/2000/01/rdf-schema#Datatype"),
+#
+#         # Legacy or datatype URIs
+#         XSD.string, XSD.integer, XSD.date, XSD.boolean, XSD.float, XSD.double}
+#
+#     return excluded_types
+# #________________________________________________________
 
-    parts = ns.rstrip("/").split("/")
-    if len(parts) >= 2:
-        return parts[-2]  # Last segment
-    return None
+# #________________________________________________________
+# # Funtion to identify the ontology from which a predicate was taken
+# def get_ontology_identifier(ns):
+#
+#     parts = ns.rstrip("/").split("/")
+#     if len(parts) >= 2:
+#         return parts[-2]  # Last segment
+#     return None
+#
+# #________________________________________________________
 
 #________________________________________________________
-
-#________________________________________________________
-# Funtion to get the predicates defined by the ontology
-def get_ontology_defined_p():
-    ontology_base_iri_list = get_ontology_base_iri()
+# Funtion to get the predicates defined by an ontology
+def get_ontology_properties_dict(g_ont):
+    ontology_base_iri_list = get_ontology_base_iri(g_ont)
     p_types_list = [RDF.Property, OWL.ObjectProperty, OWL.DatatypeProperty]
     p_exclusion_list = [RDFS.label, RDFS.comment, OWL.versionInfo, OWL.deprecated, RDF.type]
 
     p_set = set()
 
-    for s, p, o in st.session_state["g_ontology"].triples((None, RDF.type, None)):
+    for s, p, o in g_ont.triples((None, RDF.type, None)):
         if o in p_types_list:
             if ontology_base_iri_list:
                 if str(s).startswith(tuple(ontology_base_iri_list)) and s not in p_exclusion_list:
@@ -1840,31 +1858,38 @@ def get_ontology_defined_p():
                 if s not in p_exclusion_list:
                     p_set.add(s)
 
-    return sorted(list(p_set))
+    ontology_p_dict = {split_uri(p)[1]: p for p in p_set}
+
+    return ontology_p_dict
 #______________________________________________
 
 #________________________________________________________
-# Funtion to get the predicates defined by the ontology
-def get_ontology_component_defined_p(ont):
-    ontology_base_iri_list = get_ontology_base_iri()
-    p_types_list = [RDF.Property, OWL.ObjectProperty, OWL.DatatypeProperty]
-    p_exclusion_list = [RDFS.label, RDFS.comment, OWL.versionInfo, OWL.deprecated, RDF.type]
+# Funtion to get the dictionary of the superclasses in the ontology
+def get_ontology_used_properties_dict(g_ont):
 
-    p_set = set()
+    ontology_properties_dict = get_ontology_properties_dict(g_ont)
+    ontology_used_properties_dict = {}
 
-    for s, p, o in ont.triples((None, RDF.type, None)):
-        if o in p_types_list:
-            if ontology_base_iri_list:
-                if str(s).startswith(tuple(ontology_base_iri_list)) and s not in p_exclusion_list:
-                    p_set.add(s)
-            else:
-                if s not in p_exclusion_list:
-                    p_set.add(s)
+    for prop_label, prop_iri in ontology_properties_dict.items():
+        if (None, RR.predicate, URIRef(prop_iri)) in st.session_state["g_mapping"]:
+            ontology_used_properties_dict[prop_label] = prop_iri
 
-    return sorted(list(p_set))
-#______________________________________________
+    return ontology_used_properties_dict
+#________________________________________________________
 
+#________________________________________________________
+# Funtion to get the dictionary of the count of the ontology properties used by the mapping
+def get_ontology_used_properties_count_dict(g_ont):
 
+    ontology_properties_dict = get_ontology_properties_dict(g_ont)
+    usage_count_dict = defaultdict(int)
+
+    for prop_label, prop_iri in ontology_properties_dict.items():
+        for triple in st.session_state["g_mapping"].triples((None, RR["predicate"], URIRef(prop_iri))):
+            usage_count_dict[prop_label] += 1
+
+    return dict(usage_count_dict)
+#________________________________________________________
 #______________________________________________
 # Funtion to get list of datatypes
 def get_datatypes_dict():
@@ -1965,6 +1990,11 @@ def get_pom_dict():
             om_type = "reference"
             om_id_iri = str(reference)
             om_id_label = str(reference)
+
+        else:
+            om_type = "None"
+            om_id_iri = ""
+            om_id_label = ""
 
         pom_dict[pom_iri] = [tm_iri, tm_label, pom_label, predicate, predicate_label, om_label, om_type, om_id_iri, om_id_label]
 
@@ -2564,6 +2594,436 @@ def get_rules_for_sm(sm_iri):
         sm_rules_list.append([sm_for_display, p_for_display, om_for_display, split_uri(tm)[1]])
 
     return sm_rules_list
+#_________________________________________________
+
+# FUNCTIONS TO DISPLAY STATS-----------------------------------------------
+#_________________________________________________
+# Colors for STATS dict
+def get_colors_for_stats_dict():
+
+    colors_for_stats_dict = {}
+
+    if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
+        colors_for_stats_dict["purple"] = "#7A4A8C"
+        colors_for_stats_dict["salmon"] = "#ff7a7a"
+        colors_for_stats_dict["blue"] = "#336699"
+        colors_for_stats_dict["gray"] = "#D3D3D3"
+
+    else:
+        colors_for_stats_dict["purple"] = "#d8c3f0"
+        colors_for_stats_dict["salmon"] = "#b34747"
+        colors_for_stats_dict["blue"] = "#1f3f5f"
+        colors_for_stats_dict["gray"] = "#696969"
+
+    return colors_for_stats_dict
+
+#_________________________________________________
+#_________________________________________________
+# Funtion to get the used classes metric
+def format_number_for_display(number):
+
+    if number >= 10:
+        number_for_display = int(number)
+    elif number >= 1:
+        number_for_display = round(number, 1)
+    elif number >= 0.1:
+        number_for_display = round(number, 2)
+    elif number == 0:
+        number_for_display = 0
+    else:
+        number_for_display = "< 0.1"
+
+    return number_for_display
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to get the number of tm metric
+def get_tm_number_metric():
+
+    tm_dict= get_tm_dict()
+    number_of_tm = len(tm_dict)
+
+    if number_of_tm < 1000:
+        number_of_tm_for_display = format_number_for_display(number_of_tm)
+    else:
+        number_of_tm_for_display = format_big_number(number_of_tm)
+
+    st.markdown("""<style>[data-testid="stMetricDelta"] svg {
+            display: none;
+        }</style>""", unsafe_allow_html=True)
+    st.metric(label="#TriplesMap", value=f"{number_of_tm_for_display}")
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to get the number of tm metric
+def get_rules_number_metric():
+
+    sm_dict= get_sm_dict()
+    number_of_rules = 0
+    for sm_iri in sm_dict:
+        rule_list = get_rules_for_sm(sm_iri)
+        number_of_rules += len(rule_list)
+
+    if number_of_rules < 1000:
+        number_of_rules_for_display = format_number_for_display(number_of_rules)
+    else:
+        number_of_rules_for_display = format_big_number(number_of_rules)
+
+    st.markdown("""<style>[data-testid="stMetricDelta"] svg {
+            display: none;
+        }</style>""", unsafe_allow_html=True)
+    st.metric(label="#Rules", value=f"{number_of_rules_for_display}",
+        delta=f"(s → p → o)", delta_color="off")
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to get the class dictionaries with sueprclass filter
+def get_class_dictionaries_filtered_by_superclass(g_ont, superclass_filter=None):
+    # Class dictionaries___________________________
+    ontology_classes_dict = utils.get_ontology_classes_dict(g_ont)
+    ontology_used_classes_dict = utils.get_ontology_used_classes_dict(g_ont)
+    ontology_used_classes_count_dict = utils.get_ontology_used_classes_count_dict(g_ont)
+
+    # Adding sueprclass filter to dictionaries
+    if superclass_filter and superclass_filter != "No filter":
+
+        classes_in_superclass_dict = {}
+        for s, p, o in list(set(g_ont.triples((None, RDFS.subClassOf, superclass_filter)))):
+            classes_in_superclass_dict[split_uri(s)[1]] = s
+
+        ontology_classes_dict = {class_label:class_iri for class_label, class_iri in ontology_classes_dict.items()
+            if class_iri in classes_in_superclass_dict.values()}
+        ontology_used_classes_dict = {class_label:class_iri for class_label, class_iri in ontology_used_classes_dict.items()
+            if class_iri in classes_in_superclass_dict.values()}
+        ontology_used_classes_count_dict = {class_label:class_iri for class_label, class_iri in ontology_used_classes_count_dict.items()
+            if class_iri in classes_in_superclass_dict.values()}
+
+    return [ontology_classes_dict, ontology_used_classes_dict, ontology_used_classes_count_dict]
+#_________________________________________________
+
+
+#_________________________________________________
+# Funtion to get the used classes metric
+def get_used_classes_metric(g_ont, superclass_filter=None):
+
+    # Filtered class dictionaries___________________________
+    ontology_classes_dict = get_class_dictionaries_filtered_by_superclass(g_ont, superclass_filter)[0]
+    ontology_used_classes_dict = get_class_dictionaries_filtered_by_superclass(g_ont, superclass_filter)[1]
+
+    # Calculate and render_______________________
+    if len(ontology_classes_dict) != 0:
+        percentage = len(ontology_used_classes_dict)/len(ontology_classes_dict)*100
+    else:
+        percentage = 0
+    percentage_for_display = format_number_for_display(percentage)
+
+    st.markdown("""<style>[data-testid="stMetricDelta"] svg {
+            display: none;
+        }</style>""", unsafe_allow_html=True)
+    st.metric(label="Used classes", value=f"{len(ontology_used_classes_dict)}/{len(ontology_classes_dict)}",
+        delta=f"({percentage_for_display}%)", delta_color="off")
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to get the used classes metric
+def get_average_class_use_metric(g_ont, superclass_filter=None):
+
+    # Filtered class dictionaries___________________________
+    ontology_classes_dict = get_class_dictionaries_filtered_by_superclass(g_ont, superclass_filter)[0]
+    ontology_used_classes_dict = get_class_dictionaries_filtered_by_superclass(g_ont, superclass_filter)[1]
+
+    number_of_rules = len(get_sm_dict())
+    number_of_used_classes = len(ontology_used_classes_dict)
+
+    if number_of_used_classes != 0:
+        average_class_use = number_of_rules/number_of_used_classes
+    else:
+        average_class_use = 0
+
+    st.markdown("""<style>[data-testid="stMetricDelta"] svg {
+            display: none;
+        }</style>""", unsafe_allow_html=True)
+    st.metric(label="Average class use", value=f"{format_number_for_display(average_class_use)}",
+        delta=f"(#Rules per used class)", delta_color="off")
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to get the used classes metric
+def get_class_mapping_density_metric(ont):
+
+    number_of_rules = len(get_sm_dict())  #HERE FIX
+    total_number_of_classes = len(utils.get_ontology_classes_dict(ont))
+
+    if total_number_of_classes != 0:
+        mapping_density = number_of_rules/total_number_of_classes
+    else:
+        mapping_density = 0
+
+    st.markdown("""<style>[data-testid="stMetricDelta"] svg {
+            display: none;
+        }</style>""", unsafe_allow_html=True)
+    st.metric(label="Total mapping density", value=f"{format_number_for_display(mapping_density)}",
+        delta=f"(#Rules per class)", delta_color="off")
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to get used classses donut chart
+def get_used_classes_donut_chart(ont):
+
+    colors = get_colors_for_stats_dict()
+
+    ontology_classes_dict = utils.get_ontology_classes_dict(ont)
+    ontology_used_classes_dict = utils.get_ontology_used_classes_dict(ont)
+
+
+    nb_used_clases = len(ontology_used_classes_dict)
+    nb_unused_classes = len(ontology_classes_dict) - len(ontology_used_classes_dict)
+    data = {"Category": ["Used", "Unused"],
+        "Value": [nb_used_clases, nb_unused_classes]}
+
+    fig = px.pie(names=data["Category"],values=data["Value"], hole=0.4)
+
+    fig.update_traces(textinfo='label+value', marker=dict(colors=[colors["purple"], colors["gray"]]))
+
+    fig.update_layout(title=dict(
+        text="Classes in ontology",
+        font=dict(size=14),
+        x=0.5, xanchor="center", y=0.9, yanchor="bottom"),
+        width=400, height=300, margin=dict(t=60, b=20, l=20, r=20),
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="top", y=0,               # center vertically
+            xanchor="center", x=0.5))
+
+    st.plotly_chart(fig)
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to get class frequency bar plot
+def get_class_frequency_bar_plot(ont, selected_classes):
+
+    colors = get_colors_for_stats_dict()
+
+    ontology_used_classes_count_dict = utils.get_ontology_used_classes_count_dict(ont)
+
+    # Selected classes for display__________________________
+    if not selected_classes:  # plot 15 most used
+        classes_for_display_list = sorted(ontology_used_classes_count_dict.items(), key=lambda x: x[1], reverse=True)[:15]
+    else:
+        classes_for_display_list = [(cls, ontology_used_classes_count_dict[cls]) for cls in selected_classes]
+
+    # Build plot_______________________________________________
+    labels, counts = zip(*classes_for_display_list)
+    fig = px.bar(x=labels,y=counts,text=counts, title="Class frequency use")
+
+    # Style the chart_________________________________
+    fig.update_traces(marker_color=colors["purple"], textposition="inside", width=0.7)
+    fig.update_layout(xaxis_title=None, yaxis_title=None,
+        yaxis=dict(showticklabels=False), height=200,
+        margin=dict(t=20, b=20, l=20, r=20))
+
+    # Render___________________________
+    st.plotly_chart(fig, use_container_width=True)
+
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to get ontology composition
+def get_mapping_composition_by_class_donut_chart():
+
+    colors = get_colors_for_stats_dict()
+
+    frequency_dict = {}
+    for ont_label, ont in st.session_state["g_ontology_components_dict"].items():
+        ont_tag = st.session_state["g_ontology_components_tag_dict"][ont_label]
+        ontology_used_classes_count_dict = get_ontology_used_classes_count_dict(ont)
+        total_count = sum(ontology_used_classes_count_dict.values())
+        frequency_dict[ont_tag] = total_count
+
+    # Create donut chart
+    data = {"Ontology": list(frequency_dict.keys()),
+        "UsageCount": list(frequency_dict.values())}
+    fig = px.pie(data, names="Ontology", values="UsageCount", hole=0.4)
+
+    # Style
+    custom_colors = [colors["salmon"], colors["purple"], colors["blue"], colors["gray"]]
+    fallback = px.colors.qualitative.Pastel
+
+
+    # Extend colors if needed
+    num_ontologies = len(frequency_dict)
+    if num_ontologies > len(custom_colors):
+        custom_colors += fallback[:num_ontologies - len(custom_colors)]
+    fig.update_traces(textinfo='label+value', marker=dict(colors=custom_colors))
+
+    # Layout and legend
+    fig.update_layout(title=dict(
+        text="Mapping composition <br>by 🏷️ Class",
+        font=dict(size=14),
+        x=0.5, xanchor="center", y=0.9, yanchor="bottom"),
+        width=400, height=300, margin=dict(t=60, b=20, l=20, r=20),
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="top", y=0,               # center vertically
+            xanchor="center", x=0.5))
+    # Render
+    st.plotly_chart(fig)
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to get the used properties metric
+def get_used_properties_metric(ont):
+
+    ontology_properties_dict = utils.get_ontology_properties_dict(ont)
+    ontology_used_properties_dict = utils.get_ontology_used_properties_dict(ont)
+
+    percentage = len(ontology_used_properties_dict)/len(ontology_properties_dict)*100
+    percentage_for_display = format_number_for_display(percentage)
+
+    st.markdown("""<style>[data-testid="stMetricDelta"] svg {
+            display: none;
+        }</style>""", unsafe_allow_html=True)
+    st.metric(label="Used properties", value=f"{len(ontology_used_properties_dict)}/{len(ontology_properties_dict)}",
+        delta=f"({percentage_for_display}%)", delta_color="off")
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to get the used properties metric
+def get_average_property_use_metric(ont):
+
+    number_of_rules = len(get_sm_dict())
+    number_of_used_properties = len(utils.get_ontology_used_properties_dict(ont))
+
+    if number_of_used_properties != 0:
+        average_class_use = number_of_rules/number_of_used_properties
+    else:
+        average_class_use = 0
+
+    st.markdown("""<style>[data-testid="stMetricDelta"] svg {
+            display: none;
+        }</style>""", unsafe_allow_html=True)
+    st.metric(label="Average class use", value=f"{format_number_for_display(average_class_use)}",
+        delta=f"(#Rules per used class)", delta_color="off")
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to get the used properties metric
+def get_property_mapping_density_metric(ont):   #HERE FIX
+
+    number_of_rules = len(get_sm_dict())
+    total_number_of_properties = len(utils.get_ontology_properties_dict(ont))
+
+    if total_number_of_properties != 0:
+        mapping_density = number_of_rules/total_number_of_properties
+    else:
+        mapping_density = 0
+
+    st.markdown("""<style>[data-testid="stMetricDelta"] svg {
+            display: none;
+        }</style>""", unsafe_allow_html=True)
+    st.metric(label="Total mapping density", value=f"{format_number_for_display(mapping_density)}",
+        delta=f"(#Rules per class)", delta_color="off")
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to get used classses donut chart
+def get_used_properties_donut_chart(ont):
+
+    colors = get_colors_for_stats_dict()
+
+    ontology_properties_dict = utils.get_ontology_properties_dict(ont)
+    ontology_used_properties_dict = utils.get_ontology_used_properties_dict(ont)
+
+
+    nb_used_clases = len(ontology_used_properties_dict)
+    nb_unused_properties = len(ontology_properties_dict) - len(ontology_used_properties_dict)
+    data = {"Category": ["Used", "Unused"],
+        "Value": [nb_used_clases, nb_unused_properties]}
+
+    fig = px.pie(names=data["Category"],values=data["Value"], hole=0.4)
+
+    fig.update_traces(textinfo='label+value', marker=dict(colors=[colors["purple"], colors["gray"]]))
+
+    fig.update_layout(title=dict(
+        text="Properties in ontology",
+        font=dict(size=14),
+        x=0.5, xanchor="center", y=0.9, yanchor="bottom"),
+        width=400, height=300, margin=dict(t=60, b=20, l=20, r=20),
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="top", y=0,               # center vertically
+            xanchor="center", x=0.5))
+
+    st.plotly_chart(fig)
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to get class frequency bar plot
+def get_class_frequency_bar_plot(ont, selected_properties):
+
+    colors = get_colors_for_stats_dict()
+
+    ontology_used_properties_count_dict = utils.get_ontology_used_properties_count_dict(ont)
+
+    # Selected properties for display__________________________
+    if not selected_properties:  # plot 15 most used
+        properties_for_display_list = sorted(ontology_used_properties_count_dict.items(), key=lambda x: x[1], reverse=True)[:15]
+    else:
+        properties_for_display_list = [(cls, ontology_used_properties_count_dict[cls]) for cls in selected_properties]
+
+    # Build plot_______________________________________________
+    labels, counts = zip(*properties_for_display_list)
+    fig = px.bar(x=labels,y=counts,text=counts, title="Class frequency use")
+
+    # Style the chart_________________________________
+    fig.update_traces(marker_color=colors["purple"], textposition="inside", width=0.7)
+    fig.update_layout(xaxis_title=None, yaxis_title=None,
+        yaxis=dict(showticklabels=False), height=200,
+        margin=dict(t=20, b=20, l=20, r=20))
+
+    # Render___________________________
+    st.plotly_chart(fig, use_container_width=True)
+
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to get ontology composition
+def get_mapping_composition_by_property_donut_chart():
+
+    colors = get_colors_for_stats_dict()
+
+    frequency_dict = {}
+    for ont_label, ont in st.session_state["g_ontology_components_dict"].items():
+        ont_tag = st.session_state["g_ontology_components_tag_dict"][ont_label]
+        ontology_used_properties_count_dict = get_ontology_used_properties_count_dict(ont)
+        total_count = sum(ontology_used_properties_count_dict.values())
+        frequency_dict[ont_tag] = total_count
+
+    # Create donut chart
+    data = {"Ontology": list(frequency_dict.keys()),
+        "UsageCount": list(frequency_dict.values())}
+    fig = px.pie(data, names="Ontology", values="UsageCount", hole=0.4)
+
+    # Style
+    custom_colors = [colors["salmon"], colors["purple"], colors["blue"], colors["gray"]]
+    fallback = px.colors.qualitative.Pastel
+
+
+    # Extend colors if needed
+    num_ontologies = len(frequency_dict)
+    if num_ontologies > len(custom_colors):
+        custom_colors += fallback[:num_ontologies - len(custom_colors)]
+    fig.update_traces(textinfo='label+value', marker=dict(colors=custom_colors))
+
+    # Layout and legend
+    fig.update_layout(title=dict(
+        text="Mapping composition <br>by 🔗 Properties",
+        font=dict(size=14),
+        x=0.5, xanchor="center", y=0.9, yanchor="bottom"),
+        width=400, height=300, margin=dict(t=60, b=20, l=20, r=20),
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="top", y=0,               # center vertically
+            xanchor="center", x=0.5))
+    # Render
+    st.plotly_chart(fig)
+
 #_________________________________________________
 
 
