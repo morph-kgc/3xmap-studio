@@ -685,7 +685,7 @@ def get_predefined_ns_dict():
 def get_required_ns_dict():
 
     required_ns_dict = {
-        "rml": Namespace("http://semweb.mmlab.be/ns/rml#"),
+        "rml": Namespace("http://w3id.org/rml/"),
         "rr": Namespace("http://www.w3.org/ns/r2rml#"),
         "ql": Namespace("http://semweb.mmlab.be/ns/ql#")
         }
