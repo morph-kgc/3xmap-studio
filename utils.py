@@ -1427,16 +1427,16 @@ def remove_triplesmap(tm_label):
             g.remove((logical_source, None, None))
 
     # remove sm if not reused
-    subject_map = g.value(subject=tm_iri, predicate=RR.subjectMap)
+    subject_map = g.value(subject=tm_iri, predicate=RML.subjectMap)
     if subject_map:
-        sm_reused = any(s != tm_iri for s, p, o in g.triples((None, RR.subjectMap, subject_map)))
+        sm_reused = any(s != tm_iri for s, p, o in g.triples((None, RML.subjectMap, subject_map)))
         if not sm_reused:
             g.remove((subject_map, None, None))
 
     # remove all associated pom (and om)
-    pom_iri_list = list(g.objects(subject=tm_iri, predicate=RR.predicateObjectMap))
+    pom_iri_list = list(g.objects(subject=tm_iri, predicate=RML.predicateObjectMap))
     for pom_iri in pom_iri_list:
-        om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RR.objectMap)
+        om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RML.objectMap)
         st.session_state["g_mapping"].remove((pom_iri, None, None))
         st.session_state["g_mapping"].remove((om_to_delete, None, None))
 
@@ -1452,7 +1452,7 @@ def get_column_list_and_give_info(tm_iri):
     ds = str(next(st.session_state["g_mapping"].objects(ls_iri, RML.source), None))
     reference_formulation = next(st.session_state["g_mapping"].objects(ls_iri, QL.referenceFormulation), None)
     query_as_ds = next(st.session_state["g_mapping"].objects(ls_iri, RML.query), None)
-    table_name_as_ds = next(st.session_state["g_mapping"].objects(ls_iri, RR.tableName), None)
+    table_name_as_ds = next(st.session_state["g_mapping"].objects(ls_iri, RML.tableName), None)
 
     jdbc_dict = {}
     for conn in st.session_state["db_connections_dict"]:
@@ -1557,7 +1557,7 @@ def get_column_list_and_give_info(tm_iri):
 
         else:
             st.markdown(f"""<div class="warning-message">
-                ⚠️ Triple indicating either <code>RML.query</code> or <code>RR.tableName</code>
+                ⚠️ Triple indicating either <code>RML.query</code> or <code>RML.tableName</code>
                 is missing.<br>
                 <small>Please check the <b>Logical Source</b> of the TriplesMap
                 to enable automatic column detection.
@@ -1614,7 +1614,7 @@ def get_column_list(tm_iri):
     ds = str(next(st.session_state["g_mapping"].objects(ls_iri, RML.source), None))
     reference_formulation = next(st.session_state["g_mapping"].objects(ls_iri, QL.referenceFormulation), None)
     query_as_ds = next(st.session_state["g_mapping"].objects(ls_iri, RML.query), None)
-    table_name_as_ds = next(st.session_state["g_mapping"].objects(ls_iri, RR.tableName), None)
+    table_name_as_ds = next(st.session_state["g_mapping"].objects(ls_iri, RML.tableName), None)
 
     jdbc_dict = {}
     for conn in st.session_state["db_connections_dict"]:
@@ -1704,7 +1704,7 @@ def get_sm_dict():
     tm_list = list(st.session_state["g_mapping"].subjects(RML.logicalSource, None))
     for tm in tm_list:
         tm_label = split_uri(tm)[1]
-        sm_iri = st.session_state["g_mapping"].value(tm, RR.subjectMap)
+        sm_iri = st.session_state["g_mapping"].value(tm, RML.subjectMap)
 
         template = st.session_state["g_mapping"].value(sm_iri, RML.template)
         constant = st.session_state["g_mapping"].value(sm_iri, RML.constant)
@@ -1827,17 +1827,17 @@ def get_language_tags_list():
 def get_pom_dict():
 
     pom_dict = {}
-    pom_list = list(st.session_state["g_mapping"].objects(None, RR.predicateObjectMap))
+    pom_list = list(st.session_state["g_mapping"].objects(None, RML.predicateObjectMap))
 
     for pom_iri in pom_list:
 
-        tm_iri = next(st.session_state["g_mapping"].subjects(RR.predicateObjectMap, pom_iri), None)
+        tm_iri = next(st.session_state["g_mapping"].subjects(RML.predicateObjectMap, pom_iri), None)
         tm_label = split_uri(tm_iri)[1]
-        predicate = st.session_state["g_mapping"].value(pom_iri, RR.predicate)
-        om_iri = st.session_state["g_mapping"].value(pom_iri, RR.objectMap)
+        predicate = st.session_state["g_mapping"].value(pom_iri, RML.predicate)
+        om_iri = st.session_state["g_mapping"].value(pom_iri, RML.objectMap)
 
-        template = st.session_state["g_mapping"].value(om_iri, RR.template)
-        constant = st.session_state["g_mapping"].value(om_iri, RR.constant)
+        template = st.session_state["g_mapping"].value(om_iri, RML.template)
+        constant = st.session_state["g_mapping"].value(om_iri, RML.constant)
         reference = st.session_state["g_mapping"].value(om_iri, RML.reference)
 
         pom_id_iri = None
@@ -2258,19 +2258,19 @@ def check_g_mapping(g):
     tm_wo_sm_list = []   # list of all tm with assigned sm
     tm_wo_pom_list = []
     for tm_label, tm_iri in tm_dict.items():
-        if not any(g.triples((tm_iri, RR.subjectMap, None))):
+        if not any(g.triples((tm_iri, RML.subjectMap, None))):
             tm_wo_sm_list.append(tm_label)
     for tm_label, tm_iri in tm_dict.items():
-        if not any(g.triples((tm_iri, RR.predicateObjectMap, None))):
+        if not any(g.triples((tm_iri, RML.predicateObjectMap, None))):
             tm_wo_pom_list.append(tm_label)
 
     pom_wo_om_list = []
     pom_wo_predicate_list = []
-    for pom_iri in g.subjects(RDF.type, RR.PredicateObjectMap):
+    for pom_iri in g.subjects(RDF.type, RML.PredicateObjectMap):
         pom_label = get_node_label(pom_iri)
-        if not any(g.triples((pom_iri, RR.objectMap, None))):
+        if not any(g.triples((pom_iri, RML.objectMap, None))):
             pom_wo_om_list.append(pom_label)
-        if not any(g.triples((pom_iri, RR.predicate, None))):
+        if not any(g.triples((pom_iri, RML.predicate, None))):
             pom_wo_predicate_list.append(pom_label)
 
     tm_wo_pom_list_display = utils.format_list_for_markdown(tm_wo_pom_list)
@@ -2466,17 +2466,17 @@ def get_rules_for_sm(sm_iri):
 
     g = st.session_state["g_mapping"]
 
-    for pred in [RR.constant, RR.template, RML.reference]:
+    for pred in [RML.constant, RML.template, RML.reference]:
         sm_for_display = g.value(subject=sm_iri, predicate=pred)
         if sm_for_display:
             break
 
-    tm = g.value(predicate=RR.subjectMap, object=sm_iri)
+    tm = g.value(predicate=RML.subjectMap, object=sm_iri)
 
-    for pom in g.objects(subject=tm, predicate=RR.predicateObjectMap):
-        om = g.value(subject=pom, predicate=RR.objectMap)
-        p_for_display = g.value(subject=pom, predicate=RR.predicate)
-        for pred in [RR.constant, RR.template, RML.reference]:
+    for pom in g.objects(subject=tm, predicate=RML.predicateObjectMap):
+        om = g.value(subject=pom, predicate=RML.objectMap)
+        p_for_display = g.value(subject=pom, predicate=RML.predicate)
+        for pred in [RML.constant, RML.template, RML.reference]:
             om_for_display = g.value(subject=om, predicate=pred)
             if om_for_display:
                 break
@@ -2610,7 +2610,7 @@ def get_ontology_used_classes_dict(g_ont):
     ontology_used_classes_dict = {}
 
     for class_label, class_iri in ontology_classes_dict.items():
-        if (None, RR["class"], URIRef(class_iri)) in st.session_state["g_mapping"]:
+        if (None, RML["class"], URIRef(class_iri)) in st.session_state["g_mapping"]:
             ontology_used_classes_dict[class_label] = class_iri
 
     return ontology_used_classes_dict
@@ -2624,7 +2624,7 @@ def get_ontology_used_classes_count_dict(g_ont):
     usage_count_dict = defaultdict(int)
 
     for class_label, class_iri in ontology_classes_dict.items():
-        for triple in st.session_state["g_mapping"].triples((None, RR["class"], URIRef(class_iri))):
+        for triple in st.session_state["g_mapping"].triples((None, RML["class"], URIRef(class_iri))):
             usage_count_dict[class_label] += 1
 
     return dict(usage_count_dict)
@@ -2638,7 +2638,7 @@ def get_ontology_used_classes_count_by_rules_dict(g_ont):
     usage_count_dict = defaultdict(int)
 
     for class_label, class_iri in ontology_classes_dict.items():
-        for s, p, o in st.session_state["g_mapping"].triples((None, RR["class"], URIRef(class_iri))):
+        for s, p, o in st.session_state["g_mapping"].triples((None, RML["class"], URIRef(class_iri))):
             sm_iri = s
             sm_iri_rule_list = get_rules_for_sm(sm_iri)
             usage_count_dict[class_label] += len(sm_iri_rule_list)
@@ -2826,7 +2826,7 @@ def get_class_frequency_bar_plot(g_ont, selected_classes, superclass_filter=None
 #
 #     # get classes from other ontologies
 #     all_used_classes_dict = {}
-#     for s, p, o in st.session_state["g_mapping"].triples((None, RR["class"], None)):
+#     for s, p, o in st.session_state["g_mapping"].triples((None, RML["class"], None)):
 #         if isinstance(o, URIRef):
 #             all_used_classes_dict[split_uri(o)[1]] = o
 #
@@ -2845,7 +2845,7 @@ def get_class_frequency_bar_plot(g_ont, selected_classes, superclass_filter=None
 #         elif type == "rules":
 #             number_of_rules = 0
 #             for class_iri in other_ontologies_list:
-#                 for s, p, o in st.session_state["g_mapping"].triples((None, RR["class"], class_iri)):
+#                 for s, p, o in st.session_state["g_mapping"].triples((None, RML["class"], class_iri)):
 #                     sm_iri = s
 #                     rule_list = get_rules_for_sm(sm_iri)
 #                     number_of_rules += len(rule_list)
@@ -2909,7 +2909,7 @@ def get_mapping_composition_by_class_donut_chart():
 
     # get classes from other ontologies
     all_used_classes_dict = {}
-    for s, p, o in st.session_state["g_mapping"].triples((None, RR["class"], None)):
+    for s, p, o in st.session_state["g_mapping"].triples((None, RML["class"], None)):
         if isinstance(o, URIRef):
             all_used_classes_dict[split_uri(o)[1]] = o
 
@@ -2925,7 +2925,7 @@ def get_mapping_composition_by_class_donut_chart():
     if other_ontologies_list:
         number_of_rules = 0
         for class_iri in other_ontologies_list:
-            for s, p, o in st.session_state["g_mapping"].triples((None, RR["class"], class_iri)):
+            for s, p, o in st.session_state["g_mapping"].triples((None, RML["class"], class_iri)):
                 sm_iri = s
                 rule_list = get_rules_for_sm(sm_iri)
                 number_of_rules += len(rule_list)
@@ -3017,7 +3017,7 @@ def get_ontology_used_properties_dict(g_ont):
     ontology_used_properties_dict = {}
 
     for prop_label, prop_iri in ontology_properties_dict.items():
-        if (None, RR.predicate, URIRef(prop_iri)) in st.session_state["g_mapping"]:
+        if (None, RML.predicate, URIRef(prop_iri)) in st.session_state["g_mapping"]:
             ontology_used_properties_dict[prop_label] = prop_iri
 
     return ontology_used_properties_dict
@@ -3032,7 +3032,7 @@ def get_ontology_used_properties_count_dict(g_ont):
     usage_count_dict = defaultdict(int)
 
     for prop_label, prop_iri in ontology_properties_dict.items():
-        for triple in st.session_state["g_mapping"].triples((None, RR["predicate"], URIRef(prop_iri))):
+        for triple in st.session_state["g_mapping"].triples((None, RML["predicate"], URIRef(prop_iri))):
             usage_count_dict[prop_label] += 1
 
     return dict(usage_count_dict)
@@ -3203,8 +3203,6 @@ def get_property_frequency_bar_plot(g_ont, selected_properties, superproperty_fi
 
 #_________________________________________________
 
-
-
 #_________________________________________________
 # Funtion to get ontology composition
 def get_mapping_composition_by_property_donut_chart():
@@ -3222,7 +3220,7 @@ def get_mapping_composition_by_property_donut_chart():
 
     # get properties from other ontologies
     all_used_properties_dict = {}
-    for s, p, o in st.session_state["g_mapping"].triples((None, RR["predicate"], None)):
+    for s, p, o in st.session_state["g_mapping"].triples((None, RML["predicate"], None)):
         if isinstance(o, URIRef):
             all_used_properties_dict[split_uri(o)[1]] = o
 

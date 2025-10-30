@@ -294,9 +294,9 @@ def save_sm_template():   #function to save subject map (template option)
     st.session_state["g_mapping"].add((sm_iri, RR.template, Literal(sm_template)))
     if add_subject_class_option != "No Class":
         for subject_class_iri in st.session_state["multiple_subject_class_list"]:
-            st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
+            st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
     if add_sm_graph_map_option == "Add Graph Map" and subject_graph:
-        st.session_state["g_mapping"].add((sm_iri, RR["graph"], subject_graph))
+        st.session_state["g_mapping"].add((sm_iri, RML["graph"], subject_graph))
     if sm_term_type_template == "🌐 IRI":
         st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.IRI))
     elif sm_term_type_template == "👻 BNode":
@@ -326,9 +326,9 @@ def save_sm_constant():   #function to save subject map (constant option)
     st.session_state["g_mapping"].add((sm_iri, RR.constant, sm_constant_iri))
     if add_subject_class_option != "No Class":
         for subject_class_iri in st.session_state["multiple_subject_class_list"]:
-            st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
+            st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
     if add_sm_graph_map_option == "Add Graph Map" and subject_graph:
-        st.session_state["g_mapping"].add((sm_iri, RR["graph"], subject_graph))
+        st.session_state["g_mapping"].add((sm_iri, RML["graph"], subject_graph))
     st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.IRI))
     # store information____________________
     st.session_state["last_added_sm_list"].insert(0, [sm_iri, tm_label_for_sm])
@@ -351,9 +351,9 @@ def save_sm_reference():   #function to save subject map (reference option)
     st.session_state["g_mapping"].add((sm_iri, RML.reference, Literal(sm_column_name)))    #HERE change to RR.column in R2RML
     if add_subject_class_option != "No Class":
         for subject_class_iri in st.session_state["multiple_subject_class_list"]:
-            st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
+            st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
     if add_sm_graph_map_option == "Add Graph Map" and subject_graph:
-        st.session_state["g_mapping"].add((sm_iri, RR["graph"], subject_graph))
+        st.session_state["g_mapping"].add((sm_iri, RML["graph"], subject_graph))
     if sm_term_type_reference == "🌐 IRI":
         st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.IRI))
     elif sm_term_type_reference == "👻 BNode":

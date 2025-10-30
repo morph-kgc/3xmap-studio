@@ -414,7 +414,7 @@ with tab1:
 
             with col1a:
                 list_to_choose = []
-                for pom in st.session_state["g_mapping"].objects(tm_iri_for_search, RR.predicateObjectMap):
+                for pom in st.session_state["g_mapping"].objects(tm_iri_for_search, RML.predicateObjectMap):
                     list_to_choose.append(pom)
                 if len(list_to_choose) > 1:
                     selected_pom_for_display_list = st.multiselect("🖱️ Filter Predicate-Object Maps (optional):", list_to_choose,
@@ -522,7 +522,7 @@ with tab1:
 
         with col1b:
             classes_set = set()
-            for sm, rdf_class in st.session_state["g_mapping"].subject_objects(predicate=RR["class"]):
+            for sm, rdf_class in st.session_state["g_mapping"].subject_objects(predicate=RML["class"]):
                 rdf_class_label = utils.get_node_label(rdf_class)
                 classes_set.add(rdf_class_label)
 
@@ -644,8 +644,8 @@ with tab1:
                 tm = row.get("tm")
                 tm_label = utils.get_node_label(tm) if tm else "(missing)"
 
-                has_sm = bool(list(st.session_state["g_mapping"].objects(subject=tm, predicate=RR["subjectMap"])))
-                has_pom = bool(list(st.session_state["g_mapping"].objects(subject=tm, predicate=RR["predicateObjectMap"])))
+                has_sm = bool(list(st.session_state["g_mapping"].objects(subject=tm, predicate=RML["subjectMap"])))
+                has_pom = bool(list(st.session_state["g_mapping"].objects(subject=tm, predicate=RML["predicateObjectMap"])))
 
                 df_data.append({"TriplesMap label": tm_label,
                     "Has Subject Map": "❌" if not has_sm else "✔️",
@@ -695,10 +695,10 @@ with tab1:
                 pom_label = utils.get_node_label(pom) if pom else "(missing)"
 
                 # Check if objectMap is present
-                has_om = bool(list(st.session_state["g_mapping"].objects(subject=pom, predicate=RR["objectMap"])))
+                has_om = bool(list(st.session_state["g_mapping"].objects(subject=pom, predicate=RML["objectMap"])))
 
                 # Get predicate if defined
-                predicate = st.session_state["g_mapping"].value(subject=pom, predicate=RR["predicate"])
+                predicate = st.session_state["g_mapping"].value(subject=pom, predicate=RML["predicate"])
                 predicate_label = utils.get_node_label(predicate) if predicate else ""
 
                 df_data.append({"Predicate-Object Map": pom_label,
@@ -780,8 +780,8 @@ with tab1:
                 RR = Namespace("http://www.w3.org/ns/r2rml#")
                 RML = Namespace("http://semweb.mmlab.be/ns/rml#")
 
-                template = g.value(subject=sm, predicate=RR["template"])
-                constant = g.value(subject=sm, predicate=RR["constant"])
+                template = g.value(subject=sm, predicate=RML["template"])
+                constant = g.value(subject=sm, predicate=RML["constant"])
                 reference = g.value(subject=sm, predicate=RML["reference"])
                 if template:
                     sm_rule_type = "Template"
@@ -795,9 +795,9 @@ with tab1:
                 else:
                     sm_rule_type = ""
                     sm_rule = ""
-                rdf_class = g.value(subject=sm, predicate=RR["class"])
-                term_type = g.value(subject=sm, predicate=RR["termType"])
-                graph_map = g.value(subject=sm, predicate=RR["graphMap"])
+                rdf_class = g.value(subject=sm, predicate=RML["class"])
+                term_type = g.value(subject=sm, predicate=RML["termType"])
+                graph_map = g.value(subject=sm, predicate=RML["graphMap"])
 
                 row_dict = {"Subject Map": sm_label,
                     "Type": str(sm_rule_type),
@@ -854,7 +854,7 @@ with tab1:
             for row in results:
                 pom = row.get("pom") if row.get("pom") else ""
                 pom_label = utils.get_node_label(pom)
-                predicate = st.session_state["g_mapping"].value(subject=pom, predicate=RR["predicate"])
+                predicate = st.session_state["g_mapping"].value(subject=pom, predicate=RML["predicate"])
 
                 row_dict = {"Predicate-Object Map": pom_label,
                     "Predicate": predicate, "Predicate-Object Map (complete)": pom,}
@@ -915,8 +915,8 @@ with tab1:
 
                 g = st.session_state["g_mapping"]
 
-                template = g.value(subject=sm, predicate=RR["template"])
-                constant = g.value(subject=sm, predicate=RR["constant"])
+                template = g.value(subject=sm, predicate=RML["template"])
+                constant = g.value(subject=sm, predicate=RML["constant"])
                 reference = g.value(subject=sm, predicate=RML["reference"])
                 if template:
                     om_rule_type = "Template"
@@ -930,11 +930,11 @@ with tab1:
                 else:
                     om_rule_type = ""
                     om_rule = ""
-                term_type = g.value(subject=om, predicate=RR["termType"])
-                datatype = g.value(subject=om, predicate=RR["datatype"])
-                language = g.value(subject=om, predicate=RR["language"])
-                parent_tm = g.value(subject=om, predicate=RR["parentTriplesMap"])
-                join_condition = g.value(subject=om, predicate=RR["joinCondition"])
+                term_type = g.value(subject=om, predicate=RML["termType"])
+                datatype = g.value(subject=om, predicate=RML["datatype"])
+                language = g.value(subject=om, predicate=RML["language"])
+                parent_tm = g.value(subject=om, predicate=RML["parentTriplesMap"])
+                join_condition = g.value(subject=om, predicate=RML["joinCondition"])
 
                 row_dict = {"Object Map": om_label,
                         "Type": str(om_rule_type),

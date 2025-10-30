@@ -388,7 +388,7 @@ with tab3:
                 if subject_class_iri:
                     # Get all subject maps with the selected class
                     rule_list_for_class = []
-                    for s in st.session_state["g_mapping"].subjects(RR["class"], URIRef(subject_class_iri)):
+                    for s in st.session_state["g_mapping"].subjects(RML["class"], URIRef(subject_class_iri)):
                         sm_rule_list = utils.get_rules_for_sm(s)
                         for rule in sm_rule_list:
                             rule_list_for_class.append(rule)
