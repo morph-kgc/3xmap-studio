@@ -61,11 +61,52 @@ if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
 
-tab1, tab2, tab3 = st.tabs(["Ontology Coverage", "Mapping Density", "Domain/Range Validation"])
+tab1, tab2, tab3 = st.tabs(["Mapping", "Properties", "Classes"])
 
 #________________________________________________
-# ONTOLOGY COVERAGE
+# ONTOLOGY COVERAGE - MAPPING
 with tab1:
+    st.write("")
+    st.write("")
+
+    col1, col2 = st.columns([2,1.5])
+
+    with col2:
+        col2a,col2b = st.columns([1,2])
+    with col2b:
+        utils.get_corner_status_message()
+
+    if not st.session_state["g_ontology"]:
+        with col1:
+            st.markdown(f"""<div class="error-message">
+                ❌ You need to import an ontology from the
+                <b>Ontologies</b> page <small>(Import Ontology pannel).</small>
+            </div>""", unsafe_allow_html=True)
+
+    else:
+
+        #PURPLE HEADING - ONTOLOGY COVERAGE
+        with col1:
+            st.markdown("""<div class="purple-heading">
+                    📈 Ontology Coverage
+                </div>""", unsafe_allow_html=True)
+            st.write("")
+
+        with col1:
+            col1a, col1b, col1c, col1d = st.columns([1,1,0.5,0.5])
+        with col1a:
+            utils.get_mapping_composition_by_class_donut_chart()
+        with col1b:
+            utils.get_mapping_composition_by_property_donut_chart()
+        with col1d:
+            utils.get_tm_number_metric()
+            utils.get_rules_number_metric()
+
+        # st.write("HERE", utils.get_ontology_used_classes_count_by_rules_dict(st.session_state["g_ontology"]))
+        # st.write("HERE", utils.get_ontology_used_classes_count_dict(st.session_state["g_ontology"]))
+#________________________________________________
+# ONTOLOGY COVERAGE - CLASSES
+with tab3:
     st.write("")
     st.write("")
 
@@ -95,97 +136,81 @@ with tab1:
         with col1:
             col1a, col1b, col1c = st.columns(3)
 
-
-        with col1a:
-            list_to_choose = ["🗺️ Mapping", "🏷️ Classes", "🔗 Properties"]
-            type_for_lens = st.radio("🖱️ Select an option:*", list_to_choose,
-                label_visibility="collapsed", key="key_type_for_lens")
-
-        if type_for_lens == "🗺️ Mapping":
-            with col1b:
-                list_to_choose = ["📊 Stats"]
-                selected_class_search = st.selectbox("🖱️ Select an option:*", list_to_choose,
-                    key="key_class_search")
-
-            with col1:
-                col1a, col1b, col1c, col1d = st.columns([1,1,0.5,0.5])
             with col1a:
-                utils.get_mapping_composition_by_class_donut_chart()
-            with col1b:
-                utils.get_mapping_composition_by_property_donut_chart()
-            with col1d:
-                utils.get_tm_number_metric()
-                utils.get_rules_number_metric()
-
-
-
-        if type_for_lens == "🏷️ Classes":
-
-            with col1b:
                 list_to_choose = ["📊 Stats", "📐Rules", "ℹ️ Information"]
                 selected_class_search = st.selectbox("🖱️ Select an option:*", list_to_choose,
                     key="key_class_search")
 
             # Filter by ontology
-            with col1c:
+            with col1b:
                 list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
                 if len(list_to_choose) > 1:
                     list_to_choose.insert(0, "No filter")
-                ontology_filter_for_lens = st.selectbox("⚙️ Filter by ontology:",
+                ontology_filter_for_lens_tag = st.selectbox("⚙️ Filter by ontology:",
                     list_to_choose, key="key_ontology_filter_for_lens")
 
-            if ontology_filter_for_lens == "No filter":
+            if ontology_filter_for_lens_tag == "No filter":
                 ontology_filter_for_lens = st.session_state["g_ontology"]
             else:
                 for ont_label, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
-                    if ont_tag == ontology_filter_for_lens:
+                    if ont_tag == ontology_filter_for_lens_tag:
                         ontology_filter_for_lens = st.session_state["g_ontology_components_dict"][ont_label]
                         break
 
             # Superclass filter
             superclass_dict = utils.get_ontology_superclass_dict(ontology_filter_for_lens)
-            if superclass_dict:   # there exists at least one superclass (show superclass filter)
-                classes_in_superclass_dict = {}
-                with col1c:
-                    superclass_list = sorted(superclass_dict.keys())
-                    superclass_list.insert(0, "No filter")
-                    superclass_filter_for_lens = st.selectbox("⚙️ Filter by superclass:", superclass_list,
-                        key="key_superclass")   #superclass label
+            classes_in_superclass_dict = {}
+            with col1c:
+                superclass_list = sorted(superclass_dict.keys())
+                superclass_list.insert(0, "No filter")
+                superclass_filter_for_lens_label = st.selectbox("⚙️ Filter by superclass:", superclass_list,
+                    key="key_superclass")   #superclass label
+
+            if superclass_filter_for_lens_label != "No filter":   # a superclass has been selected (filter)
+                superclass_filter_for_lens = superclass_dict[superclass_filter_for_lens_label] #we get the superclass iri
             else:
-                superclass_filter_for_lens = "No filter"
-
-            if superclass_filter_for_lens != "No filter":   # a superclass has been selected (filter)
-                superclass_filter_for_lens = superclass_dict[superclass_filter_for_lens] #we get the superclass iri
-
-            with col1:
-                st.write("_____")
+                superclass_filter_for_lens = None
 
             if selected_class_search == "📊 Stats":
 
                 with col1:
-                    col1a, col1b, col1c, col1d = st.columns(4)
+                    st.write("_____")
+                    col1a, col1b, col1c, col1d, col1e = st.columns([1,1,1,0.2,1])
                 with col1a:
                     utils.get_used_classes_metric(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens)
                 with col1b:
                     utils.get_average_class_use_metric(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens)
                 with col1c:
                     utils.get_class_mapping_density_metric(ontology_filter_for_lens)
+                with col1e:
+                    inner_html = ""
+                    if ontology_filter_for_lens_tag != "No filter":
+                        inner_html += f"""🧩 Ontology:<br><span style="padding-left:20px;">
+                            <b style="color:#F63366;">{ontology_filter_for_lens_tag}</b></span><br>"""
+                    if superclass_filter_for_lens_label != "No filter":
+                        inner_html += f"""🏷️ Superclass:<br><span style="padding-left:20px;">
+                            <b style="color:#F63366;">{superclass_filter_for_lens_label}</b></span><br>"""
+                    if inner_html:
+                        st.write("")
+                        st.markdown(f"""<div class="gray-preview-message">
+                                {inner_html}
+                            </div>""", unsafe_allow_html=True)
 
 
                 with col1:
-                    col1a, col1b = st.columns(2)
-
+                    col1a, col1b = st.columns([1,2])
                 with col1a:
-                    utils.get_used_classes_donut_chart(ontology_filter_for_lens)
+                    utils.get_used_classes_donut_chart(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens)
 
-                with col1:
-                    col1a, col1b = st.columns([2,1])
-                with col1b:
-                    ontology_used_classes_count_dict = utils.get_class_dictionaries_filtered_by_superclass(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens)[2]
-                    all_classes = list(ontology_used_classes_count_dict.keys())
-                    selected_classes = st.multiselect("🖱️ Select ontology classes to display (opt):", options=all_classes)
-                with col1a:
-                    utils.get_class_frequency_bar_plot(ontology_filter_for_lens, selected_classes)
+
+                ontology_used_classes_count_dict = utils.get_class_dictionaries_filtered_by_superclass(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens)[2]
+                list_to_choose = list(ontology_used_classes_count_dict.keys())
+                if list_to_choose:
+                    with col1b:
+                        selected_classes = st.multiselect("🖱️ Select ontology classes to display (opt):", list_to_choose,
+                            key="key_selected_classes")
+
+                        utils.get_class_frequency_bar_plot(ontology_filter_for_lens, selected_classes, superclass_filter=superclass_filter_for_lens)
 
 
 
