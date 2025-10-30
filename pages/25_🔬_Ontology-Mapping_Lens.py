@@ -138,7 +138,8 @@ with tab2:
 
         with col2b:
             st.markdown(f"""<div class="info-message-gray">
-                    🧮 Property frequency is the number of times it is used in a rule.
+                    🧮 A property is <b>used</b> if it appears in at least one rule (as a predicate).
+                    <b>Property frequency</b> is the number of times a property is used in a rule.
                 </div>""", unsafe_allow_html=True)
 
         with col1:
@@ -252,7 +253,8 @@ with tab3:
 
         with col2b:
             st.markdown(f"""<div class="info-message-gray">
-                    🧮 Class frequency is the number of times it is used in a rule.
+                    🧮 A class is <b>used</b> if it appears in at least one rule.
+                    <b>Class frequency</b> is the number of times a class is used in a rule.
                 </div>""", unsafe_allow_html=True)
 
         with col1:
@@ -325,8 +327,8 @@ with tab3:
                     utils.get_used_classes_donut_chart(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens)
 
 
-                ontology_used_classes_count_dict = utils.get_class_dictionaries_filtered_by_superclass(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens)[2]
-                list_to_choose = list(ontology_used_classes_count_dict.keys())
+                ontology_used_classes_count_by_rules_dict = utils.get_class_dictionaries_filtered_by_superclass(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens)[3]
+                list_to_choose = list(ontology_used_classes_count_by_rules_dict.keys())
                 if list_to_choose:
                     with col1b:
                         selected_classes = st.multiselect("🖱️ Select ontology classes to display (opt):", list_to_choose,

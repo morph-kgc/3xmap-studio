@@ -2635,14 +2635,14 @@ def get_ontology_used_classes_count_dict(g_ont):
 def get_ontology_used_classes_count_by_rules_dict(g_ont):
 
     ontology_classes_dict = get_ontology_classes_dict(g_ont)
-    usage_count_dict = defaultdict(int)
+    usage_count_dict = {}
 
     for class_label, class_iri in ontology_classes_dict.items():
         for s, p, o in st.session_state["g_mapping"].triples((None, RML["class"], URIRef(class_iri))):
             sm_iri = s
             sm_iri_rule_list = get_rules_for_sm(sm_iri)
-            usage_count_dict[class_label] += len(sm_iri_rule_list)
-            # st.write("HERE2", sm_iri, sm_iri_rule_list)
+            if sm_iri_rule_list:
+                usage_count_dict[class_label] = len(sm_iri_rule_list)
 
     return dict(usage_count_dict)
 #________________________________________________________
@@ -2754,16 +2754,16 @@ def get_used_classes_donut_chart(g_ont, superclass_filter=None):
     colors = get_colors_for_stats_dict()
 
     ontology_classes_dict = get_class_dictionaries_filtered_by_superclass(g_ont, superclass_filter=superclass_filter)[0]
-    ontology_used_classes_dict = get_class_dictionaries_filtered_by_superclass(g_ont, superclass_filter=superclass_filter)[1]
+    ontology_used_classes_count_by_rules_dict = get_class_dictionaries_filtered_by_superclass(g_ont, superclass_filter=superclass_filter)[3]
 
-    nb_used_clases = len(ontology_used_classes_dict)
-    nb_unused_classes = len(ontology_classes_dict) - len(ontology_used_classes_dict)
+    nb_used_clases = len(ontology_used_classes_count_by_rules_dict)
+    nb_unused_classes = len(ontology_classes_dict) - nb_used_clases
     data = {"Category": ["Used classes", "Unused classes"],
         "Value": [nb_used_clases, nb_unused_classes]}
 
     fig = px.pie(names=data["Category"],values=data["Value"], hole=0.4)
 
-    fig.update_traces(textinfo='label+value',
+    fig.update_traces(textinfo='value', textposition='inside',
         marker=dict(colors=[colors["purple"], colors["gray"]]))
 
     fig.update_layout(width=400, height=300, margin=dict(t=20, b=20, l=20, r=20),
@@ -2784,7 +2784,7 @@ def get_class_frequency_bar_plot(g_ont, selected_classes, superclass_filter=None
 
     # Selected classes for display__________________________
     if not selected_classes:  # plot 15 most used
-        classes_for_display_list = sorted(ontology_used_classes_count_by_rules_dict.items(), key=lambda x: x[1], reverse=True)[:15]
+        classes_for_display_list = sorted(ontology_used_classes_count_by_rules_dict.items(), key=lambda x: x[1], reverse=True)[:10]
     else:
         classes_for_display_list = [(cls, ontology_used_classes_count_by_rules_dict[cls]) for cls in selected_classes]
 
@@ -2798,7 +2798,7 @@ def get_class_frequency_bar_plot(g_ont, selected_classes, superclass_filter=None
         fig.update_layout(xaxis_title=None, yaxis_title="Class frequency",
             yaxis=dict(showticklabels=False, ticks="", showgrid=True,
                 gridcolor="lightgray", title_standoff=5),
-            height=250, margin=dict(t=20, b=20, l=20, r=20))
+            height=300, margin=dict(t=20, b=20, l=20, r=20))
 
 
         # Render___________________________
@@ -3155,12 +3155,12 @@ def get_used_properties_donut_chart(g_ont, superproperty_filter=None):
 
     nb_used_clases = len(ontology_used_properties_dict)
     nb_unused_properties = len(ontology_properties_dict) - len(ontology_used_properties_dict)
-    data = {"Category": ["Used prop", "Unused prop"],
+    data = {"Category": ["Used properties", "Unused properties"],
         "Value": [nb_used_clases, nb_unused_properties]}
 
     fig = px.pie(names=data["Category"],values=data["Value"], hole=0.4)
 
-    fig.update_traces(textinfo='label+value',
+    fig.update_traces(textinfo='value', textposition='inside',
         marker=dict(colors=[colors["purple"], colors["gray"]]))
 
     fig.update_layout(width=400, height=300, margin=dict(t=20, b=20, l=20, r=20),
@@ -3181,7 +3181,7 @@ def get_property_frequency_bar_plot(g_ont, selected_properties, superproperty_fi
 
     # Selected properties for display__________________________
     if not selected_properties:  # plot 15 most used
-        properties_for_display_list = sorted(ontology_used_properties_count_dict.items(), key=lambda x: x[1], reverse=True)[:15]
+        properties_for_display_list = sorted(ontology_used_properties_count_dict.items(), key=lambda x: x[1], reverse=True)[:10]
     else:
         properties_for_display_list = [(cls, ontology_used_properties_count_dict[cls]) for cls in selected_properties]
 
@@ -3195,7 +3195,7 @@ def get_property_frequency_bar_plot(g_ont, selected_properties, superproperty_fi
         fig.update_layout(xaxis_title=None, yaxis_title="property frequency",
             yaxis=dict(showticklabels=False, ticks="", showgrid=True,
                 gridcolor="lightgray", title_standoff=5),
-            height=250, margin=dict(t=20, b=20, l=20, r=20))
+            height=300, margin=dict(t=20, b=20, l=20, r=20))
 
 
         # Render___________________________
