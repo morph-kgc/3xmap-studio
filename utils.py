@@ -2688,7 +2688,7 @@ def get_ontology_used_classes_count_by_rules_dict(g_ont):
             sm_iri = s
             sm_iri_rule_list = get_rules_for_sm(sm_iri)
             usage_count_dict[class_label] += len(sm_iri_rule_list)
-            st.write("HERE2", sm_iri, sm_iri_rule_list)
+            # st.write("HERE2", sm_iri, sm_iri_rule_list)
 
     return dict(usage_count_dict)
 #________________________________________________________
@@ -2799,7 +2799,7 @@ def get_used_classes_donut_chart(g_ont, superclass_filter=None):
 
     fig = px.pie(names=data["Category"],values=data["Value"], hole=0.4)
 
-    fig.update_traces(textinfo='label+value', textposition='inside',
+    fig.update_traces(textinfo='label+value',
         marker=dict(colors=[colors["purple"], colors["gray"]]))
 
     fig.update_layout(width=400, height=300, margin=dict(t=20, b=20, l=20, r=20),
