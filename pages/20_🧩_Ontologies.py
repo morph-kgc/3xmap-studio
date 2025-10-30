@@ -69,8 +69,6 @@ if "g_ontology_from_link_candidate" not in st.session_state:
     st.session_state["g_ontology_from_link_candidate"] = Graph()
 if "g_ontology_components_dict" not in st.session_state:
     st.session_state["g_ontology_components_dict"] = {}
-if "g_ontology_components_tag_dict" not in st.session_state:
-    st.session_state["g_ontology_components_tag_dict"] = {}
 if "g_ontology_reduced_ok_flag" not in st.session_state:
     st.session_state["g_ontology_reduced_ok_flag"] = False
 
@@ -624,7 +622,7 @@ with tab2:
             list_to_choose.append("Annotation")
 
             with col1d:
-                class_filter_type = st.selectbox("🔻 Add filter (opt):", list_to_choose,
+                class_filter_type = st.selectbox("⚙️ Add filter (opt):", list_to_choose,
                     key="key_class_filter_type")
 
 
@@ -635,7 +633,7 @@ with tab2:
                 with col1a:
                     superclass_list = sorted(superclass_dict.keys())
                     superclass_list.insert(0, "Select superclass")
-                    selected_superclass_filter = st.selectbox("🔻 Filter by superclass (optional):", superclass_list,
+                    selected_superclass_filter = st.selectbox("⚙️ Filter by superclass (optional):", superclass_list,
                         key="key_selected_superclass_filter")   #superclass label
 
                 if selected_superclass_filter != "Select superclass":
@@ -659,7 +657,7 @@ with tab2:
                     col1a, col1b = st.columns([2,1])
                 with col1a:
                     list_to_choose = ["Select class type", "owl:Class", "rdfs:Class"]
-                    selected_class_type = st.selectbox("🔻 Filter by class type (optional):", list_to_choose,
+                    selected_class_type = st.selectbox("⚙️ Filter by class type (optional):", list_to_choose,
                         key="key_selected_class_type")
 
                 if selected_class_type != "Select class type":
@@ -685,7 +683,7 @@ with tab2:
                     col1a, col1b = st.columns([2,1])
                 with col1a:
                     annotation_options = ["Select annotation", "Has comment", "Has label", "Has comment or label"]
-                    selected_annotation_filter = st.selectbox("🔻 Filter by annotation presence (optional):", annotation_options,
+                    selected_annotation_filter = st.selectbox("⚙️ Filter by annotation presence (optional):", annotation_options,
                         key="key_selected_annotation_filter")
 
                 if selected_annotation_filter != "Select annotation":
@@ -824,7 +822,7 @@ with tab2:
             if list_to_choose != ["No filter"]:
 
                 with col1d:
-                    property_filter_type = st.selectbox("🔻 Add filter (opt):", list_to_choose,
+                    property_filter_type = st.selectbox("⚙️ Add filter (opt):", list_to_choose,
                         key="key_property_filter_type")
 
 
@@ -834,7 +832,7 @@ with tab2:
                     with col1a:
                         list_to_choose = sorted(list(domain_dict))
                         list_to_choose.insert(0, "Select domain")
-                        selected_domain_filter = st.selectbox("🔻 Select domain filter:*", list_to_choose,
+                        selected_domain_filter = st.selectbox("⚙️ Select domain filter:*", list_to_choose,
                             key="key_selected_domain_filter")
 
                     if selected_domain_filter != "Select domain":
@@ -868,7 +866,7 @@ with tab2:
                     with col1a:
                         list_to_choose = sorted(list(range_dict))
                         list_to_choose.insert(0, "Select range")
-                        selected_range_filter = st.selectbox("🔻 Select range filter:*", list_to_choose,
+                        selected_range_filter = st.selectbox("⚙️ Select range filter:*", list_to_choose,
                             key="key_selected_range_filter")
 
                     if selected_range_filter != "Select range":
@@ -901,7 +899,7 @@ with tab2:
                     with col1a:
                         list_to_choose = sorted(list(superproperty_dict))
                         list_to_choose.insert(0, "Select superproperty")
-                        selected_superproperty_filter = st.selectbox("🔻 Select superproperty filter:*", list_to_choose,
+                        selected_superproperty_filter = st.selectbox("⚙️ Select superproperty filter:*", list_to_choose,
                             key="key_selected_superproperty_filter")
 
 
@@ -939,7 +937,7 @@ with tab2:
                             "owl: AnnotationProperty": "http://www.w3.org/2002/07/owl#AnnotationProperty"}
                         list_to_choose = list(property_type_dict)
                         list_to_choose.insert(0, "Select type")
-                        selected_property_type = st.selectbox("🔻 Select property type:", list_to_choose,
+                        selected_property_type = st.selectbox("⚙️ Select property type:", list_to_choose,
                             key="key_selected_property_type")
 
                     if selected_property_type != "Select type":
@@ -965,7 +963,7 @@ with tab2:
                         col1a, col1b = st.columns([2, 1])
                     with col1a:
                         annotation_options = ["Select annotation", "Has comment", "Has label", "Has comment or label"]
-                        selected_annotation_filter = st.selectbox("🔻 Filter by annotation presence (optional):", annotation_options,
+                        selected_annotation_filter = st.selectbox("⚙️ Filter by annotation presence (optional):", annotation_options,
                             key="key_selected_property_annotation_filter")
 
                     if selected_annotation_filter != "Select annotation":

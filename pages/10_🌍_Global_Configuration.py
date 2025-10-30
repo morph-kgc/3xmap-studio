@@ -365,7 +365,7 @@ with tab1:
                 with col1:
                     overwrite_g_mapping_and_session_checkbox = st.checkbox(
                         f"""🗑️ Start fresh: remove previously loaded ontologies and data sources""",
-                        key="key_overwrite_g_mapping_and_session_checkbox_new")
+                        value=True, key="key_overwrite_g_mapping_and_session_checkbox_new")
             else:
                 overwrite_g_mapping_and_session_checkbox = False
 
@@ -458,7 +458,7 @@ with tab1:
                 with col1:
                     overwrite_g_mapping_and_session_checkbox = st.checkbox(
                         f"""🗑️ Start fresh: remove previously loaded ontologies and data sources""",
-                        key="key_overwrite_g_mapping_and_session_checkbox_existing")
+                        value=True, key="key_overwrite_g_mapping_and_session_checkbox_existing")
             else:
                 overwrite_g_mapping_and_session_checkbox = False
             with col1:
@@ -485,7 +485,7 @@ with tab1:
                 with col1a:
                     overwrite_g_mapping_and_session_checkbox = st.checkbox(
                         f"""🗑️ Start fresh: remove previously loaded ontologies and data sources""",
-                        key="key_overwrite_g_mapping_and_session_checkbox_existing")
+                        value=True, key="key_overwrite_g_mapping_and_session_checkbox_existing")
             else:
                 overwrite_g_mapping_and_session_checkbox = False
 
@@ -869,7 +869,7 @@ with tab2:
                     with col1a:
                         list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
                         list_to_choose.insert(0, "Select ontology")
-                        ontology_filter_for_ns = st.selectbox("🔻 Filter by ontology (optional):", list_to_choose,
+                        ontology_filter_for_ns = st.selectbox("⚙️ Filter by ontology (optional):", list_to_choose,
                             key="key_ontology_filter_for_ns")
 
                     if ontology_filter_for_ns == "Select ontology":

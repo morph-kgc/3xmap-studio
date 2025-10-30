@@ -294,9 +294,9 @@ def save_sm_template():   #function to save subject map (template option)
     st.session_state["g_mapping"].add((sm_iri, RR.template, Literal(sm_template)))
     if add_subject_class_option != "No Class":
         for subject_class_iri in st.session_state["multiple_subject_class_list"]:
-            st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
+            st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
     if add_sm_graph_map_option == "Add Graph Map" and subject_graph:
-        st.session_state["g_mapping"].add((sm_iri, RR["graph"], subject_graph))
+        st.session_state["g_mapping"].add((sm_iri, RML["graph"], subject_graph))
     if sm_term_type_template == "🌐 IRI":
         st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.IRI))
     elif sm_term_type_template == "👻 BNode":
@@ -326,9 +326,9 @@ def save_sm_constant():   #function to save subject map (constant option)
     st.session_state["g_mapping"].add((sm_iri, RR.constant, sm_constant_iri))
     if add_subject_class_option != "No Class":
         for subject_class_iri in st.session_state["multiple_subject_class_list"]:
-            st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
+            st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
     if add_sm_graph_map_option == "Add Graph Map" and subject_graph:
-        st.session_state["g_mapping"].add((sm_iri, RR["graph"], subject_graph))
+        st.session_state["g_mapping"].add((sm_iri, RML["graph"], subject_graph))
     st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.IRI))
     # store information____________________
     st.session_state["last_added_sm_list"].insert(0, [sm_iri, tm_label_for_sm])
@@ -351,9 +351,9 @@ def save_sm_reference():   #function to save subject map (reference option)
     st.session_state["g_mapping"].add((sm_iri, RML.reference, Literal(sm_column_name)))    #HERE change to RR.column in R2RML
     if add_subject_class_option != "No Class":
         for subject_class_iri in st.session_state["multiple_subject_class_list"]:
-            st.session_state["g_mapping"].add((sm_iri, RR["class"], subject_class_iri))
+            st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
     if add_sm_graph_map_option == "Add Graph Map" and subject_graph:
-        st.session_state["g_mapping"].add((sm_iri, RR["graph"], subject_graph))
+        st.session_state["g_mapping"].add((sm_iri, RML["graph"], subject_graph))
     if sm_term_type_reference == "🌐 IRI":
         st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.IRI))
     elif sm_term_type_reference == "👻 BNode":
@@ -1351,7 +1351,7 @@ with tab2:
                         with col1a:
                             list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
                             list_to_choose.insert(0, "Select ontology")
-                            ontology_filter_for_subject_class = st.selectbox("🔻 Filter by ontology (optional):",
+                            ontology_filter_for_subject_class = st.selectbox("⚙️ Filter by ontology (optional):",
                                 list_to_choose, key="key_ontology_filter_for_subject_class")
 
                         if ontology_filter_for_subject_class == "Select ontology":
@@ -1386,7 +1386,7 @@ with tab2:
                         with col1a:
                             superclass_list = sorted(superclass_dict.keys())
                             superclass_list.insert(0, "Select a superclass")
-                            superclass = st.selectbox("🔻 Filter by superclass (opt):", superclass_list,
+                            superclass = st.selectbox("⚙️ Filter by superclass (opt):", superclass_list,
                                 key="key_superclass")   #superclass label
                         if superclass != "Select a superclass":   # a superclass has been selected (filter)
                             classes_in_superclass_dict[superclass] = superclass_dict[superclass]
@@ -1465,7 +1465,7 @@ with tab2:
                             with col1a:
                                 list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
                                 list_to_choose.insert(0, "Select ontology")
-                                ontology_filter_for_subject_class = st.selectbox("🔻 Filter by ontology (optional):",
+                                ontology_filter_for_subject_class = st.selectbox("⚙️ Filter by ontology (optional):",
                                     list_to_choose, key="key_ontology_filter_for_subject_class")
 
                             if ontology_filter_for_subject_class == "Select ontology":
@@ -1500,7 +1500,7 @@ with tab2:
                             with col1a:
                                 list_to_choose = sorted(superclass_dict.keys())
                                 list_to_choose.insert(0, "Select a superclass")
-                                superclass = st.selectbox("🔻 Filter by superclass (optional):", list_to_choose,
+                                superclass = st.selectbox("⚙️ Filter by superclass (optional):", list_to_choose,
                                     key="key_superclass")   #superclass label
                             if superclass != "Select a superclass":   # a superclass has been selected (filter)
                                 classes_in_superclass_dict[superclass] = superclass_dict[superclass]
@@ -1873,9 +1873,9 @@ with tab3:
 
             # PREDICATE
             if st.session_state["g_ontology_components_dict"]:
-                ontology_p_list = utils.get_ontology_defined_p()
+                ontology_p_dict = utils.get_ontology_properties_dict(st.session_state["g_ontology"])
 
-                if ontology_p_list:   # if the ontology includes at least one predicate
+                if ontology_p_dict:   # if the ontology includes at least one predicate
                     p_type_option_list = ["🧩 Ontology predicate", "🚫 Predicate outside ontology"]
                     with col1b:
                         p_type = st.selectbox("🖱️ Select an option:*", p_type_option_list,
@@ -1894,7 +1894,7 @@ with tab3:
                     with col1a:
                         list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
                         list_to_choose.insert(0, "Select ontology")
-                        ontology_filter_for_predicate = st.selectbox("🔻 Filter predicate by ontology (optional):",
+                        ontology_filter_for_predicate = st.selectbox("⚙️ Filter predicate by ontology (optional):",
                             list_to_choose, key="key_ontology_filter_for_predicate")
 
                     if ontology_filter_for_predicate == "Select ontology":
@@ -1908,8 +1908,7 @@ with tab3:
                 else:
                     ontology_filter_for_predicate = st.session_state["g_ontology"]
 
-                ontology_p_list = utils.get_ontology_component_defined_p(ontology_filter_for_predicate)
-                ontology_p_dict = {split_uri(p)[1]: p for p in ontology_p_list}
+                ontology_p_dict = utils.get_ontology_properties_dict(ontology_filter_for_predicate)
 
                 with col1b:
                     list_to_choose = sorted(ontology_p_dict.keys())
