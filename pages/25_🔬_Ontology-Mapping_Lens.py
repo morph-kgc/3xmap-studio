@@ -95,15 +95,132 @@ with tab1:
         with col1:
             col1a, col1b, col1c, col1d = st.columns([1,1,0.5,0.5])
         with col1a:
-            utils.get_mapping_composition_by_class_donut_chart()
+            class_flag = utils.get_mapping_composition_by_class_donut_chart()
         with col1b:
-            utils.get_mapping_composition_by_property_donut_chart()
+            property_flag = utils.get_mapping_composition_by_property_donut_chart()
         with col1d:
             utils.get_tm_number_metric()
             utils.get_rules_number_metric()
+        if class_flag or property_flag:
+            with col2b:
+                st.markdown(f"""<div class="info-message-gray">
+                        🧮 Composition calculated with the number of rules which use the class or property.
+                    </div>""", unsafe_allow_html=True)
 
-        # st.write("HERE", utils.get_ontology_used_classes_count_by_rules_dict(st.session_state["g_ontology"]))
-        # st.write("HERE", utils.get_ontology_used_classes_count_dict(st.session_state["g_ontology"]))
+#________________________________________________
+# ONTOLOGY COVERAGE - PROPERTIES
+with tab2:
+    st.write("")
+    st.write("")
+
+    col1, col2 = st.columns([2,1.5])
+
+    with col2:
+        col2a,col2b = st.columns([1,2])
+    with col2b:
+        utils.get_corner_status_message()
+
+    if not st.session_state["g_ontology"]:
+        with col1:
+            st.markdown(f"""<div class="error-message">
+                ❌ You need to import an ontology from the
+                <b>Ontologies</b> page <small>(Import Ontology pannel).</small>
+            </div>""", unsafe_allow_html=True)
+
+    else:
+
+        #PURPLE HEADING - ONTOLOGY COVERAGE
+        with col1:
+            st.markdown("""<div class="purple-heading">
+                    📈 Ontology Coverage
+                </div>""", unsafe_allow_html=True)
+            st.write("")
+
+        with col2b:
+            st.markdown(f"""<div class="info-message-gray">
+                    🧮 Property frequency is the number of times it is used in a rule.
+                </div>""", unsafe_allow_html=True)
+
+        with col1:
+            col1a, col1b, col1c = st.columns(3)
+
+            with col1a:
+                list_to_choose = ["📊 Stats", "📐Rules", "ℹ️ Information"]
+                selected_property_search = st.selectbox("🖱️ Select an option:*", list_to_choose,
+                    key="key_property_search")
+
+            # Filter by ontology
+            with col1b:
+                list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
+                if len(list_to_choose) > 1:
+                    list_to_choose.insert(0, "No filter")
+                ontology_filter_for_lens_tag = st.selectbox("⚙️ Filter by ontology:",
+                    list_to_choose, key="key_ontology_filter_for_lens_property")
+
+            if ontology_filter_for_lens_tag == "No filter":
+                ontology_filter_for_lens = st.session_state["g_ontology"]
+            else:
+                for ont_label, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
+                    if ont_tag == ontology_filter_for_lens_tag:
+                        ontology_filter_for_lens = st.session_state["g_ontology_components_dict"][ont_label]
+                        break
+
+            # Superproperty filter
+            superproperty_dict = utils.get_ontology_superproperty_dict(ontology_filter_for_lens)
+            properties_in_superpropery_dict = {}
+            with col1c:
+                superproperty_list = sorted(superproperty_dict.keys())
+                superproperty_list.insert(0, "No filter")
+                superproperty_filter_for_lens_label = st.selectbox("⚙️ Filter by superproperty:", superproperty_list,
+                    key="key_superproperty")   #superproperty label
+
+            if superproperty_filter_for_lens_label != "No filter":   # a superproperty has been selected (filter)
+                superproperty_filter_for_lens = superproperty_dict[superproperty_filter_for_lens_label] #we get the superproperty iri
+            else:
+                superproperty_filter_for_lens = None
+
+            if selected_property_search == "📊 Stats":
+
+                with col1:
+                    st.write("_____")
+                    col1a, col1b, col1c, col1d, col1e = st.columns([1,1.4,1.4,0.2,1.4])
+                with col1a:
+                    utils.get_used_properties_metric(ontology_filter_for_lens, superproperty_filter=superproperty_filter_for_lens)
+                with col1b:
+                    utils.get_average_property_frequency_metric(ontology_filter_for_lens, superproperty_filter=superproperty_filter_for_lens)
+                with col1c:
+                    utils.get_average_property_frequency_metric(ontology_filter_for_lens, superproperty_filter=superproperty_filter_for_lens, type="all_properties")
+                with col1e:
+                    inner_html = ""
+                    if ontology_filter_for_lens_tag != "No filter":
+                        inner_html += f"""🧩 Ontology:<br><span style="padding-left:20px;">
+                            <b style="color:#F63366;">{ontology_filter_for_lens_tag}</b></span><br>"""
+                    if superproperty_filter_for_lens_label != "No filter":
+                        inner_html += f"""🏷️ Superproperty:<br><span style="padding-left:20px;">
+                            <b style="color:#F63366;">{superproperty_filter_for_lens_label}</b></span><br>"""
+                    if inner_html:
+                        st.write("")
+                        st.markdown(f"""<div class="gray-preview-message">
+                                {inner_html}
+                            </div>""", unsafe_allow_html=True)
+
+
+                with col1:
+                    col1a, col1b = st.columns([1,2])
+                with col1a:
+                    utils.get_used_properties_donut_chart(ontology_filter_for_lens, superproperty_filter=superproperty_filter_for_lens)
+
+
+                ontology_used_properties_count_dict = utils.get_property_dictionaries_filtered_by_superproperty(ontology_filter_for_lens, superproperty_filter=superproperty_filter_for_lens)[2]
+                list_to_choose = list(ontology_used_properties_count_dict.keys())
+                if list_to_choose:
+                    with col1b:
+                        selected_properties = st.multiselect("🖱️ Select ontology properties to display (opt):", list_to_choose,
+                            key="key_selected_properties")
+
+                        utils.get_property_frequency_bar_plot(ontology_filter_for_lens, selected_properties, superproperty_filter=superproperty_filter_for_lens)
+
+
 #________________________________________________
 # ONTOLOGY COVERAGE - CLASSES
 with tab3:
@@ -133,6 +250,11 @@ with tab3:
                 </div>""", unsafe_allow_html=True)
             st.write("")
 
+        with col2b:
+            st.markdown(f"""<div class="info-message-gray">
+                    🧮 Class frequency is the number of times it is used in a rule.
+                </div>""", unsafe_allow_html=True)
+
         with col1:
             col1a, col1b, col1c = st.columns(3)
 
@@ -147,7 +269,7 @@ with tab3:
                 if len(list_to_choose) > 1:
                     list_to_choose.insert(0, "No filter")
                 ontology_filter_for_lens_tag = st.selectbox("⚙️ Filter by ontology:",
-                    list_to_choose, key="key_ontology_filter_for_lens")
+                    list_to_choose, key="key_ontology_filter_for_lens_class")
 
             if ontology_filter_for_lens_tag == "No filter":
                 ontology_filter_for_lens = st.session_state["g_ontology"]
@@ -179,9 +301,9 @@ with tab3:
                 with col1a:
                     utils.get_used_classes_metric(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens)
                 with col1b:
-                    utils.get_average_class_use_metric(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens)
+                    utils.get_average_class_frequency_metric(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens)
                 with col1c:
-                    utils.get_class_mapping_density_metric(ontology_filter_for_lens)
+                    utils.get_average_class_frequency_metric(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens, type="all_classes")
                 with col1e:
                     inner_html = ""
                     if ontology_filter_for_lens_tag != "No filter":
