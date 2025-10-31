@@ -77,20 +77,20 @@ if "mkgc_g_mappings_dict" not in st.session_state:
     st.session_state["mkgc_g_mappings_dict"] = {}
 if "manual_config_enabled_ok_flag" not in st.session_state:
     st.session_state["manual_config_enabled_ok_flag"] = False
-if "ds_for_mkgc_saved_ok_flag" not in st.session_state:
-    st.session_state["ds_for_mkgc_saved_ok_flag"] = False
-if "ds_for_mkgc_removed_ok_flag" not in st.session_state:
-    st.session_state["ds_for_mkgc_removed_ok_flag"] = False
-if "configuration_for_mkgc_saved_ok_flag" not in st.session_state:
-    st.session_state["configuration_for_mkgc_saved_ok_flag"] = False
-if "configuration_for_mkgc_removed_ok_flag" not in st.session_state:
-    st.session_state["configuration_for_mkgc_removed_ok_flag"] = False
+if "ds_for_mkgcgc_saved_ok_flag" not in st.session_state:
+    st.session_state["ds_for_mkgcgc_saved_ok_flag"] = False
+if "ds_for_mkgcgc_removed_ok_flag" not in st.session_state:
+    st.session_state["ds_for_mkgcgc_removed_ok_flag"] = False
+if "configuration_for_mkgcgc_saved_ok_flag" not in st.session_state:
+    st.session_state["configuration_for_mkgcgc_saved_ok_flag"] = False
+if "configuration_for_mkgcgc_removed_ok_flag" not in st.session_state:
+    st.session_state["configuration_for_mkgcgc_removed_ok_flag"] = False
 if "additional_mapping_added_ok_flag" not in st.session_state:
     st.session_state["additional_mapping_added_ok_flag"] = False
 if "key_mapping_uploader" not in st.session_state:
     st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
-if "additional_mapping_for_mkgc_saved_ok_flag" not in st.session_state:
-    st.session_state["additional_mapping_for_mkgc_saved_ok_flag"] = False
+if "additional_mapping_for_mkgcgc_saved_ok_flag" not in st.session_state:
+    st.session_state["additional_mapping_for_mkgcgc_saved_ok_flag"] = False
 if "additional_mapping_removed_ok_flag" not in st.session_state:
     st.session_state["additional_mapping_removed_ok_flag_tab2"] = False
 if "config_file_reset_ok_flag_tab2" not in st.session_state:
@@ -114,10 +114,17 @@ def autoconfig():
     base_label = "DataSource"
     used_data_source_labels_list = []
     # autoconfig SQL data sources_____________________________________
-    # for ds in st.session_state["db_connections_dict"]:
-    #     st.session_state["mkgc_config"][mkgc_ds_label] = {"db_url": db_url,
-    #         "mappings": mkgc_mappings_str_for_sql}
-    # autoconfig tabylar data sources___________________________________
+    for ds in st.session_state["db_connections_dict"]:
+        i = 1
+        while f"{base_label}{i}" in used_data_source_labels_list:
+            i += 1
+        mkgc_ds_label = f"{base_label}{i}"
+        used_data_source_labels_list.append(mkgc_ds_label)
+        db_url = utils.get_db_url_str(ds)
+        mkgc_mappings_str = str(os.path.join(temp_folder_path, st.session_state["g_label"] + ".ttl"))
+        st.session_state["mkgc_config"][mkgc_ds_label] = {"db_url": db_url,
+            "mappings": mkgc_mappings_str}
+    # autoconfig TABULAR data sources___________________________________
     for ds_label in st.session_state["ds_files_dict"]:
         i = 1
         while f"{base_label}{i}" in used_data_source_labels_list:
@@ -125,9 +132,9 @@ def autoconfig():
         mkgc_ds_label = f"{base_label}{i}"
         used_data_source_labels_list.append(mkgc_ds_label)
         mkgc_tab_ds_file_path = os.path.join(temp_folder_path, ds_label)
-        mkgc_mappings_str_for_tab = str(os.path.join(temp_folder_path, st.session_state["g_label"] + ".ttl"))
+        mkgc_mappings_str = str(os.path.join(temp_folder_path, st.session_state["g_label"] + ".ttl"))
         st.session_state["mkgc_config"][mkgc_ds_label] = {"file_path": mkgc_tab_ds_file_path,
-            "mappings": mkgc_mappings_str_for_tab}
+            "mappings": mkgc_mappings_str}
     # store information_________________________
     st.session_state["autoconfig_active_flag"] = True
     st.session_state["autoconfig_generated_ok_flag"] = True
@@ -160,34 +167,37 @@ def enable_manual_config():
     st.session_state["autoconfig_active_flag"] = False
     st.session_state["manual_config_enabled_ok_flag"] = True
 
-def save_sql_ds_for_mk():
+def save_sql_ds_for_mkgc():
     # add to config dict___________________
     st.session_state["mkgc_config"][mkgc_ds_label] = {"db_url": db_url,
         "mappings": mkgc_mappings_str_for_sql}
     # store information________________________
-    st.session_state["ds_for_mkgc_saved_ok_flag"] = True
+    st.session_state["ds_for_mkgcgc_saved_ok_flag"] = True
     # reset fields__________________________
     st.session_state["key_mkgc_ds_label"] = ""
 
-def save_tab_ds_for_mk():
+def save_tab_ds_for_mkgc():
     # add to config dict___________________
     st.session_state["mkgc_config"][mkgc_ds_label] = {"file_path": mkgc_tab_ds_file_path,
         "mappings": mkgc_mappings_str_for_tab}
     # store information________________________
-    st.session_state["ds_for_mkgc_saved_ok_flag"] = True
+    st.session_state["ds_for_mkgcgc_saved_ok_flag"] = True
     # reset fields__________________________
     st.session_state["key_mkgc_ds_label"] = ""
 
-def remove_ds_for_mk():
+def remove_ds_for_mkgc():
     # remove from config dict___________________
-    for ds in ds_for_mkgc_to_remove_list:
+    for ds in ds_for_mkgcgc_to_remove_list:
         del st.session_state["mkgc_config"][ds]
     # store information________________________
-    st.session_state["ds_for_mkgc_removed_ok_flag"] = True
+    st.session_state["ds_for_mkgcgc_removed_ok_flag"] = True
     # reset fields__________________________
-    st.session_state["key_configure_ds_option"] = "✚ Add"
+    if st.session_state["db_connections_dict"]:
+        st.session_state["key_mkgc_ds_type"] = "📊 SQL Database"
+    else:
+        st.session_state["key_mkgc_ds_type"] = "🛢️ Tabular data"
 
-def save_options_for_mk():
+def save_options_for_mkgc():
     #create section_______________
     if not st.session_state["mkgc_config"].has_section("CONFIGURATION"):
         st.session_state["mkgc_config"].add_section("CONFIGURATION")
@@ -251,19 +261,19 @@ def save_options_for_mk():
             if st.session_state["mkgc_config"].has_option("CONFIGURATION", "output_kafka_topic"):
                 st.session_state["mkgc_config"].remove_option("CONFIGURATION", "output_kafka_topic")
     # store information________________________
-    st.session_state["configuration_for_mkgc_saved_ok_flag"] = True
+    st.session_state["configuration_for_mkgcgc_saved_ok_flag"] = True
     # reset fields__________________________
-    st.session_state["key_configure_options_for_mk"] = "🔒 Keep options"
+    st.session_state["key_configure_options_for_mkgc"] = "🔒 Keep options"
 
-def remove_options_for_mk():
+def remove_options_for_mkgc():
     # remove from config dict___________________
     del st.session_state["mkgc_config"]["CONFIGURATION"]
     # store information________________________
-    st.session_state["configuration_for_mkgc_removed_ok_flag"] = True
+    st.session_state["configuration_for_mkgcgc_removed_ok_flag"] = True
     # reset fields__________________________
-    st.session_state["key_configure_options_for_mk"] = "🚫 No options"
+    st.session_state["key_configure_options_for_mkgc"] = "🚫 No options"
 
-def save_mapping_for_mk():
+def save_mapping_for_mkgc():
     # store information________________________
     st.session_state["mkgc_g_mappings_dict"][additional_mapping_label] = uploaded_mapping
     st.session_state["additional_mapping_added_ok_flag"] = True
@@ -271,14 +281,14 @@ def save_mapping_for_mk():
     st.session_state["key_additional_mapping_label"] = ""
     st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
 
-def save_mapping_for_mkgc_from_url():
+def save_mapping_for_mkgcgc_from_url():
     # store information________________________
     st.session_state["mkgc_g_mappings_dict"][additional_mapping_label] = mapping_url
     st.session_state["additional_mapping_added_ok_flag"] = True
     # reset fields_______________________________
     st.session_state["key_additional_mapping_label"] = ""
 
-def remove_additional_mapping_for_mk():
+def remove_additional_mapping_for_mkgc():
     # remove________________________
     for mapping in mappings_to_remove_list:
         del st.session_state["mkgc_g_mappings_dict"][mapping]
@@ -422,7 +432,7 @@ with tab1:
         st.rerun()
 
 
-    # PURPLE HEADING - ADD DATA SOURCE
+    # PURPLE HEADING - AUTOMATIC CONFIGURATION
     with col1:
         st.markdown("""<div class="purple-heading">
                 🤖 Automatic Configuration
@@ -562,36 +572,49 @@ with tab2:
         with col1:
             col1a, col1b = st.columns([1.5,1])
 
-        if st.session_state["ds_for_mkgc_saved_ok_flag"]:
+        if st.session_state["ds_for_mkgcgc_saved_ok_flag"]:
             with col1a:
                 st.write("")
                 st.markdown(f"""<div class="success-message-flag">
                     ✅ The <b>data source</b> has been saved!
                 </div>""", unsafe_allow_html=True)
-            st.session_state["ds_for_mkgc_saved_ok_flag"] = False
+            st.session_state["ds_for_mkgcgc_saved_ok_flag"] = False
             time.sleep(st.session_state["success_display_time"])
             st.rerun()
 
-        if st.session_state["ds_for_mkgc_removed_ok_flag"]:
+        if st.session_state["ds_for_mkgcgc_removed_ok_flag"]:
             with col1a:
                 st.write("")
                 st.markdown(f"""<div class="success-message-flag">
                     ✅ The <b>data source</b> has been removed!
                 </div>""", unsafe_allow_html=True)
-            st.session_state["ds_for_mkgc_removed_ok_flag"] = False
+            st.session_state["ds_for_mkgcgc_removed_ok_flag"] = False
             time.sleep(st.session_state["success_display_time"])
             st.rerun()
 
 
-        if list(st.session_state["mkgc_config"].keys()) != ["DEFAULT"] and list(st.session_state["mkgc_config"].keys()) != ["DEFAULT", "CONFIGURATION"]:
-            with col1b:
-                list_to_choose = ["✚ Add", "🗑️ Remove"]
-                configure_ds_option = st.radio("🖱️ Select an option:*", list_to_choose,
-                    horizontal=True, key="key_configure_ds_option")
+        if not st.session_state["db_connections_dict"] and not st.session_state["ds_files_dict"]:
+            with col1a:
+                st.markdown(f"""<div class="error-message">
+                    ❌ There are <b>no data sources</b> available.
+                    <small>You can add them in the <b>📊 SQL Databases</b>
+                    and the <b>🛢️ Tabular data</b> pages.</small>
+                </div>""", unsafe_allow_html=True)
+            mkgc_ds_type = ""
+        elif not st.session_state["ds_files_dict"]:
+            list_to_choose = ["📊 SQL Database"]
+        elif not st.session_state["db_connections_dict"]:
+            list_to_choose = ["🛢️ Tabular data"]
         else:
-            configure_ds_option = "✚ Add"
+            list_to_choose = ["📊 SQL Database", "🛢️ Tabular data"]
+        if list(st.session_state["mkgc_config"].keys()) != ["DEFAULT"] and list(st.session_state["mkgc_config"].keys()) != ["DEFAULT", "CONFIGURATION"]:
+            list_to_choose.append("🗑️ Remove")
+        with col1b:
+            st.write("")
+            mkgc_ds_type = st.radio("🖱️ Select an option:*", list_to_choose,
+                label_visibility="collapsed", key="key_mkgc_ds_type")
 
-        if configure_ds_option == "✚ Add":
+        if mkgc_ds_type != "🗑️ Remove":
 
             with col1a:
                 mkgc_ds_label = st.text_input("⌨️ Enter data source label:*", key="key_mkgc_ds_label")
@@ -618,24 +641,6 @@ with tab2:
                         </div>""", unsafe_allow_html=True)
 
                 else:
-
-                    if not st.session_state["db_connections_dict"] and not st.session_state["ds_files_dict"]:
-                        with col1a:
-                            st.markdown(f"""<div class="error-message">
-                                ❌ There are <b>no data sources</b> available.
-                                <small>You can add them in the <b>📊 SQL Databases</b>
-                                and the <b>🛢️ Tabular data</b> pages.</small>
-                            </div>""", unsafe_allow_html=True)
-                        mkgc_ds_type = ""
-                    elif not st.session_state["ds_files_dict"]:
-                        mkgc_ds_type = "📊 SQL Database"
-                    elif not st.session_state["db_connections_dict"]:
-                        mkgc_ds_type = "🛢️ Tabular data"
-                    else:
-                        with col1b:
-                            st.write("")
-                            mkgc_ds_type = st.radio("🖱️ Select an option:*", ["📊 SQL Database", "🛢️ Tabular data"],
-                                label_visibility="collapsed", key="key_mkgc_ds_type")
 
                     if mkgc_ds_type == "📊 SQL Database":
 
@@ -700,7 +705,7 @@ with tab2:
 
                         if mkgc_sql_ds != "Select data source" and mkgc_mappings_list_for_sql:
                             with col1a:
-                                st.button("Save", key="save_sql_ds_for_mkgc_button", on_click=save_sql_ds_for_mk)
+                                st.button("Save", key="save_sql_ds_for_mkgcgc_button", on_click=save_sql_ds_for_mkgc)
 
                     if mkgc_ds_type == "🛢️ Tabular data":
 
@@ -752,20 +757,20 @@ with tab2:
 
                         if mkgc_tab_ds_file != "Select data source" and mkgc_mappings_list_for_tab:
                             with col1a:
-                                st.button("Save", key="save_tab_ds_for_mkgc_button", on_click=save_tab_ds_for_mk)
+                                st.button("Save", key="save_tab_ds_for_mkgcgc_button", on_click=save_tab_ds_for_mkgc)
 
             if list(st.session_state["mkgc_config"].keys()) == ["DEFAULT"] or list(st.session_state["mkgc_config"].keys()) == ["DEFAULT", "CONFIGURATION"]:
-                if st.session_state["ds_for_mkgc_removed_ok_flag"]:
+                if st.session_state["ds_for_mkgcgc_removed_ok_flag"]:
                     with col1a:
                         st.write("")
                         st.markdown(f"""<div class="success-message-flag">
                             ✅ The <b>data source/s</b> have been removed!
                         </div>""", unsafe_allow_html=True)
-                    st.session_state["ds_for_mkgc_removed_ok_flag"] = False
+                    st.session_state["ds_for_mkgcgc_removed_ok_flag"] = False
                     time.sleep(st.session_state["success_display_time"])
                     st.rerun()
 
-        if configure_ds_option == "🗑️ Remove":
+        if mkgc_ds_type == "🗑️ Remove":
 
             with col1a:
                 list_to_choose = list(reversed(list(st.session_state["mkgc_config"])))
@@ -775,14 +780,14 @@ with tab2:
                 if len(list_to_choose) > 1:
                     list_to_choose.insert(0, "Select all")
 
-                ds_for_mkgc_to_remove_list = st.multiselect("🖱️ Select data sources:*", list_to_choose,
-                    key="key_ds_for_mkgc_to_remove_list")
+                ds_for_mkgcgc_to_remove_list = st.multiselect("🖱️ Select data sources:*", list_to_choose,
+                    key="key_ds_for_mkgcgc_to_remove_list")
 
-                if "Select all" in ds_for_mkgc_to_remove_list:
-                    ds_for_mkgc_to_remove_list = list(reversed(list(st.session_state["mkgc_config"])))
-                    ds_for_mkgc_to_remove_list.remove("DEFAULT")
-                    if "CONFIGURATION" in ds_for_mkgc_to_remove_list:
-                        ds_for_mkgc_to_remove_list.remove("CONFIGURATION")
+                if "Select all" in ds_for_mkgcgc_to_remove_list:
+                    ds_for_mkgcgc_to_remove_list = list(reversed(list(st.session_state["mkgc_config"])))
+                    ds_for_mkgcgc_to_remove_list.remove("DEFAULT")
+                    if "CONFIGURATION" in ds_for_mkgcgc_to_remove_list:
+                        ds_for_mkgcgc_to_remove_list.remove("CONFIGURATION")
                     with col1b:
                         st.markdown(f"""<div class="warning-message">
                             ⚠️ You are deleting <b>all Data Sources</b>.
@@ -793,15 +798,15 @@ with tab2:
                         "🔒 I am sure I want to remove all Data Sources",
                         key="key_remove_all_ds_checkbox")
                         if remove_all_ds_checkbox:
-                            st.button("Remove", key="remove_ds_for_mkgc_button", on_click=remove_ds_for_mk)
+                            st.button("Remove", key="remove_ds_for_mkgcgc_button", on_click=remove_ds_for_mkgc)
 
-                elif ds_for_mkgc_to_remove_list:
+                elif ds_for_mkgcgc_to_remove_list:
                     with col1a:
                         remove_ds_checkbox = st.checkbox(
                         "🔒 I am sure I want to remove the selected Data Source/s",
                         key="key_remove_ds_checkbox")
                         if remove_ds_checkbox:
-                            st.button("Remove", key="remove_ds_for_mkgc_button", on_click=remove_ds_for_mk)
+                            st.button("Remove", key="remove_ds_for_mkgcgc_button", on_click=remove_ds_for_mkgc)
 
 
 
@@ -815,42 +820,42 @@ with tab2:
         with col1:
             col1a, col1b = st.columns(2)
 
-        if st.session_state["configuration_for_mkgc_saved_ok_flag"]:
+        if st.session_state["configuration_for_mkgcgc_saved_ok_flag"]:
             with col1a:
                 st.write("")
                 st.markdown(f"""<div class="success-message-flag">
                     ✅ The <b>configuration</b> has been saved!
                 </div>""", unsafe_allow_html=True)
-            st.session_state["configuration_for_mkgc_saved_ok_flag"] = False
+            st.session_state["configuration_for_mkgcgc_saved_ok_flag"] = False
             time.sleep(st.session_state["success_display_time"])
             st.rerun()
 
-        if st.session_state["configuration_for_mkgc_removed_ok_flag"]:
+        if st.session_state["configuration_for_mkgcgc_removed_ok_flag"]:
             with col1a:
                 st.write("")
                 st.markdown(f"""<div class="success-message-flag">
                     ✅ The <b>configuration</b> has been removed!
                 </div>""", unsafe_allow_html=True)
-            st.session_state["configuration_for_mkgc_removed_ok_flag"] = False
+            st.session_state["configuration_for_mkgcgc_removed_ok_flag"] = False
             time.sleep(st.session_state["success_display_time"])
             st.rerun()
 
 
         with col1:
             if st.session_state["mkgc_config"].has_section("CONFIGURATION"):
-                configure_options_for_mk = st.radio("🖱️ Select an option:*",
+                configure_options_for_mkgc = st.radio("🖱️ Select an option:*",
                     ["🔒 Keep options", "✏️ Modify options", "🗑️ Remove options"],
                     horizontal=True, label_visibility="collapsed",
-                    key="key_configure_options_for_mk")
+                    key="key_configure_options_for_mkgc")
             else:
-                configure_options_for_mk = st.radio("🖱️ Select an option:*",
+                configure_options_for_mkgc = st.radio("🖱️ Select an option:*",
                     ["🚫 No options", "✏️ Add options"],
                     horizontal=True, label_visibility="collapsed",
-                    key="key_configure_options_for_mk")
+                    key="key_configure_options_for_mkgc")
 
-        if configure_options_for_mk in ["✏️ Modify options", "✏️ Add options"]:
+        if configure_options_for_mkgc in ["✏️ Modify options", "✏️ Add options"]:
 
-            options_for_mkgc_ok_flag = True
+            options_for_mkgcgc_ok_flag = True
 
             with col1:
                 col1a, col1b = st.columns(2)
@@ -871,13 +876,13 @@ with tab2:
                             ❌ <b>Forbidden character</b> in filename.
                             <small> Please, pick a valid filename.</small>
                         </div>""", unsafe_allow_html=True)
-                        options_for_mkgc_ok_flag = False
+                        options_for_mkgcgc_ok_flag = False
                     elif output_filename.endswith("."):
                         st.markdown(f"""<div class="error-message">
                             ❌ <b>Trailing "."</b> in filename.
                             <small> Please, remove it.</small>
                         </div>""", unsafe_allow_html=True)
-                        options_for_mkgc_ok_flag = False
+                        options_for_mkgcgc_ok_flag = False
                     else:
                         for item in windows_reserved_names:
                             if item == os.path.splitext(output_filename)[0].upper():
@@ -885,9 +890,9 @@ with tab2:
                                     ❌ <b>Reserved filename.</b><br>
                                     <small>Please, pick a different filename.</small>
                                 </div>""", unsafe_allow_html=True)
-                                options_for_mkgc_ok_flag = False
+                                options_for_mkgcgc_ok_flag = False
                                 break  # Stop checking after first match
-                        if options_for_mkgc_ok_flag:
+                        if options_for_mkgcgc_ok_flag:
                             if not os.path.splitext(output_filename)[1]:
                                 st.markdown(f"""<div class="warning-message">
                                     ⚠️ <b>No extension</b> in filename.
@@ -994,7 +999,7 @@ with tab2:
                             ❌ An <b>output Kafka topic</b> must be selected if
                             a <b>output Kafka server</b> is entered.
                         </div>""", unsafe_allow_html=True)
-                        options_for_mkgc_ok_flag = False
+                        options_for_mkgcgc_ok_flag = False
                     else:
                         kafka_topic_forbidden_chars = " /\\:;\"'<>[]{}|^`~?*&%#@=+,\t\n\r"
                         pattern = "[" + re.escape(kafka_topic_forbidden_chars) + "]"
@@ -1003,7 +1008,7 @@ with tab2:
                                 ❌ <b>Forbidden character</b> in output Kafka topic.
                                 <small> Please, pick a valid topic.</small>
                             </div>""", unsafe_allow_html=True)
-                            options_for_mkgc_ok_flag = False
+                            options_for_mkgcgc_ok_flag = False
 
             if output_kafka_server and output_kafka_topic:
                 with col1b:
@@ -1012,17 +1017,17 @@ with tab2:
                         <small> Please check connectivity and provide a valid topic.</small>
                     </div>""", unsafe_allow_html=True)
 
-            if options_for_mkgc_ok_flag:
+            if options_for_mkgcgc_ok_flag:
                 with col1a:
-                    st.button("Save", key="key_save_options_for_mkgc_button", on_click=save_options_for_mk)
+                    st.button("Save", key="key_save_options_for_mkgcgc_button", on_click=save_options_for_mkgc)
 
-        if configure_options_for_mk == "🗑️ Remove options":
+        if configure_options_for_mkgc == "🗑️ Remove options":
             with col1:
-                remove_options_for_mkgc_checkbox = st.checkbox(
+                remove_options_for_mkgcgc_checkbox = st.checkbox(
                 ":gray-badge[⚠️ I am sure I want to remove the Options]",
-                key="key_remove_options_for_mkgc_checkbox")
-                if remove_options_for_mkgc_checkbox:
-                    st.button("Remove", on_click=remove_options_for_mk)
+                key="key_remove_options_for_mkgcgc_checkbox")
+                if remove_options_for_mkgcgc_checkbox:
+                    st.button("Remove", on_click=remove_options_for_mkgc)
 
 
         # PURPLE HEADING - ADDITIONAL MAPPINGS
@@ -1169,8 +1174,8 @@ with tab2:
 
                         if uploaded_mapping_ok_flag:
                             with col1a:
-                                st.button("Save", key="key_save_mapping_for_mkgc_button",
-                                    on_click=save_mapping_for_mk)
+                                st.button("Save", key="key_save_mapping_for_mkgcgc_button",
+                                    on_click=save_mapping_for_mkgc)
 
         elif additional_mapping_source_option == "🌐 URL":
 
@@ -1202,8 +1207,8 @@ with tab2:
                                 </div>""", unsafe_allow_html=True)
 
                         with col1a:
-                            st.button("Save", key="key_save_mapping_for_mkgc_from_url_button",
-                                on_click=save_mapping_for_mkgc_from_url)
+                            st.button("Save", key="key_save_mapping_for_mkgcgc_from_url_button",
+                                on_click=save_mapping_for_mkgcgc_from_url)
 
         if additional_mapping_source_option == "🗑️ Remove":
 
@@ -1234,7 +1239,7 @@ with tab2:
                     "🔒 I am sure I want to delete all mappings",
                     key="key_delete_all_mappings_checkbox")
                     if delete_all_mappings_checkbox:
-                        st.button("Remove", key="key_remove_additional_mapping_for_mkgc_button", on_click=remove_additional_mapping_for_mk)
+                        st.button("Remove", key="key_remove_additional_mapping_for_mkgcgc_button", on_click=remove_additional_mapping_for_mkgc)
 
             elif mappings_to_remove_list:
                 with col1a:
@@ -1242,7 +1247,7 @@ with tab2:
                     "🔒 I am sure I want to delete the selected mapping/s",
                     key="key_delete_mappings_checkbox")
                     if delete_mappings_checkbox:
-                        st.button("Remove", key="key_remove_additional_mapping_for_mkgc_button", on_click=remove_additional_mapping_for_mk)
+                        st.button("Remove", key="key_remove_additional_mapping_for_mkgcgc_button", on_click=remove_additional_mapping_for_mkgc)
 
 
 
