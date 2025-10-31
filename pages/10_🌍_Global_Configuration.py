@@ -152,6 +152,9 @@ def load_existing_g_mapping():
     # bind required namespaces______________________________
     for prefix, namespace in utils.get_required_ns_dict().items():
         utils.bind_namespace(prefix, namespace)
+    # bind mapping namespaces
+    for prefix, namespace in st.session_state["g_mapping"].namespaces():
+        utils.bind_namespace(prefix, namespace)
     # bind ontology namespaces_____________________________
     ontology_ns_dict = utils.get_ontology_ns_dict()
     for prefix, namespace in ontology_ns_dict.items():
@@ -451,7 +454,7 @@ with tab1:
                 selected_load_file)   #we load the mapping as a candidate (until confirmed)
 
     # A mapping has not been loaded yet__________
-    if not st.session_state["g_label"]:   # a mapping has not been loaded yet
+    if st.session_state["candidate_g_mapping"] and not st.session_state["g_label"]:   # a mapping has not been loaded yet
 
         if valid_mapping_label and selected_load_file:  # after a label and file have been given
             if st.session_state["db_connections_dict"] or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]:
@@ -466,13 +469,12 @@ with tab1:
 
 
     # A mapping is currently loaded__________
-    else:  #a mapping is currently loaded (ask if overwrite or save)
+    elif st.session_state["candidate_g_mapping"] and st.session_state["g_label"]:  #a mapping is currently loaded (ask if overwrite or save)
         if valid_mapping_label and selected_load_file:   #after a label and file have been given
             with col1b:
                 st.markdown(f"""<div class="warning-message">
-                        ⚠️ <b>Mapping {st.session_state["g_label_temp_existing"]} will be imported
-                        and mapping {st.session_state["g_label"]} will be overwritten.</b>
-                        <small>You can export the current mapping or save the session in
+                        ⚠️ Mapping <b>{st.session_state["g_label"]}</b> will be overwritten.
+                        <small>You can export it or save the session in
                         the <b>Save Mapping </b> pannel.</small>
                     </div>""", unsafe_allow_html=True)
 
@@ -1059,7 +1061,7 @@ with tab2:
 
             with col1:
                 st.markdown(f"""<div class="gray-preview-message">
-                        🔒 Base IRI:
+                        🏛️ Base IRI:
                         <span style="font-size:0.92em;"><b>
                         🔗 {st.session_state["structural_ns"][0]}</b> →
                         <b style="color:#F63366;">{st.session_state["structural_ns"][1]}

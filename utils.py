@@ -1057,11 +1057,25 @@ def load_mapping_from_file(f):
             ".nt": "nt", ".n3": "n3", ".trig": "trig", ".trix": "trix"}
         g = Graph()
         content = f.read().decode("utf-8")
-        g.parse(data=content, format=rdf_format_dict[ext])
-        return g
+        try:
+            g.parse(data=content, format=rdf_format_dict[ext])
+            prefixes = re.findall(r"@prefix\s+(\w+):\s+<([^>]+)>", content)
+            for prefix, uri in prefixes:
+                ns = Namespace(uri)
+                g.bind(prefix, ns)
+            return g
+        except:
+            st.markdown(f"""<div class="error-message">
+                ❌ Failed to parse <b>mapping</b>.
+                <small> Please, check your mapping.</small>
+            </div>""", unsafe_allow_html=True)
+            return False
 
     else:
-        raise ValueError(f"Unsupported file extension: {ext}")  # should not happen
+        st.markdown(f"""<div class="error-message">
+            ❌ Unsupported file extension <b>{ext}</b>. # should not happen
+        </div>""", unsafe_allow_html=True)
+        return False
 
 #__________________________________________________
 
