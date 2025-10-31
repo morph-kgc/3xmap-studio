@@ -97,7 +97,7 @@ with tab1:
             tm_dict = utils.get_tm_dict()
             list_to_choose = list(reversed(list(tm_dict)))
             if len(list_to_choose) > 1:
-                selected_tm_for_display_list = st.multiselect("➖ Filter by TriplesMaps (opt):", list_to_choose,
+                selected_tm_for_display_list = st.multiselect("⚙️ Filter by TriplesMaps (opt):", list_to_choose,
                     key="key_selected_tm_for_display_list_1")
             else:
                 selected_tm_for_display_list = []
@@ -114,21 +114,20 @@ with tab1:
             order_clause = st.selectbox("🖱️ Select order (optional):", list_to_choose,
                 key="key_order_clause")
 
-            query = """PREFIX rr: <http://www.w3.org/ns/r2rml#>
-                PREFIX rml: <http://semweb.mmlab.be/ns/rml#>
+            query = """PREFIX rml: <http://w3id.org/rml/>
 
                 SELECT DISTINCT ?tm ?sm ?pom ?om ?subject_value ?predicate ?object_value WHERE {
-                  ?tm rr:subjectMap ?sm .
-                  ?tm rr:predicateObjectMap ?pom .
-                  ?pom rr:predicate ?predicate .
-                  ?pom rr:objectMap ?om .
+                  ?tm rml:subjectMap ?sm .
+                  ?tm rml:predicateObjectMap ?pom .
+                  ?pom rml:predicate ?predicate .
+                  ?pom rml:objectMap ?om .
 
-                  OPTIONAL { ?sm rr:template ?subject_value . }
-                  OPTIONAL { ?sm rr:constant ?subject_value . }
+                  OPTIONAL { ?sm rml:template ?subject_value . }
+                  OPTIONAL { ?sm rml:constant ?subject_value . }
                   OPTIONAL { ?sm rml:reference ?subject_value . }
 
-                  OPTIONAL { ?om rr:template ?object_value . }
-                  OPTIONAL { ?om rr:constant ?object_value . }
+                  OPTIONAL { ?om rml:template ?object_value . }
+                  OPTIONAL { ?om rml:constant ?object_value . }
                   OPTIONAL { ?om rml:reference ?object_value . }
                 }"""
 
@@ -232,9 +231,9 @@ with tab1:
               UNION
               {
                 ?tm a <http://www.w3.org/ns/r2rml#TriplesMap> ;
-                    <http://semweb.mmlab.be/ns/rml#logicalSource> ?logicalSource .
-                OPTIONAL { ?logicalSource <http://semweb.mmlab.be/ns/rml#source> ?source }
-                OPTIONAL { ?logicalSource <http://semweb.mmlab.be/ns/rml#referenceFormulation> ?referenceFormulation }
+                    <http://w3id.org/rml/logicalSource> ?logicalSource .
+                OPTIONAL { ?logicalSource <http://w3id.org/rml/source> ?source }
+                OPTIONAL { ?logicalSource <http://w3id.org/rml/referenceFormulation> ?referenceFormulation }
               }
             }
             """
@@ -325,7 +324,7 @@ with tab1:
                   <http://www.w3.org/ns/r2rml#subjectMap> ?subjectMap .
               OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#template> ?template }}
               OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#constant> ?constant }}
-              OPTIONAL {{ ?subjectMap <http://semweb.mmlab.be/ns/rml#reference> ?reference }}
+              OPTIONAL {{ ?subjectMap <http://w3id.org/rml/reference> ?reference }}
               OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#class> ?class }}
               OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#termType> ?termType }}
               OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#graph> ?graph }}
@@ -442,7 +441,7 @@ with tab1:
                   OPTIONAL {{ ?pom <http://www.w3.org/ns/r2rml#objectMap> ?objectMap }}
                   OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#template> ?template }}
                   OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#constant> ?constant }}
-                  OPTIONAL {{ ?objectMap <http://semweb.mmlab.be/ns/rml#reference> ?reference }}
+                  OPTIONAL {{ ?objectMap <http://w3id.org/rml/reference> ?reference }}
                   OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#termType> ?termType }}
                   OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#datatype> ?datatype }}
                   OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#language> ?language }}
@@ -617,11 +616,11 @@ with tab1:
 
         if selected_incomplete_node_type == "TriplesMaps":
             query = """SELECT DISTINCT ?tm WHERE {
-              {?tm <http://semweb.mmlab.be/ns/rml#logicalSource> ?ls .
+              {?tm <http://w3id.org/rml/logicalSource> ?ls .
                 FILTER NOT EXISTS { ?tm <http://www.w3.org/ns/r2rml#subjectMap> ?sm . }
               }
               UNION
-              {?tm <http://semweb.mmlab.be/ns/rml#logicalSource> ?ls .
+              {?tm <http://w3id.org/rml/logicalSource> ?ls .
                 FILTER NOT EXISTS { ?tm <http://www.w3.org/ns/r2rml#predicateObjectMap> ?pom . }
               }}"""
 
@@ -749,7 +748,7 @@ with tab1:
               }} UNION {{?sm <http://www.w3.org/ns/r2rml#column> ?column .
               }} UNION {{?sm <http://www.w3.org/ns/r2rml#termType> ?termType .
               }} UNION {{?sm <http://www.w3.org/ns/r2rml#graphMap> ?graphMap .
-              }} UNION {{?sm <http://semweb.mmlab.be/ns/rml#reference> ?reference .}}
+              }} UNION {{?sm <http://w3id.org/rml/reference> ?reference .}}
 
               FILTER NOT EXISTS {{?tm <http://www.w3.org/ns/r2rml#subjectMap> ?sm .}}
               FILTER NOT EXISTS {{?pom <http://www.w3.org/ns/r2rml#predicateObjectMap> ?sm .}}
@@ -778,7 +777,7 @@ with tab1:
                 # Extract known properties from the graph
                 g = st.session_state["g_mapping"]
                 RR = Namespace("http://www.w3.org/ns/r2rml#")
-                RML = Namespace("http://semweb.mmlab.be/ns/rml#")
+                RML = Namespace("http://w3id.org/rml/")
 
                 template = g.value(subject=sm, predicate=RML["template"])
                 constant = g.value(subject=sm, predicate=RML["constant"])
@@ -887,7 +886,7 @@ with tab1:
               }} UNION {{?om <http://www.w3.org/ns/r2rml#language> ?lang .
               }} UNION {{?om <http://www.w3.org/ns/r2rml#parentTriplesMap> ?ptm .
               }} UNION {{?om <http://www.w3.org/ns/r2rml#joinCondition> ?jc .
-              }} UNION {{?om <http://semweb.mmlab.be/ns/rml#reference> ?ref .}}
+              }} UNION {{?om <http://w3id.org/rml/reference> ?ref .}}
 
               FILTER NOT EXISTS {{?pom <http://www.w3.org/ns/r2rml#objectMap> ?om .}}
               FILTER NOT EXISTS {{?tm <http://www.w3.org/ns/r2rml#subjectMap> ?om .}}
