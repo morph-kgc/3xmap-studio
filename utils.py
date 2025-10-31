@@ -2773,7 +2773,7 @@ def get_class_dictionaries_filtered_by_superclass(g_ont, superclass_filter=None)
         ontology_used_classes_count_dict = {class_label:ontology_used_classes_count_dict[class_label]
             for class_label, class_iri in ontology_used_classes_dict.items()}
         ontology_used_classes_count_by_rules_dict = {class_label:ontology_used_classes_count_by_rules_dict[class_label]
-            for class_label, class_iri in ontology_used_classes_dict.items()}
+            for class_label, class_iri in ontology_used_classes_dict.items() if class_label in ontology_used_classes_count_by_rules_dict}
 
     return [ontology_classes_dict, ontology_used_classes_dict,
         ontology_used_classes_count_dict, ontology_used_classes_count_by_rules_dict]

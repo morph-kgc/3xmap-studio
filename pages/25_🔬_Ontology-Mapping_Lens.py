@@ -348,109 +348,109 @@ with tab3:
                     ontology_filter_for_lens = st.session_state["g_ontology_components_dict"][ont_label]
                     break
 
-            # Superclass filter
-            superclass_dict = utils.get_ontology_superclass_dict(ontology_filter_for_lens)
-            classes_in_superclass_dict = {}
+        # Superclass filter
+        superclass_dict = utils.get_ontology_superclass_dict(ontology_filter_for_lens)
+        classes_in_superclass_dict = {}
+        with col1c:
+            superclass_list = sorted(superclass_dict.keys())
+            superclass_list.insert(0, "No filter")
+            superclass_filter_for_lens_label = st.selectbox("⚙️ Filter by superclass:", superclass_list,
+                key="key_superclass")   #superclass label
+
+        if superclass_filter_for_lens_label != "No filter":   # a superclass has been selected (filter)
+            superclass_filter_for_lens = superclass_dict[superclass_filter_for_lens_label] #we get the superclass iri
+        else:
+            superclass_filter_for_lens = None
+
+        if selected_class_search == "📊 Stats":
+
+            with col1:
+                st.write("_____")
+                col1a, col1b, col1c, col1d, col1e = st.columns([1,1,1,0.2,1])
+            with col1a:
+                utils.get_used_classes_metric(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens)
+            with col1b:
+                utils.get_average_class_frequency_metric(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens)
             with col1c:
-                superclass_list = sorted(superclass_dict.keys())
-                superclass_list.insert(0, "No filter")
-                superclass_filter_for_lens_label = st.selectbox("⚙️ Filter by superclass:", superclass_list,
-                    key="key_superclass")   #superclass label
+                utils.get_average_class_frequency_metric(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens, type="all_classes")
+            with col1e:
+                inner_html = ""
+                if ontology_filter_for_lens_tag != "No filter":
+                    inner_html += f"""🧩 Ontology:<br><span style="padding-left:20px;">
+                        <b style="color:#F63366;">{ontology_filter_for_lens_tag}</b></span><br>"""
+                if superclass_filter_for_lens_label != "No filter":
+                    inner_html += f"""🏷️ Superclass:<br><span style="padding-left:20px;">
+                        <b style="color:#F63366;">{superclass_filter_for_lens_label}</b></span><br>"""
+                if inner_html:
+                    st.write("")
+                    st.markdown(f"""<div class="gray-preview-message">
+                            {inner_html}
+                        </div>""", unsafe_allow_html=True)
 
-            if superclass_filter_for_lens_label != "No filter":   # a superclass has been selected (filter)
-                superclass_filter_for_lens = superclass_dict[superclass_filter_for_lens_label] #we get the superclass iri
-            else:
-                superclass_filter_for_lens = None
 
-            if selected_class_search == "📊 Stats":
+            with col1:
+                col1a, col1b = st.columns([1,2])
+            with col1a:
+                utils.get_used_classes_donut_chart(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens)
 
-                with col1:
-                    st.write("_____")
-                    col1a, col1b, col1c, col1d, col1e = st.columns([1,1,1,0.2,1])
-                with col1a:
-                    utils.get_used_classes_metric(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens)
+
+            ontology_used_classes_count_by_rules_dict = utils.get_class_dictionaries_filtered_by_superclass(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens)[3]
+            list_to_choose = list(ontology_used_classes_count_by_rules_dict.keys())
+            if list_to_choose:
                 with col1b:
-                    utils.get_average_class_frequency_metric(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens)
-                with col1c:
-                    utils.get_average_class_frequency_metric(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens, type="all_classes")
-                with col1e:
-                    inner_html = ""
-                    if ontology_filter_for_lens_tag != "No filter":
-                        inner_html += f"""🧩 Ontology:<br><span style="padding-left:20px;">
-                            <b style="color:#F63366;">{ontology_filter_for_lens_tag}</b></span><br>"""
-                    if superclass_filter_for_lens_label != "No filter":
-                        inner_html += f"""🏷️ Superclass:<br><span style="padding-left:20px;">
-                            <b style="color:#F63366;">{superclass_filter_for_lens_label}</b></span><br>"""
-                    if inner_html:
-                        st.write("")
-                        st.markdown(f"""<div class="gray-preview-message">
-                                {inner_html}
-                            </div>""", unsafe_allow_html=True)
+                    selected_classes = st.multiselect("🖱️ Select ontology classes to display (opt):", list_to_choose,
+                        key="key_selected_classes")
+
+                    utils.get_class_frequency_bar_plot(ontology_filter_for_lens, selected_classes, superclass_filter=superclass_filter_for_lens)
 
 
+        if selected_class_search == "ℹ️ Info table":
+
+            filtered_ontology_used_classes_count_by_rules_dict = utils.get_class_dictionaries_filtered_by_superclass(ontology_filter_for_lens,
+                superclass_filter=superclass_filter_for_lens)[3]
+            filtered_ontology_classes_dict =utils.get_class_dictionaries_filtered_by_superclass(ontology_filter_for_lens,
+                superclass_filter=superclass_filter_for_lens)[0]
+
+            rows = []
+            for label, iri in filtered_ontology_classes_dict.items():
+                is_used = label in filtered_ontology_used_classes_count_by_rules_dict
+                count = filtered_ontology_used_classes_count_by_rules_dict.get(label, 0)
+                rows.append({
+                    "Class Label": label,
+                    "Used": is_used,
+                    "#Rules": count,
+                    "Class IRI": utils.format_iri_to_prefix_label(iri)})
+
+            df = pd.DataFrame(rows)
+            df = df.sort_values(by="#Rules", ascending=False)
+            with col1:
+                st.markdown(f"""<div class="info-message-blue">
+                    <b>🏷️ CLASSES ({len(df)}):</b>
+                </div>""", unsafe_allow_html=True)
+                st.dataframe(df, hide_index=True)
+
+            with col1:
+                col1a, col1b = st.columns(2)
+
+
+        if selected_class_search == "📐Rules":
+
+            with col1:
+                col1a, col1b = st.columns(2)
+
+            # Class selection
+            filtered_ontology_used_classes_dict = utils.get_class_dictionaries_filtered_by_superclass(ontology_filter_for_lens,
+                superclass_filter=superclass_filter_for_lens)[0]
+            list_to_choose = list(filtered_ontology_used_classes_dict)
+            list_to_choose.insert(0, "Select a class")
+            with col1a:
+                subject_class = st.selectbox("🖱️ Select class:", list_to_choose,
+                    key="key_subject_class")   #class label
+
+
+            if subject_class != "Select a class":
+                subject_class_iri = filtered_ontology_used_classes_dict[subject_class] #we get the superclass iri
+
+                # Display
                 with col1:
-                    col1a, col1b = st.columns([1,2])
-                with col1a:
-                    utils.get_used_classes_donut_chart(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens)
-
-
-                ontology_used_classes_count_by_rules_dict = utils.get_class_dictionaries_filtered_by_superclass(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens)[3]
-                list_to_choose = list(ontology_used_classes_count_by_rules_dict.keys())
-                if list_to_choose:
-                    with col1b:
-                        selected_classes = st.multiselect("🖱️ Select ontology classes to display (opt):", list_to_choose,
-                            key="key_selected_classes")
-
-                        utils.get_class_frequency_bar_plot(ontology_filter_for_lens, selected_classes, superclass_filter=superclass_filter_for_lens)
-
-
-            if selected_class_search == "ℹ️ Info table":
-
-                filtered_ontology_used_classes_count_by_rules_dict = utils.get_class_dictionaries_filtered_by_superclass(ontology_filter_for_lens,
-                    superclass_filter=superclass_filter_for_lens)[3]
-                filtered_ontology_classes_dict =utils.get_class_dictionaries_filtered_by_superclass(ontology_filter_for_lens,
-                    superclass_filter=superclass_filter_for_lens)[0]
-
-                rows = []
-                for label, iri in filtered_ontology_classes_dict.items():
-                    is_used = label in filtered_ontology_used_classes_count_by_rules_dict
-                    count = filtered_ontology_used_classes_count_by_rules_dict.get(label, 0)
-                    rows.append({
-                        "Class Label": label,
-                        "Used": is_used,
-                        "#Rules": count,
-                        "Class IRI": utils.format_iri_to_prefix_label(iri)})
-
-                df = pd.DataFrame(rows)
-                df = df.sort_values(by="#Rules", ascending=False)
-                with col1:
-                    st.markdown(f"""<div class="info-message-blue">
-                        <b>🏷️ CLASSES ({len(df)}):</b>
-                    </div>""", unsafe_allow_html=True)
-                    st.dataframe(df, hide_index=True)
-
-                with col1:
-                    col1a, col1b = st.columns(2)
-
-
-            if selected_class_search == "📐Rules":
-
-                with col1:
-                    col1a, col1b = st.columns(2)
-
-                # Class selection
-                filtered_ontology_used_classes_dict = utils.get_class_dictionaries_filtered_by_superclass(ontology_filter_for_lens,
-                    superclass_filter=superclass_filter_for_lens)[0]
-                list_to_choose = list(filtered_ontology_used_classes_dict)
-                list_to_choose.insert(0, "Select a class")
-                with col1a:
-                    subject_class = st.selectbox("🖱️ Select class:", list_to_choose,
-                        key="key_subject_class")   #class label
-
-
-                if subject_class != "Select a class":
-                    subject_class_iri = filtered_ontology_used_classes_dict[subject_class] #we get the superclass iri
-
-                    # Display
-                    with col1:
-                        utils.display_rules(subject_class_iri)
+                    utils.display_rules(subject_class_iri)
