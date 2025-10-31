@@ -684,11 +684,9 @@ def get_predefined_ns_dict():
 # Function to retrieve namespaces which are needed for our code
 def get_required_ns_dict():
 
-    required_ns_dict = {
-        "rml": Namespace("http://w3id.org/rml/"),
+    required_ns_dict = {"rml": Namespace("http://w3id.org/rml/"),
         "rr": Namespace("http://www.w3.org/ns/r2rml#"),
-        "ql": Namespace("http://semweb.mmlab.be/ns/ql#")
-        }
+        "ql": Namespace("http://semweb.mmlab.be/ns/ql#")}
 
     return required_ns_dict
 

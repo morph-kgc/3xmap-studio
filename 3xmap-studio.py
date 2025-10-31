@@ -1,5 +1,6 @@
 import streamlit as st
 from streamlit_js_eval import streamlit_js_eval
+import base64
 
 
 # Config---------------------------------------------------
@@ -15,5 +16,19 @@ if "dark_mode_flag" not in st.session_state or st.session_state["dark_mode_flag"
     st.session_state["dark_mode_flag"] = streamlit_js_eval(js_expressions="window.matchMedia('(prefers-color-scheme: dark)').matches",
         key="dark_mode")
 
-st.title("Welcome to 3Xmap Studio")
-st.write("Use sidebar to work with existing or new mapping")
+
+
+image_path = "logo/logo_inverse.png" if st.session_state["dark_mode_flag"] else "logo/logo.png"
+with open(image_path, "rb") as f:
+    image_base64 = base64.b64encode(f.read()).decode()
+st.markdown(
+    f"""
+    <div style="display:flex; justify-content:flex-end;">
+        <img src="data:image/png;base64,{image_base64}" alt="Logo"
+             style="height:100px; margin-right:70px; border-radius:8px;" />
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+st.title("Welcome to 3xmap Studio")
+st.write("Use sidebar to work with existing or new mapping.")
