@@ -146,7 +146,7 @@ with tab2:
             col1a, col1b, col1c = st.columns(3)
 
             with col1a:
-                list_to_choose = ["📊 Stats", "📐Rules", "ℹ️ Information"]
+                list_to_choose = ["📊 Stats", "ℹ️ Info table", "📐Rules"]
                 selected_property_search = st.selectbox("🖱️ Select an option:*", list_to_choose,
                     key="key_property_search")
 
@@ -221,6 +221,73 @@ with tab2:
 
                         utils.get_property_frequency_bar_plot(ontology_filter_for_lens, selected_properties, superproperty_filter=superproperty_filter_for_lens)
 
+            if selected_property_search == "ℹ️ Info table":
+                filtered_ontology_used_properties_count_dict = utils.get_property_dictionaries_filtered_by_superproperty(ontology_filter_for_lens,
+                    superproperty_filter=superproperty_filter_for_lens)[2]
+                filtered_ontology_properties_dict =utils.get_property_dictionaries_filtered_by_superproperty(ontology_filter_for_lens,
+                    superproperty_filter=superproperty_filter_for_lens)[0]
+
+                rows = []
+                for label, iri in filtered_ontology_properties_dict.items():
+                    is_used = label in filtered_ontology_used_properties_count_dict
+                    count = filtered_ontology_used_properties_count_dict.get(label, 0)
+                    rows.append({
+                        "property Label": label,
+                        "Used": is_used,
+                        "#Rules": count,
+                        "property IRI": iri})
+
+                df = pd.DataFrame(rows)
+                df = df.sort_values(by="#Rules", ascending=False)
+                with col1:
+                    st.dataframe(df, hide_index=True)
+
+                with col1:
+                    col1a, col1b = st.columns(2)
+
+
+            if selected_property_search == "📐Rules":
+
+                with col1:
+                    col1a, col1b = st.columns(2)
+
+                # property selection
+                filtered_ontology_used_properties_dict = utils.get_property_dictionaries_filtered_by_superproperty(ontology_filter_for_lens,
+                    superproperty_filter=superproperty_filter_for_lens)[0]
+                list_to_choose = list(filtered_ontology_used_properties_dict)
+                list_to_choose.insert(0, "Select a property")
+                with col1a:
+                    selected_property = st.selectbox("🖱️ Select property:", list_to_choose,
+                        key="key_selected_property")   #property label
+
+
+                if selected_property != "Select a property":  #HEEREIGO
+
+                    selected_property_iri = filtered_ontology_used_properties_dict[selected_property]
+                    # for s in st.session_state["g_mapping"].subjects(RML["predicate"], URIRef(selected_property_iri)):
+
+                    # Get all subject maps with the selected property
+                    rule_list_for_property = []
+                    for s in st.session_state["g_mapping"].subjects(RML["predicate"], URIRef(selected_property_iri)):
+                        sm_rule_list = utils.get_rules_for_sm(s)
+                        for rule in sm_rule_list:
+                            rule_list_for_property.append(rule)
+
+                    df = pd.DataFrame(rule_list_for_property, columns=["Subject", "Predicate", "Object", "TriplesMap"])
+
+                    # Display
+                    with col1:
+                        if not df.empty:
+                            st.markdown(f"""<div class="info-message-blue">
+                                <b>RULES ({len(df)}):</b>
+                                &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+                                <small>🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>
+                            </div>""", unsafe_allow_html=True)
+                            st.dataframe(df, hide_index=True)
+                        else:
+                            st.markdown(f"""<div class="warning-message">
+                                ⚠️ No results.
+                            </div>""", unsafe_allow_html=True)
 
 #________________________________________________
 # ONTOLOGY COVERAGE - CLASSES
@@ -260,26 +327,26 @@ with tab3:
         with col1:
             col1a, col1b, col1c = st.columns(3)
 
-            with col1a:
-                list_to_choose = ["📊 Stats", "📐Rules", "ℹ️ Information"]
-                selected_class_search = st.selectbox("🖱️ Select an option:*", list_to_choose,
-                    key="key_class_search")
+        with col1a:
+            list_to_choose = ["📊 Stats", "ℹ️ Info table", "📐Rules"]
+            selected_class_search = st.selectbox("🖱️ Select an option:*", list_to_choose,
+                key="key_class_search")
 
-            # Filter by ontology
-            with col1b:
-                list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
-                if len(list_to_choose) > 1:
-                    list_to_choose.insert(0, "No filter")
-                ontology_filter_for_lens_tag = st.selectbox("⚙️ Filter by ontology:",
-                    list_to_choose, key="key_ontology_filter_for_lens_class")
+        # Filter by ontology
+        with col1b:
+            list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
+            if len(list_to_choose) > 1:
+                list_to_choose.insert(0, "No filter")
+            ontology_filter_for_lens_tag = st.selectbox("⚙️ Filter by ontology:",
+                list_to_choose, key="key_ontology_filter_for_lens_class")
 
-            if ontology_filter_for_lens_tag == "No filter":
-                ontology_filter_for_lens = st.session_state["g_ontology"]
-            else:
-                for ont_label, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
-                    if ont_tag == ontology_filter_for_lens_tag:
-                        ontology_filter_for_lens = st.session_state["g_ontology_components_dict"][ont_label]
-                        break
+        if ontology_filter_for_lens_tag == "No filter":
+            ontology_filter_for_lens = st.session_state["g_ontology"]
+        else:
+            for ont_label, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
+                if ont_tag == ontology_filter_for_lens_tag:
+                    ontology_filter_for_lens = st.session_state["g_ontology_components_dict"][ont_label]
+                    break
 
             # Superclass filter
             superclass_dict = utils.get_ontology_superclass_dict(ontology_filter_for_lens)
@@ -337,6 +404,34 @@ with tab3:
                         utils.get_class_frequency_bar_plot(ontology_filter_for_lens, selected_classes, superclass_filter=superclass_filter_for_lens)
 
 
+            if selected_class_search == "ℹ️ Info table":
+
+                filtered_ontology_used_classes_count_by_rules_dict = utils.get_class_dictionaries_filtered_by_superclass(ontology_filter_for_lens,
+                    superclass_filter=superclass_filter_for_lens)[3]
+                filtered_ontology_classes_dict =utils.get_class_dictionaries_filtered_by_superclass(ontology_filter_for_lens,
+                    superclass_filter=superclass_filter_for_lens)[0]
+
+                rows = []
+                for label, iri in filtered_ontology_classes_dict.items():
+                    is_used = label in filtered_ontology_used_classes_count_by_rules_dict
+                    count = filtered_ontology_used_classes_count_by_rules_dict.get(label, 0)
+                    rows.append({
+                        "Class Label": label,
+                        "Used": is_used,
+                        "#Rules": count,
+                        "Class IRI": utils.format_iri_to_prefix_label(iri)})
+
+                df = pd.DataFrame(rows)
+                df = df.sort_values(by="#Rules", ascending=False)
+                with col1:
+                    st.markdown(f"""<div class="info-message-blue">
+                        <b>🏷️ CLASSES ({len(df)}):</b>
+                    </div>""", unsafe_allow_html=True)
+                    st.dataframe(df, hide_index=True)
+
+                with col1:
+                    col1a, col1b = st.columns(2)
+
 
             if selected_class_search == "📐Rules":
 
@@ -344,69 +439,18 @@ with tab3:
                     col1a, col1b = st.columns(2)
 
                 # Class selection
-                if superclass_dict:   # there exists at least one superclass (show superclass filter)
-                    # classes_in_superclass_dict = {}
-                    # with col1a:
-                    #     superclass_list = sorted(superclass_dict.keys())
-                    #     superclass_list.insert(0, "No filter")
-                    #     superclass = st.selectbox("⚙️ Filter by superclass (opt):", superclass_list,
-                    #         key="key_superclass")   #superclass label
-                    if superclass != "No filter":   # a superclass has been selected (filter)
-                    #     classes_in_superclass_dict[superclass] = superclass_dict[superclass]
-                    #     superclass = superclass_dict[superclass] #we get the superclass iri
-                    #     for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, superclass)))):
-                    #         classes_in_superclass_dict[split_uri(s)[1]] = s
-                    #     class_list = sorted(classes_in_superclass_dict.keys())
-                        list_to_choose = []
-                        for class_label in class_list:
-                            if class_label in ontology_used_classes_dict:
-                                list_to_choose.append(class_label)
-                        list_to_choose.insert(0, "Select a class")
-                        with col1b:
-                            subject_class = st.selectbox("🖱️ Select class:", list_to_choose,
-                                key="key_subject_class")   #class label
+                filtered_ontology_used_classes_dict = utils.get_class_dictionaries_filtered_by_superclass(ontology_filter_for_lens,
+                    superclass_filter=superclass_filter_for_lens)[0]
+                list_to_choose = list(filtered_ontology_used_classes_dict)
+                list_to_choose.insert(0, "Select a class")
+                with col1a:
+                    subject_class = st.selectbox("🖱️ Select class:", list_to_choose,
+                        key="key_subject_class")   #class label
 
-                    else:  #no superclass selected (list all classes)
-                        list_to_choose = sorted(ontology_used_classes_dict.keys())
-                        list_to_choose.insert(0, "Select a class")
-                        with col1b:
-                            subject_class = st.selectbox("🖱️ Select class:*", list_to_choose,
-                                key="key_subject_class")   #class label
-
-                else:     #no superclasses exist (no superclass filter)
-                    list_to_choose = sorted(ontology_used_classes_dict.keys())
-                    list_to_choose.insert(0, "Select a class")
-                    with col1a:
-                        subject_class = st.selectbox("🖱️ Select class:*", list_to_choose,
-                            key="key_subject_class")   #class label
 
                 if subject_class != "Select a class":
-                    subject_class_iri = ontology_classes_dict[subject_class] #we get the superclass iri
-                    st.session_state["multiple_subject_class_list"] = [subject_class_iri]
-                else:
-                    subject_class_iri = ""
-
-
-                if subject_class_iri:
-                    # Get all subject maps with the selected class
-                    rule_list_for_class = []
-                    for s in st.session_state["g_mapping"].subjects(RML["class"], URIRef(subject_class_iri)):
-                        sm_rule_list = utils.get_rules_for_sm(s)
-                        for rule in sm_rule_list:
-                            rule_list_for_class.append(rule)
-
-                    df = pd.DataFrame(rule_list_for_class, columns=["Subject", "Predicate", "Object", "TriplesMap"])
+                    subject_class_iri = filtered_ontology_used_classes_dict[subject_class] #we get the superclass iri
 
                     # Display
                     with col1:
-                        if not df.empty:
-                            st.markdown(f"""<div class="info-message-blue">
-                                <b>RULES ({len(df)}):</b>
-                                &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
-                                <small>🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>
-                            </div>""", unsafe_allow_html=True)
-                            st.dataframe(df, hide_index=True)
-                        else:
-                            st.markdown(f"""<div class="warning-message">
-                                ⚠️ No results.
-                            </div>""", unsafe_allow_html=True)
+                        utils.display_rules(subject_class_iri)

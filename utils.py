@@ -1573,7 +1573,7 @@ def get_column_list_and_give_info(tm_iri):
             st.markdown(f"""<div class="warning-message">
                     ⚠️ The data source <b>{ds}</b> is not available,
                     but column references have been taken from the
-                    logical source's query.<br>
+                    logical source's query.
                     <small> However, connecting to the database is still recommended.</small>
                 </div>""", unsafe_allow_html=True)
 
@@ -2457,6 +2457,109 @@ def format_iri_to_prefix_label(iri):
         else:
             return iri
 #________________________________________________
+
+#________________________________________________
+# Function to display a rule
+def preview_rule(sm_rule_for_display, selected_p_for_display, om_iri_for_display):
+
+    if len(om_iri_for_display) < 40:
+        st.markdown(f"""
+        <div class="blue-preview-message" style="margin-top:0px; padding-top:4px;">
+            <small><b style="color:#F63366; font-size:10px; margin-top:0px;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:0px;">
+                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{sm_rule_for_display}</b></div>
+                </div>
+                <div style="flex:0; font-size:18px;">🡆</div>
+                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{selected_p_for_display}</b></div>
+                </div>
+                <div style="flex:0; font-size:18px;">🡆</div>
+                <div style="flex:1.3; min-width:140px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{om_iri_for_display}</b></div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown(f"""
+        <div class="blue-preview-message" style="margin-top:0px; padding-top:4px;">
+            <small><b style="color:#F63366; font-size:10px; margin-top:0px;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:0px;">
+                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{sm_rule_for_display}</b></div>
+                </div>
+                <div style="flex:0; font-size:18px;">🡆</div>
+                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{selected_p_for_display}</b></div>
+                </div>
+                <div style="flex:0; font-size:18px;">🡆</div>
+                <div style="flex:1.3; min-width:140px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b><small>{om_iri_for_display}</small></b></div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+#_________________________________________________
+#________________________________________________
+# Function to display a rule
+def display_rules(subject_class_iri):
+
+    # Get all subject maps with the selected class
+    rule_list_for_class = []
+    for s in st.session_state["g_mapping"].subjects(RML["class"], URIRef(subject_class_iri)):
+        sm_rule_list = utils.get_rules_for_sm(s)
+        for rule in sm_rule_list:
+            rule_list_for_class.append(rule)
+
+    if not rule_list_for_class:
+        st.markdown(f"""<div class="warning-message">
+            <b>No rules.</b>
+        </div>""", unsafe_allow_html=True)
+    else:
+        inner_html = f"""<b>RULES ({len(rule_list_for_class)}):</b>
+        &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+        <small>🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small><br>"""
+
+        for rule in rule_list_for_class:
+            sm_rule_for_display = rule[0]
+            selected_p_for_display = rule[1]
+            om_iri_for_display = rule[2]
+
+            inner_html += f"""<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:10px;">"""
+
+            if len(sm_rule_for_display) < 40:
+                inner_html += f"""<div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{sm_rule_for_display}</b></div></div>"""
+            else:
+                inner_html += f"""<div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b><small>{sm_rule_for_display}</small></b></div></div>"""
+
+            inner_html += f"""<div style="flex:0; font-size:18px;">🡆</div>"""
+
+            if len(selected_p_for_display) < 40:
+                inner_html += f"""<div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{selected_p_for_display}</b></div></div>"""
+            else:
+                inner_html += f"""<div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b><small>{selected_p_for_display}</small></b></div></div>"""
+
+            inner_html += f"""<div style="flex:0; font-size:18px;">🡆</div>"""
+
+            if len(om_iri_for_display) < 40:
+                inner_html += f"""<div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{om_iri_for_display}</b></div></div><br>
+                    </div>"""
+            else:
+                inner_html += f"""<div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b><small>{om_iri_for_display}</small></b></div></div><br>
+                    </div>"""
+
+        st.markdown(f"""<div class="info-message-blue">
+            {inner_html}
+        </div>""", unsafe_allow_html=True)
+
+#_________________________________________________
 
 #_________________________________________________
 # Funtion to get the rule associated to a subject map
