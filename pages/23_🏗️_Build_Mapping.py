@@ -2349,54 +2349,14 @@ with tab3:
                 elif om_generation_rule == "Reference 📊":
                     om_iri_for_display = Literal(om_column_name)
 
-                if isinstance(om_iri_for_display, URIRef):
-                    om_iri_ns = URIRef(split_uri(om_iri_for_display)[0])
-                    om_iri_prefix = st.session_state["g_mapping"].namespace_manager.store.prefix(om_iri_ns)
-                    if om_iri_prefix:
-                        om_iri_for_display = f"{om_iri_prefix}: {split_uri(om_iri_for_display)[1]}"
+                om_iri_for_display = utils.format_iri_to_prefix_label(om_iri_for_display)
+
 
                 # display rule
                 with col1:
                     col1a, col1b = st.columns([1,4])
                 with col1b:
-                    if len(om_iri_for_display) < 40:
-                        st.markdown(f"""
-                        <div class="blue-preview-message" style="margin-top:0px; padding-top:4px;">
-                            <small><b style="color:#F63366; font-size:10px; margin-top:0px;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>
-                            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:0px;">
-                                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{sm_rule}</b></div>
-                                </div>
-                                <div style="flex:0; font-size:18px;">🡆</div>
-                                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{selected_p_for_display}</b></div>
-                                </div>
-                                <div style="flex:0; font-size:18px;">🡆</div>
-                                <div style="flex:1.3; min-width:140px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{om_iri_for_display}</b></div>
-                                </div>
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    else:
-                        st.markdown(f"""
-                        <div class="blue-preview-message" style="margin-top:0px; padding-top:4px;">
-                            <small><b style="color:#F63366; font-size:10px; margin-top:0px;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>
-                            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:0px;">
-                                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{sm_rule}</b></div>
-                                </div>
-                                <div style="flex:0; font-size:18px;">🡆</div>
-                                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{selected_p_for_display}</b></div>
-                                </div>
-                                <div style="flex:0; font-size:18px;">🡆</div>
-                                <div style="flex:1.3; min-width:140px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b><small>{om_iri_for_display}</small></b></div>
-                                </div>
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
+                    utils.preview_rule(sm_rule, selected_p_for_display, om_iri_for_display)
 
                 with col1a:
                     st.write("")

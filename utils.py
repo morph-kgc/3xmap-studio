@@ -1573,7 +1573,7 @@ def get_column_list_and_give_info(tm_iri):
             st.markdown(f"""<div class="warning-message">
                     ⚠️ The data source <b>{ds}</b> is not available,
                     but column references have been taken from the
-                    logical source's query.<br>
+                    logical source's query.
                     <small> However, connecting to the database is still recommended.</small>
                 </div>""", unsafe_allow_html=True)
 
@@ -2458,6 +2458,102 @@ def format_iri_to_prefix_label(iri):
             return iri
 #________________________________________________
 
+#________________________________________________
+# Function to display a rule
+def preview_rule(sm_rule_for_display, selected_p_for_display, om_iri_for_display):
+
+    if len(om_iri_for_display) < 40:
+        st.markdown(f"""
+        <div class="blue-preview-message" style="margin-top:0px; padding-top:4px;">
+            <small><b style="color:#F63366; font-size:10px; margin-top:0px;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:0px;">
+                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{sm_rule_for_display}</b></div>
+                </div>
+                <div style="flex:0; font-size:18px;">🡆</div>
+                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{selected_p_for_display}</b></div>
+                </div>
+                <div style="flex:0; font-size:18px;">🡆</div>
+                <div style="flex:1.3; min-width:140px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{om_iri_for_display}</b></div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown(f"""
+        <div class="blue-preview-message" style="margin-top:0px; padding-top:4px;">
+            <small><b style="color:#F63366; font-size:10px; margin-top:0px;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:0px;">
+                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{sm_rule_for_display}</b></div>
+                </div>
+                <div style="flex:0; font-size:18px;">🡆</div>
+                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{selected_p_for_display}</b></div>
+                </div>
+                <div style="flex:0; font-size:18px;">🡆</div>
+                <div style="flex:1.3; min-width:140px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b><small>{om_iri_for_display}</small></b></div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+#_________________________________________________
+#________________________________________________
+# Function to display a rule
+def display_rules(rule_list):
+
+    if not rule_list:
+        st.markdown(f"""<div class="warning-message">
+            <b>No rules.</b>
+        </div>""", unsafe_allow_html=True)
+    else:
+        inner_html = f"""<b>RULES ({len(rule_list)}):</b>
+        &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+        <small>🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small><br>"""
+
+        for rule in rule_list:
+            sm_rule_for_display = rule[0]
+            selected_p_for_display = rule[1]
+            om_iri_for_display = rule[2]
+
+            inner_html += f"""<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:10px;">"""
+
+            if len(sm_rule_for_display) < 40:
+                inner_html += f"""<div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{sm_rule_for_display}</b></div></div>"""
+            else:
+                inner_html += f"""<div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b><small>{sm_rule_for_display}</small></b></div></div>"""
+
+            inner_html += f"""<div style="flex:0; font-size:18px;">🡆</div>"""
+
+            if len(selected_p_for_display) < 40:
+                inner_html += f"""<div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{selected_p_for_display}</b></div></div>"""
+            else:
+                inner_html += f"""<div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b><small>{selected_p_for_display}</small></b></div></div>"""
+
+            inner_html += f"""<div style="flex:0; font-size:18px;">🡆</div>"""
+
+            if len(om_iri_for_display) < 40:
+                inner_html += f"""<div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{om_iri_for_display}</b></div></div><br>
+                    </div>"""
+            else:
+                inner_html += f"""<div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b><small>{om_iri_for_display}</small></b></div></div><br>
+                    </div>"""
+
+        st.markdown(f"""<div class="info-message-blue">
+            {inner_html}
+        </div>""", unsafe_allow_html=True)
+
+#_________________________________________________
+
 #_________________________________________________
 # Funtion to get the rule associated to a subject map
 def get_rules_for_sm(sm_iri):
@@ -2635,14 +2731,14 @@ def get_ontology_used_classes_count_dict(g_ont):
 def get_ontology_used_classes_count_by_rules_dict(g_ont):
 
     ontology_classes_dict = get_ontology_classes_dict(g_ont)
-    usage_count_dict = defaultdict(int)
+    usage_count_dict = {}
 
     for class_label, class_iri in ontology_classes_dict.items():
         for s, p, o in st.session_state["g_mapping"].triples((None, RML["class"], URIRef(class_iri))):
             sm_iri = s
             sm_iri_rule_list = get_rules_for_sm(sm_iri)
-            usage_count_dict[class_label] += len(sm_iri_rule_list)
-            # st.write("HERE2", sm_iri, sm_iri_rule_list)
+            if sm_iri_rule_list:
+                usage_count_dict[class_label] = len(sm_iri_rule_list)
 
     return dict(usage_count_dict)
 #________________________________________________________
@@ -2670,7 +2766,7 @@ def get_class_dictionaries_filtered_by_superclass(g_ont, superclass_filter=None)
         ontology_used_classes_count_dict = {class_label:ontology_used_classes_count_dict[class_label]
             for class_label, class_iri in ontology_used_classes_dict.items()}
         ontology_used_classes_count_by_rules_dict = {class_label:ontology_used_classes_count_by_rules_dict[class_label]
-            for class_label, class_iri in ontology_used_classes_dict.items()}
+            for class_label, class_iri in ontology_used_classes_dict.items() if class_label in ontology_used_classes_count_by_rules_dict}
 
     return [ontology_classes_dict, ontology_used_classes_dict,
         ontology_used_classes_count_dict, ontology_used_classes_count_by_rules_dict]
@@ -2754,16 +2850,16 @@ def get_used_classes_donut_chart(g_ont, superclass_filter=None):
     colors = get_colors_for_stats_dict()
 
     ontology_classes_dict = get_class_dictionaries_filtered_by_superclass(g_ont, superclass_filter=superclass_filter)[0]
-    ontology_used_classes_dict = get_class_dictionaries_filtered_by_superclass(g_ont, superclass_filter=superclass_filter)[1]
+    ontology_used_classes_count_by_rules_dict = get_class_dictionaries_filtered_by_superclass(g_ont, superclass_filter=superclass_filter)[3]
 
-    nb_used_clases = len(ontology_used_classes_dict)
-    nb_unused_classes = len(ontology_classes_dict) - len(ontology_used_classes_dict)
+    nb_used_clases = len(ontology_used_classes_count_by_rules_dict)
+    nb_unused_classes = len(ontology_classes_dict) - nb_used_clases
     data = {"Category": ["Used classes", "Unused classes"],
         "Value": [nb_used_clases, nb_unused_classes]}
 
     fig = px.pie(names=data["Category"],values=data["Value"], hole=0.4)
 
-    fig.update_traces(textinfo='label+value',
+    fig.update_traces(textinfo='value', textposition='inside',
         marker=dict(colors=[colors["purple"], colors["gray"]]))
 
     fig.update_layout(width=400, height=300, margin=dict(t=20, b=20, l=20, r=20),
@@ -2784,7 +2880,7 @@ def get_class_frequency_bar_plot(g_ont, selected_classes, superclass_filter=None
 
     # Selected classes for display__________________________
     if not selected_classes:  # plot 15 most used
-        classes_for_display_list = sorted(ontology_used_classes_count_by_rules_dict.items(), key=lambda x: x[1], reverse=True)[:15]
+        classes_for_display_list = sorted(ontology_used_classes_count_by_rules_dict.items(), key=lambda x: x[1], reverse=True)[:10]
     else:
         classes_for_display_list = [(cls, ontology_used_classes_count_by_rules_dict[cls]) for cls in selected_classes]
 
@@ -2798,7 +2894,7 @@ def get_class_frequency_bar_plot(g_ont, selected_classes, superclass_filter=None
         fig.update_layout(xaxis_title=None, yaxis_title="Class frequency",
             yaxis=dict(showticklabels=False, ticks="", showgrid=True,
                 gridcolor="lightgray", title_standoff=5),
-            height=250, margin=dict(t=20, b=20, l=20, r=20))
+            height=300, margin=dict(t=20, b=20, l=20, r=20))
 
 
         # Render___________________________
@@ -3155,12 +3251,12 @@ def get_used_properties_donut_chart(g_ont, superproperty_filter=None):
 
     nb_used_clases = len(ontology_used_properties_dict)
     nb_unused_properties = len(ontology_properties_dict) - len(ontology_used_properties_dict)
-    data = {"Category": ["Used prop", "Unused prop"],
+    data = {"Category": ["Used properties", "Unused properties"],
         "Value": [nb_used_clases, nb_unused_properties]}
 
     fig = px.pie(names=data["Category"],values=data["Value"], hole=0.4)
 
-    fig.update_traces(textinfo='label+value',
+    fig.update_traces(textinfo='value', textposition='inside',
         marker=dict(colors=[colors["purple"], colors["gray"]]))
 
     fig.update_layout(width=400, height=300, margin=dict(t=20, b=20, l=20, r=20),
@@ -3181,7 +3277,7 @@ def get_property_frequency_bar_plot(g_ont, selected_properties, superproperty_fi
 
     # Selected properties for display__________________________
     if not selected_properties:  # plot 15 most used
-        properties_for_display_list = sorted(ontology_used_properties_count_dict.items(), key=lambda x: x[1], reverse=True)[:15]
+        properties_for_display_list = sorted(ontology_used_properties_count_dict.items(), key=lambda x: x[1], reverse=True)[:10]
     else:
         properties_for_display_list = [(cls, ontology_used_properties_count_dict[cls]) for cls in selected_properties]
 
@@ -3195,7 +3291,7 @@ def get_property_frequency_bar_plot(g_ont, selected_properties, superproperty_fi
         fig.update_layout(xaxis_title=None, yaxis_title="property frequency",
             yaxis=dict(showticklabels=False, ticks="", showgrid=True,
                 gridcolor="lightgray", title_standoff=5),
-            height=250, margin=dict(t=20, b=20, l=20, r=20))
+            height=300, margin=dict(t=20, b=20, l=20, r=20))
 
 
         # Render___________________________
