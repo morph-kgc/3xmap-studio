@@ -373,7 +373,6 @@ def import_st_aesthetics_dark_mode():
 
     </style>"""
 
-
 #_______________________________________________________
 # Function to get error message to indicate a g_mapping must be created/imported
 def get_missing_g_mapping_error_message():
@@ -646,32 +645,23 @@ RML, QL = get_required_ns_dict().values()
 #________________________________________________________
 
 #_________________________________________________________
-# Funtion to get dictionary {prefix: namespace} bound in the ontology
-def get_ontology_ns_dict(g_ont):
+# Funtion to get dictionary {prefix: namespace} bound in a graph
+def get_g_ns_dict(g):
 
-    ontology_component_ns_dict = dict(g_ont.namespace_manager.namespaces())
+    ns_dict = dict(g.namespace_manager.namespaces())
 
-    return ontology_component_ns_dict
-#_________________________________________________________
-
-#_________________________________________________________
-# Funtion to get dictionary {prefix: namespace} bound in the mapping
-def get_mapping_ns_dict():
-
-    mapping_ns_dict = dict(st.session_state["g_mapping"].namespace_manager.namespaces())
-
-    return mapping_ns_dict
+    return ns_dict
 #_________________________________________________________
 
 #_________________________________________________________
 # Funtion to get dictionary {prefix: namespace} used in the mapping
-def get_used_mapping_ns_dict():
+def get_used_g_ns_dict(g):
 
     used_namespaces_set = set()
     used_namespaces_dict = {}
-    mapping_ns_dict = get_mapping_ns_dict()
+    mapping_ns_dict = get_g_ns_dict(g)
 
-    for s, p, o in st.session_state["g_mapping"]:
+    for s, p, o in g:
         for term in [s, p, o]:
             if isinstance(term, URIRef):
                 try:
@@ -717,7 +707,7 @@ def unbind_namespaces(ns_to_unbind_list):
 # Duplicated prefixes will be renamed, duplicated namespaces will be overwritten
 def bind_namespace(prefix, namespace):
 
-    mapping_ns_dict = get_mapping_ns_dict()
+    mapping_ns_dict = get_g_ns_dict(st.session_state["g_mapping"])
 
     # if namespace already bound to a different prefix, unbind it
     if URIRef(namespace) in mapping_ns_dict.values():
@@ -745,7 +735,7 @@ def bind_namespace(prefix, namespace):
 # Duplicated prefixes will be renamed, duplicated namespaces will be ignored
 def bind_namespace_wo_overwriting(prefix, namespace):
 
-    mapping_ns_dict = get_mapping_ns_dict()
+    mapping_ns_dict = get_g_ns_dict(st.session_state["g_mapping"])
 
     # if namespace already bound to a different prefix, unbind it
     if not namespace in mapping_ns_dict.values():

@@ -130,7 +130,7 @@ def create_new_g_mapping():
     for prefix, namespace in utils.get_required_ns_dict().items():
         utils.bind_namespace(prefix, namespace)
     # bind ontology namespaces______________________________
-    ontology_ns_dict = utils.get_ontology_ns_dict(st.session_state["g_ontology"])
+    ontology_ns_dict = utils.get_g_ns_dict(st.session_state["g_ontology"])
     for prefix, namespace in ontology_ns_dict.items():
         utils.bind_namespace(prefix, namespace)
     # store information________________________________
@@ -158,7 +158,7 @@ def load_existing_g_mapping():
     for prefix, namespace in st.session_state["g_mapping"].namespaces():
         utils.bind_namespace(prefix, namespace)
     # bind ontology namespaces_____________________________
-    ontology_ns_dict = utils.get_ontology_ns_dict(st.session_state["g_ontology"])
+    ontology_ns_dict = utils.get_g_ns_dict(st.session_state["g_ontology"])
     for prefix, namespace in ontology_ns_dict.items():
         utils.bind_namespace(prefix, namespace)
     # store information________________________
@@ -232,15 +232,6 @@ def bind_predefined_namespaces():
     # reset fields_____________________________
     st.session_state["key_predefined_ns_to_bind_multiselect"] = []
     st.session_state["key_add_ns_radio"] = "📋 Predefined"
-
-# def bind_all_predefined_namespaces():
-#     # bind and store information___________________________
-#     for requested_prefix in predefined_ns_dict:
-#         namespace = predefined_ns_dict[requested_prefix]
-#         utils.bind_namespace(prefix, namespace)
-#     st.session_state["ns_bound_ok_flag"] = True   #for success message
-#     # reset fields_____________________________
-#     st.session_state["key_add_ns_radio"] = "📋 Predefined"
 
 def bind_ontology_namespaces():
     # bind and store information___________________________
@@ -672,8 +663,8 @@ with tab2:
         col1,col2 = st.columns([2,1.5])
 
         # Display last added namespaces in dataframe (also option to show all ns)
-        mapping_ns_dict = utils.get_mapping_ns_dict()
-        used_mapping_ns_dict = utils.get_used_mapping_ns_dict()
+        mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
+        used_mapping_ns_dict = utils.get_used_g_ns_dict(st.session_state["g_mapping"])
 
         with col2:
             col2a, col2b = st.columns([0.5, 2])
@@ -745,8 +736,8 @@ with tab2:
             st.rerun()
 
         if st.session_state["g_ontology_components_dict"]:
-            ontology_ns_dict = utils.get_ontology_ns_dict(st.session_state["g_ontology"])
-            mapping_ns_dict = utils.get_mapping_ns_dict()
+            ontology_ns_dict = utils.get_g_ns_dict(st.session_state["g_ontology"])
+            mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
             ontology_ns_list = [key for key in ontology_ns_dict if key not in mapping_ns_dict]
             add_ns_options = ["✏️ Custom", "🧩 Ontology", "📋 Predefined", "🏛️ Base"]
         else:
@@ -759,8 +750,8 @@ with tab2:
         predefined_ns_dict = utils.get_predefined_ns_dict()
         default_ns_dict = utils.get_default_ns_dict()
         default_structural_ns = utils.get_default_structural_ns()
-        ontology_ns_dict = utils.get_ontology_ns_dict(st.session_state["g_ontology"])
-        mapping_ns_dict = utils.get_mapping_ns_dict()
+        ontology_ns_dict = utils.get_g_ns_dict(st.session_state["g_ontology"])
+        mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
 
         if add_ns_selected_option == "✏️ Custom":
             with col1:
@@ -830,7 +821,7 @@ with tab2:
         elif add_ns_selected_option == "🧩 Ontology":
 
             there_are_ontology_ns_unbound_flag = False
-            ontology_ns_dict = utils.get_ontology_ns_dict(st.session_state["g_ontology"])
+            ontology_ns_dict = utils.get_g_ns_dict(st.session_state["g_ontology"])
             for pr, ns in ontology_ns_dict.items():
                 if not ns in mapping_ns_dict.values():
                     there_are_ontology_ns_unbound_flag = True
@@ -849,7 +840,7 @@ with tab2:
 
                 g_ont_components_w_unbound_ns = []
                 for ont_label, ont in st.session_state["g_ontology_components_dict"].items():
-                    for pr, ns in utils.get_ontology_ns_dict(ont).items():
+                    for pr, ns in utils.get_g_ns_dict(ont).items():
                         if not str(ns) in mapping_ns_dict.values():
                             g_ont_components_w_unbound_ns.append(st.session_state["g_ontology_components_tag_dict"][ont_label])
                             break
@@ -900,7 +891,7 @@ with tab2:
                             for ont_label, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
                                 if ont_tag == ontology_filter_for_ns:
                                     ont = st.session_state["g_ontology_components_dict"][ont_label]
-                            ontology_component_ns_dict = utils.get_ontology_ns_dict(ont)
+                            ontology_component_ns_dict = utils.get_g_ns_dict(ont)
                             ontology_ns_list_not_duplicated = [k for k, v in ontology_component_ns_dict.items() if v not in mapping_ns_dict.values()]
                             list_to_choose = ontology_ns_list_not_duplicated.copy()
                             if len(list_to_choose) > 1:
@@ -929,7 +920,7 @@ with tab2:
                                 st.button("Bind", key="key_bind_ontology_ns_button", on_click=bind_ontology_namespaces)
 
                     if ontology_filter_for_ns != "Select ontology":
-                        ontology_ns_dict = utils.get_ontology_ns_dict(ont)
+                        ontology_ns_dict = utils.get_g_ns_dict(ont)
 
                     inner_html = ""
                     max_length = utils.get_max_length_for_display()[4]
@@ -1147,7 +1138,7 @@ with tab2:
 
 
         # unbind ns success message - show here if "Unbind" purple heading is not going to be shown
-        mapping_ns_dict = utils.get_mapping_ns_dict()
+        mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
         default_ns_dict = utils.get_default_ns_dict()
         required_ns_dict = utils.get_required_ns_dict()
         list_to_choose = [k for k in mapping_ns_dict if (k not in default_ns_dict and k not in required_ns_dict)]
@@ -1192,7 +1183,7 @@ with tab2:
             with col1:
                 col1a, col1b = st.columns([2,1])
             with col1a:
-                mapping_ns_dict = utils.get_mapping_ns_dict()
+                mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                 default_ns_dict = utils.get_default_ns_dict()
                 required_ns_dict = utils.get_required_ns_dict()
                 list_to_choose = [k for k in mapping_ns_dict if (k not in default_ns_dict and k not in required_ns_dict)]

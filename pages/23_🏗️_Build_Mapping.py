@@ -234,7 +234,7 @@ def add_ns_to_sm_template():
     else:   # a ns was added (replace)
         st.session_state["sm_template_list"][0] = sm_template_ns
     # reset fields_____________
-    st.session_state["sm_template_prefix"] = sm_template_ns_prefix if sm_template_ns_prefix else utils.get_mapping_ns_dict()[sm_template_ns_prefix]
+    st.session_state["sm_template_prefix"] = sm_template_ns_prefix if sm_template_ns_prefix else utils.get_g_ns_dict(st.session_state["g_mapping"])[sm_template_ns_prefix]
     st.session_state["key_sm_template_ns_prefix"] = "Select a namespace"
     st.session_state["key_build_template_action_sm"] = "📈 Add variable part"
 
@@ -1225,7 +1225,7 @@ with tab2:
 
                     elif build_template_action_sm in ["🏷️ Add Namespace*", "🏷️ Add Namespace"]:
                         with col1b:
-                            mapping_ns_dict = utils.get_mapping_ns_dict()
+                            mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                             list_to_choose = sorted(mapping_ns_dict.keys())
                             list_to_choose.insert(0, "Select a namespace")
                             sm_template_ns_prefix = st.selectbox("🖱️ Select a namespace for the template:", list_to_choose,
@@ -1254,7 +1254,7 @@ with tab2:
                     with col1b:
                         sm_constant = st.text_input("⌨️ Enter constant:*", key="key_sm_constant")
 
-                    mapping_ns_dict = utils.get_mapping_ns_dict()
+                    mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                     list_to_choose = sorted(mapping_ns_dict.keys())
                     list_to_choose.insert(0, "Select a namespace")
                     with col1a:
@@ -1418,7 +1418,7 @@ with tab2:
                 #CLASS OUTSIDE ONTOLOGY
                 if add_subject_class_option == "🚫 Class outside Ontology":
 
-                    mapping_ns_dict = utils.get_mapping_ns_dict()
+                    mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
 
                     subject_class_prefix_list = list(mapping_ns_dict.keys())
                     with col1a:
@@ -1530,7 +1530,7 @@ with tab2:
 
                     if add_class_option == "🚫 Add Class outside Ontology":
 
-                        mapping_ns_dict = utils.get_mapping_ns_dict()
+                        mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
 
                         subject_class_prefix_list = list(mapping_ns_dict.keys())
                         with col1a:
@@ -1588,7 +1588,7 @@ with tab2:
                 if add_sm_graph_map_option == "Add Graph Map":
 
                     with col1b:
-                        mapping_ns_dict = utils.get_mapping_ns_dict()
+                        mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                         list_to_choose = sorted(mapping_ns_dict.keys())
                         list_to_choose.insert(0,"Select a namespace")
                         subject_graph_prefix = st.selectbox("🖱️ Select a namespace:*", list_to_choose,
@@ -1613,7 +1613,7 @@ with tab2:
                 inner_html_error = ""
                 inner_html_warning = ""
 
-                if ns_needed_for_sm_flag and not utils.get_mapping_ns_dict():
+                if ns_needed_for_sm_flag and not utils.get_g_ns_dict(st.session_state["g_mapping"]):
                     inner_html_error += f"""<small>· <b>No namespaces available.</b> Go to the
                         <b>Global Configuration</b> page to add them.</small><br>"""
 
@@ -1916,7 +1916,7 @@ with tab3:
 
                 with col1:
                     col1a, col1b = st.columns(2)
-                mapping_ns_dict = utils.get_mapping_ns_dict()
+                mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
 
                 if not mapping_ns_dict:
                     ns_needed_for_pom_flag = True
@@ -2021,7 +2021,7 @@ with tab3:
 
                 elif build_template_action_om == "🏷️ Add Namespace":
                     with col1b:
-                        mapping_ns_dict = utils.get_mapping_ns_dict()
+                        mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                         list_to_choose = sorted(mapping_ns_dict.keys())
                         list_to_choose.insert(0, "Select a namespace")
                         om_template_ns_prefix = st.selectbox("🖱️ Select a namespace:", list_to_choose,
@@ -2080,7 +2080,7 @@ with tab3:
                     om_term_type_constant = st.selectbox(label="🆔 Select term type:*", options=["📘 Literal", "🌐 IRI"],
                         key="om_term_type_constant")
 
-                mapping_ns_dict = utils.get_mapping_ns_dict()
+                mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                 if om_term_type_constant == "🌐 IRI" and mapping_ns_dict:
                     list_to_choose = sorted(mapping_ns_dict.keys())
                     list_to_choose.insert(0, "Select a namespace")
@@ -2157,7 +2157,7 @@ with tab3:
                 if not mapping_ns_dict:
                     ns_needed_for_pom_flag = True
                 with col1a:
-                    mapping_ns_dict = utils.get_mapping_ns_dict()
+                    mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                     list_to_choose = sorted(mapping_ns_dict.keys())
                     list_to_choose.insert(0,"Select a namespace")
                     om_graph_prefix = st.selectbox("🖱️ Namespace for Graph Map:*", list_to_choose,
