@@ -821,10 +821,11 @@ with tab2:
                             </div>""", unsafe_allow_html=True)
 
             if iri_input and prefix_input:
-                st.write("HERE", prefix_input)
                 if valid_iri_input and valid_prefix_input:
                     with col1a:
                         st.button("Bind", key="key_bind_custom_ns_button", on_click=bind_custom_namespace)
+
+        # HEREIGO REFACTORING
 
         elif add_ns_selected_option == "🧩 Ontology":
 

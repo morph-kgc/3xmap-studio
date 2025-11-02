@@ -545,9 +545,10 @@ def format_number_for_display(number):
 # 0. complete dataframes      1. last added dataframes
 # 2. Queries display (rows)    3. Queries display (columns)
 # 4. List of multiselect items for hard display     # 5 Long lists for soft display
+# 6. max characters to set label in network visualisation
 def get_max_length_for_display():
 
-    return [50, 10, 100, 20, 5, 5]
+    return [50, 10, 100, 20, 5, 5, 20]
 #_______________________________________________________
 
 
@@ -1024,6 +1025,8 @@ def get_number_of_tm(g):
     return len(triplesmaps)
 #_________________________________________________________
 
+
+#HEREIGO
 
 
 # GLOBAL CONFIGURATION - SAVE MAPPING
@@ -3287,6 +3290,50 @@ def get_mapping_composition_by_property_donut_chart():
                 <b>No <b style="color:#F63366;">properties</b> in mapping</b.
             </div>""", unsafe_allow_html=True)
         return False
+
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to get unique node label for network display
+def get_unique_node_label(complete_node_id, constant_string, legend_dict, max_length=utils.get_max_length_for_display()[6]):
+
+    i = 1
+    while f"{constant_string}{i}" in legend_dict:
+        i += 1
+    label = f"{constant_string}{i}"
+
+    if complete_node_id and len(complete_node_id) > max_length:
+        if complete_node_id not in legend_dict.values():
+            node_id = label
+            legend_dict[node_id] = complete_node_id
+        else:
+            for k, v in legend_dict.items():
+                if v == complete_node_id:
+                    node_id = k
+    else:
+        node_id = str(complete_node_id)
+
+    return [node_id, legend_dict]
+#_________________________________________________
+
+#_________________________________________________
+# Colors for STATS dict
+def get_colors_for_network_dict():
+
+    colors_for_network_dict = {}
+
+    if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
+        colors_for_network_dict["purple"] = "#d8c3f0"
+        colors_for_network_dict["salmon"] = "#ff9999"
+        colors_for_network_dict["gray"] = "#D3D3D3"
+
+    else:
+        colors_for_network_dict["purple"] = "#7A4A8C"
+        colors_for_network_dict["salmon"] = "#ff7a7a"
+        colors_for_network_dict["blue"] = "#336699"
+        colors_for_network_dict["gray"] = "#D3D3D3"
+
+    return colors_for_network_dict
 
 #_________________________________________________
 

@@ -8,6 +8,11 @@ from rdflib.namespace import split_uri
 from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL, XSD
 from streamlit_js_eval import streamlit_js_eval
 
+import rdflib, networkx as nx, matplotlib.pyplot as plt
+from pyvis.network import Network
+import streamlit.components.v1 as components
+import networkx as nx
+
 # Config-----------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
     st.set_page_config(page_title="3Xmap Studio", layout="wide",
@@ -60,7 +65,7 @@ if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
 
-tab1, tab2, tab3 = st.tabs(["Predefined Searches", "SPARQL", "Preview"])
+tab1, tab2, tab3, tab4 = st.tabs(["Predefined Searches", "SPARQL", "Preview", "Network"])
 
 #________________________________________________
 # PREDEFINED SEARCHES
@@ -1125,3 +1130,155 @@ with tab3:
     if preview_format != "Select format":
         serialised_data = st.session_state["g_mapping"].serialize(format=preview_format)
         st.code(serialised_data)
+
+#________________________________________________
+# NETWORK VISUALISATION
+with tab4:
+    st.write("")
+    st.write("")
+
+    col1, col2 = st.columns([2,1.5])
+
+    with col2:
+        col2a,col2b = st.columns([1,2])
+    with col2b:
+        utils.get_corner_status_message_mapping()
+
+    #PURPLE HEADING - PREVIEW
+    with col1:
+        st.markdown("""<div class="purple-heading">
+                🕸️ Network Visualisation
+            </div>""", unsafe_allow_html=True)
+        st.write("")
+
+    with col1:
+        col1a, col1b = st.columns([2,1])
+
+    color_dict = utils.get_colors_for_network_dict()
+    s_node_color = color_dict["salmon"]
+    o_node_color = color_dict["purple"]
+    p_edge_color = color_dict["gray"]
+
+    G = nx.DiGraph()
+
+    list_to_choose_tm = []
+    for sm in st.session_state["g_mapping"].objects(predicate=RML.subjectMap):
+        for rule in utils.get_rules_for_sm(sm):
+            list_to_choose_tm.append(rule[3])
+            break
+
+    with col1a:
+        list_to_choose = sorted(list_to_choose_tm.copy())
+        list_to_choose.insert(0, "Select all")
+        tm_for_network_list = st.multiselect("🖱️ Select TriplesMaps:*", list_to_choose,
+            key="key_tm_for_network_list")
+        if "Select all" in tm_for_network_list:
+            tm_for_network_list = list_to_choose_tm
+
+    sm_for_network_list = []
+    for sm in st.session_state["g_mapping"].objects(predicate=RML.subjectMap):
+        for rule in utils.get_rules_for_sm(sm):
+            if rule[3] in tm_for_network_list:
+                sm_for_network_list.append(sm)
+                break
+
+    legend_dict = {}
+    for sm in sm_for_network_list:
+        for rule in utils.get_rules_for_sm(sm):
+            s, p, o, tm = rule
+
+            s_id, legend_dict = utils.get_unique_node_label(s, "s", legend_dict, max_length=0)
+            p_label, legend_dict = utils.get_unique_node_label(p, "p", legend_dict)
+            o_id, legend_dict = utils.get_unique_node_label(o, "o", legend_dict)
+
+            # Add nodes and edge
+            G.add_node(s_id, label=s_id, color=s_node_color, shape="ellipse")
+            if o_id not in G:
+                G.add_node(o_id, label=o_id, color=o_node_color, shape="ellipse")  # conditional so that if node is sm it will have s_node_color
+            G.add_edge(s_id, o_id, label=p_label, color=p_edge_color)
+
+
+    # Create Pyvis network
+    G_net = Network(height="600px", width="100%", directed=True)
+    G_net.from_nx(G)
+
+    # Optional: improve layout and styling
+    G_net.repulsion(node_distance=200, central_gravity=0.3, spring_length=200, spring_strength=0.05)
+    G_net.set_options("""
+    var options = {
+      "nodes": {
+        "shape": "ellipse",
+         "borderWidth": 0,
+        "font": {
+          "size": 14,
+          "face": "arial",
+          "align": "center"
+        }
+      },
+      "edges": {
+        "width": 3,
+        "arrows": {
+          "to": {
+            "enabled": true,
+            "scaleFactor": 0.5
+          }
+        },
+        "color": {
+          "inherit": true
+        },
+        "font": {
+          "size": 10,
+          "align": "middle"
+        },
+        "smooth": false
+      },
+      "physics": {
+        "enabled": true
+      }
+    }
+    """)
+
+
+    col1, col2 = st.columns([2,1])
+
+    # Render
+    if sm_for_network_list:
+
+        G_net.write_html("graph.html")
+        with col1:
+            with open("graph.html", "r", encoding="utf-8") as f:
+                components.html(f.read(), height=600)
+
+        # Create and display legend
+        for letter in ["s", "p", "o"]:
+            legend_flag = False
+            legend_html = "<div style='font-family: sans-serif; font-size: 14px;'>"
+            if letter == "s":
+                legend_html += "<p>🔑 Subject legend</p>"
+                color = s_node_color
+            elif letter == "p":
+                legend_html += "<p>🔑 Predicate legend</p>"
+                color = p_edge_color
+            elif letter == "o":
+                legend_html += "<p>🔑 Object legend</p>"
+                color = o_node_color
+
+            for key, value in legend_dict.items():
+                if key.startswith(letter):
+                    legend_html += ("<div style='display: flex; align-items: flex-start; margin-bottom: 4px;'>"
+                        f"<div style='min-width: 60px; font-weight: bold;'><code>{str(key)}</code></div>"
+                        f"<div style='flex: 1; max-width: 100%; word-break: break-word; white-space: normal; font-size: 12px;'>{str(value)}</div>"
+                        "</div>")
+                    legend_flag = True
+
+            legend_html += "</div>"
+
+
+            with col2:
+                if legend_flag:
+                    st.markdown(f"""<div style='border-left: 4px solid {color}; padding: 0.4em 0.6em;
+                        color: #4d4d4d; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
+                        margin: 0.5em 0; background-color: #f5f5f5; border-radius: 4px; box-sizing: border-box;
+                        word-wrap: break-word;'>
+                            {legend_html}
+                        </div>""", unsafe_allow_html=True)
