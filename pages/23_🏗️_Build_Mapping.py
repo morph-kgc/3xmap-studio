@@ -44,7 +44,7 @@ else:
 
 
 # Namespaces---------------------------------------------------------
-RML, RR, QL = utils.get_required_ns_dict().values()
+RML, QL = utils.get_required_ns_dict().values()
 
 
 # Initialise session state variables--------------------------------------
@@ -643,8 +643,6 @@ with tab1:
 
     with col2:
         col2a,col2b = st.columns([1,2])
-    # with col2b:
-    #     utils.get_corner_status_message_mapping()
 
     # Display last added namespaces in dataframe (also option to show all ns)
     tm_dict = utils.get_tm_dict()
@@ -1015,8 +1013,6 @@ with tab2:
 
     with col2:
         col2a,col2b = st.columns([1,2])
-    # with col2b:
-    #     utils.get_corner_status_message_mapping()
 
     # Display last added namespaces in dataframe (also option to show all ns)
     tm_dict = utils.get_tm_dict()
@@ -1805,8 +1801,6 @@ with tab3:
 
     with col2:
         col2a, col2b = st.columns([1,2])
-    # with col2b:
-    #     utils.get_corner_status_message_mapping()
 
     with col2:
         col2a, col2b = st.columns([0.5, 2])   #HEREHERE
@@ -2386,9 +2380,6 @@ with tab4:
 
     with col2:
         col2a,col2b = st.columns([1,2])
-    # with col2b:
-    #     utils.get_corner_status_message()
-    #     st.write("")
 
     # PURPLE HEADING - REMOVE EXISTING TRIPLESMAP
     tm_dict = utils.get_tm_dict()

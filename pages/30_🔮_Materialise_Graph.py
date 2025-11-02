@@ -46,7 +46,7 @@ else:
 
 
 # Namespaces------------------------------------------
-RML, RR, QL = utils.get_required_ns_dict().values()
+RML, QL = utils.get_required_ns_dict().values()
 
 # Temporal folder to put everything-----------------------
 temp_folder_path = os.path.join(os.getcwd(), "materialising_mapping_temp")
@@ -92,7 +92,7 @@ if "key_mapping_uploader" not in st.session_state:
 if "additional_mapping_for_mkgcgc_saved_ok_flag" not in st.session_state:
     st.session_state["additional_mapping_for_mkgcgc_saved_ok_flag"] = False
 if "additional_mapping_removed_ok_flag" not in st.session_state:
-    st.session_state["additional_mapping_removed_ok_flag_tab2"] = False
+    st.session_state["additional_mapping_removed_ok_flag"] = False
 if "config_file_reset_ok_flag_tab2" not in st.session_state:
     st.session_state["config_file_reset_ok_flag_tab2"] = False
 
@@ -601,18 +601,19 @@ with tab2:
                     and the <b>🛢️ Tabular data</b> pages.</small>
                 </div>""", unsafe_allow_html=True)
             mkgc_ds_type = ""
-        elif not st.session_state["ds_files_dict"]:
-            list_to_choose = ["📊 SQL Database"]
-        elif not st.session_state["db_connections_dict"]:
-            list_to_choose = ["🛢️ Tabular data"]
         else:
-            list_to_choose = ["📊 SQL Database", "🛢️ Tabular data"]
-        if list(st.session_state["mkgc_config"].keys()) != ["DEFAULT"] and list(st.session_state["mkgc_config"].keys()) != ["DEFAULT", "CONFIGURATION"]:
-            list_to_choose.append("🗑️ Remove")
-        with col1b:
-            st.write("")
-            mkgc_ds_type = st.radio("🖱️ Select an option:*", list_to_choose,
-                label_visibility="collapsed", key="key_mkgc_ds_type")
+            if not st.session_state["ds_files_dict"]:
+                list_to_choose = ["📊 SQL Database"]
+            elif not st.session_state["db_connections_dict"]:
+                list_to_choose = ["🛢️ Tabular data"]
+            else:
+                list_to_choose = ["📊 SQL Database", "🛢️ Tabular data"]
+            if list(st.session_state["mkgc_config"].keys()) != ["DEFAULT"] and list(st.session_state["mkgc_config"].keys()) != ["DEFAULT", "CONFIGURATION"]:
+                list_to_choose.append("🗑️ Remove")
+            with col1b:
+                st.write("")
+                mkgc_ds_type = st.radio("🖱️ Select an option:*", list_to_choose,
+                    label_visibility="collapsed", key="key_mkgc_ds_type")
 
         if mkgc_ds_type != "🗑️ Remove":
 
@@ -1276,251 +1277,253 @@ with tab3:
                 🔮 Materialise
             </div>""", unsafe_allow_html=True)
 
+    with col1:
+        col1a, col1b = st.columns([2.5,1])
+
+    if isinstance(st.session_state["graph_materialised_ok_flag"], list):
         with col1:
-            col1a, col1b = st.columns([2.5,1])
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.write("")
+            st.markdown(f"""<div class="error-message">
+                ❌ <b>Error during materialisation.</b>
+                <small><b>Full error: {st.session_state["graph_materialised_ok_flag"][1]}</b></small>
+            </div>""", unsafe_allow_html=True)
+        st.session_state["graph_materialised_ok_flag"] = False
+        time.sleep(st.session_state["success_display_time"]+5)
+        st.rerun()
 
-        if isinstance(st.session_state["graph_materialised_ok_flag"], list):
-            with col1:
-                col1a, col1b = st.columns([2,1])
+    if st.session_state["graph_materialised_ok_flag"]:
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.write("")
+            st.markdown(f"""<div class="success-message-flag">
+                ✅ <b>Graph</b> has been materialised!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["graph_materialised_ok_flag"] = False
+        time.sleep(st.session_state["success_display_time"])
+        st.rerun()
+
+    if config_string.getvalue() == "":
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.markdown(f"""<div class="error-message">
+                ❌ <b>Config file is empty</b>.<small> You can auto-generate it
+                in the <b>AutoConfig</b> pannel, or go to the
+                <b>Manual Config</b> pannel for manual edition.</small>
+            </div>""", unsafe_allow_html=True)
+
+    else:
+
+        # List of all used mappings
+        mkgc_used_mapping_list = []
+        for section in st.session_state["mkgc_config"].sections():
+            if section != "CONFIGURATION" and section != "DEFAULT":
+                mapping_path_list_string = st.session_state["mkgc_config"].get(section, "mappings", fallback="")
+                if mapping_path_list_string:
+                    for mapping_path in mapping_path_list_string.split(","):
+                        mapping_path = mapping_path.strip()
+                        g_label = next((key for key, value in st.session_state["mkgc_g_mappings_dict"].items()
+                            if value == mapping_path), os.path.splitext(os.path.basename(mapping_path))[0])
+                        if g_label not in mkgc_used_mapping_list:   # only save if not duplicated
+                            mkgc_used_mapping_list.append(g_label)
+
+        # List of all used sql databases
+        mkgc_used_db_conn_list = []
+        for section in st.session_state["mkgc_config"].sections():
+            if section != "CONFIGURATION" and section != "DEFAULT":
+                used_db_url = st.session_state["mkgc_config"].get(section, "db_url", fallback="")
+                if used_db_url and used_db_url not in mkgc_used_db_conn_list:
+                    mkgc_used_db_conn_list.append(used_db_url)
+
+        # List of all used tabular data sources
+        mkgc_used_tab_ds_list = []
+        for section in st.session_state["mkgc_config"].sections():
+            if section != "CONFIGURATION" and section != "DEFAULT":
+                file_path = st.session_state["mkgc_config"].get(section, "file_path", fallback="")
+                if file_path:
+                    filename = os.path.basename(file_path)
+                    if filename not in mkgc_used_tab_ds_list:
+                        mkgc_used_tab_ds_list.append(filename)
+
+
+        everything_ok_flag = True
+        inner_html_success = ""
+        inner_html_error = ""
+
+        # Check g_mapping if used (additional mappings checked before adding)
+        if st.session_state["g_label"] in mkgc_used_mapping_list:
+            g_mapping_ok_flag = True
+            if st.session_state["g_label"]:
+                check_g_mapping = utils.check_g_mapping(st.session_state["g_mapping"])
+                if check_g_mapping:
+                    inner_html_error += "❌" + check_g_mapping
+                    everything_ok_flag = False
+                    g_mapping_ok_flag = False
+                else:
+                    inner_html_success += f"""✔️ Mapping <b>{st.session_state["g_label"]}</b>
+                        complete.<br>"""
+
+        # Message on additional mappings if used
+        # Check links to additional mappings
+        mkgc_not_working_url_mappings_list = []
+        for section in st.session_state["mkgc_config"].sections():
+            if section != "CONFIGURATION" and section != "DEFAULT":
+                mapping_path_list_string = st.session_state["mkgc_config"].get(section, "mappings", fallback="")
+                if mapping_path_list_string:
+                    for mapping_path in mapping_path_list_string.split(","):
+                        if mapping_path in st.session_state["mkgc_g_mappings_dict"].values(): # these are the URL additional mappings
+                            if not utils.is_valid_url_mapping(mapping_path, False):
+                                mkgc_not_working_url_mappings_list.append(mapping_path)
+
+
+        mkgc_used_additional_mapping_list = mkgc_used_mapping_list.copy()
+        if st.session_state["g_label"] in mkgc_used_additional_mapping_list:
+            mkgc_used_additional_mapping_list.remove(st.session_state["g_label"])
+        if mkgc_used_additional_mapping_list and not mkgc_not_working_url_mappings_list:
+            inner_html_success += f"""✔️ <b>Additional mappings</b> are valid:<br>
+                <div style="margin-left: 20px"><b><small>
+                {utils.format_list_for_markdown(mkgc_used_additional_mapping_list)}</small><br></div>"""
+        elif mkgc_used_additional_mapping_list:
+            inner_html_error += f"""❌ URL to <b>additional mapping/s</b> not working:<br>
+                <div style="margin-left: 20px"><b><small>
+                {utils.format_list_for_markdown(mkgc_not_working_url_mappings_list)}</small><br></div>"""
+
+        # Check connections to db if used
+        not_working_db_conn_list = []
+        for connection_string in mkgc_used_db_conn_list:
+            timeout = 3
+            try:
+                engine = create_engine(connection_string, connect_args={"connect_timeout": timeout})
+                conn = engine.connect()
+            except Exception as e:
+                not_working_db_conn_list.append(connection_string)
+        if not not_working_db_conn_list and mkgc_used_db_conn_list:
+            formatted_list = "<br>".join(mkgc_used_db_conn_list)
+            inner_html_success += f"""✔️ All <b>connections to databases</b> are working:<br>
+                <div style="margin-left: 20px"><small><b>{formatted_list}</b></small><br></div>"""
+        elif not_working_db_conn_list:
+            everything_ok_flag = False
+            if len(not_working_db_conn_list) == 1:
+                inner_html_error += f"""❌ A connection to database is not working:<br>
+                    <div style="margin-left: 20px"><small><b>{utils.format_list_for_markdown(not_working_db_conn_list)}
+                    </b></small><br></div>"""
+            else:
+                inner_html_error += f"""❌ Several connections to databases are not working:<br>
+                    <div style="margin-left: 20px"><small><b>
+                    {utils.format_list_for_markdown(not_working_db_conn_list)}</b></small><br></div>"""
+
+        # Check all tabular sources are loaded
+        not_loaded_ds_list = []
+        for ds_filename in mkgc_used_tab_ds_list:
+            if not ds_filename in st.session_state["ds_files_dict"]:
+                not_loaded_ds_list.append(ds_filename)
+
+        if not not_loaded_ds_list and mkgc_used_tab_ds_list:
+            inner_html_success += f"""✔️ All <b>tabular data sources</b> are loaded:<br>
+                <div style="margin-left: 20px"><small>
+                <b>{utils.format_list_for_markdown(mkgc_used_tab_ds_list)}</b></small><br></div>"""
+        elif mkgc_used_tab_ds_list:
+            everything_ok_flag = False
+            with col1a:
+                if len(not_loaded_ds_list) == 1:
+                    inner_html_error += f"""❌ A <b>tabular data source</b> is not loaded:
+                        <div style="margin-left: 20px"><b><small>
+                        {utils.format_list_for_markdown(not_loaded_ds_list)}</b></small><br></div>"""
+                else:
+                    inner_html_error += f"""❌ Several <b>tabular data sources</b> are not loaded:
+                        <div style="margin-left: 20px"><small><b>
+                        {utils.format_list_for_markdown(not_loaded_ds_list)}</b></small>
+                        <br></div>"""
+
+        # show check message
+        with col1a:
+            if inner_html_success:
+                st.markdown(f"""<div class="success-message">
+                        {inner_html_success}
+                    </div>""", unsafe_allow_html=True)
+            if inner_html_error:
+                st.markdown(f"""<div class="error-message">
+                        {inner_html_error}
+                    </div>""", unsafe_allow_html=True)
+
+        if everything_ok_flag:
+
             with col1a:
                 st.write("")
-                st.markdown(f"""<div class="error-message">
-                    ❌ <b>Error during materialisation.</b>
-                    <small><b>Full error: {st.session_state["graph_materialised_ok_flag"][1]}</b></small>
-                </div>""", unsafe_allow_html=True)
-            st.session_state["graph_materialised_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"]+5)
-            st.rerun()
-
-        if st.session_state["graph_materialised_ok_flag"]:
-            with col1:
-                col1a, col1b = st.columns([2,1])
-            with col1a:
-                st.write("")
-                st.markdown(f"""<div class="success-message-flag">
-                    ✅ <b>Graph</b> has been materialised!
-                </div>""", unsafe_allow_html=True)
-            st.session_state["graph_materialised_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
-            st.rerun()
-
-        if config_string.getvalue() == "":
-            with col1a:
-                st.markdown(f"""<div class="error-message">
-                    ❌ <b>Config file is empty</b>.<small> You can auto-generate it
-                    in the <b>AutoConfig</b> pannel, or go to the
-                    <b>Manual Config</b> pannel for manual edition.</small>
-                </div>""", unsafe_allow_html=True)
+                st.button("Materialise", key="key_materialise_graph_button", on_click=materialise_graph)
 
         else:
-
-            # List of all used mappings
-            mkgc_used_mapping_list = []
-            for section in st.session_state["mkgc_config"].sections():
-                if section != "CONFIGURATION" and section != "DEFAULT":
-                    mapping_path_list_string = st.session_state["mkgc_config"].get(section, "mappings", fallback="")
-                    if mapping_path_list_string:
-                        for mapping_path in mapping_path_list_string.split(","):
-                            mapping_path = mapping_path.strip()
-                            g_label = next((key for key, value in st.session_state["mkgc_g_mappings_dict"].items()
-                                if value == mapping_path), os.path.splitext(os.path.basename(mapping_path))[0])
-                            if g_label not in mkgc_used_mapping_list:   # only save if not duplicated
-                                mkgc_used_mapping_list.append(g_label)
-
-            # List of all used sql databases
-            mkgc_used_db_conn_list = []
-            for section in st.session_state["mkgc_config"].sections():
-                if section != "CONFIGURATION" and section != "DEFAULT":
-                    used_db_url = st.session_state["mkgc_config"].get(section, "db_url", fallback="")
-                    if used_db_url and used_db_url not in mkgc_used_db_conn_list:
-                        mkgc_used_db_conn_list.append(used_db_url)
-
-            # List of all used tabular data sources
-            mkgc_used_tab_ds_list = []
-            for section in st.session_state["mkgc_config"].sections():
-                if section != "CONFIGURATION" and section != "DEFAULT":
-                    file_path = st.session_state["mkgc_config"].get(section, "file_path", fallback="")
-                    if file_path:
-                        filename = os.path.basename(file_path)
-                        if filename not in mkgc_used_tab_ds_list:
-                            mkgc_used_tab_ds_list.append(filename)
-
-
-            everything_ok_flag = True
-            inner_html_success = ""
-            inner_html_error = ""
-
-            # Check g_mapping if used (additional mappings checked before adding)
-            if st.session_state["g_label"] in mkgc_used_mapping_list:
-                g_mapping_ok_flag = True
-                if st.session_state["g_label"]:
-                    check_g_mapping = utils.check_g_mapping(st.session_state["g_mapping"])
-                    if check_g_mapping:
-                        inner_html_error += "❌" + check_g_mapping
-                        everything_ok_flag = False
-                        g_mapping_ok_flag = False
-                    else:
-                        inner_html_success += f"""✔️ Mapping <b>{st.session_state["g_label"]}</b>
-                            complete.<br>"""
-
-            # Message on additional mappings if used
-            # Check links to additional mappings
-            mkgc_not_working_url_mappings_list = []
-            for section in st.session_state["mkgc_config"].sections():
-                if section != "CONFIGURATION" and section != "DEFAULT":
-                    mapping_path_list_string = st.session_state["mkgc_config"].get(section, "mappings", fallback="")
-                    if mapping_path_list_string:
-                        for mapping_path in mapping_path_list_string.split(","):
-                            if mapping_path in st.session_state["mkgc_g_mappings_dict"].values(): # these are the URL additional mappings
-                                if not utils.is_valid_url_mapping(mapping_path, False):
-                                    mkgc_not_working_url_mappings_list.append(mapping_path)
-
-
-            mkgc_used_additional_mapping_list = mkgc_used_mapping_list.copy()
-            if st.session_state["g_label"] in mkgc_used_additional_mapping_list:
-                mkgc_used_additional_mapping_list.remove(st.session_state["g_label"])
-            if mkgc_used_additional_mapping_list and not mkgc_not_working_url_mappings_list:
-                inner_html_success += f"""✔️ <b>Additional mappings</b> are valid:<br>
-                    <div style="margin-left: 20px"><b><small>
-                    {utils.format_list_for_markdown(mkgc_used_additional_mapping_list)}</small><br></div>"""
-            elif mkgc_used_additional_mapping_list:
-                inner_html_error += f"""❌ URL to <b>additional mapping/s</b> not working:<br>
-                    <div style="margin-left: 20px"><b><small>
-                    {utils.format_list_for_markdown(mkgc_not_working_url_mappings_list)}</small><br></div>"""
-
-            # Check connections to db if used
-            not_working_db_conn_list = []
-            for connection_string in mkgc_used_db_conn_list:
-                timeout = 3
-                try:
-                    engine = create_engine(connection_string, connect_args={"connect_timeout": timeout})
-                    conn = engine.connect()
-                except Exception as e:
-                    not_working_db_conn_list.append(connection_string)
-            if not not_working_db_conn_list and mkgc_used_db_conn_list:
-                formatted_list = "<br>".join(mkgc_used_db_conn_list)
-                inner_html_success += f"""✔️ All <b>connections to databases</b> are working:<br>
-                    <div style="margin-left: 20px"><small><b>{formatted_list}</b></small><br></div>"""
-            elif not_working_db_conn_list:
-                everything_ok_flag = False
-                if len(not_working_db_conn_list) == 1:
-                    inner_html_error += f"""❌ A connection to database is not working:<br>
-                        <div style="margin-left: 20px"><small><b>{utils.format_list_for_markdown(not_working_db_conn_list)}
-                        </b></small><br></div>"""
-                else:
-                    inner_html_error += f"""❌ Several connections to databases are not working:<br>
-                        <div style="margin-left: 20px"><small><b>
-                        {utils.format_list_for_markdown(not_working_db_conn_list)}</b></small><br></div>"""
-
-            # Check all tabular sources are loaded
-            not_loaded_ds_list = []
-            for ds_filename in mkgc_used_tab_ds_list:
-                if not ds_filename in st.session_state["ds_files_dict"]:
-                    not_loaded_ds_list.append(ds_filename)
-
-            if not not_loaded_ds_list and mkgc_used_tab_ds_list:
-                inner_html_success += f"""✔️ All <b>tabular data sources</b> are loaded:<br>
-                    <div style="margin-left: 20px"><small>
-                    <b>{utils.format_list_for_markdown(mkgc_used_tab_ds_list)}</b></small><br></div>"""
-            elif mkgc_used_tab_ds_list:
-                everything_ok_flag = False
-                with col1a:
-                    if len(not_loaded_ds_list) == 1:
-                        inner_html_error += f"""❌ A <b>tabular data source</b> is not loaded:
-                            <div style="margin-left: 20px"><b><small>
-                            {utils.format_list_for_markdown(not_loaded_ds_list)}</b></small><br></div>"""
-                    else:
-                        inner_html_error += f"""❌ Several <b>tabular data sources</b> are not loaded:
-                            <div style="margin-left: 20px"><small><b>
-                            {utils.format_list_for_markdown(not_loaded_ds_list)}</b></small>
-                            <br></div>"""
-
-            # show check message
-            with col1a:
-                if inner_html_success:
-                    st.markdown(f"""<div class="success-message">
-                            {inner_html_success}
-                        </div>""", unsafe_allow_html=True)
-                if inner_html_error:
-                    st.markdown(f"""<div class="error-message">
-                            {inner_html_error}
-                        </div>""", unsafe_allow_html=True)
-
-            if everything_ok_flag:
-
-                with col1a:
-                    st.write("")
-                    st.button("Materialise", key="key_materialise_graph_button", on_click=materialise_graph)
-
-            else:
-                with col1b:
-                    if st.session_state["g_label"] and not g_mapping_ok_flag:
-                        st.markdown(f"""<div class="info-message-blue">
-                                <small>ℹ️ You can fix mapping <b>{st.session_state["g_label"]}</b>
-                                in the <b>Build Mapping</b> page.</small>
-                            </div>""", unsafe_allow_html=True)
-                    if not_working_db_conn_list:
-                        st.markdown(f"""<div class="info-message-blue">
-                                <small>ℹ️ You can check the <b>connections to databases</b> in the
-                                <b>Manage Logical Sources</b> page.</small>
-                            </div>""", unsafe_allow_html=True)
-                    if not_loaded_ds_list:
-                        st.markdown(f"""<div class="info-message-blue">
-                                <small>ℹ️ You can load the <b>tabular data sources</b> in the
-                                <b>Manage Logical Sources</b> page.</small>
-                            </div>""", unsafe_allow_html=True)
-
-            if st.session_state["materialised_g_mapping"]:
-
-                with col1b:
+            with col1b:
+                if st.session_state["g_label"] and not g_mapping_ok_flag:
                     st.markdown(f"""<div class="info-message-blue">
-                            ℹ️ Graph materialised with <b>{len(st.session_state["materialised_g_mapping"])} triples</b>.
+                            <small>ℹ️ You can fix mapping <b>{st.session_state["g_label"]}</b>
+                            in the <b>Build Mapping</b> page.</small>
+                        </div>""", unsafe_allow_html=True)
+                if not_working_db_conn_list:
+                    st.markdown(f"""<div class="info-message-blue">
+                            <small>ℹ️ You can check the <b>connections to databases</b> in the
+                            <b>Manage Logical Sources</b> page.</small>
+                        </div>""", unsafe_allow_html=True)
+                if not_loaded_ds_list:
+                    st.markdown(f"""<div class="info-message-blue">
+                            <small>ℹ️ You can load the <b>tabular data sources</b> in the
+                            <b>Manage Logical Sources</b> page.</small>
                         </div>""", unsafe_allow_html=True)
 
-                with col1:
-                    st.write("")
-                    st.markdown("""<div class="gray-heading">
-                            📥 Download graph
+        if st.session_state["materialised_g_mapping"]:
+
+            with col1b:
+                st.markdown(f"""<div class="info-message-blue">
+                        ℹ️ Graph materialised with <b>{len(st.session_state["materialised_g_mapping"])} triples</b>.
+                    </div>""", unsafe_allow_html=True)
+
+            with col1:
+                st.write("")
+                st.markdown("""<div class="gray-heading">
+                        📥 Download graph
+                    </div>""", unsafe_allow_html=True)
+                st.write("")
+
+            with col1:
+                col1a, col1b = st.columns([1,2])
+
+            download_extension_dict = utils.get_g_mapping_file_formats_dict()
+            download_format_list = list(download_extension_dict)
+
+            with col1a:
+                download_format = st.selectbox("🖱️ Select format:*", download_format_list, key="key_download_format_selectbox")
+            download_extension = download_extension_dict[download_format]
+
+            with col1b:
+                download_filename = st.text_input("⌨️ Enter filename (without extension):*", key="key_download_filename_selectbox")
+
+            if "." in download_filename:
+                with col1b:
+                    st.markdown(f"""<div class="warning-message">
+                            ⚠️ The filename <b style="color:#cc9a06;">{download_filename}</b>
+                            seems to include an extension.
                         </div>""", unsafe_allow_html=True)
-                    st.write("")
 
-                with col1:
-                    col1a, col1b = st.columns([1,2])
+            with col1:
+                col1a, col1b = st.columns([1.5,1])
 
-                download_extension_dict = utils.get_g_mapping_file_formats_dict()
-                download_format_list = list(download_extension_dict)
+            if download_filename:
+                download_filename_complete = download_filename + download_extension if download_filename else ""
+                if download_format == "turtle":
+                    mime_option = "text/turtle"
+                elif download_format == "ntriples":
+                    mime_option = "application/n-triples"
+                elif download_format == "trig":
+                    mime_option = "application/trig"
+                elif download_format == "jsonld":
+                    mime_option = "application/ld+json"
 
                 with col1a:
-                    download_format = st.selectbox("🖱️ Select format:*", download_format_list, key="key_download_format_selectbox")
-                download_extension = download_extension_dict[download_format]
-
-                with col1b:
-                    download_filename = st.text_input("⌨️ Enter filename (without extension):*", key="key_download_filename_selectbox")
-
-                if "." in download_filename:
-                    with col1b:
-                        st.markdown(f"""<div class="warning-message">
-                                ⚠️ The filename <b style="color:#cc9a06;">{download_filename}</b>
-                                seems to include an extension.
-                            </div>""", unsafe_allow_html=True)
-
-                with col1:
-                    col1a, col1b = st.columns([1.5,1])
-
-                if download_filename:
-                    download_filename_complete = download_filename + download_extension if download_filename else ""
-                    if download_format == "turtle":
-                        mime_option = "text/turtle"
-                    elif download_format == "ntriples":
-                        mime_option = "application/n-triples"
-                    elif download_format == "trig":
-                        mime_option = "application/trig"
-                    elif download_format == "jsonld":
-                        mime_option = "application/ld+json"
-
-                    with col1a:
-                        st.write("")
-                        st.download_button(label="Download",
-                            data=st.session_state["materialised_g_mapping_file"],
-                            file_name=download_filename_complete,
-                            mime=mime_option)
+                    st.write("")
+                    st.download_button(label="Download",
+                        data=st.session_state["materialised_g_mapping_file"],
+                        file_name=download_filename_complete,
+                        mime=mime_option)

@@ -69,12 +69,14 @@ if "g_ontology_from_link_candidate" not in st.session_state:
     st.session_state["g_ontology_from_link_candidate"] = Graph()
 if "g_ontology_components_dict" not in st.session_state:
     st.session_state["g_ontology_components_dict"] = {}
+if "g_ontology_components_tag_dict" not in st.session_state:
+    st.session_state["g_ontology_components_tag_dict"] = {}
 if "g_ontology_reduced_ok_flag" not in st.session_state:
     st.session_state["g_ontology_reduced_ok_flag"] = False
 
 
 # Namespaces-----------------------------------
-RML, RR, QL = utils.get_required_ns_dict().values()
+RML, QL = utils.get_required_ns_dict().values()
 
 
 # Define on_click functions-------------------------------------------------
@@ -85,7 +87,7 @@ def load_ontology_from_link():  #HEREIGONS
     st.session_state["g_ontology"] = st.session_state["g_ontology_from_link_candidate"]  # consolidate ontology graph
     st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_link=st.session_state["key_ontology_link"])
     # bind ontology namespaces
-    ontology_ns_dict = utils.get_ontology_ns_dict()
+    ontology_ns_dict = utils.get_ontology_ns_dict(st.session_state["g_ontology"])
     for prefix, namespace in ontology_ns_dict.items():
         utils.bind_namespace_wo_overwriting(prefix, namespace)
     # store information___________________________
@@ -101,7 +103,7 @@ def load_ontology_from_file():
     st.session_state["g_ontology"] = st.session_state["g_ontology_from_file_candidate"]  # consolidate ontology graph
     st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_file=st.session_state["ontology_file"])
     # bind ontology namespaces
-    ontology_ns_dict = utils.get_ontology_ns_dict()
+    ontology_ns_dict = utils.get_ontology_ns_dict(st.session_state["g_ontology"])
     for prefix, namespace in ontology_ns_dict.items():
         utils.bind_namespace_wo_overwriting(prefix, namespace)
     # store information___________________________
@@ -121,14 +123,14 @@ def extend_ontology_from_link():
     st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
     st.session_state["g_ontology_components_tag_dict"][g_ontology_new_part_label] = utils.get_unique_ontology_tag(g_ontology_new_part_label)
     # bind ontology namespaces
-    ontology_ns_dict = utils.get_ontology_component_ns_dict(g_ontology_new_part)
+    ontology_ns_dict = utils.get_ontology_ns_dict(g_ontology_new_part)
     for prefix, namespace in ontology_ns_dict.items():
         utils.bind_namespace_wo_overwriting(prefix, namespace)
     # merge ontologies components___________________
     st.session_state["g_ontology"] = Graph()
     for ont_label, ont in st.session_state["g_ontology_components_dict"].items():
         st.session_state["g_ontology"] += ont  # merge the graphs using RDFLib's += operator
-        for prefix, namespace in utils.get_ontology_component_ns_dict(ont).items():
+        for prefix, namespace in utils.get_ontology_ns_dict(ont).items():
             st.session_state["g_ontology"].bind(prefix, namespace)
     # reset fields___________________________
     st.session_state["key_ontology_link"] = ""
@@ -144,14 +146,14 @@ def extend_ontology_from_file():
     st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
     st.session_state["g_ontology_components_tag_dict"][g_ontology_new_part_label] = utils.get_unique_ontology_tag(g_ontology_new_part_label)
     # bind ontology namespaces
-    ontology_ns_dict = utils.get_ontology_component_ns_dict(g_ontology_new_part)
+    ontology_ns_dict = utils.get_ontology_ns_dict(g_ontology_new_part)
     for prefix, namespace in ontology_ns_dict.items():
         utils.bind_namespace_wo_overwriting(prefix, namespace)
     # merge ontologies components___________________
     st.session_state["g_ontology"] = Graph()
     for ont_label, ont in st.session_state["g_ontology_components_dict"].items():
         st.session_state["g_ontology"] += ont  # merge the graphs using RDFLib's += operator
-        for prefix, namespace in utils.get_ontology_component_ns_dict(ont).items():
+        for prefix, namespace in utils.get_ontology_ns_dict(ont).items():
             st.session_state["g_ontology"].bind(prefix, namespace)
     # reset fields___________________________
     st.session_state["key_ontology_uploader"] = str(uuid.uuid4())
@@ -274,7 +276,7 @@ with tab1:
                                 <b>{st.session_state["g_ontology_from_link_candidate_fmt"]}</b>).</small>
                             </div>""", unsafe_allow_html=True)
 
-                    ontology_ns_dict = utils.get_ontology_component_ns_dict(st.session_state["g_ontology_from_link_candidate"])
+                    ontology_ns_dict = utils.get_ontology_ns_dict(st.session_state["g_ontology_from_link_candidate"])
                     mapping_ns_dict = utils.get_mapping_ns_dict()
                     already_used_prefix_list = []
                     already_bound_ns_list = []

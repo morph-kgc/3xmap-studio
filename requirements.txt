@@ -1,5 +1,7 @@
 cryptography
+matplotlib
 morph-kgc
+networkx
 odfpy
 openpyxl
 oracledb
@@ -10,6 +12,7 @@ pyarrow
 PyMySQL
 pyodbc
 pyreadstat
+pyvis
 rdflib
 requests
 sqlalchemy

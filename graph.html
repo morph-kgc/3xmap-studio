@@ -1,0 +1,127 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 600px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "#ff9999", "id": "s1", "label": "s1", "shape": "ellipse", "size": 10}, {"color": "#ff9999", "id": "o1", "label": "o1", "shape": "ellipse", "size": 10}, {"color": "#ff9999", "id": "o3", "label": "o3", "shape": "ellipse", "size": 10}, {"color": "#d8c3f0", "id": "researchinterest", "label": "researchinterest", "shape": "ellipse", "size": 10}, {"color": "#d8c3f0", "id": "o7", "label": "o7", "shape": "ellipse", "size": 10}, {"color": "#d8c3f0", "id": "telephone", "label": "telephone", "shape": "ellipse", "size": 10}, {"color": "#d8c3f0", "id": "o9", "label": "o9", "shape": "ellipse", "size": 10}, {"color": "#ff9999", "id": "o4", "label": "o4", "shape": "ellipse", "size": 10}, {"color": "#d8c3f0", "id": "o10", "label": "o10", "shape": "ellipse", "size": 10}, {"color": "#d8c3f0", "id": "facultyname", "label": "facultyname", "shape": "ellipse", "size": 10}, {"color": "#d8c3f0", "id": "emailaddress", "label": "emailaddress", "shape": "ellipse", "size": 10}, {"color": "#d8c3f0", "id": "o11", "label": "o11", "shape": "ellipse", "size": 10}, {"color": "#d8c3f0", "id": "graduatecoursename", "label": "graduatecoursename", "shape": "ellipse", "size": 10}, {"color": "#ff9999", "id": "s2", "label": "s2", "shape": "ellipse", "size": 10}, {"color": "#ff9999", "id": "o2", "label": "o2", "shape": "ellipse", "size": 10}, {"color": "#d8c3f0", "id": "publicationname", "label": "publicationname", "shape": "ellipse", "size": 10}, {"color": "#d8c3f0", "id": "publicationtitle", "label": "publicationtitle", "shape": "ellipse", "size": 10}, {"color": "#d8c3f0", "id": "publicationabstract", "label": "publicationabstract", "shape": "ellipse", "size": 10}, {"color": "#d8c3f0", "id": "graduatestudentname", "label": "graduatestudentname", "shape": "ellipse", "size": 10}, {"color": "#d8c3f0", "id": "o8", "label": "o8", "shape": "ellipse", "size": 10}, {"color": "#ff9999", "id": "s3", "label": "s3", "shape": "ellipse", "size": 10}, {"color": "#d8c3f0", "id": "o5", "label": "o5", "shape": "ellipse", "size": 10}, {"color": "#d8c3f0", "id": "name", "label": "name", "shape": "ellipse", "size": 10}, {"color": "#d8c3f0", "id": "o6", "label": "o6", "shape": "ellipse", "size": 10}, {"color": "#ff9999", "id": "s4", "label": "s4", "shape": "ellipse", "size": 10}, {"color": "#d8c3f0", "id": "None", "label": "None", "shape": "ellipse", "size": 10}, {"color": "#d8c3f0", "id": "o12", "label": "o12", "shape": "ellipse", "size": 10}, {"color": "#ff9999", "id": "s5", "label": "s5", "shape": "ellipse", "size": 10}, {"color": "#ff9999", "id": "s6", "label": "s6", "shape": "ellipse", "size": 10}]);
+                  edges = new vis.DataSet([{"arrows": "to", "color": "#D3D3D3", "from": "s1", "label": "ub: teacherOf", "to": "o1", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s1", "label": "ub: teacherOf", "to": "o3", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s1", "label": "ub: researchInterest", "to": "researchinterest", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s1", "label": "ub: headOf", "to": "o7", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s1", "label": "ub: telephone", "to": "telephone", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s1", "label": "ub: masterDegreeFrom", "to": "o9", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s1", "label": "ub: worksFor", "to": "o4", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s1", "label": "p3", "to": "o10", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s1", "label": "ub: name", "to": "facultyname", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s1", "label": "ub: emailAddress", "to": "emailaddress", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s1", "label": "p4", "to": "o11", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "o1", "label": "ub: name", "to": "graduatecoursename", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s2", "label": "p1", "to": "o2", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s2", "label": "ub: name", "to": "publicationname", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s2", "label": "p1", "to": "s1", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s2", "label": "ub: title", "to": "publicationtitle", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s2", "label": "ub: abstract", "to": "publicationabstract", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "o2", "label": "ub: advisor", "to": "s1", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "o2", "label": "ub: emailAddress", "to": "emailaddress", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "o2", "label": "ub: memberOf", "to": "o4", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "o2", "label": "ub: telephone", "to": "telephone", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "o2", "label": "ub: name", "to": "graduatestudentname", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "o2", "label": "p5", "to": "o3", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "o2", "label": "ub: takesCourse", "to": "o1", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "o3", "label": "ub: name", "to": "o8", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s3", "label": "ub: telephone", "to": "telephone", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s3", "label": "ub: emailAddress", "to": "emailaddress", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s3", "label": "ub: memberOf", "to": "o4", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s3", "label": "ub: name", "to": "o5", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s3", "label": "ub: advisor", "to": "s1", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s3", "label": "ub: takesCourse", "to": "o3", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "o4", "label": "ub: name", "to": "name", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "o4", "label": "p2", "to": "o6", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s4", "label": "rdf: predicate", "to": "None", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s4", "label": "ub: yearOfAward", "to": "o12", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s4", "label": "rdf: subject", "to": "o2", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s4", "label": "rdf: object", "to": "o11", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s5", "label": "ub: name", "to": "name", "width": 1}, {"arrows": "to", "color": "#D3D3D3", "from": "s6", "label": "p2", "to": "o4", "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {"nodes": {"shape": "ellipse", "borderWidth": 0, "font": {"size": 14, "face": "arial", "align": "center"}}, "edges": {"width": 3, "arrows": {"to": {"enabled": true, "scaleFactor": 0.5}}, "color": {"inherit": true}, "font": {"size": 10, "align": "middle"}, "smooth": false}, "physics": {"enabled": true}};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>
