@@ -43,7 +43,7 @@ if not "g_mapping" in st.session_state:
     st.session_state["g_mapping"] = Graph()
 
 # Namespaces------------------------------------------------------------
-RML, RR, QL = utils.get_required_ns_dict().values()
+RML, QL = utils.get_required_ns_dict().values()
 
 # START PAGE_____________________________________________________________________
 

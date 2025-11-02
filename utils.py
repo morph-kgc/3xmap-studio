@@ -49,21 +49,17 @@ def render_header(title, description, dark_mode: bool = False):
     title_color = "#d8c3f0" if dark_mode else "#511D66"
     desc_color = "#999999" if dark_mode else "#555"
 
-    return f"""
-    <div style="display:flex; align-items:center; background-color:{bg_color}; padding:16px 20px;
+    return f"""<div style="display:flex; align-items:center; background-color:{bg_color}; padding:16px 20px;
                 border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
         <img src="data:image/png;base64,{image_base64}" alt="Logo"
              style="height:74px; margin-right:70px; border-radius:8px;" />
         <div style="display:flex; flex-direction:column;">
-            <div style="font-size:1.4rem; font-weight:600; color:{title_color}; margin-bottom:4px;">
-                {title}
-            </div>
-            <div style="font-size:0.95rem; color:{desc_color};">
-                {description}
-            </div>
+        <div style="font-size:1.4rem; font-weight:600; color:{title_color}; margin-bottom:4px;">
+            {title}
         </div>
-    </div>
-    """
+        <div style="font-size:0.95rem; color:{desc_color};">
+            {description}
+        </div></div></div>"""
 #________________________________________________
 
 #________________________________________________
@@ -73,6 +69,7 @@ def import_st_aesthetics():
     #TIME FOR MESSAGES
     st.session_state["success_display_time"] = 2
 
+    # MARKDOWN STYLES
     return """<style>
 
     /* TABS */
@@ -150,12 +147,6 @@ def import_st_aesthetics():
                 border-radius:5px; padding:6px; margin-bottom:8px;
                 font-size:1rem; font-weight:600; color:#333333;}
 
-    /* SUBSECTION */
-        .subsection {background-color: #dcdcdc;
-            border: 1px solid #e0e0e0; border-radius: 5px;
-            font-size: 0.9rem; padding: 2px 6px;
-            margin-top: 2px; margin-bottom: 2px;}
-
     /* GRAY PREVIEW MESSAGE */
             .gray-preview-message {background-color:#f9f9f9; padding:0.7em; border-radius:5px;
             color:#333333; border:1px solid #e0e0e0; font-size: 0.92em; word-wrap: break-word;}
@@ -163,18 +154,6 @@ def import_st_aesthetics():
     /* BLUE PREVIEW MESSAGE */
             .blue-preview-message {background-color: #eaf4ff; padding:0.7em; border-radius:5px;
             color:#0c5460; border:1px solid #d0e4ff; font-size: 0.92em; word-wrap: break-word;}
-
-    /* BLUE STATUS MESSAGE */
-            .blue-status-message {background-color: #eaf4ff; padding: 0.6em;
-            border-radius: 5px; color: #0c5460; border-left: 4px solid #0c5460;
-            word-wrap: break-word; line-height: 1.5; font-size: 0.92em;}
-
-            .blue-status-message b {color: #0c5460;}
-
-    /* GRAY STATUS MESSAGE */
-            .gray-status-message {background-color:#f5f5f5; padding: 0.6em;
-            border-radius:5px; color:#2a0134; border-left:4px solid #2a0134;
-            word-wrap: break-word; line-height: 1.5; font-size: 0.92em;}
 
     /* SUCCESS MESSAGE FLAG */
         .success-message-flag {background-color: #d4edda; padding: 1em;
@@ -228,29 +207,6 @@ def import_st_aesthetics():
 
     .info-message-blue b {
         color: #003366; font-weight:600;}
-
-    /* INFO TABLE GRAY */
-    .info-table-gray {border-collapse: collapse; width: 100%;
-        background-color: #f5f5f5; border-radius: 5px; table-layout: auto;
-        max-width: 100%; word-break: break-word;}
-
-    .info-table-gray td {padding: 4px 8px; vertical-align: top;
-        font-size: 0.85rem; word-wrap: break-word; white-space: normal;
-        overflow-wrap: anywhere;}
-
-    /* TITLE ROW */
-    .title-row td {font-size: 0.9rem; font-weight: bold; text-align: center;
-        padding-bottom: 6px;}
-
-/* Reduce font size of checkbox label text */
-div[data-testid="stCheckbox"] > label > div > span {
-    font-size: 0.5rem !important;
-    line-height: 1.2;
-    color: #333;
-    white-space: normal;
-    word-break: break-word;
-    overflow-wrap: anywhere;
-}
 
     </style>"""
 #_______________________________________________________
@@ -359,12 +315,6 @@ def import_st_aesthetics_dark_mode():
           border-radius: 5px;   padding: 6px; margin-bottom: 8px; font-size: 1rem;
           font-weight: 600; color: #dddddd;}
 
-    /* SUBSECTION */
-        .subsection {background-color: #dcdcdc;
-            border: 1px solid #e0e0e0; border-radius: 5px;
-            font-size: 0.9rem; padding: 2px 6px;
-            margin-top: 2px; margin-bottom: 2px;}
-
     /* GRAY PREVIEW MESSAGE — Dark Mode */
         .gray-preview-message {background-color: #1c1c1c; padding: 0.7em;
           border-radius: 5px; color: #dddddd; border: 1px solid #444444; font-size: 0.92em;
@@ -373,19 +323,6 @@ def import_st_aesthetics_dark_mode():
     /* BLUE PREVIEW MESSAGE - Dark Mode*/
             .blue-preview-message {background-color: #0b1c2d; padding:0.7em; border-radius:5px;
             color:#b3d9ff; border:1px solid #060e1a; font-size: 0.92em; word-wrap: break-word;}
-
-    /* BLUE STATUS MESSAGE — Dark Mode */
-        .blue-status-message {background-color: #0b1c2d; padding: 0.6em;
-            border-radius: 5px; color: #b3d9ff; border-left: 4px solid #b3d9ff;
-            word-wrap: break-word; line-height: 1.5; font-size: 0.92em;}
-
-        .blue-status-message b {color: #dceeff;}
-
-    /* GRAY STATUS MESSAGE — Dark Mode */
-        .gray-status-message {background-color: #1e1e1e;
-            padding: 0.6em; border-radius: 5px; color: #dddddd;
-            border-left: 4px solid #999999; word-wrap: break-word;
-             line-height: 1.5; font-size: 0.92em;}
 
     /* SUCCESS MESSAGE FLAG — Dark Mode */
         .success-message-flag {background-color: #1e2e24; padding: 1em;
@@ -434,43 +371,29 @@ def import_st_aesthetics_dark_mode():
 
         .info-message-blue b {color: #dceeff; font-weight: 600;}
 
-    /* INFO TABLE GRAY — Dark Mode */
-        .info-table-gray {border-collapse: collapse; width: 100%;
-          background-color: #1e1e1e; border-radius: 5px;
-          table-layout: auto; max-width: 100%; word-break: break-word;}
-
-        .info-table-gray td {padding: 4px 8px; vertical-align: top;
-          font-size: 0.85rem; word-wrap: break-word; white-space: normal;
-          overflow-wrap: anywhere; color: #dddddd;}
-
-    /* TITLE ROW */
-    .title-row td {font-size: 0.9rem; font-weight: bold; text-align: center;
-        padding-bottom: 6px;}
-
     </style>"""
 
 
 #_______________________________________________________
-# Function to get error message to indicate a g_mapping must be loaded
+# Function to get error message to indicate a g_mapping must be created/imported
 def get_missing_g_mapping_error_message():
     st.markdown(f"""<div class="error-message">
-        ❌ You need to create or load a mapping in the
-        <b>Select Mapping pannel</b>.
+        ❌ You need to create or import a mapping from the
+        <b>Select Mapping</b> pannel.
     </div>""", unsafe_allow_html=True)
 #_______________________________________________________
 
 #_______________________________________________________
-# Function to get error message to indicate a g_mapping must be loaded
+# Function to get error message to indicate a g_mapping must be created/imported
 def get_missing_g_mapping_error_message_different_page():
     st.markdown(f"""<div class="error-message">
-        ❌ You need to create or load a mapping in the
+        ❌ You need to create or import a mapping from the
         <b>Global Configuration</b> page <small>(Select Mapping pannel).</small>
     </div>""", unsafe_allow_html=True)
 #_______________________________________________________
 
-
 #_______________________________________________________
-# Function to get the corner status message in the different panels
+# Function to get the mapping+ontology corner status message in the different panels
 def get_corner_status_message():
     inner_html = ""
 
@@ -567,6 +490,19 @@ def format_list_for_markdown(xlist):
     return formatted_list
 #_______________________________________________________
 
+#________________________________________________
+# Function to format iri to prefix:label
+def format_iri_to_prefix_label(iri):
+
+        if isinstance(iri, URIRef):
+            iri_ns = URIRef(split_uri(iri)[0])
+            iri_prefix = st.session_state["g_mapping"].namespace_manager.store.prefix(iri_ns)
+            if iri_prefix:
+                return f"{iri_prefix}: {split_uri(iri)[1]}"
+        else:
+            return iri
+#________________________________________________
+
 #_______________________________________________________
 # Function to format big numbers
 def format_big_number(number):
@@ -582,6 +518,27 @@ def format_big_number(number):
 
     return number_for_display
 #_______________________________________________________
+#_________________________________________________
+# Funtion to get the used classes metric
+def format_number_for_display(number):
+
+    if number >= 10:
+        number_for_display = int(number)
+    elif number >= 1:
+        number_for_display = round(number, 1)
+    elif number >= 0.1:
+        number_for_display = round(number, 2)
+    elif number == 0:
+        number_for_display = 0
+    elif number < 0.001:
+        number_for_display = "< 0.001"
+    elif number < 0.01:
+        number_for_display = "< 0.01"
+    else:
+        number_for_display = "< 0.1"
+
+    return number_for_display
+#_________________________________________________
 
 #_______________________________________________________
 # Function to get the max_length for the display options
@@ -591,30 +548,22 @@ def format_big_number(number):
 def get_max_length_for_display():
 
     return [50, 10, 100, 20, 5, 5]
-
 #_______________________________________________________
 
 
 # GLOBAL CONFIGURATION - CONFIGURE NAMESPACES ---------------------------------------------------
 # We define these first because they will be needed in this page
 #_________________________________________________________
-# Function to get a base iri for our application
-def get_3xmap_base_iri():
-    return "http://3xmap.org/mapping/"
-#________________________________________________________
-
-#_________________________________________________________
 # Function to get the default base iri for the structural components
 def get_default_structural_ns():
 
-    default_structural_ns = utils.get_3xmap_base_iri()
-
-    return ["map3x", Namespace(default_structural_ns)]
+    return ["map3x", Namespace("http://3xmap.org/mapping/")]
 #________________________________________________________
 
 #_________________________________________________________
 # Funtion to get dictionary with default namespaces
-# Default namespaces are automatically added to the g namespace manager by rdflib (DO NOT MODIFY LIST)
+# Default namespaces are automatically added to the g namespace manager by rdflib
+# DO NOT MODIFY LIST
 def get_default_ns_dict():
 
     default_ns_dict = {
@@ -652,9 +601,8 @@ def get_default_ns_dict():
 #________________________________________________________
 
 #_________________________________________________________
-# Dictionary with predefined namespaces
-# These are predefined so that they can be easily bound
-# LIST CAN BE CHANGED but should keep the namespaces used in get_required_ns()
+# Function to get dictionary with predefined namespaces so that they can be easily bound
+# LIST CAN BE CHANGED
 def get_predefined_ns_dict():
 
     predefined_ns_dict = {
@@ -685,7 +633,6 @@ def get_predefined_ns_dict():
 def get_required_ns_dict():
 
     required_ns_dict = {"rml": Namespace("http://w3id.org/rml/"),
-        "rr": Namespace("http://www.w3.org/ns/r2rml#"),
         "ql": Namespace("http://semweb.mmlab.be/ns/ql#")}
 
     return required_ns_dict
@@ -693,46 +640,30 @@ def get_required_ns_dict():
 #_______________________________________________________
 
 #________________________________________________________
-# retrieving necessary namespaces for this page here
-RML, RR, QL = get_required_ns_dict().values()
+# Retrieving necessary namespaces for this page here
+RML, QL = get_required_ns_dict().values()
 #________________________________________________________
 
 #_________________________________________________________
 # Funtion to get dictionary {prefix: namespace} bound in the ontology
-# It will ignore the default namespaces
-def get_ontology_ns_dict():
+def get_ontology_ns_dict(g_ont):
 
-    all_ontology_ns_dict = dict(st.session_state["g_ontology"].namespace_manager.namespaces())
-    ontology_ns_dict = {k: Namespace(v) for k, v in all_ontology_ns_dict.items()}
-
-    return ontology_ns_dict
-#_________________________________________________________
-
-#_________________________________________________________
-# Funtion to get dictionary {prefix: namespace} bound in the ontology
-# It will ignore the default namespaces
-def get_ontology_component_ns_dict(g_ont_component):
-
-    ontology_component_ns_dict = dict(g_ont_component.namespace_manager.namespaces())
-    ontology_component_ns_dict = {k: Namespace(v) for k, v in ontology_component_ns_dict.items()}
+    ontology_component_ns_dict = dict(g_ont.namespace_manager.namespaces())
 
     return ontology_component_ns_dict
 #_________________________________________________________
 
 #_________________________________________________________
-# Funtion to get dictionary {prefix: namespace} bound in the ontology
-# It will ignore the default namespaces
+# Funtion to get dictionary {prefix: namespace} bound in the mapping
 def get_mapping_ns_dict():
 
     mapping_ns_dict = dict(st.session_state["g_mapping"].namespace_manager.namespaces())
-    mapping_ns_dict = {k: Namespace(v) for k, v in mapping_ns_dict.items()}
 
     return mapping_ns_dict
 #_________________________________________________________
 
 #_________________________________________________________
-# Funtion to get dictionary {prefix: namespace} bound in the ontology
-# It will ignore the default namespaces
+# Funtion to get dictionary {prefix: namespace} used in the mapping
 def get_used_mapping_ns_dict():
 
     used_namespaces_set = set()
@@ -758,8 +689,8 @@ def get_used_mapping_ns_dict():
 
 #__________________________________________________________
 # Function to unbind namespaces from g mapping
+# Namespaces cannot be removed, so the mapping is rebuilt completely
 # Duplicated prefixes will be renamed, duplicated namespaces will be ignored
-# namespaces cannot be removed, so the mapping is rebuilt completely
 def unbind_namespaces(ns_to_unbind_list):
 
     if ns_to_unbind_list:
@@ -788,14 +719,17 @@ def bind_namespace(prefix, namespace):
     mapping_ns_dict = get_mapping_ns_dict()
 
     # if namespace already bound to a different prefix, unbind it
-    if namespace in mapping_ns_dict.values():
-        old_prefix_list = [k for k, v in mapping_ns_dict.items() if v == namespace]
+    if URIRef(namespace) in mapping_ns_dict.values():
+        old_prefix_list = [k for k, v in mapping_ns_dict.items() if v == URIRef(namespace)]
+        for old_prefix in old_prefix_list:
+            if old_prefix in st.session_state["last_added_ns_list"]:
+                st.session_state["last_added_ns_list"].remove(old_prefix)
         unbind_namespaces(old_prefix_list)
 
     # bind the new namespace
     st.session_state["g_mapping"].bind(prefix, namespace)
 
-    # find actual prefix (it might have been auto-renamed)
+    # find actual prefix (it may have been auto-renamed)
     actual_prefix = None
     for pr, ns in st.session_state["g_mapping"].namespace_manager.namespaces():
         if str(ns) == namespace:
@@ -827,7 +761,6 @@ def bind_namespace_wo_overwriting(prefix, namespace):
             st.session_state["last_added_ns_list"].insert(0, actual_prefix)
 
 #____________________________________________________________
-
 
 #_________________________________________________
 #Function to check whether an IRI is valid
@@ -949,7 +882,7 @@ def is_valid_label(label):
 #__________________________________________________
 
 #_________________________________________________
-#Function to check whether a label is valid
+# Function to check whether a label is valid with harder conditions
 def is_valid_label_hard(label, display_option=True):
 
     if not label:
@@ -961,7 +894,6 @@ def is_valid_label_hard(label, display_option=True):
         "N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
 
     valid_digits = ["0","1","2","3","4","5","6","7","8","9","_","-"]
-
 
     if re.search(r"[ \t\n\r]", label):    # disallow spaces
         if display_option:
@@ -1000,8 +932,8 @@ def is_valid_label_hard(label, display_option=True):
 #__________________________________________________
 
 #_______________________________________________________
-# List of allowed mapping file format
-# HERE expand options, now reduced version
+# List of allowed mapping file formats
+# HERE - Expand options, now reduced version
 def get_g_mapping_file_formats_dict():
 
     allowed_format_dict = {"turtle": ".ttl",
@@ -1020,7 +952,8 @@ def empty_last_added_lists():
 #_____________________________________________________
 
 #_______________________________________________________
-# Function to empty all lists that store last added stuff
+# Function to completely reset cache (last added dictionaries and ontology dictionaries)
+# Data sources, ontologies and last added lists
 def full_reset():
     # data sources________________________________
     st.session_state["db_connections_dict"] = {}
@@ -1029,13 +962,16 @@ def full_reset():
     st.session_state["ds_files_dict"] = {}
     # ontology___________________________
     st.session_state["g_ontology_components_dict"] = {}
+    st.session_state["g_ontology_components_tag_dict"] = {}
     st.session_state["g_ontology"] = Graph()
+    # last added lists_________________________
+    empty_last_added_lists()
 #_____________________________________________________
 
 #_______________________________________________________
-#Funcion to load mapping from file
-#f is a file object
-#HERE check all formats work
+# Function to load mapping from file (f is a file object)
+# This should work for all formats in get_g_mapping_file_formats_dict
+# HERE - Check all formats work
 def load_mapping_from_file(f):
 
     ext = os.path.splitext(f.name)[1].lower()  #file extension
@@ -1082,7 +1018,9 @@ def load_mapping_from_file(f):
 #_______________________________________________________
 #Function to get the number of TriplesMaps in a mapping
 def get_number_of_tm(g):
+
     triplesmaps = [s for s in g.subjects(predicate=RML.logicalSource, object=None)]
+
     return len(triplesmaps)
 #_________________________________________________________
 
@@ -2458,19 +2396,6 @@ def is_valid_url_mapping(mapping_url, show_info):
 #_________________________________________________
 
 #________________________________________________
-# Function to format iri to prefix:label
-def format_iri_to_prefix_label(iri):
-
-        if isinstance(iri, URIRef):
-            iri_ns = URIRef(split_uri(iri)[0])
-            iri_prefix = st.session_state["g_mapping"].namespace_manager.store.prefix(iri_ns)
-            if iri_prefix:
-                return f"{iri_prefix}: {split_uri(iri)[1]}"
-        else:
-            return iri
-#________________________________________________
-
-#________________________________________________
 # Function to display a rule
 def preview_rule(sm_rule_for_display, selected_p_for_display, om_iri_for_display):
 
@@ -2619,27 +2544,6 @@ def get_colors_for_stats_dict():
 
     return colors_for_stats_dict
 
-#_________________________________________________
-#_________________________________________________
-# Funtion to get the used classes metric
-def format_number_for_display(number):
-
-    if number >= 10:
-        number_for_display = int(number)
-    elif number >= 1:
-        number_for_display = round(number, 1)
-    elif number >= 0.1:
-        number_for_display = round(number, 2)
-    elif number == 0:
-        number_for_display = 0
-    elif number < 0.001:
-        number_for_display = "< 0.001"
-    elif number < 0.01:
-        number_for_display = "< 0.01"
-    else:
-        number_for_display = "< 0.1"
-
-    return number_for_display
 #_________________________________________________
 
 #_________________________________________________

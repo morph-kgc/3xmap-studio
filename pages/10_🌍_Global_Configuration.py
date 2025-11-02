@@ -68,6 +68,8 @@ if "cached_mapping_retrieved_ok_flag" not in st.session_state:
     st.session_state["cached_mapping_retrieved_ok_flag"] = False
 if "g_label_changed_ok_flag" not in st.session_state:
     st.session_state["g_label_changed_ok_flag"] = False
+if "candidate_g_mapping" not in st.session_state:
+    st.session_state["candidate_g_mapping"] = Graph()
 
 # TAB2
 if "ns_bound_ok_flag" not in st.session_state:
@@ -105,7 +107,7 @@ if "g_ontology" not in st.session_state:
 
 
 # Namespaces-----------------------------------
-RML, RR, QL = utils.get_required_ns_dict().values()
+RML, QL = utils.get_required_ns_dict().values()
 
 if "structural_ns" not in st.session_state and st.session_state["g_label"]:
     st.session_state["structural_ns"] = utils.get_default_structural_ns()
@@ -128,7 +130,7 @@ def create_new_g_mapping():
     for prefix, namespace in utils.get_required_ns_dict().items():
         utils.bind_namespace(prefix, namespace)
     # bind ontology namespaces______________________________
-    ontology_ns_dict = utils.get_ontology_ns_dict()
+    ontology_ns_dict = utils.get_ontology_ns_dict(st.session_state["g_ontology"])
     for prefix, namespace in ontology_ns_dict.items():
         utils.bind_namespace(prefix, namespace)
     # store information________________________________
@@ -156,7 +158,7 @@ def load_existing_g_mapping():
     for prefix, namespace in st.session_state["g_mapping"].namespaces():
         utils.bind_namespace(prefix, namespace)
     # bind ontology namespaces_____________________________
-    ontology_ns_dict = utils.get_ontology_ns_dict()
+    ontology_ns_dict = utils.get_ontology_ns_dict(st.session_state["g_ontology"])
     for prefix, namespace in ontology_ns_dict.items():
         utils.bind_namespace(prefix, namespace)
     # store information________________________
@@ -382,17 +384,10 @@ with tab1:
 
             with col1b:
                 st.markdown(f"""<div class="warning-message">
-                        ⚠️ <b>Mapping {st.session_state["g_label_temp_new"]} will be created
-                        and mapping {st.session_state["g_label"]} will be overwritten.</b>
-                        <small>You can export the current mapping or save the session in
+                        ⚠️ Mapping <b>{st.session_state["g_label"]}</b> will be overwritten.
+                        <small>You can export it or save the session in
                         the <b>Save Mapping </b> pannel.</small>
                     </div>""", unsafe_allow_html=True)
-
-            with col1a:
-                overwrite_g_mapping_checkbox = st.checkbox(
-                    f"""🔒 I am sure I want to overwrite mapping {st.session_state["g_label"]}""",
-                    key="key_overwrite_g_mapping_checkbox_new")
-
 
             if st.session_state["db_connections_dict"] or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]:
                 with col1a:
@@ -401,6 +396,11 @@ with tab1:
                         value=True, key="key_overwrite_g_mapping_and_session_checkbox_new")
             else:
                 overwrite_g_mapping_and_session_checkbox = False
+
+            with col1a:
+                overwrite_g_mapping_checkbox = st.checkbox(
+                    f"""🔒 I am sure I want to overwrite mapping {st.session_state["g_label"]}""",
+                    key="key_overwrite_g_mapping_checkbox_new")
 
             if overwrite_g_mapping_checkbox:
                 with col1a:
@@ -478,11 +478,6 @@ with tab1:
                         the <b>Save Mapping </b> pannel.</small>
                     </div>""", unsafe_allow_html=True)
 
-            with col1a:
-                overwrite_g_mapping_checkbox = st.checkbox(
-                    f"""🔒 I am sure I want to overwrite mapping {st.session_state["g_label"]}""",
-                    key="key_overwrite_g_mapping_checkbox_existing")
-
             if st.session_state["db_connections_dict"] or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]:
                 with col1a:
                     overwrite_g_mapping_and_session_checkbox = st.checkbox(
@@ -490,6 +485,11 @@ with tab1:
                         value=True, key="key_overwrite_g_mapping_and_session_checkbox_existing")
             else:
                 overwrite_g_mapping_and_session_checkbox = False
+
+            with col1a:
+                overwrite_g_mapping_checkbox = st.checkbox(
+                    f"""🔒 I am sure I want to overwrite mapping {st.session_state["g_label"]}""",
+                    key="key_overwrite_g_mapping_checkbox_existing")
 
             if overwrite_g_mapping_checkbox:
                 with col1a:
@@ -606,8 +606,8 @@ with tab1:
 
 
         else:
-            st.markdown("""<div class="gray-status-message">
-                ✖️ <b>No mapping</b> has been loaded yet.
+            st.markdown("""<div class="gray-preview-message">
+                🚫 <b>No mapping</b> has been loaded yet.
             </div>
             """, unsafe_allow_html=True)
 
@@ -699,16 +699,15 @@ with tab2:
             mapping_ns_df = pd.DataFrame(list(mapping_ns_dict.items()), columns=["Prefix", "Namespace"]).iloc[::-1]
             used_mapping_ns_df = pd.DataFrame(list(used_mapping_ns_dict.items()), columns=["Prefix", "Namespace"]).iloc[::-1]
 
-            #Option to show bound namespaces
-            with st.expander("🔎 Show all namespaces"):
-                st.write("")
-                st.dataframe(mapping_ns_df, hide_index=True)
-
             #Option to show used bound namespaces
             with st.expander("🔎 Show used namespaces"):
                 st.write("")
                 st.dataframe(used_mapping_ns_df, hide_index=True)
 
+            #Option to show bound namespaces
+            with st.expander("🔎 Show all namespaces"):
+                st.write("")
+                st.dataframe(mapping_ns_df, hide_index=True)
 
 
         # PURPLE HEADING - ADD A NEW NAMESPACE
@@ -745,9 +744,8 @@ with tab2:
             time.sleep(st.session_state["success_display_time"])
             st.rerun()
 
-
         if st.session_state["g_ontology_components_dict"]:
-            ontology_ns_dict = utils.get_ontology_ns_dict()
+            ontology_ns_dict = utils.get_ontology_ns_dict(st.session_state["g_ontology"])
             mapping_ns_dict = utils.get_mapping_ns_dict()
             ontology_ns_list = [key for key in ontology_ns_dict if key not in mapping_ns_dict]
             add_ns_options = ["✏️ Custom", "🧩 Ontology", "📋 Predefined", "🏛️ Base"]
@@ -761,7 +759,7 @@ with tab2:
         predefined_ns_dict = utils.get_predefined_ns_dict()
         default_ns_dict = utils.get_default_ns_dict()
         default_structural_ns = utils.get_default_structural_ns()
-        ontology_ns_dict = utils.get_ontology_ns_dict()
+        ontology_ns_dict = utils.get_ontology_ns_dict(st.session_state["g_ontology"])
         mapping_ns_dict = utils.get_mapping_ns_dict()
 
         if add_ns_selected_option == "✏️ Custom":
@@ -793,33 +791,37 @@ with tab2:
 
             with col1b:
                 if iri_input:
-                    valid_iri_input = False
+                    valid_iri_input = True
                     if not utils.is_valid_iri(iri_input):
                         st.markdown(f"""<div class="error-message">
                             ❌ <b> Invalid IRI. </b>
                             <small>Please make sure it starts with a valid scheme (e.g., http, https), includes no illegal characters
                             and ends with a delimiter (/, # or :).</small>
                         </div>""", unsafe_allow_html=True)
-                    elif iri_input in mapping_ns_dict.values():
+                        valid_iri_input = False
+                    elif URIRef(iri_input) in mapping_ns_dict.values():
                         for pr, ns in mapping_ns_dict.items():
-                            if ns == iri_input:
+                            if ns == URIRef(iri_input):
                                 bound_prefix = pr
                                 break
                         if prefix_input == bound_prefix:
                             st.markdown(f"""<div class="error-message">
-                                ❌ <b> Namespace is already bound to prefix {bound_prefix}.</b>
+                                ❌ Namespace <b>{iri_input}</b> is already bound to prefix <b>{bound_prefix}</b>.
+                                <small> Please choose a different namespace and/or prefix.</small>
+                            </div>""", unsafe_allow_html=True)
+                            valid_iri_input = False
+                        elif prefix_input:
+                            st.markdown(f"""<div class="warning-message">
+                                ⚠️ <b> Namespace is already bound to prefix {bound_prefix}.</b>
+                                <small>If you continue, that prefix will be overwritten <b>({bound_prefix} → {prefix_input})</b>.</small>
                             </div>""", unsafe_allow_html=True)
                         else:
                             st.markdown(f"""<div class="warning-message">
-                                ⚠️ <b> Namespace is already bound to prefix {bound_prefix}. </b>
-                                <small>If you continue, that prefix will be overwritten <b>({bound_prefix} → {prefix_input})</b>.</small>
+                                ⚠️ <b> Namespace is already bound to prefix {bound_prefix}.</b>
                             </div>""", unsafe_allow_html=True)
-                            valid_iri_input = True
-                    else:
-                        valid_iri_input = True
-
 
             if iri_input and prefix_input:
+                st.write("HERE", prefix_input)
                 if valid_iri_input and valid_prefix_input:
                     with col1a:
                         st.button("Bind", key="key_bind_custom_ns_button", on_click=bind_custom_namespace)
@@ -827,7 +829,7 @@ with tab2:
         elif add_ns_selected_option == "🧩 Ontology":
 
             there_are_ontology_ns_unbound_flag = False
-            ontology_ns_dict = utils.get_ontology_ns_dict()
+            ontology_ns_dict = utils.get_ontology_ns_dict(st.session_state["g_ontology"])
             for pr, ns in ontology_ns_dict.items():
                 if not ns in mapping_ns_dict.values():
                     there_are_ontology_ns_unbound_flag = True
@@ -846,7 +848,7 @@ with tab2:
 
                 g_ont_components_w_unbound_ns = []
                 for ont_label, ont in st.session_state["g_ontology_components_dict"].items():
-                    for pr, ns in utils.get_ontology_component_ns_dict(ont).items():
+                    for pr, ns in utils.get_ontology_ns_dict(ont).items():
                         if not str(ns) in mapping_ns_dict.values():
                             g_ont_components_w_unbound_ns.append(st.session_state["g_ontology_components_tag_dict"][ont_label])
                             break
@@ -897,7 +899,7 @@ with tab2:
                             for ont_label, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
                                 if ont_tag == ontology_filter_for_ns:
                                     ont = st.session_state["g_ontology_components_dict"][ont_label]
-                            ontology_component_ns_dict = utils.get_ontology_component_ns_dict(ont)
+                            ontology_component_ns_dict = utils.get_ontology_ns_dict(ont)
                             ontology_ns_list_not_duplicated = [k for k, v in ontology_component_ns_dict.items() if v not in mapping_ns_dict.values()]
                             list_to_choose = ontology_ns_list_not_duplicated.copy()
                             if len(list_to_choose) > 1:
@@ -926,7 +928,7 @@ with tab2:
                                 st.button("Bind", key="key_bind_ontology_ns_button", on_click=bind_ontology_namespaces)
 
                     if ontology_filter_for_ns != "Select ontology":
-                        ontology_ns_dict = utils.get_ontology_component_ns_dict(ont)
+                        ontology_ns_dict = utils.get_ontology_ns_dict(ont)
 
                     inner_html = ""
                     max_length = utils.get_max_length_for_display()[4]
@@ -1291,8 +1293,6 @@ with tab3:
 
         with col2:
             col2a,col2b = st.columns([1,2])
-        # with col2b:
-        #     utils.get_corner_status_message()
 
         with col2b:
             st.write("")
