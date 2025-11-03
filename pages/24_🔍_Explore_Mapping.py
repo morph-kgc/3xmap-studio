@@ -98,8 +98,6 @@ with tab1:
     background_color = color_dict["background_color"]
     legend_font_color = color_dict["legend_font_color"]
 
-    G = nx.DiGraph()
-
     list_to_choose_tm = []
     for sm in st.session_state["g_mapping"].objects(predicate=RML.subjectMap):
         for rule in utils.get_rules_for_sm(sm):
@@ -121,6 +119,7 @@ with tab1:
                 sm_for_network_list.append(sm)
                 break
 
+    G = nx.DiGraph()
     legend_dict = {}
     for sm in sm_for_network_list:
         for rule in utils.get_rules_for_sm(sm):
@@ -143,53 +142,20 @@ with tab1:
 
     # Optional: improve layout and styling
     G_net.repulsion(node_distance=200, central_gravity=0.3, spring_length=200, spring_strength=0.05)
-    G_net.set_options("""
-    {
-      "nodes": {
-        "shape": "ellipse",
-        "borderWidth": 0,
-        "font": {
-          "size": 14,
-          "face": "arial",
-          "align": "center",
-          "color": "#ffffff"
-        },
-        "color": {
-          "background": "#87cefa",
-          "border": "#87cefa"
-        }
-      },
-      "edges": {
-        "width": 3,
-        "arrows": {
-          "to": {
-            "enabled": true,
-            "scaleFactor": 0.5
-          }
-        },
-        "color": {
-          "color": "#1e1e1e"
-        },
-        "font": {
-          "size": 10,
-          "align": "middle",
-          "color": "#1e1e1e"
-        },
-        "smooth": false
-      },
-      "physics": {
-        "enabled": true
-      },
-      "interaction": {
-        "hover": true
-      },
-      "layout": {
-        "improvedLayout": true
-      }
-    }
-    """)
-
-
+    G_net.set_options("""{
+    "nodes": {"shape": "ellipse", "borderWidth": 0,
+        "font": {"size": 14, "face": "arial", "align": "center",
+          "color": "#ffffff"},
+        "color": {"background": "#87cefa", "border": "#87cefa"}},
+     "edges": {"width": 3, "arrows":
+        {"to": {"enabled": true, "scaleFactor": 0.5}},
+        "color": {"color": "#1e1e1e"},
+        "font": {"size": 10, "align": "middle", "color": "#1e1e1e"},
+        "smooth": false},
+      "physics": {"enabled": true},
+      "interaction": {"hover": true},
+      "layout": {"improvedLayout": true}
+    }""")
 
     col1, col2 = st.columns([2,1])
 
@@ -197,31 +163,14 @@ with tab1:
     if sm_for_network_list:
 
         G_net.write_html("graph.html")
+        with open("graph.html", "r", encoding="utf-8") as f:
+            html = f.read()
 
-        if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
-            with open("graph.html", "r", encoding="utf-8") as f:
-                html = f.read()
+        html = html.replace('<div id="mynetwork"',
+            f'<div id="mynetwork" style="background-color: {background_color};"')   # for background colour
 
-            html = html.replace(
-                '<div id="mynetwork"',
-                f'<div id="mynetwork" style="background-color: {background_color};"'
-            )
-
-            with col1:
-                components.html(html, height=600)
-
-        else:
-
-            with open("graph.html", "r", encoding="utf-8") as f:
-                html = f.read()
-
-            html = html.replace(
-                '<div id="mynetwork"',
-                f'<div id="mynetwork" style="background-color: {background_color};"'
-            )
-
-            with col1:
-                components.html(html, height=600)
+        with col1:
+            components.html(html, height=600)
 
         # Create and display legend
         for letter in ["s", "p", "o"]:
@@ -246,7 +195,6 @@ with tab1:
                     legend_flag = True
 
             legend_html += "</div>"
-
 
             with col2:
                 if legend_flag:

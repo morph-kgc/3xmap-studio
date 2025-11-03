@@ -3328,7 +3328,6 @@ def get_colors_for_network_dict():
         colors_for_network_dict["background_color"] = "#222222"
         colors_for_network_dict["legend_font_color"] = "#888888"
 
-
     return colors_for_network_dict
 
 #_________________________________________________
