@@ -91,9 +91,12 @@ with tab1:
         col1a, col1b = st.columns([2,1])
 
     color_dict = utils.get_colors_for_network_dict()
-    s_node_color = color_dict["salmon"]
-    o_node_color = color_dict["purple"]
-    p_edge_color = color_dict["gray"]
+    s_node_color = color_dict["s_node_color"]
+    o_node_color = color_dict["o_node_color"]
+    p_edge_color = color_dict["p_edge_color"]
+    p_edge_label_color = color_dict["p_edge_label_color"]
+    background_color = color_dict["background_color"]
+    legend_font_color = color_dict["legend_font_color"]
 
     G = nx.DiGraph()
 
@@ -131,7 +134,7 @@ with tab1:
             G.add_node(s_id, label=s_id, color=s_node_color, shape="ellipse")
             if o_id not in G:
                 G.add_node(o_id, label=o_id, color=o_node_color, shape="ellipse")  # conditional so that if node is sm it will have s_node_color
-            G.add_edge(s_id, o_id, label=p_label, color=p_edge_color)
+            G.add_edge(s_id, o_id, label=p_label, color=p_edge_color, font={"color": p_edge_label_color})
 
 
     # Create Pyvis network
@@ -141,14 +144,19 @@ with tab1:
     # Optional: improve layout and styling
     G_net.repulsion(node_distance=200, central_gravity=0.3, spring_length=200, spring_strength=0.05)
     G_net.set_options("""
-    var options = {
+    {
       "nodes": {
         "shape": "ellipse",
-         "borderWidth": 0,
+        "borderWidth": 0,
         "font": {
           "size": 14,
           "face": "arial",
-          "align": "center"
+          "align": "center",
+          "color": "#ffffff"
+        },
+        "color": {
+          "background": "#87cefa",
+          "border": "#87cefa"
         }
       },
       "edges": {
@@ -160,19 +168,27 @@ with tab1:
           }
         },
         "color": {
-          "inherit": true
+          "color": "#1e1e1e"
         },
         "font": {
           "size": 10,
-          "align": "middle"
+          "align": "middle",
+          "color": "#1e1e1e"
         },
         "smooth": false
       },
       "physics": {
         "enabled": true
+      },
+      "interaction": {
+        "hover": true
+      },
+      "layout": {
+        "improvedLayout": true
       }
     }
     """)
+
 
 
     col1, col2 = st.columns([2,1])
@@ -181,9 +197,31 @@ with tab1:
     if sm_for_network_list:
 
         G_net.write_html("graph.html")
-        with col1:
+
+        if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
             with open("graph.html", "r", encoding="utf-8") as f:
-                components.html(f.read(), height=600)
+                html = f.read()
+
+            html = html.replace(
+                '<div id="mynetwork"',
+                f'<div id="mynetwork" style="background-color: {background_color};"'
+            )
+
+            with col1:
+                components.html(html, height=600)
+
+        else:
+
+            with open("graph.html", "r", encoding="utf-8") as f:
+                html = f.read()
+
+            html = html.replace(
+                '<div id="mynetwork"',
+                f'<div id="mynetwork" style="background-color: {background_color};"'
+            )
+
+            with col1:
+                components.html(html, height=600)
 
         # Create and display legend
         for letter in ["s", "p", "o"]:
@@ -191,13 +229,13 @@ with tab1:
             legend_html = "<div style='font-family: sans-serif; font-size: 14px;'>"
             if letter == "s":
                 legend_html += "<p>🔑 Subject legend</p>"
-                color = s_node_color
+                object_color = s_node_color
             elif letter == "p":
                 legend_html += "<p>🔑 Predicate legend</p>"
-                color = p_edge_color
+                object_color = p_edge_color
             elif letter == "o":
                 legend_html += "<p>🔑 Object legend</p>"
-                color = o_node_color
+                object_color = o_node_color
 
             for key, value in legend_dict.items():
                 if key.startswith(letter):
@@ -212,9 +250,9 @@ with tab1:
 
             with col2:
                 if legend_flag:
-                    st.markdown(f"""<div style='border-left: 4px solid {color}; padding: 0.4em 0.6em;
-                        color: #4d4d4d; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
-                        margin: 0.5em 0; background-color: #f5f5f5; border-radius: 4px; box-sizing: border-box;
+                    st.markdown(f"""<div style='border-left: 4px solid {object_color}; padding: 0.4em 0.6em;
+                        color: {legend_font_color}; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
+                        margin: 0.5em 0; background-color: {background_color}; border-radius: 4px; box-sizing: border-box;
                         word-wrap: break-word;'>
                             {legend_html}
                         </div>""", unsafe_allow_html=True)

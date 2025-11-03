@@ -3313,15 +3313,21 @@ def get_colors_for_network_dict():
     colors_for_network_dict = {}
 
     if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
-        colors_for_network_dict["purple"] = "#d8c3f0"
-        colors_for_network_dict["salmon"] = "#ff9999"
-        colors_for_network_dict["gray"] = "#D3D3D3"
+        colors_for_network_dict["o_node_color"] = "#7A4A8C"# "#d8c3f0"
+        colors_for_network_dict["s_node_color"] = "#ff7a7a" #"#ff9999"
+        colors_for_network_dict["p_edge_color"] = "#D3D3D3"
+        colors_for_network_dict["p_edge_label_color"] = "#888888"
+        colors_for_network_dict["background_color"] = "#f5f5f5"
+        colors_for_network_dict["legend_font_color"] = "#888888"
 
     else:
-        colors_for_network_dict["purple"] = "#7A4A8C"
-        colors_for_network_dict["salmon"] = "#ff7a7a"
-        colors_for_network_dict["blue"] = "#336699"
-        colors_for_network_dict["gray"] = "#D3D3D3"
+        colors_for_network_dict["o_node_color"] = "#7A4A8C"
+        colors_for_network_dict["s_node_color"] = "#ff7a7a"
+        colors_for_network_dict["p_edge_color"] = "#D3D3D3"
+        colors_for_network_dict["p_edge_label_color"] = "#222222"
+        colors_for_network_dict["background_color"] = "#222222"
+        colors_for_network_dict["legend_font_color"] = "#888888"
+
 
     return colors_for_network_dict
 
