@@ -834,6 +834,7 @@ with tab2:
 
         # HEREIGO REFACTORING
         elif add_ns_selected_option == "🗺️ Mapping":
+            st.write("HERE", st.session_state["original_g_size_cache"])
             st.write("HERE", st.session_state["original_g_mapping_ns_dict"])
             there_are_original_mapping_ns_unbound_flag = False
             original_mapping_ns_dict = st.session_state["original_g_mapping_ns_dict"]

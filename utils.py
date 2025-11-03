@@ -1043,6 +1043,9 @@ def save_project_state():
     project_state_list.append(st.session_state["db_connection_status_dict"])
     project_state_list.append(st.session_state["ds_files_dict"])
     project_state_list.append(st.session_state["sql_queries_dict"])
+    project_state_list.append(st.session_state["g_mapping_source_cache"])
+    project_state_list.append(st.session_state["original_g_size_cache"])
+    project_state_list.append(st.session_state["original_g_mapping_ns_dict"])
 
     return project_state_list
 
@@ -1061,6 +1064,10 @@ def retrieve_project_state(project_state_list):
     st.session_state["db_connection_status_dict"] = project_state_list[5]
     st.session_state["ds_files_dict"] = project_state_list[6]
     st.session_state["sql_queries_dict"] = project_state_list[7]
+    st.session_state["g_mapping_source_cache"] = project_state_list[8]
+    st.session_state["original_g_size_cache"] = project_state_list[9]
+    st.session_state["original_g_mapping_ns_dict"] = project_state_list[10]
+
 
 #______________________________________________________
 
