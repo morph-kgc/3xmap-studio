@@ -64,6 +64,8 @@ if "g_mapping_source_cache" not in st.session_state:
     st.session_state["g_mapping_source_cache"] = ["",""]
 if "original_g_size_cache" not in st.session_state:
     st.session_state["original_g_size_cache"] = 0
+if "original_g_mapping_ns_dict" not in st.session_state:
+    st.session_state["original_g_mapping_ns_dict"] = {}
 if "cached_mapping_retrieved_ok_flag" not in st.session_state:
     st.session_state["cached_mapping_retrieved_ok_flag"] = False
 if "g_label_changed_ok_flag" not in st.session_state:
@@ -135,6 +137,7 @@ def create_new_g_mapping():
         utils.bind_namespace(prefix, namespace)
     # store information________________________________
     st.session_state["g_mapping_source_cache"] = ["scratch", ""]   #cache info on the mapping source
+    st.session_state["original_g_mapping_ns_dict"] = {}
     st.session_state["new_g_mapping_created_ok_flag"] = True   #flag for success mesagge
     utils.empty_last_added_lists()
     # reset fields__________________
@@ -147,6 +150,7 @@ def load_existing_g_mapping():
     # load mapping_____________________________________
     st.session_state["g_label"] = st.session_state["g_label_temp_existing"]   # consolidate g_label
     st.session_state["original_g_size_cache"] = utils.get_number_of_tm(st.session_state["candidate_g_mapping"])
+    st.session_state["original_g_mapping_ns_dict"] = utils.get_g_ns_dict(st.session_state["candidate_g_mapping"])
     st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]   # consolidate the loaded mapping
     # bind default namespaces____________________________
     for prefix, namespace in utils.get_default_ns_dict().items():
@@ -232,6 +236,16 @@ def bind_predefined_namespaces():
     # reset fields_____________________________
     st.session_state["key_predefined_ns_to_bind_multiselect"] = []
     st.session_state["key_add_ns_radio"] = "📋 Predefined"
+
+def bind_original_mapping_namespaces():
+    # bind and store information___________________________
+    for prefix in original_mapping_ns_to_bind_list:
+        namespace = original_mapping_ns_dict[prefix]
+        utils.bind_namespace(prefix, namespace)
+    st.session_state["ns_bound_ok_flag"] = True   # for success message
+    # reset fields_____________________________
+    st.session_state["key_original_mapping_ns_to_bind_multiselect"] = []
+    st.session_state["key_add_ns_radio"] = "🗺️ Mapping"
 
 def bind_ontology_namespaces():
     # bind and store information___________________________
@@ -735,13 +749,15 @@ with tab2:
             time.sleep(st.session_state["success_display_time"])
             st.rerun()
 
+        ontology_ns_dict = utils.get_g_ns_dict(st.session_state["g_ontology"])
+        mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
+        ontology_ns_list = [key for key in ontology_ns_dict if key not in mapping_ns_dict]
+        add_ns_options = ["✏️ Custom", "📋 Predefined", "🏛️ Base"]
         if st.session_state["g_ontology_components_dict"]:
-            ontology_ns_dict = utils.get_g_ns_dict(st.session_state["g_ontology"])
-            mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
-            ontology_ns_list = [key for key in ontology_ns_dict if key not in mapping_ns_dict]
-            add_ns_options = ["✏️ Custom", "🧩 Ontology", "📋 Predefined", "🏛️ Base"]
-        else:
-            add_ns_options = ["✏️ Custom", "📋 Predefined", "🏛️ Base"]
+            add_ns_options.insert(1, "🧩 Ontology")
+
+        if st.session_state["original_g_mapping_ns_dict"]:
+            add_ns_options.insert(1, "🗺️ Mapping")
 
         with col1:
             add_ns_selected_option = st.radio("🖱️ Select an option:*", add_ns_options, key="key_add_ns_radio",
@@ -817,11 +833,88 @@ with tab2:
                         st.button("Bind", key="key_bind_custom_ns_button", on_click=bind_custom_namespace)
 
         # HEREIGO REFACTORING
+        elif add_ns_selected_option == "🗺️ Mapping":
+            st.write("HERE", st.session_state["original_g_mapping_ns_dict"])
+            there_are_original_mapping_ns_unbound_flag = False
+            original_mapping_ns_dict = st.session_state["original_g_mapping_ns_dict"]
+            for pr, ns in original_mapping_ns_dict.items():
+                if not ns in mapping_ns_dict.values():
+                    there_are_original_mapping_ns_unbound_flag = True
+                    continue
+
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            if not there_are_original_mapping_ns_unbound_flag:
+                with col1a:
+                    st.markdown(f"""<div class="info-message-gray">
+                        🔒 All <b>original mapping namespaces</b> are already bound.
+                    </div>""", unsafe_allow_html=True)
+                    st.write("")
+
+            else:
+                with col1a:
+                    original_mapping_ns_list_not_duplicated = [k for k, v in original_mapping_ns_dict.items() if v not in mapping_ns_dict.values()]
+                    list_to_choose = sorted(original_mapping_ns_list_not_duplicated.copy())
+                    if len(list_to_choose) > 1:
+                        list_to_choose.insert(0, "Select all")
+                    original_mapping_ns_to_bind_list = st.multiselect("🖱️ Select ontology namespaces:*", list_to_choose,
+                        key="key_ontology_ns_to_bind_multiselect")
+
+                if original_mapping_ns_to_bind_list:
+                    already_used_prefix_list = []
+                    for pr in original_mapping_ns_to_bind_list:
+                        if pr in mapping_ns_dict:
+                            already_used_prefix_list.append(pr)
+
+                    if "Select all" not in original_mapping_ns_to_bind_list:   # "Select all" not selected
+                        with col1:
+                            st.button("Bind", key="key_bind_original_mapping_ns_button", on_click=bind_original_mapping_namespaces)
+                    else:
+                        original_mapping_ns_to_bind_list = original_mapping_ns_list_not_duplicated
+
+                        with col1:
+                            bind_all_original_mapping_ns_checkbox = st.checkbox(
+                            "🔒 I am sure I want to bind all the namespaces in the original mapping",
+                            key="key_bind_all_original_mapping_ns_checkbox")
+                            if bind_all_original_mapping_ns_checkbox:
+                                st.button("Bind", key="key_bind_original_mapping_ns_button", on_click=bind_original_mapping_namespaces)
+
+
+                    inner_html = ""
+                    max_length = utils.get_max_length_for_display()[4]
+                    for prefix in original_mapping_ns_to_bind_list:
+                        inner_html += f"""<div style="margin-bottom:6px;">
+                            <b>🔗 {prefix}</b> → {original_mapping_ns_dict[prefix]}
+                        </div>"""
+
+                    if len(original_mapping_ns_to_bind_list) > max_length:
+                        inner_html += f"""<div style="margin-bottom:6px;">
+                            🔗 ... <b>(+{len(original_mapping_ns_to_bind_list[max_length:])})</b>
+                        </div>"""
+
+                    with col1:
+                        col1a, col1b = st.columns([2,1])
+                    with col1a:
+                        st.markdown(f"""<div class="info-message-gray">
+                                <small>{inner_html}</small>
+                            </div>""", unsafe_allow_html=True)
+
+                    with col1b:
+                        if len(already_used_prefix_list) == 1:
+                            st.markdown(f"""<div class="warning-message">
+                                        ⚠️ Prefix <b>{utils.format_list_for_markdown(already_used_prefix_list)}</b> is already in use<small>
+                                        and will be auto-renamed with a numeric suffix.</small>
+                                </div>""", unsafe_allow_html=True)
+
+                        elif already_used_prefix_list:
+                            st.markdown(f"""<div class="warning-message">
+                                        <small>⚠️ <b>Prefixes {utils.format_list_for_markdown(already_used_prefix_list)} are already in use</b>
+                                        and will be auto-renamed with a numeric suffix.</small>
+                                </div>""", unsafe_allow_html=True)
 
         elif add_ns_selected_option == "🧩 Ontology":
 
             there_are_ontology_ns_unbound_flag = False
-            ontology_ns_dict = utils.get_g_ns_dict(st.session_state["g_ontology"])
             for pr, ns in ontology_ns_dict.items():
                 if not ns in mapping_ns_dict.values():
                     there_are_ontology_ns_unbound_flag = True
@@ -836,7 +929,6 @@ with tab2:
                     </div>""", unsafe_allow_html=True)
                     st.write("")
             else:
-                default_ns = list(utils.get_default_ns_dict())
 
                 g_ont_components_w_unbound_ns = []
                 for ont_label, ont in st.session_state["g_ontology_components_dict"].items():
@@ -944,7 +1036,7 @@ with tab2:
                     with col1b:
                         if len(already_used_prefix_list) == 1:
                             st.markdown(f"""<div class="warning-message">
-                                        <small>⚠️ <b>Prefix {utils.format_list_for_markdown(already_used_prefix_list)} is already in use</b>
+                                        ⚠️ Prefix <b>{utils.format_list_for_markdown(already_used_prefix_list)}</b> is already in use<small>
                                         and will be auto-renamed with a numeric suffix.</small>
                                 </div>""", unsafe_allow_html=True)
 
