@@ -819,12 +819,12 @@ with tab2:
                             valid_iri_input = False
                         elif prefix_input:
                             st.markdown(f"""<div class="warning-message">
-                                ⚠️ <b> Namespace is already bound to prefix {bound_prefix}.</b>
+                                ⚠️ Namespace is already bound to prefix <b>{bound_prefix}</b>.
                                 <small>If you continue, that prefix will be overwritten <b>({bound_prefix} → {prefix_input})</b>.</small>
                             </div>""", unsafe_allow_html=True)
                         else:
                             st.markdown(f"""<div class="warning-message">
-                                ⚠️ <b> Namespace is already bound to prefix {bound_prefix}.</b>
+                                ⚠️ Namespace is already bound to prefix <b>{bound_prefix}</b>.
                             </div>""", unsafe_allow_html=True)
 
             if iri_input and prefix_input:
@@ -1054,7 +1054,7 @@ with tab2:
 
             there_are_predefined_ns_unbound_flag = False
             for pr, ns in predefined_ns_dict.items():
-                if not ns in mapping_ns_dict.values():
+                if not URIRef(ns) in mapping_ns_dict.values():
                     there_are_predefined_ns_unbound_flag = True
                     continue
 
@@ -1067,7 +1067,7 @@ with tab2:
             else:
 
                 with col1a:
-                    predefined_ns_list_not_duplicated = [k for k, v in predefined_ns_dict.items() if v not in mapping_ns_dict.values()]
+                    predefined_ns_list_not_duplicated = [k for k, v in predefined_ns_dict.items() if URIRef(v) not in mapping_ns_dict.values()]
                     list_to_choose = sorted(predefined_ns_list_not_duplicated.copy())
                     if len(list_to_choose) > 1:
                         list_to_choose.insert(0, "Select all")
@@ -1195,11 +1195,11 @@ with tab2:
                                 break
                         if structural_ns_prefix_candidate == bound_prefix:
                             st.markdown(f"""<div class="error-message">
-                                ❌ <b> Namespace is already bound to prefix {bound_prefix}.</b>
+                                ❌ Namespace is already bound to prefix <b>{bound_prefix}</b>.
                             </div>""", unsafe_allow_html=True)
                         else:
                             st.markdown(f"""<div class="warning-message">
-                                ⚠️ <b> Namespace is already bound to prefix {bound_prefix}. </b>
+                                ⚠️ Namespace is already bound to prefix <b>{bound_prefix}</b>.
                                 <small>If you continue, that prefix will be overwritten <b>({bound_prefix} → {structural_ns_prefix_candidate})</b>.</small>
                             </div>""", unsafe_allow_html=True)
                             valid_iri_input = True
