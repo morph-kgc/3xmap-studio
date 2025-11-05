@@ -679,12 +679,18 @@ def empty_last_added_lists():
 # Function to completely reset cache (last added dictionaries and ontology dictionaries)
 # Data sources, ontologies and last added lists
 def full_reset():
-    # data sources________________________________
+
+    # mapping
+    st.session_state["g_mapping"] = Graph()
+    st.session_state["g_label"] = ""
+    
+    # data sources
     st.session_state["db_connections_dict"] = {}
     st.session_state["db_connection_status_dict"] = {}
     st.session_state["sql_queries_dict"] = {}
     st.session_state["ds_files_dict"] = {}
-    # ontology___________________________
+
+    # ontology
     st.session_state["g_ontology_components_dict"] = {}
     st.session_state["g_ontology_components_tag_dict"] = {}
     st.session_state["g_ontology"] = Graph()
@@ -1073,30 +1079,8 @@ def get_ns_warning_message(ns_to_bind_list):
                     and will be auto-renamed with a numeric suffix.</small>
             </div>""", unsafe_allow_html=True)
 
-# def get_warning_error_messages_for_new_ns_prefix(prefix_input, iri_input):
-#
-#     mapping_ns_dict = get_g_ns_dict(st.session_state["g_mapping"])
-#     iri_input = URIRef(iri_input)
-#     valid_prefix_input = utils.is_valid_prefix(prefix_input)
-#
-#     if valid_prefix_input:
-#         if prefix_input in mapping_ns_dict:
-#             bound_prefix = ""
-#             for pr, ns in mapping_ns_dict.items():
-#                 if ns == iri_input:
-#                     bound_prefix = pr
-#                     break
-#             if bound_prefix != prefix_input:
-#                 st.markdown(f"""<div class="warning-message">
-#                     ⚠️ Prefix <b>{prefix_input}</b> is already in use.
-#                     <small>The chosen prefix will be auto-renamed with a numeric suffix.</small>
-#                 </div>""", unsafe_allow_html=True)
-#
-#     return valid_prefix_input
-# #_________________________________________________
 
-#__________________________________________________
-#Function to check whether a prefix is valid
+
 # HEREIGO - REFACTORING
 
 

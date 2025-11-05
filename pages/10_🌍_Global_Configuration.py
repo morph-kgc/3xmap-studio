@@ -822,7 +822,6 @@ with tab2:
                     with col1a:
                         st.button("Bind", key="key_bind_custom_ns_button", on_click=bind_custom_namespace)
 
-        # HEREIGO REFACTORING
         elif add_ns_selected_option == "🗺️ Mapping":
 
             original_mapping_ns_dict = st.session_state["original_g_mapping_ns_dict"]
@@ -1267,10 +1266,17 @@ with tab3:
                         to file <b style="color:#F63366;">{export_filename_complete}</b>.
                     </span></div>""", unsafe_allow_html=True)
 
+            reset_after_exporting_mapping_checkbox = st.checkbox("🗑️ Start fresh: Reset session after exporting mapping",
+                key="key_reset_after_exporting_mapping_checkbox")
+
             serialised_data = st.session_state["g_mapping"].serialize(format=export_format)
             with col1a:
                 st.session_state["mapping_downloaded_ok_flag"] = st.download_button(label="Export", data=serialised_data,
                     file_name=export_filename_complete, mime="text/plain")
+
+        if st.session_state["mapping_downloaded_ok_flag"]:
+            st.rerun()
+
 
             # THIS IS TO DELETE EVERYTHING AFTER SAVING
             # if st.session_state["mapping_downloaded_ok_flag"]:    # delete cache file if any and rerun
