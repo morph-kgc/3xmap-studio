@@ -755,7 +755,7 @@ def get_number_of_tm(g):
 # Function to get the default base iri for the base components
 def get_default_base_ns():
 
-    return ["map3x", Namespace("http://3xmap.org/mapping/")]
+    return ["map3x", URIRef("http://3xmap.org/mapping/")]
 #________________________________________________________
 
 #_________________________________________________________
@@ -765,35 +765,35 @@ def get_default_base_ns():
 def get_default_ns_dict():
 
     default_ns_dict = {
-        "brick": Namespace("https://brickschema.org/schema/Brick#"),
-        "csvw": Namespace("http://www.w3.org/ns/csvw#"),
-        "dc": Namespace("http://purl.org/dc/elements/1.1/"),
-        "dcam": Namespace("http://purl.org/dc/dcam/"),
-        "dcat": Namespace("http://www.w3.org/ns/dcat#"),
-        "dcmitype": Namespace("http://purl.org/dc/dcmitype/"),
-        "dcterms": Namespace("http://purl.org/dc/terms/"),
-        "doap": Namespace("http://usefulinc.com/ns/doap#"),
-        "foaf": Namespace("http://xmlns.com/foaf/0.1/"),
-        "geo": Namespace("http://www.opengis.net/ont/geosparql#"),
-        "odrl": Namespace("http://www.w3.org/ns/odrl/2/"),
-        "org": Namespace("http://www.w3.org/ns/org#"),
-        "owl": Namespace("http://www.w3.org/2002/07/owl#"),
-        "prof": Namespace("http://www.w3.org/ns/dx/prof/"),
-        "prov": Namespace("http://www.w3.org/ns/prov#"),
-        "qb": Namespace("http://purl.org/linked-data/cube#"),
-        "rdf": Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
-        "rdfs": Namespace("http://www.w3.org/2000/01/rdf-schema#"),
-        "schema": Namespace("https://schema.org/"),
-        "sh": Namespace("http://www.w3.org/ns/shacl#"),
-        "skos": Namespace("http://www.w3.org/2004/02/skos/core#"),
-        "sosa": Namespace("http://www.w3.org/ns/sosa/"),
-        "ssn": Namespace("http://www.w3.org/ns/ssn/"),
-        "time": Namespace("http://www.w3.org/2006/time#"),
-        "vann": Namespace("http://purl.org/vocab/vann/"),
-        "void": Namespace("http://rdfs.org/ns/void#"),
-        "wgs": Namespace("https://www.w3.org/2003/01/geo/wgs84_pos#"),
-        "xml": Namespace("http://www.w3.org/XML/1998/namespace"),
-        "xsd": Namespace("http://www.w3.org/2001/XMLSchema#")}
+        "brick": URIRef("https://brickschema.org/schema/Brick#"),
+        "csvw": URIRef("http://www.w3.org/ns/csvw#"),
+        "dc": URIRef("http://purl.org/dc/elements/1.1/"),
+        "dcam": URIRef("http://purl.org/dc/dcam/"),
+        "dcat": URIRef("http://www.w3.org/ns/dcat#"),
+        "dcmitype": URIRef("http://purl.org/dc/dcmitype/"),
+        "dcterms": URIRef("http://purl.org/dc/terms/"),
+        "doap": URIRef("http://usefulinc.com/ns/doap#"),
+        "foaf": URIRef("http://xmlns.com/foaf/0.1/"),
+        "geo": URIRef("http://www.opengis.net/ont/geosparql#"),
+        "odrl": URIRef("http://www.w3.org/ns/odrl/2/"),
+        "org": URIRef("http://www.w3.org/ns/org#"),
+        "owl": URIRef("http://www.w3.org/2002/07/owl#"),
+        "prof": URIRef("http://www.w3.org/ns/dx/prof/"),
+        "prov": URIRef("http://www.w3.org/ns/prov#"),
+        "qb": URIRef("http://purl.org/linked-data/cube#"),
+        "rdf": URIRef("http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
+        "rdfs": URIRef("http://www.w3.org/2000/01/rdf-schema#"),
+        "schema": URIRef("https://schema.org/"),
+        "sh": URIRef("http://www.w3.org/ns/shacl#"),
+        "skos": URIRef("http://www.w3.org/2004/02/skos/core#"),
+        "sosa": URIRef("http://www.w3.org/ns/sosa/"),
+        "ssn": URIRef("http://www.w3.org/ns/ssn/"),
+        "time": URIRef("http://www.w3.org/2006/time#"),
+        "vann": URIRef("http://purl.org/vocab/vann/"),
+        "void": URIRef("http://rdfs.org/ns/void#"),
+        "wgs": URIRef("https://www.w3.org/2003/01/geo/wgs84_pos#"),
+        "xml": URIRef("http://www.w3.org/XML/1998/namespace"),
+        "xsd": URIRef("http://www.w3.org/2001/XMLSchema#")}
 
     return default_ns_dict
 #________________________________________________________
@@ -804,24 +804,24 @@ def get_default_ns_dict():
 def get_predefined_ns_dict():
 
     predefined_ns_dict = {
-        "fnml": "http://semweb.mmlab.be/ns/fnml#",
-        "fno": "https://w3id.org/function/ontology#",
-        "idlab-fn": "http://example.com/idlab/function#",
-        "ex": "http://example.org/",
-        "vcard": "http://www.w3.org/2006/vcard/ns#",
-        "geo": "http://www.w3.org/2003/01/geo/wgs84_pos#",
-        "xhv": "http://www.w3.org/1999/xhtml/vocab#",
-        "gr": "http://purl.org/goodrelations/v1#",
-        "event": "http://purl.org/NET/c4dm/event.owl#",
-        "bioc": "http://purl.org/bioc#",
-        "mo": "http://purl.org/ontology/mo/",
-        "bibo": "http://purl.org/ontology/bibo/",
-        "org": "http://www.w3.org/ns/org#",
-        "cnt": "http://www.w3.org/2008/content#",
-        "doap": "http://usefulinc.com/ns/doap#",
-        "media": "http://purl.org/media#",
-        "oa": "http://www.w3.org/ns/oa#",
-        "time": "http://www.w3.org/2006/time#",}
+        "fnml": URIRef("http://semweb.mmlab.be/ns/fnml#"),
+        "fno": URIRef("https://w3id.org/function/ontology#"),
+        "idlab-fn": URIRef("http://example.com/idlab/function#"),
+        "ex": URIRef("http://example.org/"),
+        "vcard": URIRef("http://www.w3.org/2006/vcard/ns#"),
+        "geo": URIRef("http://www.w3.org/2003/01/geo/wgs84_pos#"),
+        "xhv": URIRef("http://www.w3.org/1999/xhtml/vocab#"),
+        "gr": URIRef("http://purl.org/goodrelations/v1#"),
+        "event": URIRef("http://purl.org/NET/c4dm/event.owl#"),
+        "bioc": URIRef("http://purl.org/bioc#"),
+        "mo": URIRef("http://purl.org/ontology/mo/"),
+        "bibo": URIRef("http://purl.org/ontology/bibo/"),
+        "org": URIRef("http://www.w3.org/ns/org#"),
+        "cnt": URIRef("http://www.w3.org/2008/content#"),
+        "doap": URIRef("http://usefulinc.com/ns/doap#"),
+        "media": URIRef("http://purl.org/media#"),
+        "oa": URIRef("http://www.w3.org/ns/oa#"),
+        "time": URIRef("http://www.w3.org/2006/time#")}
 
     return predefined_ns_dict
 #________________________________________________________
@@ -905,7 +905,7 @@ def bind_namespace(prefix, namespace):
     # find actual prefix (it may have been auto-renamed)
     actual_prefix = None
     for pr, ns in st.session_state["g_mapping"].namespace_manager.namespaces():
-        if str(ns) == namespace:
+        if str(ns) == str(namespace):
             actual_prefix = pr
             break
     if actual_prefix:
@@ -1026,8 +1026,52 @@ def are_there_unbound_ns(ns_dict):
             there_are_ns_unbound_flag = True
             continue
     return there_are_ns_unbound_flag
+#_________________________________________________
 
 #_________________________________________________
+#Function to get previsualisation message of mapping/ontology/predefined namespaces
+def get_ns_previsualisation_message(ns_to_bind_list, ns_dict):
+
+    inner_html = ""
+    max_length = get_max_length_for_display()[4]
+
+    for prefix in ns_to_bind_list[:max_length]:
+        inner_html += f"""<div style="margin-bottom:6px;">
+            <b>🔗 {prefix}</b> → {ns_dict[prefix]}
+        </div>"""
+
+    if len(ns_to_bind_list) > max_length:
+        inner_html += f"""<div style="margin-bottom:6px;">
+            🔗 ... <b>(+{len(ns_to_bind_list[max_length:])})</b>
+        </div>"""
+
+    st.markdown(f"""<div class="info-message-gray">
+            <small>{inner_html}</small>
+        </div>""", unsafe_allow_html=True)
+#_________________________________________________
+
+#_________________________________________________
+#Function to get warning messages when binding mapping/ontology/predefined namespaces
+# and when unbinding namespaces
+def get_ns_warning_message(ns_to_bind_list):
+
+    mapping_ns_dict = get_g_ns_dict(st.session_state["g_mapping"])
+    already_used_prefix_list = []
+    for pr in ns_to_bind_list:
+        if pr in mapping_ns_dict:
+            already_used_prefix_list.append(pr)
+
+    if len(already_used_prefix_list) == 1:
+        st.markdown(f"""<div class="warning-message">
+                    ⚠️ Prefix <b>{utils.format_list_for_markdown(already_used_prefix_list)}</b> is already in use<small>
+                    and will be auto-renamed with a numeric suffix.</small>
+            </div>""", unsafe_allow_html=True)
+
+    elif already_used_prefix_list:
+        st.markdown(f"""<div class="warning-message">
+                    <small>⚠️ <b>Prefixes {utils.format_list_for_markdown(already_used_prefix_list)} are already in use</b>
+                    and will be auto-renamed with a numeric suffix.</small>
+            </div>""", unsafe_allow_html=True)
 
 # def get_warning_error_messages_for_new_ns_prefix(prefix_input, iri_input):
 #

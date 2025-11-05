@@ -218,8 +218,6 @@ def bind_custom_namespace():
     st.session_state["key_add_ns_radio"] = "✏️ Custom"
 
 def bind_predefined_namespaces():
-    if "Select all" in st.session_state["predefined_ns_to_bind_list"]:
-        st.session_state["predefined_ns_to_bind_list"] = predefined_ns_list_not_duplicated
     # bind and store information___________________________
     for prefix in st.session_state["predefined_ns_to_bind_list"]:
         namespace = predefined_ns_dict[prefix]
@@ -826,12 +824,9 @@ with tab2:
 
         # HEREIGO REFACTORING
         elif add_ns_selected_option == "🗺️ Mapping":
-            there_are_original_mapping_ns_unbound_flag = False
+
             original_mapping_ns_dict = st.session_state["original_g_mapping_ns_dict"]
-            for pr, ns in original_mapping_ns_dict.items():
-                if not ns in mapping_ns_dict.values():
-                    there_are_original_mapping_ns_unbound_flag = True
-                    continue
+            there_are_original_mapping_ns_unbound_flag = utils.are_there_unbound_ns(original_mapping_ns_dict)
 
             with col1:
                 col1a, col1b = st.columns([2,1])
@@ -862,7 +857,6 @@ with tab2:
                             st.button("Bind", key="key_bind_original_mapping_ns_button", on_click=bind_original_mapping_namespaces)
                     else:
                         original_mapping_ns_to_bind_list = original_mapping_ns_list_not_duplicated
-
                         with col1:
                             bind_all_original_mapping_ns_checkbox = st.checkbox(
                             "🔒 I am sure I want to bind all the namespaces in the original mapping",
@@ -871,45 +865,17 @@ with tab2:
                                 st.button("Bind", key="key_bind_original_mapping_ns_button", on_click=bind_original_mapping_namespaces)
 
 
-                    inner_html = ""
-                    max_length = utils.get_max_length_for_display()[4]
-                    for prefix in original_mapping_ns_to_bind_list:
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            <b>🔗 {prefix}</b> → {original_mapping_ns_dict[prefix]}
-                        </div>"""
-
-                    if len(original_mapping_ns_to_bind_list) > max_length:
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            🔗 ... <b>(+{len(original_mapping_ns_to_bind_list[max_length:])})</b>
-                        </div>"""
-
                     with col1:
                         col1a, col1b = st.columns([2,1])
                     with col1a:
-                        st.markdown(f"""<div class="info-message-gray">
-                                <small>{inner_html}</small>
-                            </div>""", unsafe_allow_html=True)
+                        utils.get_ns_previsualisation_message(original_mapping_ns_to_bind_list, original_mapping_ns_dict)
 
                     with col1b:
-                        if len(already_used_prefix_list) == 1:
-                            st.markdown(f"""<div class="warning-message">
-                                        ⚠️ Prefix <b>{utils.format_list_for_markdown(already_used_prefix_list)}</b> is already in use<small>
-                                        and will be auto-renamed with a numeric suffix.</small>
-                                </div>""", unsafe_allow_html=True)
-
-                        elif already_used_prefix_list:
-                            st.markdown(f"""<div class="warning-message">
-                                        <small>⚠️ <b>Prefixes {utils.format_list_for_markdown(already_used_prefix_list)} are already in use</b>
-                                        and will be auto-renamed with a numeric suffix.</small>
-                                </div>""", unsafe_allow_html=True)
+                        utils.get_ns_warning_message(original_mapping_ns_to_bind_list)
 
         elif add_ns_selected_option == "🧩 Ontology":
 
             there_are_ontology_ns_unbound_flag = utils.are_there_unbound_ns(ontology_ns_dict)
-            for pr, ns in ontology_ns_dict.items():
-                if not ns in mapping_ns_dict.values():
-                    there_are_ontology_ns_unbound_flag = True
-                    continue
 
             if not there_are_ontology_ns_unbound_flag:
                 with col1:
@@ -923,10 +889,9 @@ with tab2:
 
                 g_ont_components_w_unbound_ns = []
                 for ont_label, ont in st.session_state["g_ontology_components_dict"].items():
-                    for pr, ns in utils.get_g_ns_dict(ont).items():
-                        if not ns in mapping_ns_dict.values():
-                            g_ont_components_w_unbound_ns.append(st.session_state["g_ontology_components_tag_dict"][ont_label])
-                            break
+                    ontology_component_ns_dict = utils.get_g_ns_dict(ont)
+                    if utils.are_there_unbound_ns(ontology_component_ns_dict):
+                        g_ont_components_w_unbound_ns.append(st.session_state["g_ontology_components_tag_dict"][ont_label])
 
                 if len(st.session_state["g_ontology_components_dict"]) == 1:   # no ontolgoy filter
                     with col1:
@@ -984,10 +949,6 @@ with tab2:
                                     key="key_ontology_ns_to_bind_multiselect")
 
                 if ontology_ns_to_bind_list:
-                    already_used_prefix_list = []
-                    for pr in ontology_ns_to_bind_list:
-                        if pr in mapping_ns_dict:
-                            already_used_prefix_list.append(pr)
 
                     if "Select all" not in ontology_ns_to_bind_list:   # "Select all" not selected
                         with col1:
@@ -1005,48 +966,20 @@ with tab2:
                     if ontology_filter_for_ns != "Select ontology":
                         ontology_ns_dict = utils.get_g_ns_dict(ont)
 
-                    inner_html = ""
-                    max_length = utils.get_max_length_for_display()[4]
-                    for prefix in ontology_ns_to_bind_list:
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            <b>🔗 {prefix}</b> → {ontology_ns_dict[prefix]}
-                        </div>"""
-
-                    if len(ontology_ns_to_bind_list) > max_length:
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            🔗 ... <b>(+{len(ontology_ns_to_bind_list[max_length:])})</b>
-                        </div>"""
-
                     with col1:
                         col1a, col1b = st.columns([2,1])
                     with col1a:
-                        st.markdown(f"""<div class="info-message-gray">
-                                <small>{inner_html}</small>
-                            </div>""", unsafe_allow_html=True)
+                        utils.get_ns_previsualisation_message(ontology_ns_to_bind_list, ontology_ns_dict)
 
                     with col1b:
-                        if len(already_used_prefix_list) == 1:
-                            st.markdown(f"""<div class="warning-message">
-                                        ⚠️ Prefix <b>{utils.format_list_for_markdown(already_used_prefix_list)}</b> is already in use<small>
-                                        and will be auto-renamed with a numeric suffix.</small>
-                                </div>""", unsafe_allow_html=True)
-
-                        elif already_used_prefix_list:
-                            st.markdown(f"""<div class="warning-message">
-                                        <small>⚠️ <b>Prefixes {utils.format_list_for_markdown(already_used_prefix_list)} are already in use</b>
-                                        and will be auto-renamed with a numeric suffix.</small>
-                                </div>""", unsafe_allow_html=True)
+                        utils.get_ns_warning_message(ontology_ns_to_bind_list)
 
 
         elif add_ns_selected_option == "📋 Predefined":
             with col1:
                 col1a, col1b = st.columns([2,1])
 
-            there_are_predefined_ns_unbound_flag = False
-            for pr, ns in predefined_ns_dict.items():
-                if not URIRef(ns) in mapping_ns_dict.values():
-                    there_are_predefined_ns_unbound_flag = True
-                    continue
+            there_are_predefined_ns_unbound_flag = utils.are_there_unbound_ns(predefined_ns_dict)
 
             if not there_are_predefined_ns_unbound_flag:
                 with col1a:
@@ -1057,7 +990,7 @@ with tab2:
             else:
 
                 with col1a:
-                    predefined_ns_list_not_duplicated = [k for k, v in predefined_ns_dict.items() if URIRef(v) not in mapping_ns_dict.values()]
+                    predefined_ns_list_not_duplicated = [k for k, v in predefined_ns_dict.items() if v not in mapping_ns_dict.values()]
                     list_to_choose = sorted(predefined_ns_list_not_duplicated.copy())
                     if len(list_to_choose) > 1:
                         list_to_choose.insert(0, "Select all")
@@ -1070,34 +1003,8 @@ with tab2:
                         already_used_prefix_list.append(pr)
 
                 # Information messages
-                if predefined_ns_to_bind_list and "Select all" not in predefined_ns_to_bind_list:
-                    # create a single info message
-                    inner_html = ""
-                    max_length = utils.get_max_length_for_display()[4]
-                    for prefix in predefined_ns_to_bind_list[:max_length]:
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            <b>🔗 {prefix}</b> → {predefined_ns_dict[prefix]}
-                        </div>"""
-
-                    if len(predefined_ns_to_bind_list) > max_length:   # many sm to remove
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            🔗 ... <b>(+{len(predefined_ns_to_bind_list[max_length:])})</b>
-                        </div>"""
-
-                elif predefined_ns_to_bind_list:
-                    # create a single info message
-                    inner_html = ""
-                    max_length = utils.get_max_length_for_display()[4]
-                    for prefix in list(predefined_ns_list_not_duplicated)[:max_length]:
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            <b>🔗 {prefix}</b> → {predefined_ns_dict[prefix]}
-                        </div>"""
-
-                    if len(predefined_ns_list_not_duplicated) > max_length:   # many sm to remove
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            🔗 ... <b>(+{len(list(predefined_ns_list_not_duplicated)[max_length:])})</b>
-                        </div>"""
-
+                if "Select all" in predefined_ns_to_bind_list:
+                    predefined_ns_to_bind_list = predefined_ns_list_not_duplicated
 
                 if predefined_ns_to_bind_list:
                     st.session_state["predefined_ns_to_bind_list"] = predefined_ns_to_bind_list
@@ -1114,24 +1021,12 @@ with tab2:
 
                     with col1:
                         col1a, col1b = st.columns([2,1])
+
                     with col1a:
-                        st.markdown(f"""<div class="info-message-gray">
-                                <small>{inner_html}</small>
-                            </div>""", unsafe_allow_html=True)
+                            utils.get_ns_previsualisation_message(predefined_ns_to_bind_list, predefined_ns_dict)
 
                     with col1b:
-                        if len(already_used_prefix_list) == 1:
-                            st.markdown(f"""<div class="warning-message">
-                                        <small>⚠️ <b>Prefix {utils.format_list_for_markdown(already_used_prefix_list)} is already in use</b>
-                                        and will be auto-renamed with a numeric suffix.</small>
-                                </div>""", unsafe_allow_html=True)
-
-                        elif already_used_prefix_list:
-                            st.markdown(f"""<div class="warning-message">
-                                        <small>⚠️ <b>Prefixes {utils.format_list_for_markdown(already_used_prefix_list)} are already in use</b>
-                                        and will be auto-renamed with a numeric suffix.</small>
-                                </div>""", unsafe_allow_html=True)
-
+                        utils. get_ns_warning_message(predefined_ns_to_bind_list)
 
 
         if add_ns_selected_option == "🏛️ Base":
@@ -1238,20 +1133,6 @@ with tab2:
 
             if ns_to_unbind_list and "Select all" not in ns_to_unbind_list:
 
-                # create a single info message
-                inner_html = ""
-                max_length = utils.get_max_length_for_display()[4]
-                formatted_ns_to_unbind = utils.format_list_for_markdown(ns_to_unbind_list)
-                for prefix in ns_to_unbind_list[:max_length]:
-                    inner_html += f"""<div style="margin-bottom:6px;">
-                        <b>🔗 {prefix}</b> → {mapping_ns_dict[prefix]}
-                    </div>"""
-
-                if len(ns_to_unbind_list) > max_length:   # many sm to remove
-                    inner_html += f"""<div style="margin-bottom:6px;">
-                        🔗 ... <b>(+{len(ns_to_unbind_list[:max_length])})</b>
-                    </div>"""
-
                 with col1a:
                     unbind_ns_button_checkbox = st.checkbox(
                     "🔒 I am sure want to unbind the selected namespace/s",
@@ -1259,32 +1140,11 @@ with tab2:
                     if unbind_ns_button_checkbox:
                         st.button(f"Unbind", key="key_unbind_ns_button", on_click=unbind_namespaces)
 
-                    if len(ns_to_unbind_list) > 0:
-                        with col1a:
-                            st.markdown(f"""<div class="info-message-gray">
-                                    <small>{inner_html}</small>
-                                </div>""", unsafe_allow_html=True)
-
-
             elif ns_to_unbind_list:    # unbind all namespaces
 
-                # create a single info message
-                inner_html = ""
-                max_length = utils.get_max_length_for_display()[4]
                 mapping_ns_dict_available_to_unbind = {k: v for k, v in mapping_ns_dict.items() if
                     (k not in default_ns_dict and k not in required_ns_dict) and k != st.session_state["base_ns"][0]}
-                # mapping_ns_dict_wo_base_ns = {k: v for k, v in mapping_ns_dict.items() if k != st.session_state["base_ns"][0]}
-
-                for prefix in list(mapping_ns_dict_available_to_unbind)[:max_length]:
-                    if prefix != "Select all":
-                        inner_html += f"""<div style="margin-bottom:6px;">
-                            🔗 <b>{prefix}</b> → {mapping_ns_dict_available_to_unbind[prefix]}
-                        </div>"""
-
-                if len(mapping_ns_dict_available_to_unbind) > max_length:   # many sm to remove
-                    inner_html += f"""<div style="margin-bottom:2px;">
-                        🔗 ... <b>(+{len(list(mapping_ns_dict_available_to_unbind)[:max_length])})</b>
-                    </div>"""
+                ns_to_unbind_list = list(mapping_ns_dict_available_to_unbind)
 
                 with col1b:
                     st.write("")
@@ -1298,11 +1158,12 @@ with tab2:
                     "🔒 I am sure I want to unbind all namespaces",
                     key="key_unbind_all_ns_button_checkbox")
                     if unbind_all_ns_button_checkbox:
-                        st.button("Unbind", key="key_unbind_all_ns_button", on_click=unbind_all_namespaces)
+                        st.button("Unbind", key="key_unbind_all_ns_button", on_click=unbind_namespaces)
 
-                    st.markdown(f"""<div class="info-message-gray">
-                            <small>{inner_html}</small>
-                        </div>""", unsafe_allow_html=True)
+            if ns_to_unbind_list:
+                with col1a:
+                    utils.get_ns_previsualisation_message(ns_to_unbind_list, mapping_ns_dict)
+
 
 
 #_____________________________________________
