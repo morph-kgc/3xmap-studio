@@ -29,6 +29,22 @@ import rdflib
 from collections import Counter
 from urllib.parse import urlparse
 
+# REQUIRED NS
+#________________________________________________________
+# Function to retrieve namespaces which are needed for our code
+def get_required_ns_dict():
+
+    required_ns_dict = {"rml": Namespace("http://w3id.org/rml/"),
+        "ql": Namespace("http://semweb.mmlab.be/ns/ql#")}
+
+    return required_ns_dict
+
+#_______________________________________________________
+
+#________________________________________________________
+# Retrieving necessary namespaces for UTILS page here
+RML, QL = get_required_ns_dict().values()
+#________________________________________________________
 
 # AESTHETICS-------------------------------------------------------------------------------------
 
@@ -550,12 +566,194 @@ def get_max_length_for_display():
     return [50, 10, 100, 20, 5, 5, 20]
 #_______________________________________________________
 
+# GLOBAL CONFIGURATION - SELECT MAPPING -------------------------------------------------------------
+#_________________________________________________
+#Function to check whether a label is valid
+def is_valid_label(label):
+
+    if not label:
+        return False
+
+    valid_letters = ["a","b","c","d","e","f","g","h","i","j","k","l","m",
+        "n","o","p","q","r","s","t","u","v","w","x","y","z",
+        "A","B","C","D","E","F","G","H","I","J","K","L","M",
+        "N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
+
+    valid_digits = ["0","1","2","3","4","5","6","7","8","9","_","-"]
+
+
+    if re.search(r"[ \t\n\r]", label):    # disallow spaces
+        st.markdown(f"""<div class="error-message">
+            ❌ <b> Invalid label. </b>
+            <small>Please make sure it does not contain any spaces.</small>
+        </div>""", unsafe_allow_html=True)
+        return False
+
+    if re.search(r"[<>\"{}|\\^`]", label):    # disallow unescaped characters
+        st.markdown(f"""<div class="error-message">
+            ❌ <b> Invalid label. </b>
+            <small>Please make sure it does not contain any invalid characters (&lt;&gt;"{{}}|\\^`).</small>
+        </div>""", unsafe_allow_html=True)
+        return False
+
+    inner_html = ""
+    if len(label) > 20:
+        st.markdown(f"""<div class="warning-message">
+            ⚠️ A <b>shorter label</b> is recommended.
+        </div>""", unsafe_allow_html=True)
+
+    return True
+#__________________________________________________
+
+#_________________________________________________
+# Function to check whether a label is valid with harder conditions
+def is_valid_label_hard(label, display_option=True):
+
+    if not label:
+        return False
+
+    valid_letters = ["a","b","c","d","e","f","g","h","i","j","k","l","m",
+        "n","o","p","q","r","s","t","u","v","w","x","y","z",
+        "A","B","C","D","E","F","G","H","I","J","K","L","M",
+        "N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
+
+    valid_digits = ["0","1","2","3","4","5","6","7","8","9","_","-"]
+
+    if re.search(r"[ \t\n\r]", label):    # disallow spaces
+        if display_option:
+            st.markdown(f"""<div class="error-message">
+                ❌ <b> Invalid label. </b>
+                <small>Please make sure it does not contain any spaces.</small>
+            </div>""", unsafe_allow_html=True)
+        return False
+
+    for letter in label:
+        if letter not in valid_letters and letter not in valid_digits:
+            if display_option:
+                st.markdown(f"""<div class="error-message">
+                    ❌ <b> Invalid label. </b>
+                    <small>Please make sure it contains only safe characters (a-z, A-Z, 0-9, -, _).</small>
+                </div>""", unsafe_allow_html=True)
+            return False
+
+    if label.endswith("_") or label.endswith("-"):    # disallow trailing puntuation
+        if display_option:
+            st.markdown(f"""<div class="error-message">
+                ❌ <b> Invalid label. </b>
+                <small>Please make sure it does not end with puntuation.</small>
+            </div>""", unsafe_allow_html=True)
+        return False
+
+    inner_html = ""
+    if len(label) > 20:
+        if display_option:
+            st.markdown(f"""<div class="warning-message">
+                ⚠️ A <b>shorter label</b> is recommended.
+            </div>""", unsafe_allow_html=True)
+            inner_html += f"""A shorter label is recommended. """
+
+    return True
+#__________________________________________________
+
+#_______________________________________________________
+# List of allowed mapping file formats
+# HERE - Expand options, now reduced version
+def get_g_mapping_file_formats_dict():
+
+    allowed_format_dict = {"turtle": ".ttl",
+        "ntriples": ".nt", "trig": ".trig", "jsonld": ".jsonld"}    # missing hdt, nquads
+
+    return allowed_format_dict
+#_______________________________________________________
+
+#_______________________________________________________
+# Function to empty all lists that store last added stuff
+def empty_last_added_lists():
+    st.session_state["last_added_ns_list"] = []
+    st.session_state["last_added_tm_list"] = []
+    st.session_state["last_added_sm_list"] = []
+    st.session_state["last_added_pom_list"] = []
+#_____________________________________________________
+
+#_______________________________________________________
+# Function to completely reset cache (last added dictionaries and ontology dictionaries)
+# Data sources, ontologies and last added lists
+def full_reset():
+    # data sources________________________________
+    st.session_state["db_connections_dict"] = {}
+    st.session_state["db_connection_status_dict"] = {}
+    st.session_state["sql_queries_dict"] = {}
+    st.session_state["ds_files_dict"] = {}
+    # ontology___________________________
+    st.session_state["g_ontology_components_dict"] = {}
+    st.session_state["g_ontology_components_tag_dict"] = {}
+    st.session_state["g_ontology"] = Graph()
+    # last added lists_________________________
+    empty_last_added_lists()
+#_____________________________________________________
+
+#_______________________________________________________
+# Function to load mapping from file (f is a file object)
+# This should work for all formats in get_g_mapping_file_formats_dict
+# HERE - Check all formats work
+def load_mapping_from_file(f):
+
+    ext = os.path.splitext(f.name)[1].lower()  #file extension
+
+    if ext == ".pkl":
+        return pickle.load(f)
+
+    elif ext in [".json", ".jsonld"]:
+        text = f.read().decode("utf-8")
+        return json.loads(text)
+
+    elif ext == ".csv":
+        text = f.read().decode("utf-8")
+        reader = csv.DictReader(io.StringIO(text))
+        return [row for row in reader]
+
+    elif ext in [".ttl", ".rdf", ".xml", ".nt", ".n3", ".trig", ".trix"]:
+        rdf_format_dict = {".ttl": "turtle", ".rdf": "xml", ".xml": "xml",
+            ".nt": "nt", ".n3": "n3", ".trig": "trig", ".trix": "trix"}
+        g = Graph()
+        content = f.read().decode("utf-8")
+        try:
+            g.parse(data=content, format=rdf_format_dict[ext])
+            prefixes = re.findall(r"@prefix\s+(\w+):\s+<([^>]+)>", content)
+            for prefix, uri in prefixes:
+                ns = Namespace(uri)
+                g.bind(prefix, ns)
+            return g
+        except:
+            st.markdown(f"""<div class="error-message">
+                ❌ Failed to parse <b>mapping</b>.
+                <small> Please, check your mapping.</small>
+            </div>""", unsafe_allow_html=True)
+            return False
+
+    else:
+        st.markdown(f"""<div class="error-message">
+            ❌ Unsupported file extension <b>{ext}</b>. # should not happen
+        </div>""", unsafe_allow_html=True)
+        return False
+
+#__________________________________________________
+
+#_______________________________________________________
+#Function to get the number of TriplesMaps in a mapping
+def get_number_of_tm(g):
+
+    triplesmaps = [s for s in g.subjects(predicate=RML.logicalSource, object=None)]
+
+    return len(triplesmaps)
+#_________________________________________________________
+
 
 # GLOBAL CONFIGURATION - CONFIGURE NAMESPACES ---------------------------------------------------
 # We define these first because they will be needed in this page
 #_________________________________________________________
-# Function to get the default base iri for the structural components
-def get_default_structural_ns():
+# Function to get the default base iri for the base components
+def get_default_base_ns():
 
     return ["map3x", Namespace("http://3xmap.org/mapping/")]
 #________________________________________________________
@@ -626,22 +824,6 @@ def get_predefined_ns_dict():
         "time": "http://www.w3.org/2006/time#",}
 
     return predefined_ns_dict
-#________________________________________________________
-
-#________________________________________________________
-# Function to retrieve namespaces which are needed for our code
-def get_required_ns_dict():
-
-    required_ns_dict = {"rml": Namespace("http://w3id.org/rml/"),
-        "ql": Namespace("http://semweb.mmlab.be/ns/ql#")}
-
-    return required_ns_dict
-
-#_______________________________________________________
-
-#________________________________________________________
-# Retrieving necessary namespaces for this page here
-RML, QL = get_required_ns_dict().values()
 #________________________________________________________
 
 #_________________________________________________________
@@ -832,213 +1014,65 @@ def is_valid_prefix(prefix):
     return True
 #__________________________________________________
 
-
-# GLOBAL CONFIGURATION - SELECT MAPPING -------------------------------------------------------------
 #_________________________________________________
-#Function to check whether a label is valid
-def is_valid_label(label):
+#Function to check whether there exists an unbound prefix from a ns dictionary
+def are_there_unbound_ns(ns_dict):
 
-    if not label:
-        return False
+    mapping_ns_dict = get_g_ns_dict(st.session_state["g_mapping"])
+    there_are_ns_unbound_flag = False
 
-    valid_letters = ["a","b","c","d","e","f","g","h","i","j","k","l","m",
-        "n","o","p","q","r","s","t","u","v","w","x","y","z",
-        "A","B","C","D","E","F","G","H","I","J","K","L","M",
-        "N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
-
-    valid_digits = ["0","1","2","3","4","5","6","7","8","9","_","-"]
-
-
-    if re.search(r"[ \t\n\r]", label):    # disallow spaces
-        st.markdown(f"""<div class="error-message">
-            ❌ <b> Invalid label. </b>
-            <small>Please make sure it does not contain any spaces.</small>
-        </div>""", unsafe_allow_html=True)
-        return False
-
-    if re.search(r"[<>\"{}|\\^`]", label):    # disallow unescaped characters
-        st.markdown(f"""<div class="error-message">
-            ❌ <b> Invalid label. </b>
-            <small>Please make sure it does not contain any invalid characters (&lt;&gt;"{{}}|\\^`).</small>
-        </div>""", unsafe_allow_html=True)
-        return False
-
-    inner_html = ""
-    if len(label) > 20:
-        st.markdown(f"""<div class="warning-message">
-            ⚠️ A <b>shorter label</b> is recommended.
-        </div>""", unsafe_allow_html=True)
-
-    return True
-#__________________________________________________
+    for pr, ns in ns_dict.items():
+        if not ns in mapping_ns_dict.values():
+            there_are_ns_unbound_flag = True
+            continue
+    return there_are_ns_unbound_flag
 
 #_________________________________________________
-# Function to check whether a label is valid with harder conditions
-def is_valid_label_hard(label, display_option=True):
 
-    if not label:
-        return False
-
-    valid_letters = ["a","b","c","d","e","f","g","h","i","j","k","l","m",
-        "n","o","p","q","r","s","t","u","v","w","x","y","z",
-        "A","B","C","D","E","F","G","H","I","J","K","L","M",
-        "N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
-
-    valid_digits = ["0","1","2","3","4","5","6","7","8","9","_","-"]
-
-    if re.search(r"[ \t\n\r]", label):    # disallow spaces
-        if display_option:
-            st.markdown(f"""<div class="error-message">
-                ❌ <b> Invalid label. </b>
-                <small>Please make sure it does not contain any spaces.</small>
-            </div>""", unsafe_allow_html=True)
-        return False
-
-    for letter in label:
-        if letter not in valid_letters and letter not in valid_digits:
-            if display_option:
-                st.markdown(f"""<div class="error-message">
-                    ❌ <b> Invalid label. </b>
-                    <small>Please make sure it contains only safe characters (a-z, A-Z, 0-9, -, _).</small>
-                </div>""", unsafe_allow_html=True)
-            return False
-
-    if label.endswith("_") or label.endswith("-"):    # disallow trailing puntuation
-        if display_option:
-            st.markdown(f"""<div class="error-message">
-                ❌ <b> Invalid label. </b>
-                <small>Please make sure it does not end with puntuation.</small>
-            </div>""", unsafe_allow_html=True)
-        return False
-
-    inner_html = ""
-    if len(label) > 20:
-        if display_option:
-            st.markdown(f"""<div class="warning-message">
-                ⚠️ A <b>shorter label</b> is recommended.
-            </div>""", unsafe_allow_html=True)
-            inner_html += f"""A shorter label is recommended. """
-
-    return True
-#__________________________________________________
-
-#_______________________________________________________
-# List of allowed mapping file formats
-# HERE - Expand options, now reduced version
-def get_g_mapping_file_formats_dict():
-
-    allowed_format_dict = {"turtle": ".ttl",
-        "ntriples": ".nt", "trig": ".trig", "jsonld": ".jsonld"}    # missing hdt, nquads
-
-    return allowed_format_dict
-#_______________________________________________________
-
-#_______________________________________________________
-# Function to empty all lists that store last added stuff
-def empty_last_added_lists():
-    st.session_state["last_added_ns_list"] = []
-    st.session_state["last_added_tm_list"] = []
-    st.session_state["last_added_sm_list"] = []
-    st.session_state["last_added_pom_list"] = []
-#_____________________________________________________
-
-#_______________________________________________________
-# Function to completely reset cache (last added dictionaries and ontology dictionaries)
-# Data sources, ontologies and last added lists
-def full_reset():
-    # data sources________________________________
-    st.session_state["db_connections_dict"] = {}
-    st.session_state["db_connection_status_dict"] = {}
-    st.session_state["sql_queries_dict"] = {}
-    st.session_state["ds_files_dict"] = {}
-    # ontology___________________________
-    st.session_state["g_ontology_components_dict"] = {}
-    st.session_state["g_ontology_components_tag_dict"] = {}
-    st.session_state["g_ontology"] = Graph()
-    # last added lists_________________________
-    empty_last_added_lists()
-#_____________________________________________________
-
-#_______________________________________________________
-# Function to load mapping from file (f is a file object)
-# This should work for all formats in get_g_mapping_file_formats_dict
-# HERE - Check all formats work
-def load_mapping_from_file(f):
-
-    ext = os.path.splitext(f.name)[1].lower()  #file extension
-
-    if ext == ".pkl":
-        return pickle.load(f)
-
-    elif ext in [".json", ".jsonld"]:
-        text = f.read().decode("utf-8")
-        return json.loads(text)
-
-    elif ext == ".csv":
-        text = f.read().decode("utf-8")
-        reader = csv.DictReader(io.StringIO(text))
-        return [row for row in reader]
-
-    elif ext in [".ttl", ".rdf", ".xml", ".nt", ".n3", ".trig", ".trix"]:
-        rdf_format_dict = {".ttl": "turtle", ".rdf": "xml", ".xml": "xml",
-            ".nt": "nt", ".n3": "n3", ".trig": "trig", ".trix": "trix"}
-        g = Graph()
-        content = f.read().decode("utf-8")
-        try:
-            g.parse(data=content, format=rdf_format_dict[ext])
-            prefixes = re.findall(r"@prefix\s+(\w+):\s+<([^>]+)>", content)
-            for prefix, uri in prefixes:
-                ns = Namespace(uri)
-                g.bind(prefix, ns)
-            return g
-        except:
-            st.markdown(f"""<div class="error-message">
-                ❌ Failed to parse <b>mapping</b>.
-                <small> Please, check your mapping.</small>
-            </div>""", unsafe_allow_html=True)
-            return False
-
-    else:
-        st.markdown(f"""<div class="error-message">
-            ❌ Unsupported file extension <b>{ext}</b>. # should not happen
-        </div>""", unsafe_allow_html=True)
-        return False
+# def get_warning_error_messages_for_new_ns_prefix(prefix_input, iri_input):
+#
+#     mapping_ns_dict = get_g_ns_dict(st.session_state["g_mapping"])
+#     iri_input = URIRef(iri_input)
+#     valid_prefix_input = utils.is_valid_prefix(prefix_input)
+#
+#     if valid_prefix_input:
+#         if prefix_input in mapping_ns_dict:
+#             bound_prefix = ""
+#             for pr, ns in mapping_ns_dict.items():
+#                 if ns == iri_input:
+#                     bound_prefix = pr
+#                     break
+#             if bound_prefix != prefix_input:
+#                 st.markdown(f"""<div class="warning-message">
+#                     ⚠️ Prefix <b>{prefix_input}</b> is already in use.
+#                     <small>The chosen prefix will be auto-renamed with a numeric suffix.</small>
+#                 </div>""", unsafe_allow_html=True)
+#
+#     return valid_prefix_input
+# #_________________________________________________
 
 #__________________________________________________
-
-#_______________________________________________________
-#Function to get the number of TriplesMaps in a mapping
-def get_number_of_tm(g):
-
-    triplesmaps = [s for s in g.subjects(predicate=RML.logicalSource, object=None)]
-
-    return len(triplesmaps)
-#_________________________________________________________
-
-
-#HEREIGO
+#Function to check whether a prefix is valid
+# HEREIGO - REFACTORING
 
 
 # GLOBAL CONFIGURATION - SAVE MAPPING
 #_________________________________________________
 #Funtion to create the list that stores the state of the project
 # project_state_list
-# 0. [g_label, g_mapping]     1. g_ontology_components_dict      2. structural_ns_dict
+# 0. [g_label, g_mapping]     1. g_ontology_components_dict      2. base_ns_dict
 # 3. db_connections_dict       4. db_connection_status_dict
 # 5. ds_files_dict                6. sql_queries_dict
 def save_project_state():
 
-    # list to save the mapping
-    mapping_list = []
-    mapping_list.append(st.session_state["g_label"])
-    mapping_list.append(st.session_state["g_mapping"])
-
     # list to save session
     project_state_list = []
-    project_state_list.append(mapping_list)
+    project_state_list.append(st.session_state["g_label"])
+    project_state_list.append(st.session_state["g_mapping"])
+    project_state_list.append(st.session_state["g_ontology"])
     project_state_list.append(st.session_state["g_ontology_components_dict"])
     project_state_list.append(st.session_state["g_ontology_components_tag_dict"])
-    project_state_list.append(st.session_state["structural_ns"])
+    project_state_list.append(st.session_state["base_ns"])
     project_state_list.append(st.session_state["db_connections_dict"])
     project_state_list.append(st.session_state["db_connection_status_dict"])
     project_state_list.append(st.session_state["ds_files_dict"])
@@ -1055,20 +1089,19 @@ def save_project_state():
 #Funtion to retrieve the project state
 def retrieve_project_state(project_state_list):
 
-    st.session_state["g_mapping"] = project_state_list[0][1]
-    st.session_state["g_label"] = project_state_list[0][0]
-    st.session_state["g_ontology_components_dict"] = project_state_list[1]
-    st.session_state["g_ontology_components_tag_dict"] = project_state_list[2]
-    st.session_state["structural_ns"] = project_state_list[3]
-    st.session_state["db_connections_dict"] = project_state_list[4]
-    st.session_state["db_connection_status_dict"] = project_state_list[5]
-    st.session_state["ds_files_dict"] = project_state_list[6]
-    st.session_state["sql_queries_dict"] = project_state_list[7]
-    st.session_state["g_mapping_source_cache"] = project_state_list[8]
-    st.session_state["original_g_size_cache"] = project_state_list[9]
-    st.session_state["original_g_mapping_ns_dict"] = project_state_list[10]
-
-
+    st.session_state["g_label"] = project_state_list[0]
+    st.session_state["g_mapping"] = project_state_list[1]
+    st.session_state["g_ontology"] = project_state_list[2]
+    st.session_state["g_ontology_components_dict"] = project_state_list[3]
+    st.session_state["g_ontology_components_tag_dict"] = project_state_list[4]
+    st.session_state["base_ns"] = project_state_list[5]
+    st.session_state["db_connections_dict"] = project_state_list[6]
+    st.session_state["db_connection_status_dict"] = project_state_list[7]
+    st.session_state["ds_files_dict"] = project_state_list[8]
+    st.session_state["sql_queries_dict"] = project_state_list[9]
+    st.session_state["g_mapping_source_cache"] = project_state_list[10]
+    st.session_state["original_g_size_cache"] = project_state_list[11]
+    st.session_state["original_g_mapping_ns_dict"] = project_state_list[12]
 #______________________________________________________
 
 #_________________________________________________
@@ -1706,12 +1739,12 @@ def get_sm_dict():
 # def get_exclusion_list_for_p_search():
 #
 #     excluded_types = {
-#         # OWL structural types
+#         # OWL base types
 #         OWL.Class, OWL.Ontology, OWL.Restriction, OWL.FunctionalProperty,
 #         OWL.AnnotationProperty, OWL.ObjectProperty, OWL.DatatypeProperty,
 #         OWL.SymmetricProperty, OWL.TransitiveProperty, OWL.InverseFunctionalProperty,
 #
-#         # RDF/RDFS structural types
+#         # RDF/RDFS base types
 #         RDF.Property, RDF.Statement, RDF.List, RDF.Seq, RDF.Bag,
 #         RDF.Alt, RDF.XMLLiteral, RDFS.Class, RDFS.Resource, RDFS.Container,
 #         RDFS.ContainerMembershipProperty,

@@ -115,9 +115,9 @@ if "pom_deleted_ok_flag" not in st.session_state:
 # TAB1
 def save_tm_w_existing_ls():
     # add triples___________________
-    NS = st.session_state["structural_ns"][1]
+    NS = st.session_state["base_ns"][1]
     tm_iri = NS[f"{st.session_state["tm_label"]}"]  # change so that is can be defined by user
-    NS = st.session_state["structural_ns"][1]
+    NS = st.session_state["base_ns"][1]
     ls_iri =  NS[f"{existing_ls}"]   # idem ns
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    #bind to logical source
     st.session_state["g_mapping"].add((tm_iri, RDF.type, RR.TriplesMap))
@@ -129,11 +129,11 @@ def save_tm_w_existing_ls():
 
 def save_tm_w_tabular_ls():
     # add triples__________________
-    NS = st.session_state["structural_ns"][1]
+    NS = st.session_state["base_ns"][1]
     tm_iri = NS[f"{st.session_state["tm_label"]}"]
     ds_filename = ds_file.name
     if ls_label:
-        NS = st.session_state["structural_ns"][1]
+        NS = st.session_state["base_ns"][1]
         ls_iri = NS[f"{ls_label}"]
     else:
         ls_iri = BNode()
@@ -168,10 +168,10 @@ def save_tm_w_query():
     elif engine =="MariaDB":
         jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
     # add triples__________________
-    NS = st.session_state["structural_ns"][1]
+    NS = st.session_state["base_ns"][1]
     tm_iri = NS[f"{st.session_state["tm_label"]}"]
     if ls_label:
-        NS = st.session_state["structural_ns"][1]
+        NS = st.session_state["base_ns"][1]
         ls_iri = NS[f"{ls_label}"]
     else:
         ls_iri = BNode()
@@ -199,10 +199,10 @@ def save_tm_w_table_name():
     elif engine =="MariaDB":
         jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
     # add triples__________________
-    NS = st.session_state["structural_ns"][1]
+    NS = st.session_state["base_ns"][1]
     tm_iri = NS[f"{st.session_state["tm_label"]}"]
     if ls_label:
-        NS = st.session_state["structural_ns"][1]
+        NS = st.session_state["base_ns"][1]
         ls_iri = NS[f"{ls_label}"]
     else:
         ls_iri = BNode()
@@ -287,7 +287,7 @@ def save_sm_template():   #function to save subject map (template option)
         sm_iri = BNode()
         st.session_state["sm_label"] = "_:" + str(sm_iri)[:7] + "..."   # to be displayed
     else:
-        NS = st.session_state["structural_ns"][1]
+        NS = st.session_state["base_ns"][1]
         sm_iri = NS[sm_label]
     st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, sm_iri))
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RR.SubjectMap))
@@ -316,7 +316,7 @@ def save_sm_constant():   #function to save subject map (constant option)
         sm_iri = BNode()
         st.session_state["sm_label"] = "_:" + str(sm_iri)[:7] + "..."   # to be displayed
     else:
-        NS = st.session_state["structural_ns"][1]
+        NS = st.session_state["base_ns"][1]
         sm_iri = NS[sm_label]
     st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, sm_iri))
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RR.SubjectMap))
@@ -344,7 +344,7 @@ def save_sm_reference():   #function to save subject map (reference option)
         sm_iri = BNode()
         st.session_state["sm_label"] = "_:" + str(sm_iri)[:7] + "..."   # to be displayed
     else:
-        NS = st.session_state["structural_ns"][1]
+        NS = st.session_state["base_ns"][1]
         sm_iri = NS[sm_label]
     st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, sm_iri))
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RR.SubjectMap))
@@ -1699,7 +1699,7 @@ with tab2:
                         inner_html_error += """<small>· The <b>Subject Map label</b>
                             is not valid (only safe characters allowed and cannot end with puntuation).</small><br>"""
                     else:
-                        NS = st.session_state["structural_ns"][1]
+                        NS = st.session_state["base_ns"][1]
                         sm_iri = BNode() if not sm_label else NS[sm_label]
                         if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):
                             sm_complete_flag = False
