@@ -90,6 +90,8 @@ if "mapping_downloaded_ok_flag" not in st.session_state:
     st.session_state["mapping_downloaded_ok_flag"] = False
 if "session_saved_ok_flag" not in st.session_state:
     st.session_state["session_saved_ok_flag"] = False
+if "session_removed_ok_flag" not in st.session_state:
+    st.session_state["session_removed_ok_flag"] = False
 
 # OTHER PAGES
 if "db_connections_dict" not in st.session_state:
@@ -315,6 +317,20 @@ def save_session():
     st.session_state["pkl_filename"] = pkl_filename + '.pkl'
     # reset fields_____________________
     st.session_state["key_pkl_filename"] = ""
+
+def remove_sessions():
+    # remove files___________________________________
+    for file in sessions_to_remove_list:
+        file_path = os.path.join(folder_path, file + ".pkl")
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+    # remove folder if empty___________________
+    if not os.listdir(folder_path):
+        os.rmdir(folder_path)
+    # store information_________________________________
+    st.session_state["session_removed_ok_flag"] = True
+    # reset fields_______________________________
+    st.session_state["key_save_session_options"] = "💾 Save session"
 
 # TAB 5
 def activate_dark_mode():
@@ -658,7 +674,7 @@ with tab1:
             if full_reset_checkbox:
                 st.markdown(f"""<div class="warning-message">
                         ⚠️ All progress <b>will be lost</b>
-                        (mapping, ontologies and/or data sources).
+                        (mapping, ontologies, namespaces and/or data sources).
                         <small>You can export the mapping or save the session in the Save Mapping pannel.</small>
                     </span></div>""", unsafe_allow_html=True)
 
@@ -1340,50 +1356,91 @@ with tab3:
             time.sleep(st.session_state["success_display_time"])
             st.rerun()
 
+        if st.session_state["session_removed_ok_flag"]:
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                st.markdown(f"""<div class="success-message-flag">
+                    ✅ The <b>session/s</b> have been removed!
+                </div>""", unsafe_allow_html=True)
+            st.session_state["session_removed_ok_flag"] = False
+            time.sleep(st.session_state["success_display_time"])
+            st.rerun()
+
         with col1:
             col1a, col1b = st.columns([2,1])
-        with col1a:
-            pkl_filename = st.text_input("⌨️ Enter filename (without extension):*", key="key_pkl_filename")
-
-        if pkl_filename:
-            # if "." in pkl_filename:
-            #     with col1b:
-            #         st.markdown(f"""<div class="warning-message">
-            #                 ⚠️ The filename <b style="color:#cc9a06;">{pkl_filename}</b>
-            #                 seems to include an extension.
-            #             </div>""", unsafe_allow_html=True)
-            with col1b:
-                valid_pkl_filename_flag = utils.is_valid_filename(pkl_filename)
-
 
         folder_name = "saved_sessions"
-        pkl_filename_w_extension = pkl_filename + '.pkl'
         folder_path = os.path.join(os.getcwd(), folder_name)
-        file_path = os.path.join(folder_path, pkl_filename_w_extension)
+        if os.path.isdir(folder_path):
+            file_list = [os.path.splitext(f)[0] for f in os.listdir(folder_path)
+                if os.path.isfile(os.path.join(folder_path, f)) and f.endswith(".pkl")]
+        else:
+            file_list = []
 
-        if pkl_filename and os.path.isfile(file_path):
+        if file_list:
             with col1b:
-                st.markdown(f"""<div class="warning-message">
-                        ⚠️ <b>A session was already saved with this filename</b>. <small>Please, pick
-                        a different filename unless you want to overwrite it.</small>
-                    </div>""", unsafe_allow_html=True)
+                st.write("")
+                save_session_selected_option = st.radio("🖱️ Select an option:*", ["💾 Save session", "🗑️ Delete session"],
+                    label_visibility="collapsed", key="key_save_session_options")
+        else:
+            save_session_selected_option = "💾 Save session"
+
+        if save_session_selected_option == "💾 Save session":
+
             with col1a:
-                overwrite_pkl_checkbox = st.checkbox(
-                    f"""🔒 I am sure I want to overwrite""",
-                    key="key_overwrite_pkl_checkbox")
-            if overwrite_pkl_checkbox:
+                pkl_filename = st.text_input("⌨️ Enter filename (without extension):*", key="key_pkl_filename")
+            if pkl_filename:
+                with col1b:
+                    valid_pkl_filename_flag = utils.is_valid_filename(pkl_filename)
+
+            pkl_filename_w_extension = pkl_filename + '.pkl'
+            file_path = os.path.join(folder_path, pkl_filename_w_extension)
+
+            if pkl_filename and os.path.isfile(file_path):
+                with col1b:
+                    st.markdown(f"""<div class="warning-message">
+                            ⚠️ A session was already saved with <b>this filename</b>. <small>Pick
+                            a different filename unless you want to overwrite it.</small>
+                        </div>""", unsafe_allow_html=True)
+                with col1a:
+                    overwrite_pkl_checkbox = st.checkbox(
+                        f"""🔒 I am sure I want to overwrite""",
+                        key="key_overwrite_pkl_checkbox")
+                if overwrite_pkl_checkbox:
+                    with col1a:
+                        st.button("Save", key="key_save_session_button", on_click=save_session)
+            elif pkl_filename and valid_pkl_filename_flag:
+                with col1b:
+                    st.markdown(f"""<div class="info-message-blue">
+                            ℹ️ Current <b>session state</b> will be exported
+                            to file <b style="color:#F63366;">{pkl_filename + ".pkl"}</b>.
+                            <small> This includes the mapping, ontologies, namespaces and data sources.</small>
+                        </span></div>""", unsafe_allow_html=True)
                 with col1a:
                     st.button("Save", key="key_save_session_button", on_click=save_session)
-        elif pkl_filename and valid_pkl_filename_flag:
-            with col1b:
-                st.markdown(f"""<div class="info-message-blue">
-                        ℹ️ Current <b>session state</b> will be exported
-                        to file <b style="color:#F63366;">{pkl_filename + ".pkl"}</b>.
-                        <small> This includes the mapping, ontologies, namespaces and data sources.</small>
-                    </span></div>""", unsafe_allow_html=True)
-            with col1a:
-                st.button("Save", key="key_save_session_button", on_click=save_session)
 
+        elif save_session_selected_option == "🗑️ Delete session":
+
+            with col1a:
+                list_to_choose = sorted(file_list)
+                if len(list_to_choose) > 1:
+                    list_to_choose.insert(0, "Select all")
+                sessions_to_remove_list = st.multiselect("🖱️ Select sessions to remove:*", list_to_choose,
+                    key="key_sessions_to_remove_list")
+
+                if sessions_to_remove_list:
+
+                    if "Select all" in sessions_to_remove_list:
+                        sessions_to_remove_list = file_list
+                        remove_sessions_checkbox = st.checkbox("🔒 I am sure I want to remove all saved sessions",
+                            key="key_remove_sessions_checkbox")
+                    else:
+                        remove_sessions_checkbox = st.checkbox("🔒 I am sure I want to remove the selected session/s",
+                            key="key_remove_sessions_checkbox")
+
+                    if remove_sessions_checkbox:
+                        st.button("Remove", key="remove_sessions_button", on_click=remove_sessions)
 
 #_____________________________________________
 
