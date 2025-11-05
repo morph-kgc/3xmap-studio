@@ -373,7 +373,7 @@ with tab1:
                 ✅ The mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> has been created!
             </div>""", unsafe_allow_html=True)
         st.session_state["new_g_mapping_created_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
     with col1a:
@@ -389,7 +389,7 @@ with tab1:
             if st.session_state["db_connections_dict"] or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]:
                 with col1:
                     overwrite_g_mapping_and_session_checkbox = st.checkbox(
-                        f"""🗑️ Start fresh: remove previously loaded ontologies and data sources""",
+                        f"""🔄 Start fresh: remove previously loaded ontologies and data sources""",
                         value=True, key="key_overwrite_g_mapping_and_session_checkbox_new")
             else:
                 overwrite_g_mapping_and_session_checkbox = False
@@ -412,7 +412,7 @@ with tab1:
             if st.session_state["db_connections_dict"] or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]:
                 with col1a:
                     overwrite_g_mapping_and_session_checkbox = st.checkbox(
-                        f"""🗑️ Start fresh: remove previously loaded ontologies and data sources""",
+                        f"""🔄 Start fresh: remove previously loaded ontologies and data sources""",
                         value=True, key="key_overwrite_g_mapping_and_session_checkbox_new")
             else:
                 overwrite_g_mapping_and_session_checkbox = False
@@ -450,7 +450,7 @@ with tab1:
                 ✅ The mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> has been loaded!
             </div>""", unsafe_allow_html=True)
         st.session_state["existing_g_mapping_loaded_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
     with col1a:
@@ -480,7 +480,7 @@ with tab1:
             if st.session_state["db_connections_dict"] or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]:
                 with col1:
                     overwrite_g_mapping_and_session_checkbox = st.checkbox(
-                        f"""🗑️ Start fresh: remove previously loaded ontologies and data sources""",
+                        f"""🔄 Start fresh: remove previously loaded ontologies and data sources""",
                         value=True, key="key_overwrite_g_mapping_and_session_checkbox_existing")
             else:
                 overwrite_g_mapping_and_session_checkbox = False
@@ -501,7 +501,7 @@ with tab1:
             if st.session_state["db_connections_dict"] or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]:
                 with col1a:
                     overwrite_g_mapping_and_session_checkbox = st.checkbox(
-                        f"""🗑️ Start fresh: remove previously loaded ontologies and data sources""",
+                        f"""🔄 Start fresh: remove previously loaded ontologies and data sources""",
                         value=True, key="key_overwrite_g_mapping_and_session_checkbox_existing")
             else:
                 overwrite_g_mapping_and_session_checkbox = False
@@ -540,7 +540,7 @@ with tab1:
                     ✅ The session <b>{st.session_state["selected_pkl_file_wo_extension"]}</b> has been retrieved!
                 </div>""", unsafe_allow_html=True)
             st.session_state["session_retrieved_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
+            time.sleep(utils.get_success_message_time())
             st.rerun()
 
         with col1:
@@ -586,7 +586,7 @@ with tab1:
                 ✅ Mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> has been retrieved from cache!
             </div>""", unsafe_allow_html=True)
         st.session_state["cached_mapping_retrieved_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
     if st.session_state["g_label_changed_ok_flag"]:
@@ -596,7 +596,7 @@ with tab1:
                 ✅ Mapping was renamed to <b style="color:#F63366;">{st.session_state["g_label"]}</b>!
             </div>""", unsafe_allow_html=True)
         st.session_state["g_label_changed_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
     # g mapping INFORMATION BOX--------------------------------------------
@@ -764,7 +764,7 @@ with tab2:
             st.write("")
             st.write("")
             st.session_state["ns_bound_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
+            time.sleep(utils.get_success_message_time())
             st.rerun()
 
 
@@ -777,7 +777,7 @@ with tab2:
                     ✅ The <b>base namespace</b> has been changed!
                 </div>""", unsafe_allow_html=True)
             st.session_state["base_ns_changed_ok_flag"]  = False
-            time.sleep(st.session_state["success_display_time"])
+            time.sleep(utils.get_success_message_time())
             st.rerun()
 
         ontology_ns_dict = utils.get_g_ns_dict(st.session_state["g_ontology"])
@@ -1133,7 +1133,7 @@ with tab2:
                 st.write("")
                 st.write("")
                 st.session_state["ns_unbound_ok_flag"] = False
-                time.sleep(st.session_state["success_display_time"])
+                time.sleep(utils.get_success_message_time())
                 st.rerun()
 
         # PURPLE HEADING - UNBIND NS (if there are bound ns)
@@ -1154,7 +1154,7 @@ with tab2:
                     </div>""", unsafe_allow_html=True)
                 st.write("")
                 st.session_state["ns_unbound_ok_flag"] = False
-                time.sleep(st.session_state["success_display_time"])
+                time.sleep(utils.get_success_message_time())
                 st.rerun()
 
             with col1:
@@ -1258,7 +1258,7 @@ with tab3:
                     ✅ Current state of mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> has been cached!
                 </div>""", unsafe_allow_html=True)
             st.session_state["progress_saved_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
+            time.sleep(utils.get_success_message_time())
             st.rerun()
 
 
@@ -1278,7 +1278,7 @@ with tab3:
                 </div>""", unsafe_allow_html=True)
             st.session_state["key_export_filename_selectbox"] = ""
             st.session_state["mapping_downloaded_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
+            time.sleep(utils.get_success_message_time())
             st.rerun()
 
         with col1:
@@ -1308,8 +1308,11 @@ with tab3:
                         to file <b style="color:#F63366;">{export_filename_complete}</b>.
                     </span></div>""", unsafe_allow_html=True)
 
-            reset_after_exporting_mapping_checkbox = st.checkbox("🗑️ Start fresh: Reset session after exporting mapping",
-                key="key_reset_after_exporting_mapping_checkbox")
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                reset_after_exporting_mapping_checkbox = st.checkbox("🔄 Start fresh: Reset session after exporting mapping",
+                    key="key_reset_after_exporting_mapping_checkbox")
 
             serialised_data = st.session_state["g_mapping"].serialize(format=export_format)
             with col1a:
@@ -1357,7 +1360,7 @@ with tab3:
                     ✅ The session has been saved to file <b style="color:#F63366;">{st.session_state["pkl_filename"]}</b>!
                 </div>""", unsafe_allow_html=True)
             st.session_state["session_saved_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
+            time.sleep(utils.get_success_message_time())
             st.rerun()
 
         if st.session_state["session_removed_ok_flag"]:
@@ -1368,7 +1371,7 @@ with tab3:
                     ✅ The <b>session/s</b> have been deleted!
                 </div>""", unsafe_allow_html=True)
             st.session_state["session_removed_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
+            time.sleep(utils.get_success_message_time())
             st.rerun()
 
         with col1:

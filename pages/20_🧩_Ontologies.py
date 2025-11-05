@@ -197,7 +197,7 @@ with tab1:
                 ✅ The <b>ontology</b> has been imported!
             </div>""", unsafe_allow_html=True)
         st.session_state["g_ontology_loaded_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
     if st.session_state["g_ontology_reduced_ok_flag"]:
@@ -209,7 +209,7 @@ with tab1:
                 ✅ The <b>ontology/ies</b> have been removed!
             </div>""", unsafe_allow_html=True)
         st.session_state["g_ontology_reduced_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
 
@@ -575,7 +575,7 @@ with tab2:
             with col2b:
                 st.write("")
                 st.markdown(f"""<div class="warning-message">
-                    🐘 <b>Your ontology is quite large</b> ({utils.format_big_number(len(ontology_for_search))} triples).
+                    🐘 <b>Your ontology is quite large</b> ({utils.format_number_for_display(len(ontology_for_search))} triples).
                     <small>Some patience may be required.</small>
                 </div>""", unsafe_allow_html=True)
 
@@ -1143,9 +1143,9 @@ with tab3:
         if len(serialised_data) > max_length:
             with col1:
                 st.markdown(f"""<div class="warning-message">
-                    🐘 <b>Your ontology is quite large</b> ({utils.format_big_number(len(ontology_for_preview))} triples).
-                    <small>Showing only the first {utils.format_big_number(max_length)} characters
-                    (out of {utils.format_big_number(len(serialised_data))}) to avoid performance issues.</small>
+                    🐘 <b>Your ontology is quite large</b> ({utils.format_number_for_display(len(ontology_for_preview))} triples).
+                    <small>Showing only the first {utils.format_number_for_display(max_length)} characters
+                    (out of {utils.format_number_for_display(len(serialised_data))}) to avoid performance issues.</small>
                 </div>""", unsafe_allow_html=True)
 
         st.code(serialised_data[:max_length])

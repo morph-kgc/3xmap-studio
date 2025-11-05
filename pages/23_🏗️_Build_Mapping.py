@@ -714,7 +714,7 @@ with tab1:
                 ✅ The TriplesMap <b style="color:#F63366;">{st.session_state["tm_label"]}</b> has been added!
             </div>""", unsafe_allow_html=True)
         st.session_state["tm_saved_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
     with col1:
@@ -999,7 +999,7 @@ with tab1:
             </div>""", unsafe_allow_html=True)
             st.write("")
         st.session_state["tm_deleted_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
 #________________________________________________
@@ -1042,7 +1042,7 @@ with tab2:
                 ✅ The <b>Subject Map</b> has been created!
             </div>""", unsafe_allow_html=True)
         st.session_state["sm_saved_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
 
@@ -1829,7 +1829,7 @@ with tab3:
                 ✅ The <b style="color:#F63366;">Predicate-Object Map</b> has been created!
             </div>""", unsafe_allow_html=True)
         st.session_state["pom_saved_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
 
@@ -2406,7 +2406,7 @@ with tab4:
                 </div>""", unsafe_allow_html=True)
                 st.write("")
             st.session_state["tm_deleted_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
+            time.sleep(utils.get_success_message_time())
             st.rerun()
 
         with col1:
@@ -2545,7 +2545,7 @@ with tab4:
                 ✅ The <b>Subject Map/s</b> have been removed!
             </div>""", unsafe_allow_html=True)
         st.session_state["sm_unassigned_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
 
@@ -2566,7 +2566,7 @@ with tab4:
                     ✅ The <b>Subject Map/s</b> have been removed!
                 </div>""", unsafe_allow_html=True)
             st.session_state["sm_unassigned_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
+            time.sleep(utils.get_success_message_time())
             st.rerun()
 
         tm_w_sm_list = []
@@ -2667,7 +2667,7 @@ with tab4:
             </div>""", unsafe_allow_html=True)
             st.write("")
         st.session_state["pom_deleted_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
 
@@ -2782,7 +2782,7 @@ with tab4:
                 ✅ The mapping <b>{st.session_state["g_label"]}</b> has been cleaned.
             </div>""", unsafe_allow_html=True)
         st.session_state["g_mapping_cleaned_ok_flag"]  = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
     check_g_mapping = utils.check_g_mapping(st.session_state["g_mapping"])

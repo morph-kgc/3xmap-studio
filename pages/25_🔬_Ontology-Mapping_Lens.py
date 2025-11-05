@@ -188,7 +188,7 @@ with tab2:
 
             with col1:
                 st.write("_____")
-                col1a, col1b, col1c, col1d, col1e = st.columns([1,1.4,1.4,0.2,1.4])
+                col1a, col1b, col1c, col1d, col1e = st.columns([1,1,1,0.1,1])
             with col1a:
                 utils.get_used_properties_metric(ontology_filter_for_lens, superproperty_filter=superproperty_filter_for_lens)
             with col1b:
@@ -363,7 +363,7 @@ with tab3:
 
             with col1:
                 st.write("_____")
-                col1a, col1b, col1c, col1d, col1e = st.columns([1,1,1,0.2,1])
+                col1a, col1b, col1c, col1d, col1e = st.columns([1,1,1,0.1,1])
             with col1a:
                 utils.get_used_classes_metric(ontology_filter_for_lens, superclass_filter=superclass_filter_for_lens)
             with col1b:

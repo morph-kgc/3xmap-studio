@@ -432,7 +432,7 @@ with tab1:
                 ✅ The <b>Config file</b> has been reset!
             </div>""", unsafe_allow_html=True)
         st.session_state["config_file_reset_ok_flag_tab1"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
 
@@ -453,7 +453,7 @@ with tab1:
                 ✅ The <b>Config file</b> has been auto-generated!
             </div>""", unsafe_allow_html=True)
         st.session_state["autoconfig_generated_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
 
@@ -531,7 +531,7 @@ with tab2:
                 ✅ <b>Manual configuration</b> has been enabled!
             </div>""", unsafe_allow_html=True)
         st.session_state["manual_config_enabled_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
     if st.session_state["config_file_reset_ok_flag_tab2"]:
@@ -543,7 +543,7 @@ with tab2:
                 ✅ The <b>Config file</b> has been reset!
             </div>""", unsafe_allow_html=True)
         st.session_state["config_file_reset_ok_flag_tab2"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
     # PURPLE HEADING - ENABLE MANUAL CONFIG
@@ -583,7 +583,7 @@ with tab2:
                     ✅ The <b>data source</b> has been saved!
                 </div>""", unsafe_allow_html=True)
             st.session_state["ds_for_mkgcgc_saved_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
+            time.sleep(utils.get_success_message_time())
             st.rerun()
 
         if st.session_state["ds_for_mkgcgc_removed_ok_flag"]:
@@ -593,7 +593,7 @@ with tab2:
                     ✅ The <b>data source</b> has been removed!
                 </div>""", unsafe_allow_html=True)
             st.session_state["ds_for_mkgcgc_removed_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
+            time.sleep(utils.get_success_message_time())
             st.rerun()
 
 
@@ -772,7 +772,7 @@ with tab2:
                             ✅ The <b>data source/s</b> have been removed!
                         </div>""", unsafe_allow_html=True)
                     st.session_state["ds_for_mkgcgc_removed_ok_flag"] = False
-                    time.sleep(st.session_state["success_display_time"])
+                    time.sleep(utils.get_success_message_time())
                     st.rerun()
 
         if mkgc_ds_type == "🗑️ Remove":
@@ -832,7 +832,7 @@ with tab2:
                     ✅ The <b>configuration</b> has been saved!
                 </div>""", unsafe_allow_html=True)
             st.session_state["configuration_for_mkgcgc_saved_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
+            time.sleep(utils.get_success_message_time())
             st.rerun()
 
         if st.session_state["configuration_for_mkgcgc_removed_ok_flag"]:
@@ -842,7 +842,7 @@ with tab2:
                     ✅ The <b>configuration</b> has been removed!
                 </div>""", unsafe_allow_html=True)
             st.session_state["configuration_for_mkgcgc_removed_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
+            time.sleep(utils.get_success_message_time())
             st.rerun()
 
 
@@ -1053,7 +1053,7 @@ with tab2:
                     ✅ The <b>additional mapping</b> has been included!
                 </div>""", unsafe_allow_html=True)
             st.session_state["additional_mapping_added_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
+            time.sleep(utils.get_success_message_time())
             st.rerun()
 
         if st.session_state["additional_mapping_removed_ok_flag"]:
@@ -1065,7 +1065,7 @@ with tab2:
                     ✅ The <b>additional mapping/s</b> have been removed!
                 </div>""", unsafe_allow_html=True)
             st.session_state["additional_mapping_removed_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
+            time.sleep(utils.get_success_message_time())
             st.rerun()
 
         # List of all used mappings (only allow to remvoe mapping if not used)
@@ -1294,7 +1294,7 @@ with tab3:
                 <small><b>Full error: {st.session_state["graph_materialised_ok_flag"][1]}</b></small>
             </div>""", unsafe_allow_html=True)
         st.session_state["graph_materialised_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"]+5)
+        time.sleep(utils.get_success_message_time()+5)
         st.rerun()
 
     if st.session_state["graph_materialised_ok_flag"]:
@@ -1306,7 +1306,7 @@ with tab3:
                 ✅ <b>Graph</b> has been materialised!
             </div>""", unsafe_allow_html=True)
         st.session_state["graph_materialised_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
     if config_string.getvalue() == "":

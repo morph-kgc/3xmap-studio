@@ -193,7 +193,7 @@ with tab1:
                 ✅ The <b>data source file</b> has been saved!
             </div>""", unsafe_allow_html=True)
         st.session_state["ds_file_saved_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
     ds_allowed_formats = utils.get_ds_allowed_tab_formats()            #data source for the TriplesMap
@@ -309,7 +309,7 @@ with tab1:
                 ✅ The <b>data source file/s</b> have been removed!
             </div>""", unsafe_allow_html=True)
         st.session_state["ds_file_removed_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
     #PURPLE HEADING - REMOVE FILE
@@ -330,7 +330,7 @@ with tab1:
                     ✅ The <b>data source file/s</b> have been removed!
                 </div>""", unsafe_allow_html=True)
             st.session_state["ds_file_removed_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
+            time.sleep(utils.get_success_message_time())
             st.rerun()
 
         with col1:

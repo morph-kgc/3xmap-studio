@@ -217,7 +217,7 @@ with tab1:
                 ✅ The <b>connection to the database</b> has been saved!
             </div>""", unsafe_allow_html=True)
         st.session_state["db_connection_saved_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
     with col1:
@@ -292,7 +292,7 @@ with tab1:
                 ✅ The <b>connection to the database</b> has been removed!
             </div>""", unsafe_allow_html=True)
         st.session_state["db_connection_removed_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
 
@@ -315,7 +315,7 @@ with tab1:
                     ✅ The <b>connection/s to the database</b> have been removed!
                 </div>""", unsafe_allow_html=True)
             st.session_state["db_connection_removed_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
+            time.sleep(utils.get_success_message_time())
             st.rerun()
 
         with col1:
@@ -763,7 +763,7 @@ with tab3:
                     ✅ The <b>view</b> has been saved!
                 </div>""", unsafe_allow_html=True)
             st.session_state["sql_query_saved_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
+            time.sleep(utils.get_success_message_time())
             st.rerun()
 
         with col1:
@@ -884,7 +884,7 @@ with tab3:
                 ✅ The <b>view/s</b> have been removed!
             </div>""", unsafe_allow_html=True)
         st.session_state["sql_query_removed_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
 
@@ -906,7 +906,7 @@ with tab3:
                     ✅ The <b>view</b> has been removed!
                 </div>""", unsafe_allow_html=True)
             st.session_state["sql_query_removed_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
+            time.sleep(utils.get_success_message_time())
             st.rerun()
 
         with col1:
