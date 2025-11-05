@@ -20,6 +20,7 @@ import requests
 import base64
 from collections import defaultdict
 import plotly.express as px
+from PIL import Image   # for logo rendering
 
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 
@@ -77,6 +78,37 @@ def render_header(title, description, dark_mode: bool = False):
             {description}
         </div></div></div>"""
 #________________________________________________
+
+#_____________________________________________________
+# Function to render logo in sidebar
+def render_sidebar_logo(dark_mode: bool = False):
+
+    resize_factor = 0.35
+    image_path = "logo/logo_inverse.png" if dark_mode else "logo/logo.png"
+
+    # Open and resize image
+    with open(image_path, "rb") as img_file:
+        image = Image.open(img_file).copy()
+    width, height = image.size
+    resized_image = image.resize((int(width * resize_factor), int(height * resize_factor)))
+
+    # Convert to base64
+    buf = io.BytesIO()
+    resized_image.save(buf, format="PNG")
+    image_base64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+
+    # Display image
+    st.sidebar.markdown(f"""<div style="text-align: center;">
+            <img src="data:image/png;base64,{image_base64}" style="margin-top:10px; border-radius:8px;" />
+        </div>""", unsafe_allow_html=True)
+
+    # image_path = "logo/logo_inverse.png" if dark_mode else "logo/logo.png"
+    # with open(image_path, "rb") as img_file:
+    #     image_bytes = img_file.read()
+    #
+    # with st.sidebar:
+    #     st.image(image_bytes, use_container_width=True)
+#___________________________________________________
 
 #________________________________________________
 # Function to import style
@@ -683,7 +715,7 @@ def full_reset():
     # mapping
     st.session_state["g_mapping"] = Graph()
     st.session_state["g_label"] = ""
-    
+
     # data sources
     st.session_state["db_connections_dict"] = {}
     st.session_state["db_connection_status_dict"] = {}

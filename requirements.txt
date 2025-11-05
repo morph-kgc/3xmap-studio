@@ -6,6 +6,7 @@ odfpy
 openpyxl
 oracledb
 pandas
+Pillow
 plotly
 psycopg[binary]
 pyarrow

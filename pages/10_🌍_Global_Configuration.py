@@ -27,11 +27,15 @@ if "dark_mode_flag" not in st.session_state or st.session_state["dark_mode_flag"
         key="dark_mode")
 
 # Header-----------------------------------
+# dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
+# header_html = utils.render_header(title="Global Configuration",
+#     description="System-wide configuration: load <b>mapping</b>, manage <b>namespaces</b>, and <b>save work</b>.",
+#     dark_mode=dark_mode)
+# st.markdown(header_html, unsafe_allow_html=True)
+
+# Sidebar logo-----------------------------------
 dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
-header_html = utils.render_header(title="Global Configuration",
-    description="System-wide configuration: load <b>mapping</b>, manage <b>namespaces</b>, and <b>save work</b>.",
-    dark_mode=dark_mode)
-st.markdown(header_html, unsafe_allow_html=True)
+utils.render_sidebar_logo(dark_mode=dark_mode)
 
 # Import style-----------------------------
 style_container = st.empty()
@@ -318,7 +322,7 @@ def save_session():
     # reset fields_____________________
     st.session_state["key_pkl_filename"] = ""
 
-def remove_sessions():
+def delete_sessions():
     # remove files___________________________________
     for file in sessions_to_remove_list:
         file_path = os.path.join(folder_path, file + ".pkl")
@@ -1361,7 +1365,7 @@ with tab3:
                 col1a, col1b = st.columns([2,1])
             with col1a:
                 st.markdown(f"""<div class="success-message-flag">
-                    ✅ The <b>session/s</b> have been removed!
+                    ✅ The <b>session/s</b> have been deleted!
                 </div>""", unsafe_allow_html=True)
             st.session_state["session_removed_ok_flag"] = False
             time.sleep(st.session_state["success_display_time"])
@@ -1381,7 +1385,7 @@ with tab3:
         if file_list:
             with col1b:
                 st.write("")
-                save_session_selected_option = st.radio("🖱️ Select an option:*", ["💾 Save session", "🗑️ Delete session"],
+                save_session_selected_option = st.radio("🖱️ Select an option:*", ["💾 Save session", "🗑️ Delete sessions"],
                     label_visibility="collapsed", key="key_save_session_options")
         else:
             save_session_selected_option = "💾 Save session"
@@ -1420,27 +1424,27 @@ with tab3:
                 with col1a:
                     st.button("Save", key="key_save_session_button", on_click=save_session)
 
-        elif save_session_selected_option == "🗑️ Delete session":
+        elif save_session_selected_option == "🗑️ Delete sessions":
 
             with col1a:
                 list_to_choose = sorted(file_list)
                 if len(list_to_choose) > 1:
                     list_to_choose.insert(0, "Select all")
-                sessions_to_remove_list = st.multiselect("🖱️ Select sessions to remove:*", list_to_choose,
+                sessions_to_remove_list = st.multiselect("🖱️ Select sessions to delete:*", list_to_choose,
                     key="key_sessions_to_remove_list")
 
                 if sessions_to_remove_list:
 
                     if "Select all" in sessions_to_remove_list:
                         sessions_to_remove_list = file_list
-                        remove_sessions_checkbox = st.checkbox("🔒 I am sure I want to remove all saved sessions",
-                            key="key_remove_sessions_checkbox")
+                        delete_sessions_checkbox = st.checkbox("🔒 I am sure I want to delete all saved sessions",
+                            key="key_delete_sessions_checkbox")
                     else:
-                        remove_sessions_checkbox = st.checkbox("🔒 I am sure I want to remove the selected session/s",
-                            key="key_remove_sessions_checkbox")
+                        delete_sessions_checkbox = st.checkbox("🔒 I am sure I want to delete the selected session/s",
+                            key="key_delete_sessions_checkbox")
 
-                    if remove_sessions_checkbox:
-                        st.button("Remove", key="remove_sessions_button", on_click=remove_sessions)
+                    if delete_sessions_checkbox:
+                        st.button("Delete", key="delete_sessions_button", on_click=delete_sessions)
 
 #_____________________________________________
 
