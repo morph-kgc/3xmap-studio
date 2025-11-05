@@ -180,10 +180,6 @@ def retrieve_session():
     with open(full_path, "rb") as f:     # load mapping
         project_state_list = pickle.load(f)
     utils.retrieve_project_state(project_state_list)
-    # build the complete ontology from its components
-    st.session_state["g_ontology"] = Graph()
-    for g_ontology in st.session_state["g_ontology_components_dict"].values():
-        st.session_state["g_ontology"] += g_ontology
     #store information___________________________
     utils.empty_last_added_lists()
     st.session_state["selected_pkl_file_wo_extension"] = selected_pkl_file_wo_extension
