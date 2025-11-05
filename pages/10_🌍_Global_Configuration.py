@@ -207,6 +207,12 @@ def change_g_label():
     # reset fields___________________________
     st.session_state["key_change_mapping_label_checkbox"] = False
 
+def full_reset():
+    # full reset
+    utils.full_reset()
+    # reset fields___________________________
+    st.session_state["key_full_reset_checkbox"] = False
+
 # TAB2
 def bind_custom_namespace():
     # bind and store information___________________________
@@ -645,6 +651,22 @@ with tab1:
                             ℹ️ Mapping label will be changed to <b style="color:#F63366;">
                             {g_label_candidate}</b> (currently <b>{st.session_state["g_label"]}</b>).
                         </span></div>""", unsafe_allow_html=True)
+
+        with col3:
+            full_reset_checkbox = st.checkbox(
+                "🔄 Full reset", key="key_full_reset_checkbox")
+            if full_reset_checkbox:
+                st.markdown(f"""<div class="warning-message">
+                        ⚠️ All progress <b>will be lost</b>
+                        (mapping, ontologies and/or data sources).
+                        <small>You can export the mapping or save the session in the Save Mapping pannel.</small>
+                    </span></div>""", unsafe_allow_html=True)
+
+                second_full_reset_checkbox = st.checkbox(
+                    "🔒 I am sure I want to reset everything", key="key_second_full_reset_checkbox")
+
+                if second_full_reset_checkbox:
+                    st.button("Reset", key="key_full_reset_button", on_click=full_reset)
 
 
 #_______________________________________________________
