@@ -7,6 +7,7 @@ import pickle
 from rdflib.namespace import split_uri
 from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL, XSD
 from streamlit_js_eval import streamlit_js_eval
+import io
 
 import rdflib, networkx as nx, matplotlib.pyplot as plt
 from pyvis.network import Network
@@ -116,6 +117,13 @@ with tab1:
         if "Select all" in tm_for_network_list:
             tm_for_network_list = list_to_choose_tm
 
+        if list_to_choose == ["Select all"]:
+            with col1b:
+                st.markdown(f"""<div class="error-message">
+                    ❌ Mapping <b>{st.session_state["g_label"]}</b> contains no TriplesMaps.
+                    <small>You can add them in the <b>🏗️Build Mapping</b> page.</small>
+                </div>""", unsafe_allow_html=True)
+
     sm_for_network_list = []
     for sm in st.session_state["g_mapping"].objects(predicate=RML.subjectMap):
         for rule in utils.get_rules_for_sm(sm):
@@ -147,32 +155,30 @@ with tab1:
     # Optional: improve layout and styling
     G_net.repulsion(node_distance=200, central_gravity=0.3, spring_length=200, spring_strength=0.05)
     G_net.set_options("""{
-    "nodes": {"shape": "ellipse", "borderWidth": 0,
-        "font": {"size": 14, "face": "arial", "align": "center",
-          "color": "#ffffff"},
-        "color": {"background": "#87cefa", "border": "#87cefa"}},
-     "edges": {"width": 3, "arrows":
-        {"to": {"enabled": true, "scaleFactor": 0.5}},
-        "color": {"color": "#1e1e1e"},
-        "font": {"size": 10, "align": "middle", "color": "#1e1e1e"},
-        "smooth": false},
-      "physics": {"enabled": true},
-      "interaction": {"hover": true},
-      "layout": {"improvedLayout": true}
-    }""")
+        "nodes": {"shape": "ellipse", "borderWidth": 0,
+            "font": {"size": 14, "face": "arial", "align": "center",
+              "color": "#ffffff"},
+            "color": {"background": "#87cefa", "border": "#87cefa"}},
+         "edges": {"width": 3, "arrows":
+            {"to": {"enabled": true, "scaleFactor": 0.5}},
+            "color": {"color": "#1e1e1e"},
+            "font": {"size": 10, "align": "middle", "color": "#1e1e1e"},
+            "smooth": false},
+          "physics": {"enabled": true},
+          "interaction": {"hover": true},
+          "layout": {"improvedLayout": true}
+        }""")
 
-    col1, col2 = st.columns([2,1])
-
-    # Render
+    # Render only if needed
     if sm_for_network_list:
+        # Generate HTML string
+        html = G_net.generate_html()
 
-        G_net.write_html("graph.html")
-        with open("graph.html", "r", encoding="utf-8") as f:
-            html = f.read()
-
+        # Inject background color
         html = html.replace('<div id="mynetwork"',
-            f'<div id="mynetwork" style="background-color: {background_color};"')   # for background colour
+            f'<div id="mynetwork" style="background-color: {background_color};"')
 
+        # Display in Streamlit
         with col1:
             components.html(html, height=600)
 
