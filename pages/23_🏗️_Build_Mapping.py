@@ -28,12 +28,16 @@ if "dark_mode_flag" not in st.session_state or st.session_state["dark_mode_flag"
         key="dark_mode")
 
 # Header-----------------------------------
+# dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
+# header_html = utils.render_header(title="Build mapping",
+#     description="""Build your mapping by adding <b>Triple Maps</b>,
+#         <b>Subject Maps</b>, and <b>Predicate-Object Maps</b>.""",
+#     dark_mode=dark_mode)
+# st.markdown(header_html, unsafe_allow_html=True)
+
+# Sidebar logo-----------------------------------
 dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
-header_html = utils.render_header(title="Build mapping",
-    description="""Build your mapping by adding <b>Triple Maps</b>,
-        <b>Subject Maps</b>, and <b>Predicate-Object Maps</b>.""",
-    dark_mode=dark_mode)
-st.markdown(header_html, unsafe_allow_html=True)
+utils.render_sidebar_logo(dark_mode=dark_mode)
 
 # Import style--------------------------------------------------
 style_container = st.empty()
@@ -120,7 +124,7 @@ def save_tm_w_existing_ls():
     NS = st.session_state["structural_ns"][1]
     ls_iri =  NS[f"{existing_ls}"]   # idem ns
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    #bind to logical source
-    st.session_state["g_mapping"].add((tm_iri, RDF.type, RR.TriplesMap))
+    st.session_state["g_mapping"].add((tm_iri, RDF.type, RML.TriplesMap))
     # store information________________
     st.session_state["tm_saved_ok_flag"] = True  # for success message
     st.session_state["last_added_tm_list"].insert(0, st.session_state["tm_label"])    # to display last added tm
@@ -133,7 +137,7 @@ def save_tm_w_tabular_ls():
     tm_iri = NS[f"{st.session_state['tm_label']}"]
     ds_filename = ds_file.name
     if ls_label:
-        NS = st.session_state["structural_ns"][1]
+        NS = st.session_state["base_ns"][1]
         ls_iri = NS[f"{ls_label}"]
     else:
         ls_iri = BNode()
@@ -148,7 +152,7 @@ def save_tm_w_tabular_ls():
         st.session_state["g_mapping"].add((ls_iri, QL.referenceFormulation, QL.Parquet))
     elif file_extension.lower() == "orc":
         st.session_state["g_mapping"].add((ls_iri, QL.referenceFormulation, QL.ORC))
-    st.session_state["g_mapping"].add((tm_iri, RDF.type, RR.TriplesMap))
+    st.session_state["g_mapping"].add((tm_iri, RDF.type, RML.TriplesMap))
     # store information____________________
     st.session_state["tm_saved_ok_flag"] = True  # for success message
     st.session_state["last_added_tm_list"].insert(0, st.session_state["tm_label"])    # to display last added tm
@@ -171,7 +175,7 @@ def save_tm_w_query():
     NS = st.session_state["structural_ns"][1]
     tm_iri = NS[f"{st.session_state['tm_label']}"]
     if ls_label:
-        NS = st.session_state["structural_ns"][1]
+        NS = st.session_state["base_ns"][1]
         ls_iri = NS[f"{ls_label}"]
     else:
         ls_iri = BNode()
@@ -179,7 +183,7 @@ def save_tm_w_query():
     st.session_state["g_mapping"].add((ls_iri, RML.source, Literal(jdbc_str)))    #bind ls to source file
     st.session_state["g_mapping"].add((ls_iri, RML.referenceFormulation, QL.SQL))
     st.session_state["g_mapping"].add((ls_iri, RML.query, Literal(sql_query)))
-    st.session_state["g_mapping"].add((tm_iri, RDF.type, RR.TriplesMap))
+    st.session_state["g_mapping"].add((tm_iri, RDF.type, RML.TriplesMap))
     # store information____________________
     st.session_state["tm_saved_ok_flag"] = True  # for success message
     st.session_state["last_added_tm_list"].insert(0, st.session_state["tm_label"])    # to display last added tm
@@ -202,15 +206,15 @@ def save_tm_w_table_name():
     NS = st.session_state["structural_ns"][1]
     tm_iri = NS[f"{st.session_state['tm_label']}"]
     if ls_label:
-        NS = st.session_state["structural_ns"][1]
+        NS = st.session_state["base_ns"][1]
         ls_iri = NS[f"{ls_label}"]
     else:
         ls_iri = BNode()
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    #bind to logical source
     st.session_state["g_mapping"].add((ls_iri, RML.source, Literal(jdbc_str)))    #bind ls to source file
     st.session_state["g_mapping"].add((ls_iri, RML.referenceFormulation, QL.SQL))
-    st.session_state["g_mapping"].add((ls_iri, RR.tableName, Literal(selected_table_for_ls)))
-    st.session_state["g_mapping"].add((tm_iri, RDF.type, RR.TriplesMap))
+    st.session_state["g_mapping"].add((ls_iri, RML.tableName, Literal(selected_table_for_ls)))
+    st.session_state["g_mapping"].add((tm_iri, RDF.type, RML.TriplesMap))
     # store information____________________
     st.session_state["tm_saved_ok_flag"] = True  # for success message
     st.session_state["last_added_tm_list"].insert(0, st.session_state["tm_label"])    # to display last added tm
@@ -220,7 +224,7 @@ def save_tm_w_table_name():
 # TAB2
 def save_sm_existing():
     # add triples____________________
-    st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, st.session_state["sm_iri"]))
+    st.session_state["g_mapping"].add((tm_iri_for_sm, RML.subjectMap, st.session_state["sm_iri"]))
     # store information__________________
     st.session_state["last_added_sm_list"].insert(0, [st.session_state["sm_iri"], tm_label_for_sm])
     st.session_state["sm_saved_ok_flag"] = True
@@ -234,7 +238,7 @@ def add_ns_to_sm_template():
     else:   # a ns was added (replace)
         st.session_state["sm_template_list"][0] = sm_template_ns
     # reset fields_____________
-    st.session_state["sm_template_prefix"] = sm_template_ns_prefix if sm_template_ns_prefix else utils.get_mapping_ns_dict()[sm_template_ns_prefix]
+    st.session_state["sm_template_prefix"] = sm_template_ns_prefix if sm_template_ns_prefix else utils.get_g_ns_dict(st.session_state["g_mapping"])[sm_template_ns_prefix]
     st.session_state["key_sm_template_ns_prefix"] = "Select a namespace"
     st.session_state["key_build_template_action_sm"] = "📈 Add variable part"
 
@@ -287,20 +291,20 @@ def save_sm_template():   #function to save subject map (template option)
         sm_iri = BNode()
         st.session_state["sm_label"] = "_:" + str(sm_iri)[:7] + "..."   # to be displayed
     else:
-        NS = st.session_state["structural_ns"][1]
+        NS = st.session_state["base_ns"][1]
         sm_iri = NS[sm_label]
-    st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, sm_iri))
-    st.session_state["g_mapping"].add((sm_iri, RDF.type, RR.SubjectMap))
-    st.session_state["g_mapping"].add((sm_iri, RR.template, Literal(sm_template)))
+    st.session_state["g_mapping"].add((tm_iri_for_sm, RML.subjectMap, sm_iri))
+    st.session_state["g_mapping"].add((sm_iri, RDF.type, RML.SubjectMap))
+    st.session_state["g_mapping"].add((sm_iri, RML.template, Literal(sm_template)))
     if add_subject_class_option != "No Class":
         for subject_class_iri in st.session_state["multiple_subject_class_list"]:
             st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
     if add_sm_graph_map_option == "Add Graph Map" and subject_graph:
         st.session_state["g_mapping"].add((sm_iri, RML["graph"], subject_graph))
     if sm_term_type_template == "🌐 IRI":
-        st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.IRI))
+        st.session_state["g_mapping"].add((sm_iri, RML.termType, RML.IRI))
     elif sm_term_type_template == "👻 BNode":
-        st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.BlankNode))
+        st.session_state["g_mapping"].add((sm_iri, RML.termType, RML.BlankNode))
     # store information__________________
     st.session_state["last_added_sm_list"].insert(0, [sm_iri, tm_label_for_sm])
     st.session_state["sm_saved_ok_flag"] = True
@@ -316,20 +320,20 @@ def save_sm_constant():   #function to save subject map (constant option)
         sm_iri = BNode()
         st.session_state["sm_label"] = "_:" + str(sm_iri)[:7] + "..."   # to be displayed
     else:
-        NS = st.session_state["structural_ns"][1]
+        NS = st.session_state["base_ns"][1]
         sm_iri = NS[sm_label]
-    st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, sm_iri))
-    st.session_state["g_mapping"].add((sm_iri, RDF.type, RR.SubjectMap))
+    st.session_state["g_mapping"].add((tm_iri_for_sm, RML.subjectMap, sm_iri))
+    st.session_state["g_mapping"].add((sm_iri, RDF.type, RML.SubjectMap))
     sm_constant_ns = mapping_ns_dict[sm_constant_ns_prefix]
     NS = Namespace(sm_constant_ns)
     sm_constant_iri = NS[sm_constant]
-    st.session_state["g_mapping"].add((sm_iri, RR.constant, sm_constant_iri))
+    st.session_state["g_mapping"].add((sm_iri, RML.constant, sm_constant_iri))
     if add_subject_class_option != "No Class":
         for subject_class_iri in st.session_state["multiple_subject_class_list"]:
             st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
     if add_sm_graph_map_option == "Add Graph Map" and subject_graph:
         st.session_state["g_mapping"].add((sm_iri, RML["graph"], subject_graph))
-    st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.IRI))
+    st.session_state["g_mapping"].add((sm_iri, RML.termType, RML.IRI))
     # store information____________________
     st.session_state["last_added_sm_list"].insert(0, [sm_iri, tm_label_for_sm])
     st.session_state["sm_saved_ok_flag"] = True
@@ -344,20 +348,20 @@ def save_sm_reference():   #function to save subject map (reference option)
         sm_iri = BNode()
         st.session_state["sm_label"] = "_:" + str(sm_iri)[:7] + "..."   # to be displayed
     else:
-        NS = st.session_state["structural_ns"][1]
+        NS = st.session_state["base_ns"][1]
         sm_iri = NS[sm_label]
-    st.session_state["g_mapping"].add((tm_iri_for_sm, RR.subjectMap, sm_iri))
-    st.session_state["g_mapping"].add((sm_iri, RDF.type, RR.SubjectMap))
-    st.session_state["g_mapping"].add((sm_iri, RML.reference, Literal(sm_column_name)))    #HERE change to RR.column in R2RML
+    st.session_state["g_mapping"].add((tm_iri_for_sm, RML.subjectMap, sm_iri))
+    st.session_state["g_mapping"].add((sm_iri, RDF.type, RML.SubjectMap))
+    st.session_state["g_mapping"].add((sm_iri, RML.reference, Literal(sm_column_name)))    #HERE change to RML.column in R2RML
     if add_subject_class_option != "No Class":
         for subject_class_iri in st.session_state["multiple_subject_class_list"]:
             st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
     if add_sm_graph_map_option == "Add Graph Map" and subject_graph:
         st.session_state["g_mapping"].add((sm_iri, RML["graph"], subject_graph))
     if sm_term_type_reference == "🌐 IRI":
-        st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.IRI))
+        st.session_state["g_mapping"].add((sm_iri, RML.termType, RML.IRI))
     elif sm_term_type_reference == "👻 BNode":
-        st.session_state["g_mapping"].add((sm_iri, RR.termType, RR.BlankNode))
+        st.session_state["g_mapping"].add((sm_iri, RML.termType, RML.BlankNode))
     # store information__________________
     st.session_state["last_added_sm_list"].insert(0, [sm_iri, tm_label_for_sm])
     st.session_state["sm_saved_ok_flag"] = True
@@ -405,26 +409,26 @@ def reset_om_template():
 
 def save_pom_template():
     # add triples pom________________________
-    st.session_state["g_mapping"].add((st.session_state["tm_iri_for_pom"], RR.predicateObjectMap, st.session_state["pom_iri_to_create"]))
-    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RR.predicate, selected_p_iri))
-    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RR.objectMap, om_iri))
-    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RDF.type, RR.PredicateObjectMap))
+    st.session_state["g_mapping"].add((st.session_state["tm_iri_for_pom"], RML.predicateObjectMap, st.session_state["pom_iri_to_create"]))
+    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RML.predicate, selected_p_iri))
+    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RML.objectMap, om_iri))
+    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RDF.type, RML.PredicateObjectMap))
     # add triples om________________________
-    st.session_state["g_mapping"].add((om_iri, RDF.type, RR.ObjectMap))
-    st.session_state["g_mapping"].add((om_iri, RR.template, Literal(om_template)))
+    st.session_state["g_mapping"].add((om_iri, RDF.type, RML.ObjectMap))
+    st.session_state["g_mapping"].add((om_iri, RML.template, Literal(om_template)))
     if om_term_type_template == "📘 Literal":
-        st.session_state["g_mapping"].add((om_iri, RR.termType, RR.Literal))
+        st.session_state["g_mapping"].add((om_iri, RML.termType, RML.Literal))
         if om_datatype != "Select datatype" and om_datatype != "Natural language tag":
             datatype_dict = utils.get_datatypes_dict()
-            st.session_state["g_mapping"].add((om_iri, RR.datatype, datatype_dict[om_datatype]))
+            st.session_state["g_mapping"].add((om_iri, RML.datatype, datatype_dict[om_datatype]))
         elif om_datatype == "Natural language tag":
-            st.session_state["g_mapping"].add((om_iri, RR.language, Literal(om_language_tag)))
+            st.session_state["g_mapping"].add((om_iri, RML.language, Literal(om_language_tag)))
     elif om_term_type_template == "🌐 IRI":
-        st.session_state["g_mapping"].add((om_iri, RR.termType, RR.IRI))
+        st.session_state["g_mapping"].add((om_iri, RML.termType, RML.IRI))
     elif om_term_type_template == "👻 BNode":
-        st.session_state["g_mapping"].add((om_iri, RR.termType, RR.BlankNode))
+        st.session_state["g_mapping"].add((om_iri, RML.termType, RML.BlankNode))
     if add_om_graph_map_option == "Add Graph Map":
-        st.session_state["g_mapping"].add((om_iri, RR.graphMap, om_graph))
+        st.session_state["g_mapping"].add((om_iri, RML.graphMap, om_graph))
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
     st.session_state["last_added_pom_list"].insert(0, [st.session_state["pom_iri_to_create"], st.session_state["tm_iri_for_pom"]])
@@ -442,28 +446,28 @@ def save_pom_template():
 
 def save_pom_constant():
     # add triples pom________________________
-    st.session_state["g_mapping"].add((st.session_state["tm_iri_for_pom"], RR.predicateObjectMap, st.session_state["pom_iri_to_create"]))
-    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RR.predicate, selected_p_iri))
-    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RR.objectMap, om_iri))
-    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RDF.type, RR.PredicateObjectMap))
+    st.session_state["g_mapping"].add((st.session_state["tm_iri_for_pom"], RML.predicateObjectMap, st.session_state["pom_iri_to_create"]))
+    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RML.predicate, selected_p_iri))
+    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RML.objectMap, om_iri))
+    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RDF.type, RML.PredicateObjectMap))
     # add triples om________________________
-    st.session_state["g_mapping"].add((om_iri, RDF.type, RR.ObjectMap))
+    st.session_state["g_mapping"].add((om_iri, RDF.type, RML.ObjectMap))
     if om_term_type_constant == "🌐 IRI":
         om_constant_ns = mapping_ns_dict[om_constant_ns_prefix]
         NS = Namespace(om_constant_ns)
         om_constant_iri = NS[om_constant]
-        st.session_state["g_mapping"].add((om_iri, RR.constant, om_constant_iri))
-        st.session_state["g_mapping"].add((om_iri, RR.termType, RR.IRI))
+        st.session_state["g_mapping"].add((om_iri, RML.constant, om_constant_iri))
+        st.session_state["g_mapping"].add((om_iri, RML.termType, RML.IRI))
     elif om_term_type_constant == "📘 Literal":
-        st.session_state["g_mapping"].add((om_iri, RR.constant, Literal(om_constant)))
-        st.session_state["g_mapping"].add((om_iri, RR.termType, RR.Literal))
+        st.session_state["g_mapping"].add((om_iri, RML.constant, Literal(om_constant)))
+        st.session_state["g_mapping"].add((om_iri, RML.termType, RML.Literal))
         if om_datatype != "Select datatype" and om_datatype != "Natural language tag":
             datatype_dict = utils.get_datatypes_dict()
-            st.session_state["g_mapping"].add((om_iri, RR.datatype, datatype_dict[om_datatype]))
+            st.session_state["g_mapping"].add((om_iri, RML.datatype, datatype_dict[om_datatype]))
         elif om_datatype == "Natural language tag":
-            st.session_state["g_mapping"].add((om_iri, RR.language, Literal(om_language_tag)))
+            st.session_state["g_mapping"].add((om_iri, RML.language, Literal(om_language_tag)))
     if add_om_graph_map_option == "Add Graph Map":
-        st.session_state["g_mapping"].add((om_iri, RR.graphMap, om_graph))
+        st.session_state["g_mapping"].add((om_iri, RML.graphMap, om_graph))
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
     st.session_state["last_added_pom_list"].insert(0, [st.session_state["pom_iri_to_create"], st.session_state["tm_iri_for_pom"]])
@@ -479,26 +483,26 @@ def save_pom_constant():
 
 def save_pom_reference():
     # add triples pom________________________
-    st.session_state["g_mapping"].add((st.session_state["tm_iri_for_pom"], RR.predicateObjectMap, st.session_state["pom_iri_to_create"]))
-    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RR.predicate, selected_p_iri))
-    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RR.objectMap, om_iri))
-    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RDF.type, RR.PredicateObjectMap))
+    st.session_state["g_mapping"].add((st.session_state["tm_iri_for_pom"], RML.predicateObjectMap, st.session_state["pom_iri_to_create"]))
+    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RML.predicate, selected_p_iri))
+    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RML.objectMap, om_iri))
+    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RDF.type, RML.PredicateObjectMap))
     # add triples om________________________
-    st.session_state["g_mapping"].add((om_iri, RDF.type, RR.ObjectMap))
-    st.session_state["g_mapping"].add((om_iri, RML.reference, Literal(om_column_name)))    #HERE change to RR.column in R2RML
+    st.session_state["g_mapping"].add((om_iri, RDF.type, RML.ObjectMap))
+    st.session_state["g_mapping"].add((om_iri, RML.reference, Literal(om_column_name)))    #HERE change to RML.column in R2RML
     if om_term_type_reference == "📘 Literal":
-        st.session_state["g_mapping"].add((om_iri, RR.termType, RR.Literal))
+        st.session_state["g_mapping"].add((om_iri, RML.termType, RML.Literal))
         if om_datatype_reference != "Select datatype" and om_datatype_reference != "Natural language tag":
             datatype_dict = utils.get_datatypes_dict()
-            st.session_state["g_mapping"].add((om_iri, RR.datatype, datatype_dict[om_datatype_reference]))
+            st.session_state["g_mapping"].add((om_iri, RML.datatype, datatype_dict[om_datatype_reference]))
         elif om_datatype_reference == "Natural language tag":
-            st.session_state["g_mapping"].add((om_iri, RR.language, Literal(om_language_tag)))
+            st.session_state["g_mapping"].add((om_iri, RML.language, Literal(om_language_tag)))
     elif om_term_type_reference == "🌐 IRI":
-        st.session_state["g_mapping"].add((om_iri, RR.termType, RR.IRI))
+        st.session_state["g_mapping"].add((om_iri, RML.termType, RML.IRI))
     elif om_term_type_reference == "👻 BNode":
-        st.session_state["g_mapping"].add((om_iri, RR.termType, RR.BlankNode))
+        st.session_state["g_mapping"].add((om_iri, RML.termType, RML.BlankNode))
     if add_om_graph_map_option == "Add Graph Map":
-        st.session_state["g_mapping"].add((om_iri, RR.graphMap, om_graph))
+        st.session_state["g_mapping"].add((om_iri, RML.graphMap, om_graph))
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
     st.session_state["last_added_pom_list"].insert(0, [st.session_state["pom_iri_to_create"], st.session_state["tm_iri_for_pom"]])
@@ -544,10 +548,10 @@ def unassign_sm():
     # remove triples______________________
     for tm in tm_to_unassign_sm_list:
         tm_iri = tm_dict[tm]
-        sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RR.subjectMap)
-        other_tm_with_sm = [split_uri(s)[1] for s, p, o in st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)) if s != tm_iri]
+        sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RML.subjectMap)
+        other_tm_with_sm = [split_uri(s)[1] for s, p, o in st.session_state["g_mapping"].triples((None, RML.subjectMap, sm_iri)) if s != tm_iri]
         if len(other_tm_with_sm) != 0:       # just unassign sm from tm (don't remove)
-            st.session_state["g_mapping"].remove((tm_iri, RR.subjectMap, None))
+            st.session_state["g_mapping"].remove((tm_iri, RML.subjectMap, None))
         else:       # completely remove sm
             st.session_state["g_mapping"].remove((sm_iri, None, None))
             st.session_state["g_mapping"].remove((None, None, sm_iri))
@@ -560,7 +564,7 @@ def unassign_sm():
 
 def delete_pom():           #function to delete a Predicate-Object Map
     for pom_iri in pom_to_delete_iri_list:
-        om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RR.objectMap)
+        om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RML.objectMap)
         # remove triples______________________
         st.session_state["g_mapping"].remove((pom_iri, None, None))
         st.session_state["g_mapping"].remove((None, None, pom_iri))
@@ -575,7 +579,7 @@ def delete_pom():           #function to delete a Predicate-Object Map
 
 def delete_all_pom():           #function to delete a Predicate-Object Map
     for pom_iri in pom_to_delete_all_iri_list:
-        om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RR.objectMap)
+        om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RML.objectMap)
         # remove triples______________________
         st.session_state["g_mapping"].remove((pom_iri, None, None))
         st.session_state["g_mapping"].remove((None, None, pom_iri))
@@ -602,7 +606,7 @@ def clean_g_mapping():
 
     # REMOVE PREDICATE-OBJECT MAPS
     for pom_iri in pom_to_clean_list:
-        om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RR.objectMap)
+        om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RML.objectMap)
         # remove triples______________________
         st.session_state["g_mapping"].remove((pom_iri, None, None))
         st.session_state["g_mapping"].remove((None, None, pom_iri))
@@ -710,7 +714,7 @@ with tab1:
                 ✅ The TriplesMap <b style="color:#F63366;">{st.session_state["tm_label"]}</b> has been added!
             </div>""", unsafe_allow_html=True)
         st.session_state["tm_saved_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
     with col1:
@@ -995,7 +999,7 @@ with tab1:
             </div>""", unsafe_allow_html=True)
             st.write("")
         st.session_state["tm_deleted_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
 #________________________________________________
@@ -1038,7 +1042,7 @@ with tab2:
                 ✅ The <b>Subject Map</b> has been created!
             </div>""", unsafe_allow_html=True)
         st.session_state["sm_saved_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
 
@@ -1052,7 +1056,7 @@ with tab2:
 
     tm_wo_sm_list = []          #list of all TriplesMap which do not have a subject yet
     for tm_label, tm_iri in tm_dict.items():
-        if not next(st.session_state["g_mapping"].objects(tm_iri, RR.subjectMap), None):   #if there is no subject for that TriplesMap
+        if not next(st.session_state["g_mapping"].objects(tm_iri, RML.subjectMap), None):   #if there is no subject for that TriplesMap
             tm_wo_sm_list.append(tm_label)
 
 
@@ -1086,7 +1090,7 @@ with tab2:
         ns_needed_for_sm_flag = False
 
         existing_sm_dict = {}
-        for sm in st.session_state["g_mapping"].objects(predicate=RR.subjectMap):
+        for sm in st.session_state["g_mapping"].objects(predicate=RML.subjectMap):
             if isinstance(sm, URIRef):
                 existing_sm_dict[split_uri(sm)[1]] = sm
         existing_sm_list = list(existing_sm_dict.keys())
@@ -1225,7 +1229,7 @@ with tab2:
 
                     elif build_template_action_sm in ["🏷️ Add Namespace*", "🏷️ Add Namespace"]:
                         with col1b:
-                            mapping_ns_dict = utils.get_mapping_ns_dict()
+                            mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                             list_to_choose = sorted(mapping_ns_dict.keys())
                             list_to_choose.insert(0, "Select a namespace")
                             sm_template_ns_prefix = st.selectbox("🖱️ Select a namespace for the template:", list_to_choose,
@@ -1254,7 +1258,7 @@ with tab2:
                     with col1b:
                         sm_constant = st.text_input("⌨️ Enter constant:*", key="key_sm_constant")
 
-                    mapping_ns_dict = utils.get_mapping_ns_dict()
+                    mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                     list_to_choose = sorted(mapping_ns_dict.keys())
                     list_to_choose.insert(0, "Select a namespace")
                     with col1a:
@@ -1418,7 +1422,7 @@ with tab2:
                 #CLASS OUTSIDE ONTOLOGY
                 if add_subject_class_option == "🚫 Class outside Ontology":
 
-                    mapping_ns_dict = utils.get_mapping_ns_dict()
+                    mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
 
                     subject_class_prefix_list = list(mapping_ns_dict.keys())
                     with col1a:
@@ -1530,7 +1534,7 @@ with tab2:
 
                     if add_class_option == "🚫 Add Class outside Ontology":
 
-                        mapping_ns_dict = utils.get_mapping_ns_dict()
+                        mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
 
                         subject_class_prefix_list = list(mapping_ns_dict.keys())
                         with col1a:
@@ -1588,7 +1592,7 @@ with tab2:
                 if add_sm_graph_map_option == "Add Graph Map":
 
                     with col1b:
-                        mapping_ns_dict = utils.get_mapping_ns_dict()
+                        mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                         list_to_choose = sorted(mapping_ns_dict.keys())
                         list_to_choose.insert(0,"Select a namespace")
                         subject_graph_prefix = st.selectbox("🖱️ Select a namespace:*", list_to_choose,
@@ -1613,7 +1617,7 @@ with tab2:
                 inner_html_error = ""
                 inner_html_warning = ""
 
-                if ns_needed_for_sm_flag and not utils.get_mapping_ns_dict():
+                if ns_needed_for_sm_flag and not utils.get_g_ns_dict(st.session_state["g_mapping"]):
                     inner_html_error += f"""<small>· <b>No namespaces available.</b> Go to the
                         <b>Global Configuration</b> page to add them.</small><br>"""
 
@@ -1699,9 +1703,9 @@ with tab2:
                         inner_html_error += """<small>· The <b>Subject Map label</b>
                             is not valid (only safe characters allowed and cannot end with puntuation).</small><br>"""
                     else:
-                        NS = st.session_state["structural_ns"][1]
+                        NS = st.session_state["base_ns"][1]
                         sm_iri = BNode() if not sm_label else NS[sm_label]
-                        if next(st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)), None):
+                        if next(st.session_state["g_mapping"].triples((None, RML.subjectMap, sm_iri)), None):
                             sm_complete_flag = False
                             inner_html_error += """<small>· That <b>Subject Map label</b> is already in use.
                                 Please pick a different label.</small><br>"""
@@ -1825,14 +1829,14 @@ with tab3:
                 ✅ The <b style="color:#F63366;">Predicate-Object Map</b> has been created!
             </div>""", unsafe_allow_html=True)
         st.session_state["pom_saved_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
 
     #list of all triplesmaps with assigned Subject Map
     tm_w_sm_list = []
     for tm_label, tm_iri in tm_dict.items():
-        if any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectMap, None))):
+        if any(st.session_state["g_mapping"].triples((tm_iri, RML.subjectMap, None))):
             tm_w_sm_list.append(tm_label)
 
     if not tm_dict:
@@ -1916,7 +1920,7 @@ with tab3:
 
                 with col1:
                     col1a, col1b = st.columns(2)
-                mapping_ns_dict = utils.get_mapping_ns_dict()
+                mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
 
                 if not mapping_ns_dict:
                     ns_needed_for_pom_flag = True
@@ -2021,7 +2025,7 @@ with tab3:
 
                 elif build_template_action_om == "🏷️ Add Namespace":
                     with col1b:
-                        mapping_ns_dict = utils.get_mapping_ns_dict()
+                        mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                         list_to_choose = sorted(mapping_ns_dict.keys())
                         list_to_choose.insert(0, "Select a namespace")
                         om_template_ns_prefix = st.selectbox("🖱️ Select a namespace:", list_to_choose,
@@ -2080,7 +2084,7 @@ with tab3:
                     om_term_type_constant = st.selectbox(label="🆔 Select term type:*", options=["📘 Literal", "🌐 IRI"],
                         key="om_term_type_constant")
 
-                mapping_ns_dict = utils.get_mapping_ns_dict()
+                mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                 if om_term_type_constant == "🌐 IRI" and mapping_ns_dict:
                     list_to_choose = sorted(mapping_ns_dict.keys())
                     list_to_choose.insert(0, "Select a namespace")
@@ -2157,7 +2161,7 @@ with tab3:
                 if not mapping_ns_dict:
                     ns_needed_for_pom_flag = True
                 with col1a:
-                    mapping_ns_dict = utils.get_mapping_ns_dict()
+                    mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                     list_to_choose = sorted(mapping_ns_dict.keys())
                     list_to_choose.insert(0,"Select a namespace")
                     om_graph_prefix = st.selectbox("🖱️ Namespace for Graph Map:*", list_to_choose,
@@ -2297,11 +2301,11 @@ with tab3:
             if pom_complete_flag:
 
                 # Prepare subject for display
-                sm_iri_for_pom = next(st.session_state["g_mapping"].objects(tm_iri_for_pom, RR.subjectMap), None)
+                sm_iri_for_pom = next(st.session_state["g_mapping"].objects(tm_iri_for_pom, RML.subjectMap), None)
 
                 if sm_iri_for_pom:
-                    template_sm_for_pom = next(st.session_state["g_mapping"].objects(sm_iri_for_pom, RR.template), None)
-                    constant_sm_for_pom = next(st.session_state["g_mapping"].objects(sm_iri_for_pom, RR.constant), None)
+                    template_sm_for_pom = next(st.session_state["g_mapping"].objects(sm_iri_for_pom, RML.template), None)
+                    constant_sm_for_pom = next(st.session_state["g_mapping"].objects(sm_iri_for_pom, RML.constant), None)
                     reference_sm_for_pom = next(st.session_state["g_mapping"].objects(sm_iri_for_pom, RML.reference), None)
 
                     if template_sm_for_pom:
@@ -2402,7 +2406,7 @@ with tab4:
                 </div>""", unsafe_allow_html=True)
                 st.write("")
             st.session_state["tm_deleted_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
+            time.sleep(utils.get_success_message_time())
             st.rerun()
 
         with col1:
@@ -2425,12 +2429,12 @@ with tab4:
                 for tm in tm_to_remove_list:
                     inner_html += f"""<b>🔖 {tm}</b> ("""
                     tm_iri = tm_dict[tm]
-                    sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RR.subjectMap)), None)
+                    sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RML.subjectMap)), None)
                     if sm_to_remove_tm:
                         inner_html += f"""<span style="font-size:0.85em;">Subject Map: {sm_dict[sm_to_remove_tm][0]} | </span>"""
                     else:
                         inner_html += f"""<span style="font-size:0.85em;">No Subject Map | </span>"""
-                    pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RR.predicateObjectMap))
+                    pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RML.predicateObjectMap))
                     if len(pom_to_remove_tm_list) == 1:
                         inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Map)<br></span>"""
                     elif pom_to_remove_tm_list:
@@ -2441,12 +2445,12 @@ with tab4:
                 for tm in tm_to_remove_list[:max_length]:
                     inner_html += f"""🔖 <b>{tm}</b> ("""
                     tm_iri = tm_dict[tm]
-                    sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RR.subjectMap)), None)
+                    sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RML.subjectMap)), None)
                     if sm_to_remove_tm:
                         inner_html += f"""<span style="font-size:0.85em;">Subject Map: {sm_dict[sm_to_remove_tm][0]} | </span>"""
                     else:
                         inner_html += f"""<span style="font-size:0.85em;">No Subject Map | </span>"""
-                    pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RR.predicateObjectMap))
+                    pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RML.predicateObjectMap))
                     if len(pom_to_remove_tm_list) == 1:
                         inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Map)<br></span>"""
                     elif pom_to_remove_tm_list:
@@ -2464,12 +2468,12 @@ with tab4:
                 for tm in tm_dict:
                     inner_html += f"""<b>🔖 {tm}</b> ("""
                     tm_iri = tm_dict[tm]
-                    sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RR.subjectMap)), None)
+                    sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RML.subjectMap)), None)
                     if sm_to_remove_tm:
                         inner_html += f"""<span style="font-size:0.85em;">Subject Map: {sm_dict[sm_to_remove_tm][0]} | </span>"""
                     else:
                         inner_html += f"""<span style="font-size:0.85em;">No Subject Map | </span>"""
-                    pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RR.predicateObjectMap))
+                    pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RML.predicateObjectMap))
                     if len(pom_to_remove_tm_list) == 1:
                         inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Map)<br></span>"""
                     elif pom_to_remove_tm_list:
@@ -2480,12 +2484,12 @@ with tab4:
                 for tm in list(tm_dict)[:max_length]:
                     inner_html += f"""🔖 <b>{tm}</b> ("""
                     tm_iri = tm_dict[tm]
-                    sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RR.subjectMap)), None)
+                    sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RML.subjectMap)), None)
                     if sm_to_remove_tm:
                         inner_html += f"""<span style="font-size:0.85em;">Subject Map: {sm_dict[sm_to_remove_tm][0]} | </span>"""
                     else:
                         inner_html += f"""<span style="font-size:0.85em;">No Subject Map | </span>"""
-                    pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RR.predicateObjectMap))
+                    pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RML.predicateObjectMap))
                     if len(pom_to_remove_tm_list) == 1:
                         inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Map)<br></span>"""
                     elif pom_to_remove_tm_list:
@@ -2528,7 +2532,7 @@ with tab4:
 
 
     # PURPLE HEADING - REMOVE EXISTING SUBJECT MAP
-    sm_list = list(st.session_state["g_mapping"].objects(predicate=RR.subjectMap))
+    sm_list = list(st.session_state["g_mapping"].objects(predicate=RML.subjectMap))
     tm_dict = utils.get_tm_dict()
     sm_dict = utils.get_sm_dict()
 
@@ -2541,7 +2545,7 @@ with tab4:
                 ✅ The <b>Subject Map/s</b> have been removed!
             </div>""", unsafe_allow_html=True)
         st.session_state["sm_unassigned_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
 
@@ -2562,12 +2566,12 @@ with tab4:
                     ✅ The <b>Subject Map/s</b> have been removed!
                 </div>""", unsafe_allow_html=True)
             st.session_state["sm_unassigned_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
+            time.sleep(utils.get_success_message_time())
             st.rerun()
 
         tm_w_sm_list = []
         for tm_label, tm_iri in tm_dict.items():
-            if any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectMap, None))):
+            if any(st.session_state["g_mapping"].triples((tm_iri, RML.subjectMap, None))):
                 tm_w_sm_list.append(tm_label)
 
         with col1:
@@ -2593,7 +2597,7 @@ with tab4:
 
         for tm in tm_to_unassign_sm_list[:max_length]:
             tm_iri = tm_dict[tm]
-            sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RR.subjectMap)
+            sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RML.subjectMap)
             sm_label_to_unassign = sm_dict[sm_iri][0]
             inner_html += f"""<div style="margin-bottom:1px;">
                 <small>🔖 {tm} →  <b>{sm_label_to_unassign}</b></small>
@@ -2609,9 +2613,9 @@ with tab4:
         sm_to_just_unassign_list = []
         for tm in tm_to_unassign_sm_list:
             tm_iri = tm_dict[tm]
-            sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RR.subjectMap)
+            sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RML.subjectMap)
             sm_label_to_unassign = sm_dict[sm_iri][0]
-            other_tm_with_sm = [split_uri(s)[1] for s, p, o in st.session_state["g_mapping"].triples((None, RR.subjectMap, sm_iri)) if s != tm_iri]
+            other_tm_with_sm = [split_uri(s)[1] for s, p, o in st.session_state["g_mapping"].triples((None, RML.subjectMap, sm_iri)) if s != tm_iri]
             if all(tm in tm_to_unassign_sm_list for tm in other_tm_with_sm):   # if upon deletion sm is no longer assigned to any tm
                 if sm_label_to_unassign not in sm_to_completely_remove_list:
                     sm_to_completely_remove_list.append(sm_label_to_unassign)
@@ -2663,7 +2667,7 @@ with tab4:
             </div>""", unsafe_allow_html=True)
             st.write("")
         st.session_state["pom_deleted_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
 
@@ -2778,7 +2782,7 @@ with tab4:
                 ✅ The mapping <b>{st.session_state["g_label"]}</b> has been cleaned.
             </div>""", unsafe_allow_html=True)
         st.session_state["g_mapping_cleaned_ok_flag"]  = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
     check_g_mapping = utils.check_g_mapping(st.session_state["g_mapping"])
@@ -2800,7 +2804,7 @@ with tab4:
             tm_dict[tm_label] = tm
 
         pom_dict = {}
-        for pom in st.session_state["g_mapping"].subjects(RDF.type, RR.PredicateObjectMap):
+        for pom in st.session_state["g_mapping"].subjects(RDF.type, RML.PredicateObjectMap):
             if isinstance(pom, URIRef):
                 pom_label = split_uri(tm)[1]
             elif isinstance(pom, BNode):
@@ -2812,19 +2816,19 @@ with tab4:
         tm_wo_sm_list = []   # list of all tm with assigned sm
         tm_wo_pom_list = []
         for tm_label, tm_iri in tm_dict.items():
-            if not any(st.session_state["g_mapping"].triples((tm_iri, RR.subjectMap, None))):
+            if not any(st.session_state["g_mapping"].triples((tm_iri, RML.subjectMap, None))):
                 tm_wo_sm_list.append(tm_label)
         for tm_label, tm_iri in tm_dict.items():
-            if not any(st.session_state["g_mapping"].triples((tm_iri, RR.predicateObjectMap, None))):
+            if not any(st.session_state["g_mapping"].triples((tm_iri, RML.predicateObjectMap, None))):
                 tm_wo_pom_list.append(tm_label)
 
         pom_wo_om_list = []
         pom_wo_predicate_list = []
-        for pom_iri in st.session_state["g_mapping"].subjects(RDF.type, RR.PredicateObjectMap):
+        for pom_iri in st.session_state["g_mapping"].subjects(RDF.type, RML.PredicateObjectMap):
             pom_label = utils.get_node_label(pom_iri)
-            if not any(st.session_state["g_mapping"].triples((pom_iri, RR.objectMap, None))):
+            if not any(st.session_state["g_mapping"].triples((pom_iri, RML.objectMap, None))):
                 pom_wo_om_list.append(pom_label)
-            if not any(st.session_state["g_mapping"].triples((pom_iri, RR.predicate, None))):
+            if not any(st.session_state["g_mapping"].triples((pom_iri, RML.predicate, None))):
                 pom_wo_predicate_list.append(pom_label)
 
         tm_to_clean_list = list(set(tm_wo_sm_list).union(tm_wo_pom_list))

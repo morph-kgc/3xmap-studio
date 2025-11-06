@@ -26,12 +26,16 @@ if "dark_mode_flag" not in st.session_state or st.session_state["dark_mode_flag"
         key="dark_mode")
 
 # Header-----------------------------------
+# dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
+# header_html = utils.render_header(title="Tabular Data",
+#     description="""Load files from <b>non-SQL sources</b>
+#         and <b>display the data</b>.""",
+#     dark_mode=dark_mode)
+# st.markdown(header_html, unsafe_allow_html=True)
+
+# Sidebar logo-----------------------------------
 dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
-header_html = utils.render_header(title="Tabular Data",
-    description="""Load files from <b>non-SQL sources</b>
-        and <b>display the data</b>.""",
-    dark_mode=dark_mode)
-st.markdown(header_html, unsafe_allow_html=True)
+utils.render_sidebar_logo(dark_mode=dark_mode)
 
 # Import style----------------------------------------------------------
 style_container = st.empty()
@@ -189,7 +193,7 @@ with tab1:
                 ✅ The <b>data source file</b> has been saved!
             </div>""", unsafe_allow_html=True)
         st.session_state["ds_file_saved_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
     ds_allowed_formats = utils.get_ds_allowed_tab_formats()            #data source for the TriplesMap
@@ -305,7 +309,7 @@ with tab1:
                 ✅ The <b>data source file/s</b> have been removed!
             </div>""", unsafe_allow_html=True)
         st.session_state["ds_file_removed_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
     #PURPLE HEADING - REMOVE FILE
@@ -326,7 +330,7 @@ with tab1:
                     ✅ The <b>data source file/s</b> have been removed!
                 </div>""", unsafe_allow_html=True)
             st.session_state["ds_file_removed_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
+            time.sleep(utils.get_success_message_time())
             st.rerun()
 
         with col1:

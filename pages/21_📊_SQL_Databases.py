@@ -25,12 +25,16 @@ if "dark_mode_flag" not in st.session_state or st.session_state["dark_mode_flag"
         key="dark_mode")
 
 # Header-----------------------------------
+# dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
+# header_html = utils.render_header(title="SQL Databases",
+#     description="""Manage the connections to <b>relational data sources</b>, consult the data
+#                     and <b>save views</b>.""",
+#     dark_mode=dark_mode)
+# st.markdown(header_html, unsafe_allow_html=True)
+
+# Sidebar logo-----------------------------------
 dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
-header_html = utils.render_header(title="SQL Databases",
-    description="""Manage the connections to <b>relational data sources</b>, consult the data
-                    and <b>save views</b>.""",
-    dark_mode=dark_mode)
-st.markdown(header_html, unsafe_allow_html=True)
+utils.render_sidebar_logo(dark_mode=dark_mode)
 
 # Import style----------------------------------------------
 style_container = st.empty()
@@ -213,7 +217,7 @@ with tab1:
                 ✅ The <b>connection to the database</b> has been saved!
             </div>""", unsafe_allow_html=True)
         st.session_state["db_connection_saved_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
     with col1:
@@ -288,7 +292,7 @@ with tab1:
                 ✅ The <b>connection to the database</b> has been removed!
             </div>""", unsafe_allow_html=True)
         st.session_state["db_connection_removed_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
 
@@ -311,7 +315,7 @@ with tab1:
                     ✅ The <b>connection/s to the database</b> have been removed!
                 </div>""", unsafe_allow_html=True)
             st.session_state["db_connection_removed_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
+            time.sleep(utils.get_success_message_time())
             st.rerun()
 
         with col1:
@@ -759,7 +763,7 @@ with tab3:
                     ✅ The <b>view</b> has been saved!
                 </div>""", unsafe_allow_html=True)
             st.session_state["sql_query_saved_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
+            time.sleep(utils.get_success_message_time())
             st.rerun()
 
         with col1:
@@ -880,7 +884,7 @@ with tab3:
                 ✅ The <b>view/s</b> have been removed!
             </div>""", unsafe_allow_html=True)
         st.session_state["sql_query_removed_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
 
@@ -902,7 +906,7 @@ with tab3:
                     ✅ The <b>view</b> has been removed!
                 </div>""", unsafe_allow_html=True)
             st.session_state["sql_query_removed_ok_flag"] = False
-            time.sleep(st.session_state["success_display_time"])
+            time.sleep(utils.get_success_message_time())
             st.rerun()
 
         with col1:

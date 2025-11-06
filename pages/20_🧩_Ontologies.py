@@ -27,11 +27,15 @@ if "dark_mode_flag" not in st.session_state or st.session_state["dark_mode_flag"
         key="dark_mode")
 
 # Header-----------------------------------
+# dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
+# header_html = utils.render_header(title="Ontologies",
+#     description="Import <b>ontologies</b> from link or file.",
+#     dark_mode=dark_mode)
+# st.markdown(header_html, unsafe_allow_html=True)
+
+# Sidebar logo-----------------------------------
 dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
-header_html = utils.render_header(title="Ontologies",
-    description="Import <b>ontologies</b> from link or file.",
-    dark_mode=dark_mode)
-st.markdown(header_html, unsafe_allow_html=True)
+utils.render_sidebar_logo(dark_mode=dark_mode)
 
 # Import style-----------------------------
 style_container = st.empty()
@@ -78,16 +82,14 @@ if "g_ontology_reduced_ok_flag" not in st.session_state:
 # Namespaces-----------------------------------
 RML, QL = utils.get_required_ns_dict().values()
 
-
 # Define on_click functions-------------------------------------------------
-
 # TAB1
 def load_ontology_from_link():  #HEREIGONS
     # load ontology
     st.session_state["g_ontology"] = st.session_state["g_ontology_from_link_candidate"]  # consolidate ontology graph
     st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_link=st.session_state["key_ontology_link"])
     # bind ontology namespaces
-    ontology_ns_dict = utils.get_ontology_ns_dict(st.session_state["g_ontology"])
+    ontology_ns_dict = utils.get_g_ns_dict(st.session_state["g_ontology"])
     for prefix, namespace in ontology_ns_dict.items():
         utils.bind_namespace_wo_overwriting(prefix, namespace)
     # store information___________________________
@@ -103,7 +105,7 @@ def load_ontology_from_file():
     st.session_state["g_ontology"] = st.session_state["g_ontology_from_file_candidate"]  # consolidate ontology graph
     st.session_state["g_ontology_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology"], source_file=st.session_state["ontology_file"])
     # bind ontology namespaces
-    ontology_ns_dict = utils.get_ontology_ns_dict(st.session_state["g_ontology"])
+    ontology_ns_dict = utils.get_g_ns_dict(st.session_state["g_ontology"])
     for prefix, namespace in ontology_ns_dict.items():
         utils.bind_namespace_wo_overwriting(prefix, namespace)
     # store information___________________________
@@ -123,14 +125,14 @@ def extend_ontology_from_link():
     st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
     st.session_state["g_ontology_components_tag_dict"][g_ontology_new_part_label] = utils.get_unique_ontology_tag(g_ontology_new_part_label)
     # bind ontology namespaces
-    ontology_ns_dict = utils.get_ontology_ns_dict(g_ontology_new_part)
+    ontology_ns_dict = utils.get_g_ns_dict(g_ontology_new_part)
     for prefix, namespace in ontology_ns_dict.items():
         utils.bind_namespace_wo_overwriting(prefix, namespace)
     # merge ontologies components___________________
     st.session_state["g_ontology"] = Graph()
     for ont_label, ont in st.session_state["g_ontology_components_dict"].items():
         st.session_state["g_ontology"] += ont  # merge the graphs using RDFLib's += operator
-        for prefix, namespace in utils.get_ontology_ns_dict(ont).items():
+        for prefix, namespace in utils.get_g_ns_dict(ont).items():
             st.session_state["g_ontology"].bind(prefix, namespace)
     # reset fields___________________________
     st.session_state["key_ontology_link"] = ""
@@ -146,14 +148,14 @@ def extend_ontology_from_file():
     st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
     st.session_state["g_ontology_components_tag_dict"][g_ontology_new_part_label] = utils.get_unique_ontology_tag(g_ontology_new_part_label)
     # bind ontology namespaces
-    ontology_ns_dict = utils.get_ontology_ns_dict(g_ontology_new_part)
+    ontology_ns_dict = utils.get_g_ns_dict(g_ontology_new_part)
     for prefix, namespace in ontology_ns_dict.items():
         utils.bind_namespace_wo_overwriting(prefix, namespace)
     # merge ontologies components___________________
     st.session_state["g_ontology"] = Graph()
     for ont_label, ont in st.session_state["g_ontology_components_dict"].items():
         st.session_state["g_ontology"] += ont  # merge the graphs using RDFLib's += operator
-        for prefix, namespace in utils.get_ontology_ns_dict(ont).items():
+        for prefix, namespace in utils.get_g_ns_dict(ont).items():
             st.session_state["g_ontology"].bind(prefix, namespace)
     # reset fields___________________________
     st.session_state["key_ontology_uploader"] = str(uuid.uuid4())
@@ -193,7 +195,7 @@ with tab1:
                 ✅ The <b>ontology</b> has been imported!
             </div>""", unsafe_allow_html=True)
         st.session_state["g_ontology_loaded_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
     if st.session_state["g_ontology_reduced_ok_flag"]:
@@ -205,7 +207,7 @@ with tab1:
                 ✅ The <b>ontology/ies</b> have been removed!
             </div>""", unsafe_allow_html=True)
         st.session_state["g_ontology_reduced_ok_flag"] = False
-        time.sleep(st.session_state["success_display_time"])
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
 
@@ -276,8 +278,8 @@ with tab1:
                                 <b>{st.session_state["g_ontology_from_link_candidate_fmt"]}</b>).</small>
                             </div>""", unsafe_allow_html=True)
 
-                    ontology_ns_dict = utils.get_ontology_ns_dict(st.session_state["g_ontology_from_link_candidate"])
-                    mapping_ns_dict = utils.get_mapping_ns_dict()
+                    ontology_ns_dict = utils.get_g_ns_dict(st.session_state["g_ontology_from_link_candidate"])
+                    mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                     already_used_prefix_list = []
                     already_bound_ns_list = []
                     for pr, ns in ontology_ns_dict.items():
@@ -571,7 +573,7 @@ with tab2:
             with col2b:
                 st.write("")
                 st.markdown(f"""<div class="warning-message">
-                    🐘 <b>Your ontology is quite large</b> ({utils.format_big_number(len(ontology_for_search))} triples).
+                    🐘 <b>Your ontology is quite large</b> ({utils.format_number_for_display(len(ontology_for_search))} triples).
                     <small>Some patience may be required.</small>
                 </div>""", unsafe_allow_html=True)
 
@@ -1139,9 +1141,9 @@ with tab3:
         if len(serialised_data) > max_length:
             with col1:
                 st.markdown(f"""<div class="warning-message">
-                    🐘 <b>Your ontology is quite large</b> ({utils.format_big_number(len(ontology_for_preview))} triples).
-                    <small>Showing only the first {utils.format_big_number(max_length)} characters
-                    (out of {utils.format_big_number(len(serialised_data))}) to avoid performance issues.</small>
+                    🐘 <b>Your ontology is quite large</b> ({utils.format_number_for_display(len(ontology_for_preview))} triples).
+                    <small>Showing only the first {utils.format_number_for_display(max_length)} characters
+                    (out of {utils.format_number_for_display(len(serialised_data))}) to avoid performance issues.</small>
                 </div>""", unsafe_allow_html=True)
 
         st.code(serialised_data[:max_length])
