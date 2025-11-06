@@ -841,6 +841,7 @@ def get_g_mapping_base_ns():
 
 #_________________________________________________________
 # Function to change the base namespace in a mapping
+# Changes the ns of all tm, sm, pom and om
 def change_g_mapping_base_ns(prefix, namespace):
 
     base_ns = [prefix, namespace]
