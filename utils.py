@@ -619,7 +619,8 @@ def get_max_length_for_display():
 
 
 
-# GLOBAL CONFIGURATION - SELECT MAPPING -------------------------------------------------------------
+# GLOBAL CONFIGURATION PAGE=========================================================
+# SELECT MAPPING PANNEL-------------------------------------------------------------
 #______________________________________________________
 #Function to check whether a label is valid
 def is_valid_label(label):
@@ -739,22 +740,22 @@ def empty_last_added_lists():
 # Mapping, data sources, ontologies and last added lists
 def full_reset():
 
-    # mapping
+    # reset mapping
     st.session_state["g_mapping"] = Graph()
     st.session_state["g_label"] = ""
 
-    # data sources
+    # reset data sources
     st.session_state["db_connections_dict"] = {}
     st.session_state["db_connection_status_dict"] = {}
     st.session_state["sql_queries_dict"] = {}
     st.session_state["ds_files_dict"] = {}
 
-    # ontology
+    # reset ontology
     st.session_state["g_ontology_components_dict"] = {}
     st.session_state["g_ontology_components_tag_dict"] = {}
     st.session_state["g_ontology"] = Graph()
 
-    # last added lists
+    # reset last added lists
     empty_last_added_lists()
 #_____________________________________________________
 
@@ -811,7 +812,7 @@ def load_mapping_from_file(f):
 #_____________________________________________________
 
 #_____________________________________________________
-#Function to get the number of TriplesMaps in a mapping
+# Function to get the number of TriplesMaps in a mapping
 def get_number_of_tm(g):
 
     triplesmaps = [s for s in g.subjects(predicate=RML.logicalSource, object=None)]
@@ -819,9 +820,58 @@ def get_number_of_tm(g):
     return len(triplesmaps)
 #_________________________________________________________
 
+#_____________________________________________________
+# Function to get the base namespace of an imported mapping
+def get_g_mapping_base_ns():
+
+    for s, p, o in st.session_state["g_mapping"]:
+        if isinstance(s, URIRef):
+            if p in [RML.logicalSource, RML.subjectMap, RML.predicateObjectMap, RML.objectMap]:
+                base_ns = split_uri(s)[0]
+                break
+
+    prefix = "base"
+    for pr, ns in st.session_state["g_mapping"].namespaces():
+        if str(base_ns) == str(ns):
+            prefix = pr
+            break
+
+    return [prefix, base_ns]
+#_________________________________________________________
+
+#_________________________________________________________
+# Function to change the base namespace in a mapping
+def change_g_mapping_base_ns(prefix, namespace):
+
+    base_ns = [prefix, namespace]
+    updated_nodes_dict = {}
+    updated_g = Graph()
+    updated_g.bind(base_ns[0], base_ns[1])
+
+    # bind the namespaces of the mapping into the updated version
+    for prefix, namespace in st.session_state["g_mapping"].namespaces():
+        updated_g.bind(prefix, namespace)
+
+    # look for the tm, sm, pom and om and create dictionary with updated iris
+    for s, p, o in st.session_state["g_mapping"]:
+        if isinstance(s, URIRef):
+            if p in [RML.logicalSource, RML.subjectMap, RML.predicateObjectMap, RML.objectMap]:
+                updated_nodes_dict[s] = URIRef(base_ns[1] + split_uri(s)[1])
+
+    # for all triples, change if necessary and add to updated graph
+    for s, p, o in st.session_state["g_mapping"]:
+        s = updated_nodes_dict[s] if s in updated_nodes_dict else s
+        o = updated_nodes_dict[o] if o in updated_nodes_dict else o
+        updated_g.add((s, p, o))
+
+    # consolidate updated graph
+    st.session_state["g_mapping"] = updated_g
+#_________________________________________________________
 
 
-# GLOBAL CONFIGURATION - CONFIGURE NAMESPACES ---------------------------------------------------
+
+
+# CONFIGURE NAMESPACES PANNEL---------------------------------------------------
 #_____________________________________________________
 # Function to get the default base iri for the base components
 def get_default_base_ns():
@@ -2587,6 +2637,7 @@ def preview_rule(sm_rule_for_display, selected_p_for_display, om_iri_for_display
         </div>
         """, unsafe_allow_html=True)
 #_________________________________________________
+
 #________________________________________________
 # Function to display a rule
 def display_rules(rule_list):
