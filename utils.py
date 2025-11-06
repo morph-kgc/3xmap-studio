@@ -30,7 +30,7 @@ import rdflib
 from collections import Counter
 from urllib.parse import urlparse
 
-# REQUIRED NS-------------------------------------------------------------------------------------
+# REQUIRED NS===================================================================
 #________________________________________________________
 # Function to retrieve namespaces which are needed for our code
 def get_required_ns_dict():
@@ -49,7 +49,7 @@ RML, QL = get_required_ns_dict().values()
 
 
 
-# AESTHETICS-------------------------------------------------------------------------------------
+# AESTHETICS====================================================================
 #______________________________________________________
 # Function to render headers (UNUSED)
 def render_header(title, description, dark_mode: bool = False):
@@ -619,8 +619,8 @@ def get_max_length_for_display():
 
 
 
-# GLOBAL CONFIGURATION PAGE=========================================================
-# SELECT MAPPING PANNEL-------------------------------------------------------------
+# PAGE: GLOBAL CONFIGURATION ===================================================
+# PANNEL: SELECT MAPPING--------------------------------------------------------
 #______________________________________________________
 #Function to check whether a label is valid
 def is_valid_label(label):
@@ -870,9 +870,7 @@ def change_g_mapping_base_ns(prefix, namespace):
 #_________________________________________________________
 
 
-
-
-# CONFIGURE NAMESPACES PANNEL---------------------------------------------------
+# PANNEL: CONFIGURE NAMESPACES -------------------------------------------------
 #_____________________________________________________
 # Function to get the default base iri for the base components
 def get_default_base_ns():
@@ -1213,7 +1211,7 @@ def get_ns_warning_message(ns_to_bind_list):
 #_________________________________________________
 
 
-# GLOBAL CONFIGURATION - SAVE MAPPING
+# PANNEL: SAVE MAPPING----------------------------------------------------------
 #_________________________________________________
 #Funtion to create the list that stores the state of the project
 # project_state_list
@@ -1310,7 +1308,7 @@ def is_valid_filename(filename):  #HEREIGO
 
 # HEREIGO - REFACTORING
 
-# ONTOLOGIES----------------------------------------------------------------
+# PAGE: ONTOLOGIES==============================================================
 #_________________________________________________________
 # Function to get the ontology base iri
 # Returns a list because the ontology can have several components
