@@ -82,9 +82,7 @@ if "g_ontology_reduced_ok_flag" not in st.session_state:
 # Namespaces-----------------------------------
 RML, QL = utils.get_required_ns_dict().values()
 
-
 # Define on_click functions-------------------------------------------------
-
 # TAB1
 def load_ontology_from_link():  #HEREIGONS
     # load ontology
