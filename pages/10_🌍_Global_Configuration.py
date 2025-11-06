@@ -1105,16 +1105,6 @@ with tab2:
                 base_ns_prefix_candidate = st.selectbox("🖱️ Select new base namespace:",
                     list_to_choose, key="key_base_ns_prefix_candidate")
 
-            tm_dict = utils.get_tm_dict()
-            if tm_dict:
-                with col1b:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ TriplesMaps have already been added to mapping <b>{st.session_state["g_label"]}</b>.
-                            <small>Changing the base namespace at this stage may lead to inconsistencies.
-                            The use of a consistent <b>base namespace</b> throughout the mapping is recommended.</small>
-                        </div>""", unsafe_allow_html=True)
-
-
             with col1:
                 if base_ns_prefix_candidate != "Select prefix":
                     base_ns_iri_candidate = mapping_ns_dict[base_ns_prefix_candidate]
