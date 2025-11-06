@@ -149,15 +149,18 @@ def create_new_g_mapping():
     # reset fields__________________
     st.session_state["key_g_label_temp_new"] = ""
 
-def load_existing_g_mapping():
+def import_existing_g_mapping():
     # optional reset (clear everything)_____________________
     if overwrite_g_mapping_and_session_checkbox:
         utils.full_reset()
-    # load mapping_____________________________________
+    # import mapping_____________________________________
     st.session_state["g_label"] = st.session_state["g_label_temp_existing"]   # consolidate g_label
     st.session_state["original_g_size_cache"] = utils.get_number_of_tm(st.session_state["candidate_g_mapping"])
     st.session_state["original_g_mapping_ns_dict"] = utils.get_g_ns_dict(st.session_state["candidate_g_mapping"])
     st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]   # consolidate the loaded mapping
+    # set base namespace___________________________________
+    st.session_state["base_ns"] = utils.get_g_mapping_base_ns()
+    utils.change_g_mapping_base_ns(st.session_state["base_ns"][0], st.session_state["base_ns"][1])  # ensure all nodes have same base ns
     # bind default namespaces____________________________
     for prefix, namespace in utils.get_default_ns_dict().items():
         utils.bind_namespace(prefix, namespace)
@@ -261,13 +264,15 @@ def bind_ontology_namespaces():
     st.session_state["key_ontology_filter_for_ns"] = "Select ontology"
 
 def change_base_ns():
-    # unbind original namespace________________________
+    # unbind original namespace (optional)____________________
     if unbind_previous_base_ns_checkbox:
         prefix = st.session_state["base_ns"][0]
         utils.unbind_namespaces([prefix])
     # bind new namespace and store________________________
     st.session_state["base_ns"] = [base_ns_prefix_candidate, Namespace(base_ns_iri_candidate)]
     utils.bind_namespace(base_ns_prefix_candidate, base_ns_iri_candidate)
+    # change base namespace in g mapping___________________
+    utils.change_g_mapping_base_ns(st.session_state["base_ns"][0], st.session_state["base_ns"][1])
     #store information________________________
     st.session_state["base_ns_changed_ok_flag"] = True
     # reset fields_____________________________
@@ -483,7 +488,7 @@ with tab1:
             else:
                 overwrite_g_mapping_and_session_checkbox = False
             with col1:
-                st.button("Import", on_click=load_existing_g_mapping, key="key_load_existing_g_mapping_button_2")
+                st.button("Import", on_click=import_existing_g_mapping, key="key_import_existing_g_mapping_button_2")
 
 
     # A mapping is currently loaded
@@ -511,7 +516,7 @@ with tab1:
 
             if overwrite_g_mapping_checkbox:
                 with col1a:
-                    st.button(f"""Import""", on_click=load_existing_g_mapping, key="key_load_existing_g_mapping_button_2")
+                    st.button(f"""Import""", on_click=import_existing_g_mapping, key="key_import_existing_g_mapping_button_2")
 
     # PURPLE HEADING - RETRIEVE SAVED SESSION-----------------------------------------------
     # Only shows if there exist saved sessions
