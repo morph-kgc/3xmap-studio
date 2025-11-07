@@ -41,11 +41,7 @@ else:
     style_container.markdown(utils.import_st_aesthetics_dark_mode(), unsafe_allow_html=True)
 
 # Initialise session state variables----------------------------------------
-# OTHER PAGES
-if not "g_label" in st.session_state:
-    st.session_state["g_label"] = ""
-if not "g_mapping" in st.session_state:
-    st.session_state["g_mapping"] = Graph()
+utils.initialise_session_state_variables()
 
 # Namespaces------------------------------------------------------------
 RML, QL = utils.get_required_ns_dict().values()

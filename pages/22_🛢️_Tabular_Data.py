@@ -46,22 +46,7 @@ else:
 
 
 # Initialise session state variables------------------------------------
-# TAB1
-if "key_ds_uploader" not in st.session_state:
-    st.session_state["key_ds_uploader"] = str(uuid.uuid4())
-if "ds_files_dict" not in st.session_state:
-    st.session_state["ds_files_dict"] = {}
-if "large_ds_files_dict" not in st.session_state:
-    st.session_state["large_ds_files_dict"] = {}
-if "ds_file_saved_ok_flag" not in st.session_state:
-    st.session_state["ds_file_saved_ok_flag"] = False
-if "ds_file_removed_ok_flag" not in st.session_state:
-    st.session_state["ds_file_removed_ok_flag"] = False
-
-# OTHER PAGES
-if not "db_connections_dict" in st.session_state:
-    st.session_state["db_connections_dict"] = {}
-
+utils.initialise_session_state_variables()
 
 #define on_click functions--------------------------------------------
 # TAB1

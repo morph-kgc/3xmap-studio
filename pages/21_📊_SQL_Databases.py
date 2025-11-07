@@ -45,23 +45,7 @@ else:
 
 
 # Initialise session state variables------------------------------------
-#TAB1
-if "db_connections_dict" not in st.session_state:
-    st.session_state["db_connections_dict"] = {}
-if "db_connection_status_dict" not in st.session_state:
-    st.session_state["db_connection_status_dict"] = {}
-if "db_connection_saved_ok_flag" not in st.session_state:
-    st.session_state["db_connection_saved_ok_flag"] = False
-if "db_connection_removed_ok_flag" not in st.session_state:
-    st.session_state["db_connection_removed_ok_flag"] = False
-
-#TAB3
-if "sql_queries_dict" not in st.session_state:
-    st.session_state["sql_queries_dict"] = {}
-if "sql_query_saved_ok_flag" not in st.session_state:
-    st.session_state["sql_query_saved_ok_flag"] = False
-if "sql_query_removed_ok_flag" not in st.session_state:
-    st.session_state["sql_query_removed_ok_flag"] = False
+utils.initialise_session_state_variables()
 
 #define on_click functions-----------------------------------------
 # TAB1

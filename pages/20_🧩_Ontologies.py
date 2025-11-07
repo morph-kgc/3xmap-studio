@@ -13,7 +13,7 @@ import io
 from io import IOBase
 from streamlit_js_eval import streamlit_js_eval
 
-# Config-----------------------------------
+# Config------------------------------------------------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
     st.set_page_config(page_title="3Xmap Studio", layout="wide",
         page_icon="logo/fav_icon.png")
@@ -21,68 +21,36 @@ else:
     st.set_page_config(page_title="3Xmap Studio", layout="wide",
         page_icon="logo/fav_icon_inverse.png")
 
-# Automatic detection of dark mode-------------------------
+# Automatic detection of dark mode----------------------------------------------
 if "dark_mode_flag" not in st.session_state or st.session_state["dark_mode_flag"] is None:
     st.session_state["dark_mode_flag"] = streamlit_js_eval(js_expressions="window.matchMedia('(prefers-color-scheme: dark)').matches",
         key="dark_mode")
 
-# Header-----------------------------------
+# Header------------------------------------------------------------------------
 # dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
 # header_html = utils.render_header(title="Ontologies",
 #     description="Import <b>ontologies</b> from link or file.",
 #     dark_mode=dark_mode)
 # st.markdown(header_html, unsafe_allow_html=True)
 
-# Sidebar logo-----------------------------------
+# Sidebar logo------------------------------------------------------------------
 dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
 utils.render_sidebar_logo(dark_mode=dark_mode)
 
-# Import style-----------------------------
+# Import style------------------------------------------------------------------
 style_container = st.empty()
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
     style_container.markdown(utils.import_st_aesthetics(), unsafe_allow_html=True)
 else:
     style_container.markdown(utils.import_st_aesthetics_dark_mode(), unsafe_allow_html=True)
 
+# Initialise session state variables--------------------------------------------
+utils.initialise_session_state_variables()
 
-# Initialise session state variables----------------------------------------
-# OTHER PAGES
-if not "g_label" in st.session_state:
-    st.session_state["g_label"] = ""
-if not "g_mapping" in st.session_state:
-    st.session_state["g_mapping"] = Graph()
-if not "last_added_ns_list" in st.session_state:
-    st.session_state["last_added_ns_list"] = []
-
-# TAB1
-if "g_ontology" not in st.session_state:
-    st.session_state["g_ontology"] = Graph()
-if "g_ontology_label" not in st.session_state:
-    st.session_state["g_ontology_label"] = ""
-if "g_ontology_loaded_ok_flag" not in st.session_state:
-    st.session_state["g_ontology_loaded_ok_flag"] = False
-if "ontology_link" not in st.session_state:
-    st.session_state["ontology_link"] = ""
-if "key_ontology_uploader" not in st.session_state:
-    st.session_state["key_ontology_uploader"] = None
-if "ontology_file" not in st.session_state:
-    st.session_state["ontology_file"] = None
-if "g_ontology_from_file_candidate" not in st.session_state:
-    st.session_state["g_ontology_from_file_candidate"] = Graph()
-if "g_ontology_from_link_candidate" not in st.session_state:
-    st.session_state["g_ontology_from_link_candidate"] = Graph()
-if "g_ontology_components_dict" not in st.session_state:
-    st.session_state["g_ontology_components_dict"] = {}
-if "g_ontology_components_tag_dict" not in st.session_state:
-    st.session_state["g_ontology_components_tag_dict"] = {}
-if "g_ontology_reduced_ok_flag" not in st.session_state:
-    st.session_state["g_ontology_reduced_ok_flag"] = False
-
-
-# Namespaces-----------------------------------
+# Namespaces--------------------------------------------------------------------
 RML, QL = utils.get_required_ns_dict().values()
 
-# Define on_click functions-------------------------------------------------
+# Define on_click functions-----------------------------------------------------
 # TAB1
 def load_ontology_from_link():  #HEREIGONS
     # load ontology
@@ -175,13 +143,12 @@ def reduce_ontology():
         for prefix, namespace in ont.namespaces():
             st.session_state["g_ontology"].bind(prefix, namespace)
 
-#____________________________________________________________
+#_______________________________________________________________________________
 # PANELS OF THE PAGE (tabs)
-
 tab1, tab2, tab3 = st.tabs(["Import Ontology", "Explore Ontology", "View Ontology"])
 
-#________________________________________________
-# PANEL: "IMPORT ONTOLOGY"
+#_______________________________________________________________________________
+# PANEL: IMPORT ONTOLOGY
 with tab1:
 
     col1, col2 = st.columns([2,1.5])
@@ -223,7 +190,8 @@ with tab1:
     with col2b:
         st.write("")
         st.markdown("""<div class="info-message-blue">
-        🐢 Certain options in this panel can be a bit slow. <small> Some patience may be required.</small>
+        🐢 Certain options in this panel can be a bit slow.
+        <small> Some <b>patience</b> may be required.</small>
             </div>""", unsafe_allow_html=True)
 
     #LOAD ONTOLOGY FROM URL___________________________________
@@ -241,7 +209,7 @@ with tab1:
 
         with col1b:
             import_ontology_selected_option = st.radio("🖱️ Import ontology from:*", ["🌐 URL", "📁 File"],
-                horizontal=True, key="key_import_ontology_selected_option")
+                label_visibility="collapsed", horizontal=True, key="key_import_ontology_selected_option")
 
         if import_ontology_selected_option == "🌐 URL":
 
@@ -365,7 +333,9 @@ with tab1:
         with col1:
             col1a,col1b = st.columns([2,1])
         with col1b:
-            extend_ontology_selected_option = st.radio("🖱️ Import ontology from:*", ["🌐 URL", "📁 File"], horizontal=True, key="key_extend_ontology_selected_option")
+            st.write("")
+            extend_ontology_selected_option = st.radio("🖱️ Import ontology from:*", ["🌐 URL", "📁 File"],
+                label_visibility="collapsed", horizontal=True, key="key_extend_ontology_selected_option")
 
         if extend_ontology_selected_option == "🌐 URL":
             with col1a:
@@ -390,7 +360,7 @@ with tab1:
                         st.markdown(f"""<div class="error-message">
                                 ❌ The ontology <b>
                                 {st.session_state["g_ontology_from_link_candidate_label"]}</b>
-                                has been already imported.
+                                has already been imported.
                             </div>""", unsafe_allow_html=True)
 
                 else:
@@ -442,7 +412,7 @@ with tab1:
                         st.markdown(f"""<div class="error-message">
                                 ❌ The ontology <b>
                                 {st.session_state["g_ontology_from_file_candidate_label"]}</b>
-                                has been already imported.
+                                has already been imported.
                             </div>""", unsafe_allow_html=True)
 
                 else:
@@ -574,7 +544,7 @@ with tab2:
                 st.write("")
                 st.markdown(f"""<div class="warning-message">
                     🐘 <b>Your ontology is quite large</b> ({utils.format_number_for_display(len(ontology_for_search))} triples).
-                    <small>Some patience may be required.</small>
+                    <small>Some <b>patience</b> may be required.</small>
                 </div>""", unsafe_allow_html=True)
 
 

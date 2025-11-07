@@ -48,7 +48,6 @@ if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_f
 else:
     style_container.markdown(utils.import_st_aesthetics_dark_mode(), unsafe_allow_html=True)
 
-
 # Namespaces------------------------------------------
 RML, QL = utils.get_required_ns_dict().values()
 
@@ -56,58 +55,7 @@ RML, QL = utils.get_required_ns_dict().values()
 temp_folder_path = os.path.join(os.getcwd(), "materialising_mapping_temp")
 
 # Initialise session state variables--------------------------
-# OTHER PAGES
-if "g_label" not in st.session_state:
-    st.session_state["g_label"] = ""
-if "g_mapping" not in st.session_state:
-    st.session_state["g_mapping"] = Graph()
-if "db_connections_dict" not in st.session_state:
-    st.session_state["db_connections_dict"] = {}
-if "ds_files_dict" not in st.session_state:
-    st.session_state["ds_files_dict"] = {}
-
-# TAB1
-if "mkgc_config" not in st.session_state:
-    st.session_state["mkgc_config"] = configparser.ConfigParser()
-if "autoconfig_active_flag" not in st.session_state:
-    st.session_state["autoconfig_active_flag"] = False
-if "autoconfig_generated_ok_flag" not in st.session_state:
-    st.session_state["autoconfig_generated_ok_flag"] = False
-if "config_file_reset_ok_flag_tab1" not in st.session_state:
-    st.session_state["config_file_reset_ok_flag_tab1"] = False
-
-# TAB2
-if "mkgc_g_mappings_dict" not in st.session_state:
-    st.session_state["mkgc_g_mappings_dict"] = {}
-if "manual_config_enabled_ok_flag" not in st.session_state:
-    st.session_state["manual_config_enabled_ok_flag"] = False
-if "ds_for_mkgcgc_saved_ok_flag" not in st.session_state:
-    st.session_state["ds_for_mkgcgc_saved_ok_flag"] = False
-if "ds_for_mkgcgc_removed_ok_flag" not in st.session_state:
-    st.session_state["ds_for_mkgcgc_removed_ok_flag"] = False
-if "configuration_for_mkgcgc_saved_ok_flag" not in st.session_state:
-    st.session_state["configuration_for_mkgcgc_saved_ok_flag"] = False
-if "configuration_for_mkgcgc_removed_ok_flag" not in st.session_state:
-    st.session_state["configuration_for_mkgcgc_removed_ok_flag"] = False
-if "additional_mapping_added_ok_flag" not in st.session_state:
-    st.session_state["additional_mapping_added_ok_flag"] = False
-if "key_mapping_uploader" not in st.session_state:
-    st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
-if "additional_mapping_for_mkgcgc_saved_ok_flag" not in st.session_state:
-    st.session_state["additional_mapping_for_mkgcgc_saved_ok_flag"] = False
-if "additional_mapping_removed_ok_flag" not in st.session_state:
-    st.session_state["additional_mapping_removed_ok_flag"] = False
-if "config_file_reset_ok_flag_tab2" not in st.session_state:
-    st.session_state["config_file_reset_ok_flag_tab2"] = False
-
-# TAB3
-if "materialised_g_mapping_file" not in st.session_state:
-    st.session_state["materialised_g_mapping_file"] = None
-if "materialised_g_mapping" not in st.session_state:
-    st.session_state["materialised_g_mapping"] = Graph()
-if "graph_materialised_ok_flag" not in st.session_state:
-    st.session_state["graph_materialised_ok_flag"] = False
-
+utils.initialise_session_state_variables()
 
 #define on_click functions--------------------------------------------
 # TAB1

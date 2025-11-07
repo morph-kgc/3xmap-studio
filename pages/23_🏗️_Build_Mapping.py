@@ -46,74 +46,11 @@ if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_f
 else:
     style_container.markdown(utils.import_st_aesthetics_dark_mode(), unsafe_allow_html=True)
 
-
 # Namespaces---------------------------------------------------------
 RML, QL = utils.get_required_ns_dict().values()
 
-
 # Initialise session state variables--------------------------------------
-# OTHER PAGES
-if "ds_files_dict" not in st.session_state:
-    st.session_state["ds_files_dict"] = {}
-
-# TAB1
-if "key_ds_uploader" not in st.session_state:
-    st.session_state["key_ds_uploader"] = str(uuid.uuid4())
-if "last_added_tm_list" not in st.session_state:
-    st.session_state["last_added_tm_list"] = []
-if "tm_label" not in st.session_state:
-    st.session_state["tm_label"] = ""
-if "tm_saved_ok_flag" not in st.session_state:
-    st.session_state["tm_saved_ok_flag"] = False
-
-# TAB2
-if "key_ds_uploader_for_sm" not in st.session_state:
-    st.session_state["key_ds_uploader_for_sm"] = str(uuid.uuid4())
-if "last_added_sm_list" not in st.session_state:
-    st.session_state["last_added_sm_list"] = []
-if "sm_label" not in st.session_state:
-    st.session_state["sm_label"] = ""
-if "tm_label_for_sm" not in st.session_state:
-    st.session_state["tm_label_for_sm"] = False
-if "sm_template_list" not in st.session_state:
-    st.session_state["sm_template_list"] = []
-if "sm_saved_ok_flag" not in st.session_state:
-    st.session_state["sm_saved_ok_flag"] = False
-if "sm_iri" not in st.session_state:
-    st.session_state["sm_iri"] = None
-if "sm_template_prefix" not in st.session_state:
-    st.session_state["sm_template_prefix"] = ""
-if "sm_template_variable_part_flag" not in st.session_state:
-    st.session_state["sm_template_variable_part_flag"] = False
-if not "multiple_subject_class_list" in st.session_state:
-    st.session_state["multiple_subject_class_list"] = []
-
-# TAB3
-if "key_ds_uploader_for_pom" not in st.session_state:
-    st.session_state["key_ds_uploader_for_pom"] = str(uuid.uuid4())
-if "om_template_ns_prefix" not in st.session_state:
-    st.session_state["om_template_ns_prefix"] = ""
-if "template_om_is_iri_flag" not in st.session_state:
-    st.session_state["template_om_is_iri_flag"] = False
-if "pom_saved_ok_flag" not in st.session_state:
-    st.session_state["pom_saved_ok_flag"] = False
-if "om_template_list" not in st.session_state:
-    st.session_state["om_template_list"] = []
-if "last_added_pom_list" not in st.session_state:
-    st.session_state["last_added_pom_list"] = []
-if "om_template_variable_part_flag" not in st.session_state:
-    st.session_state["om_template_variable_part_flag"] = False
-
-# TAB4
-if "tm_deleted_ok_flag" not in st.session_state:
-    st.session_state["tm_deleted_ok_flag"] = False
-if "sm_unassigned_ok_flag" not in st.session_state:
-    st.session_state["sm_unassigned_ok_flag"] = False
-if "g_mapping_cleaned_ok_flag"  not in st.session_state:
-    st.session_state["g_mapping_cleaned_ok_flag"]  = False
-if "pom_deleted_ok_flag" not in st.session_state:
-    st.session_state["pom_deleted_ok_flag"] = False
-
+utils.initialise_session_state_variables()
 
 #define on_click functions-----------------------------------------------
 # TAB1

@@ -13,7 +13,7 @@ import io
 from io import IOBase
 from streamlit_js_eval import streamlit_js_eval
 
-# Config-----------------------------------
+# Config------------------------------------------------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
     st.set_page_config(page_title="3Xmap Studio", layout="wide",
         page_icon="logo/fav_icon.png")
@@ -21,23 +21,23 @@ else:
     st.set_page_config(page_title="3Xmap Studio", layout="wide",
         page_icon="logo/fav_icon_inverse.png")
 
-# Automatic detection of dark mode-------------------------
+# Automatic detection of dark mode----------------------------------------------
 if "dark_mode_flag" not in st.session_state or st.session_state["dark_mode_flag"] is None:
     st.session_state["dark_mode_flag"] = streamlit_js_eval(js_expressions="window.matchMedia('(prefers-color-scheme: dark)').matches",
         key="dark_mode")
 
-# Header-----------------------------------
+# Header------------------------------------------------------------------------
 # dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
 # header_html = utils.render_header(title="Global Configuration",
 #     description="System-wide configuration: load <b>mapping</b>, manage <b>namespaces</b>, and <b>save work</b>.",
 #     dark_mode=dark_mode)
 # st.markdown(header_html, unsafe_allow_html=True)
 
-# Sidebar logo-----------------------------------
+# Sidebar logo------------------------------------------------------------------
 dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
 utils.render_sidebar_logo(dark_mode=dark_mode)
 
-# Import style-----------------------------
+# Import style------------------------------------------------------------------
 style_container = st.empty()
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
     style_container.markdown(utils.import_st_aesthetics(), unsafe_allow_html=True)
@@ -46,75 +46,10 @@ else:
 
 
 
-# Initialise session state variables----------------------------------------
-# TAB1
-if "g_mapping" not in st.session_state:
-    st.session_state["g_mapping"] = Graph()
-if "g_label" not in st.session_state:
-    st.session_state["g_label"] = ""
-if "g_label_temp_new" not in st.session_state:
-    st.session_state["g_label_temp_new"] = ""
-if "new_g_mapping_created_ok_flag" not in st.session_state:
-    st.session_state["new_g_mapping_created_ok_flag"] = False
-if "key_mapping_uploader" not in st.session_state:
-    st.session_state["key_mapping_uploader"] = None
-if "g_label_temp_existing" not in st.session_state:
-    st.session_state["g_label_temp_existing"] = ""
-if "existing_g_mapping_loaded_ok_flag" not in st.session_state:
-    st.session_state["existing_g_mapping_loaded_ok_flag"] = False
-if "session_retrieved_ok_flag" not in st.session_state:
-    st.session_state["session_retrieved_ok_flag"] = False
-if "g_mapping_source_cache" not in st.session_state:
-    st.session_state["g_mapping_source_cache"] = ["",""]
-if "original_g_size_cache" not in st.session_state:
-    st.session_state["original_g_size_cache"] = 0
-if "original_g_mapping_ns_dict" not in st.session_state:
-    st.session_state["original_g_mapping_ns_dict"] = {}
-if "cached_mapping_retrieved_ok_flag" not in st.session_state:
-    st.session_state["cached_mapping_retrieved_ok_flag"] = False
-if "g_label_changed_ok_flag" not in st.session_state:
-    st.session_state["g_label_changed_ok_flag"] = False
-if "candidate_g_mapping" not in st.session_state:
-    st.session_state["candidate_g_mapping"] = Graph()
+# Initialise session state variables--------------------------------------------
+utils.initialise_session_state_variables()
 
-# TAB2
-if "ns_bound_ok_flag" not in st.session_state:
-    st.session_state["ns_bound_ok_flag"] = False
-if "base_ns_changed_ok_flag" not in st.session_state:
-    st.session_state["base_ns_changed_ok_flag"] = False
-if "ns_unbound_ok_flag" not in st.session_state:
-    st.session_state["ns_unbound_ok_flag"] = False
-if "last_added_ns_list" not in st.session_state:
-    st.session_state["last_added_ns_list"] = []
-
-# TAB3
-if "progress_saved_ok_flag" not in st.session_state:
-    st.session_state["progress_saved_ok_flag"] = False
-if "mapping_downloaded_ok_flag" not in st.session_state:
-    st.session_state["mapping_downloaded_ok_flag"] = False
-if "session_saved_ok_flag" not in st.session_state:
-    st.session_state["session_saved_ok_flag"] = False
-if "session_removed_ok_flag" not in st.session_state:
-    st.session_state["session_removed_ok_flag"] = False
-
-# OTHER PAGES
-if "db_connections_dict" not in st.session_state:
-    st.session_state["db_connections_dict"] = {}
-if "db_connection_status_dict" not in st.session_state:
-    st.session_state["db_connection_status_dict"] = {}
-if "sql_queries_dict" not in st.session_state:
-    st.session_state["sql_queries_dict"] = {}
-if "ds_files_dict" not in st.session_state:
-    st.session_state["ds_files_dict"] = {}
-if "g_ontology_components_dict" not in st.session_state:
-    st.session_state["g_ontology_components_dict"] = {}
-if "g_ontology_components_tag_dict" not in st.session_state:
-    st.session_state["g_ontology_components_tag_dict"] = {}
-if "g_ontology" not in st.session_state:
-    st.session_state["g_ontology"] = Graph()
-
-
-# Namespaces-----------------------------------
+# Namespaces--------------------------------------------------------------------
 RML, QL = utils.get_required_ns_dict().values()
 
 if "base_ns" not in st.session_state and st.session_state["g_label"]:
@@ -122,7 +57,7 @@ if "base_ns" not in st.session_state and st.session_state["g_label"]:
     prefix, ns = utils.get_default_base_ns()   # bind the default ns for the base components
     st.session_state["g_mapping"].bind(prefix, ns)
 
-# Define on_click functions-------------------------------------------------
+# Define on_click functions-----------------------------------------------------
 #TAB1
 def create_new_g_mapping():
     # optional reset (clear everything)_____________________
@@ -353,18 +288,18 @@ def activate_dark_mode():
 def deactivate_dark_mode():
     st.session_state["dark_mode_flag"] = False
 
-#____________________________________________________________
+#_______________________________________________________________________________
 # PANELS OF THE PAGE (tabs)
 tab1, tab2, tab3, tab4 = st.tabs(["Select Mapping",
     "Configure Namespaces", "Save Mapping", "Set Style"])
 
-#____________________________________________________________
-# PANEL - SELECT MAPPING
+#_______________________________________________________________________________
+# PANEL: SELECT MAPPING
 with tab1:
     st.write("")
     st.write("")
 
-    # PURPLE HEADER - CREATE NEW MAPPING------------------------------
+    # PURPLE HEADER - CREATE NEW MAPPING----------------------------------------
     col1,col2,col3 = st.columns([2,0.5, 1])
     with col1:
         st.markdown("""<div class="purple-heading">
@@ -438,7 +373,7 @@ with tab1:
         st.write("______")
 
 
-    # PURPLE HEADER- IMPORT EXISTING MAPPING----------------------------------
+    # PURPLE HEADER- IMPORT EXISTING MAPPING------------------------------------
     with col1:
         st.markdown("""<div class="purple-heading">
                 📁 Import Existing Mapping
@@ -549,7 +484,7 @@ with tab1:
                 with col1a:
                     st.button(f"""Import""", on_click=import_existing_g_mapping, key="key_import_existing_g_mapping_button_2")
 
-    # PURPLE HEADING - RETRIEVE SAVED SESSION-----------------------------------------------
+    # PURPLE HEADING - RETRIEVE SAVED SESSION-----------------------------------
     # Only shows if there exist saved sessions
     folder_name = "saved_sessions"
     if os.path.isdir(folder_name):   # create if it does not exist
@@ -610,7 +545,7 @@ with tab1:
             else:
                 st.button("Retrieve", key="key_retrieve_session_button_2", on_click=retrieve_session)
 
-    # SUCCESS MESSAGES for retrieve cached mapping and change label------------------------------------
+    # SUCCESS MESSAGES for retrieve cached mapping and change label-------------
     if st.session_state["cached_mapping_retrieved_ok_flag"]:
         with col3:
             st.write("")
@@ -631,7 +566,7 @@ with tab1:
         time.sleep(utils.get_success_message_time())
         st.rerun()
 
-    # MAPPING INFORMATION BOX--------------------------------------------
+    # MAPPING INFORMATION BOX---------------------------------------------------
     with col3:
         if st.session_state["g_label"]:
 
@@ -681,7 +616,7 @@ with tab1:
             </div>
             """, unsafe_allow_html=True)
 
-    # OPTION - Retrieve cached mapping---------------------------------------------------
+    # OPTION - Retrieve cached mapping------------------------------------------
     # Only shows if not working with a mapping
     if not st.session_state["g_label"]:
         pkl_cache_filename = next((f for f in os.listdir() if f.endswith("_cache__.pkl")), None)  # fallback if no match is found
@@ -704,7 +639,7 @@ with tab1:
                     st.write("")
                     st.button("Load", key="key_retrieve_cached_mapping_button", on_click=retrieve_cached_mapping)
 
-    # OPTION - Change the mapping label-----------------------------------
+    # OPTION - Change the mapping label-----------------------------------------
     # Only shows if working with a mapping
     if st.session_state["g_label"]:
 
@@ -724,7 +659,7 @@ with tab1:
                             {g_label_candidate}</b> (currently <b>{st.session_state["g_label"]}</b>).
                         </span></div>""", unsafe_allow_html=True)
 
-    # OPTION - Full reset-----------------------------------
+    # OPTION - Full reset-------------------------------------------------------
     # Only shows if there is a mapping, ontology or data source
     if (st.session_state["g_label"] or st.session_state["db_connections_dict"]
         or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]):
@@ -746,8 +681,8 @@ with tab1:
                     st.button("Reset", key="key_full_reset_button", on_click=full_reset)
 
 
-#_____________________________________________________________________________________________
-# PANEL - CONFIGURE NAMESPACES
+#_______________________________________________________________________________
+# PANEL: CONFIGURE NAMESPACES
 # Available only if mapping is loaded
 with tab2:
     st.write("")
@@ -801,7 +736,7 @@ with tab2:
                 st.dataframe(mapping_ns_df, hide_index=True)
 
 
-        # PURPLE HEADING - ADD NEW NAMESPACE---------------------------------------------
+        # PURPLE HEADING - ADD NEW NAMESPACE------------------------------------
         with col1:
             st.markdown("""<div class="purple-heading">
                     🆕 Add New Namespace
@@ -1171,7 +1106,8 @@ with tab2:
                             st.button("Set to default", key="key_base_ns_set_to_default_button", on_click=change_base_ns)
 
 
-        # UNBIND NS SUCCESS MESSAGE - Shows here if no "Unbind Namespace" purple heading-------------
+        # UNBIND NS SUCCESS MESSAGE---------------------------------------------
+        # Only shows here if no "Unbind Namespace" purple heading
         mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
         default_ns_dict = utils.get_default_ns_dict()
         required_ns_dict = utils.get_required_ns_dict()
@@ -1193,7 +1129,7 @@ with tab2:
                 time.sleep(utils.get_success_message_time())
                 st.rerun()
 
-        # PURPLE HEADING - UNBIND NAMESPACE------------------------------------------
+        # PURPLE HEADING - UNBIND NAMESPACE-------------------------------------
         # Only shows if there are bound namespaces
         if list_to_choose:
             with col1:
@@ -1263,8 +1199,8 @@ with tab2:
                 with col1a:
                     utils.get_ns_previsualisation_message(ns_to_unbind_list, mapping_ns_dict)
 
-#___________________________________________________________________________________________
-# PANEL - SAVE MAPPING
+#_______________________________________________________________________________
+# PANEL: SAVE MAPPING
 # Available only if mapping is loaded
 with tab3:
     st.write("")
@@ -1281,7 +1217,7 @@ with tab3:
         with col2:
             col2a,col2b = st.columns([1,2])
 
-        # OPTION - SAVE PROGRESS---------------------------------------------------
+        # OPTION - SAVE PROGRESS------------------------------------------------
         with col2b:
             st.write("")
             save_progress_checkbox = st.checkbox(
@@ -1315,7 +1251,7 @@ with tab3:
             st.rerun()
 
 
-        # PURPLE HEADING - EXPORT MAPPING---------------------------------------------------
+        # PURPLE HEADING - EXPORT MAPPING---------------------------------------
         with col1:
             st.markdown("""<div class="purple-heading">
                     📤 Export mapping
@@ -1388,7 +1324,7 @@ with tab3:
                             {inner_html}
                         </div>""", unsafe_allow_html=True)
 
-        # PURPLE HEADING - SAVE SESSION---------------------------------------------------
+        # PURPLE HEADING - SAVE SESSION-----------------------------------------
         with col1:
             st.write("________")
             st.markdown("""<div class="purple-heading">
@@ -1494,8 +1430,8 @@ with tab3:
                         st.button("Delete", key="delete_sessions_button", on_click=delete_sessions)
 
 
-#_______________________________________________________________________________________________________
-# PANEL - SET STYLE
+#_______________________________________________________________________________
+# PANEL: SET STYLE
 with tab4:
 
     st.write("")
@@ -1506,7 +1442,7 @@ with tab4:
     with col2:
         col2a,col2b = st.columns([1,2])
 
-    # PURPLE HEADING - STYLE CONFIGURATION----------------------------------------------------
+    # PURPLE HEADING - STYLE CONFIGURATION--------------------------------------
     with col1:
         st.markdown("""<div class="purple-heading">
                 🎨 Style Configuration
