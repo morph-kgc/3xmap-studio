@@ -49,132 +49,6 @@ RML, QL = get_required_ns_dict().values()
 #________________________________________________________
 
 
-
-# INITILISE SESSION STATE VARIABLES ============================================
-#________________________________________________________
-# Function to retrieve namespaces which are needed for our code
-def initialise_session_state_variables():
-
-    if "session_initialised_ok_flag" not in st.session_state:
-
-        st.session_state["session_initialised_ok_flag"] = True
-
-        # 🌍 GLOBAL CONFIGURATION_________________
-        # TAB1
-        st.session_state["g_mapping"] = Graph()
-        st.session_state["g_label"] = ""
-        st.session_state["g_label_temp_new"] = ""
-        st.session_state["new_g_mapping_created_ok_flag"] = False
-        st.session_state["key_mapping_uploader"] = None
-        st.session_state["g_label_temp_existing"] = ""
-        st.session_state["existing_g_mapping_loaded_ok_flag"] = False
-        st.session_state["session_retrieved_ok_flag"] = False
-        st.session_state["g_mapping_source_cache"] = ["",""]
-        st.session_state["original_g_size_cache"] = 0
-        st.session_state["original_g_mapping_ns_dict"] = {}
-        st.session_state["cached_mapping_retrieved_ok_flag"] = False
-        st.session_state["g_label_changed_ok_flag"] = False
-        st.session_state["candidate_g_mapping"] = Graph()
-        # TAB2
-        st.session_state["ns_bound_ok_flag"] = False
-        st.session_state["base_ns_changed_ok_flag"] = False
-        st.session_state["ns_unbound_ok_flag"] = False
-        st.session_state["last_added_ns_list"] = []
-        # TAB3
-        st.session_state["progress_saved_ok_flag"] = False
-        st.session_state["mapping_downloaded_ok_flag"] = False
-        st.session_state["session_saved_ok_flag"] = False
-        st.session_state["session_removed_ok_flag"] = False
-
-        # 🧩 ONTOLOGIES_______________________________________
-        # TAB1
-        st.session_state["g_ontology"] = Graph()
-        st.session_state["g_ontology_label"] = ""
-        st.session_state["g_ontology_loaded_ok_flag"] = False
-        st.session_state["ontology_link"] = ""
-        st.session_state["key_ontology_uploader"] = None
-        st.session_state["ontology_file"] = None
-        st.session_state["g_ontology_from_file_candidate"] = Graph()
-        st.session_state["g_ontology_from_link_candidate"] = Graph()
-        st.session_state["g_ontology_components_dict"] = {}
-        st.session_state["g_ontology_components_tag_dict"] = {}
-        st.session_state["g_ontology_reduced_ok_flag"] = False
-
-        # 📊 SQL DATABASES____________________________________
-        # TAB1
-        st.session_state["db_connections_dict"] = {}
-        st.session_state["db_connection_status_dict"] = {}
-        st.session_state["db_connection_saved_ok_flag"] = False
-        st.session_state["db_connection_removed_ok_flag"] = False
-        #TAB3
-        st.session_state["sql_queries_dict"] = {}
-        st.session_state["sql_query_saved_ok_flag"] = False
-        st.session_state["sql_query_removed_ok_flag"] = False
-
-        # 🛢️ TABULAR DATA
-        # TAB1
-        st.session_state["key_ds_uploader"] = str(uuid.uuid4())
-        st.session_state["ds_files_dict"] = {}
-        st.session_state["large_ds_files_dict"] = {}
-        st.session_state["ds_file_saved_ok_flag"] = False
-        st.session_state["ds_file_removed_ok_flag"] = False
-
-        # 🏗️ BUILD MAPPING
-        # TAB1
-        st.session_state["key_ds_uploader"] = str(uuid.uuid4())
-        st.session_state["last_added_tm_list"] = []
-        st.session_state["tm_label"] = ""
-        st.session_state["tm_saved_ok_flag"] = False
-        # TAB2
-        st.session_state["key_ds_uploader_for_sm"] = str(uuid.uuid4())
-        st.session_state["last_added_sm_list"] = []
-        st.session_state["sm_label"] = ""
-        st.session_state["tm_label_for_sm"] = False
-        st.session_state["sm_template_list"] = []
-        st.session_state["sm_saved_ok_flag"] = False
-        st.session_state["sm_iri"] = None
-        st.session_state["sm_template_prefix"] = ""
-        st.session_state["sm_template_variable_part_flag"] = False
-        st.session_state["multiple_subject_class_list"] = []
-        # TAB3
-        st.session_state["key_ds_uploader_for_pom"] = str(uuid.uuid4())
-        st.session_state["om_template_ns_prefix"] = ""
-        st.session_state["template_om_is_iri_flag"] = False
-        st.session_state["pom_saved_ok_flag"] = False
-        st.session_state["om_template_list"] = []
-        st.session_state["last_added_pom_list"] = []
-        st.session_state["om_template_variable_part_flag"] = False
-        # TAB4
-        st.session_state["tm_deleted_ok_flag"] = False
-        st.session_state["sm_unassigned_ok_flag"] = False
-        st.session_state["g_mapping_cleaned_ok_flag"]  = False
-        st.session_state["pom_deleted_ok_flag"] = False
-
-        # 🔮 MATERIALISE GRAPH
-        # TAB1
-        st.session_state["mkgc_config"] = configparser.ConfigParser()
-        st.session_state["autoconfig_active_flag"] = False
-        st.session_state["autoconfig_generated_ok_flag"] = False
-        st.session_state["config_file_reset_ok_flag_tab1"] = False
-        # TAB2
-        st.session_state["mkgc_g_mappings_dict"] = {}
-        st.session_state["manual_config_enabled_ok_flag"] = False
-        st.session_state["ds_for_mkgcgc_saved_ok_flag"] = False
-        st.session_state["ds_for_mkgcgc_removed_ok_flag"] = False
-        st.session_state["configuration_for_mkgcgc_saved_ok_flag"] = False
-        st.session_state["configuration_for_mkgcgc_removed_ok_flag"] = False
-        st.session_state["additional_mapping_added_ok_flag"] = False
-        st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
-        st.session_state["additional_mapping_for_mkgcgc_saved_ok_flag"] = False
-        st.session_state["additional_mapping_removed_ok_flag"] = False
-        st.session_state["config_file_reset_ok_flag_tab2"] = False
-        # TAB3
-        st.session_state["materialised_g_mapping_file"] = None
-        st.session_state["materialised_g_mapping"] = Graph()
-        st.session_state["graph_materialised_ok_flag"] = False
-
-#_______________________________________________________
-
 # AESTHETICS====================================================================
 #______________________________________________________
 # Function to render headers (UNUSED)
@@ -743,6 +617,155 @@ def get_max_length_for_display():
 #_______________________________________________________
 
 
+# INITILISE PAGES ==============================================================
+#________________________________________________________
+# Function to retrieve namespaces which are needed for our code
+def init_session_state_variables():
+
+    if "session_initialised_ok_flag" not in st.session_state:
+
+        st.session_state["session_initialised_ok_flag"] = True
+
+        # 🌍 GLOBAL CONFIGURATION_________________
+        # TAB1
+        st.session_state["g_mapping"] = Graph()
+        st.session_state["g_label"] = ""
+        st.session_state["g_label_temp_new"] = ""
+        st.session_state["new_g_mapping_created_ok_flag"] = False
+        st.session_state["key_mapping_uploader"] = None
+        st.session_state["g_label_temp_existing"] = ""
+        st.session_state["existing_g_mapping_loaded_ok_flag"] = False
+        st.session_state["session_retrieved_ok_flag"] = False
+        st.session_state["g_mapping_source_cache"] = ["",""]
+        st.session_state["original_g_size_cache"] = 0
+        st.session_state["original_g_mapping_ns_dict"] = {}
+        st.session_state["cached_mapping_retrieved_ok_flag"] = False
+        st.session_state["g_label_changed_ok_flag"] = False
+        st.session_state["candidate_g_mapping"] = Graph()
+        # TAB2
+        st.session_state["ns_bound_ok_flag"] = False
+        st.session_state["base_ns"] = get_default_base_ns()
+        st.session_state["base_ns_changed_ok_flag"] = False
+        st.session_state["ns_unbound_ok_flag"] = False
+        st.session_state["last_added_ns_list"] = []
+        # TAB3
+        st.session_state["progress_saved_ok_flag"] = False
+        st.session_state["mapping_downloaded_ok_flag"] = False
+        st.session_state["session_saved_ok_flag"] = False
+        st.session_state["session_removed_ok_flag"] = False
+
+        # 🧩 ONTOLOGIES_______________________________________
+        # TAB1
+        st.session_state["g_ontology"] = Graph()
+        st.session_state["g_ontology_label"] = ""
+        st.session_state["g_ontology_loaded_ok_flag"] = False
+        st.session_state["ontology_link"] = ""
+        st.session_state["key_ontology_uploader"] = None
+        st.session_state["ontology_file"] = None
+        st.session_state["g_ontology_from_file_candidate"] = Graph()
+        st.session_state["g_ontology_from_link_candidate"] = Graph()
+        st.session_state["g_ontology_components_dict"] = {}
+        st.session_state["g_ontology_components_tag_dict"] = {}
+        st.session_state["g_ontology_reduced_ok_flag"] = False
+
+        # 📊 SQL DATABASES____________________________________
+        # TAB1
+        st.session_state["db_connections_dict"] = {}
+        st.session_state["db_connection_status_dict"] = {}
+        st.session_state["db_connection_saved_ok_flag"] = False
+        st.session_state["db_connection_removed_ok_flag"] = False
+        #TAB3
+        st.session_state["sql_queries_dict"] = {}
+        st.session_state["sql_query_saved_ok_flag"] = False
+        st.session_state["sql_query_removed_ok_flag"] = False
+
+        # 🛢️ TABULAR DATA
+        # TAB1
+        st.session_state["key_ds_uploader"] = str(uuid.uuid4())
+        st.session_state["ds_files_dict"] = {}
+        st.session_state["large_ds_files_dict"] = {}
+        st.session_state["ds_file_saved_ok_flag"] = False
+        st.session_state["ds_file_removed_ok_flag"] = False
+
+        # 🏗️ BUILD MAPPING
+        # TAB1
+        st.session_state["key_ds_uploader"] = str(uuid.uuid4())
+        st.session_state["last_added_tm_list"] = []
+        st.session_state["tm_label"] = ""
+        st.session_state["tm_saved_ok_flag"] = False
+        # TAB2
+        st.session_state["key_ds_uploader_for_sm"] = str(uuid.uuid4())
+        st.session_state["last_added_sm_list"] = []
+        st.session_state["sm_label"] = ""
+        st.session_state["tm_label_for_sm"] = False
+        st.session_state["sm_template_list"] = []
+        st.session_state["sm_saved_ok_flag"] = False
+        st.session_state["sm_iri"] = None
+        st.session_state["sm_template_prefix"] = ""
+        st.session_state["sm_template_variable_part_flag"] = False
+        st.session_state["multiple_subject_class_list"] = []
+        # TAB3
+        st.session_state["key_ds_uploader_for_pom"] = str(uuid.uuid4())
+        st.session_state["om_template_ns_prefix"] = ""
+        st.session_state["template_om_is_iri_flag"] = False
+        st.session_state["pom_saved_ok_flag"] = False
+        st.session_state["om_template_list"] = []
+        st.session_state["last_added_pom_list"] = []
+        st.session_state["om_template_variable_part_flag"] = False
+        # TAB4
+        st.session_state["tm_deleted_ok_flag"] = False
+        st.session_state["sm_unassigned_ok_flag"] = False
+        st.session_state["g_mapping_cleaned_ok_flag"]  = False
+        st.session_state["pom_deleted_ok_flag"] = False
+
+        # 🔮 MATERIALISE GRAPH
+        # TAB1
+        st.session_state["mkgc_config"] = configparser.ConfigParser()
+        st.session_state["autoconfig_active_flag"] = False
+        st.session_state["autoconfig_generated_ok_flag"] = False
+        st.session_state["config_file_reset_ok_flag_tab1"] = False
+        # TAB2
+        st.session_state["mkgc_g_mappings_dict"] = {}
+        st.session_state["manual_config_enabled_ok_flag"] = False
+        st.session_state["ds_for_mkgcgc_saved_ok_flag"] = False
+        st.session_state["ds_for_mkgcgc_removed_ok_flag"] = False
+        st.session_state["configuration_for_mkgcgc_saved_ok_flag"] = False
+        st.session_state["configuration_for_mkgcgc_removed_ok_flag"] = False
+        st.session_state["additional_mapping_added_ok_flag"] = False
+        st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
+        st.session_state["additional_mapping_for_mkgcgc_saved_ok_flag"] = False
+        st.session_state["additional_mapping_removed_ok_flag"] = False
+        st.session_state["config_file_reset_ok_flag_tab2"] = False
+        # TAB3
+        st.session_state["materialised_g_mapping_file"] = None
+        st.session_state["materialised_g_mapping"] = Graph()
+        st.session_state["graph_materialised_ok_flag"] = False
+
+#______________________________________________________
+
+#______________________________________________________
+#Function to initialise page
+def init_page():
+
+    # Automatic detection of dark mode
+    if "dark_mode_flag" not in st.session_state or st.session_state["dark_mode_flag"] is None:
+        st.session_state["dark_mode_flag"] = streamlit_js_eval(js_expressions="window.matchMedia('(prefers-color-scheme: dark)').matches",
+            key="dark_mode")
+
+    # Sidebar logo
+    dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
+    utils.render_sidebar_logo(dark_mode=dark_mode)
+
+    # Import style
+    style_container = st.empty()
+    if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
+        style_container.markdown(import_st_aesthetics(), unsafe_allow_html=True)
+    else:
+        style_container.markdown(import_st_aesthetics_dark_mode(), unsafe_allow_html=True)
+
+    # Initialise session state variables
+    init_session_state_variables()
+#______________________________________________________
 
 
 # PAGE: GLOBAL CONFIGURATION ===================================================

@@ -21,41 +21,9 @@ else:
     st.set_page_config(page_title="3Xmap Studio", layout="wide",
         page_icon="logo/fav_icon_inverse.png")
 
-# Automatic detection of dark mode----------------------------------------------
-if "dark_mode_flag" not in st.session_state or st.session_state["dark_mode_flag"] is None:
-    st.session_state["dark_mode_flag"] = streamlit_js_eval(js_expressions="window.matchMedia('(prefers-color-scheme: dark)').matches",
-        key="dark_mode")
-
-# Header------------------------------------------------------------------------
-# dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
-# header_html = utils.render_header(title="Global Configuration",
-#     description="System-wide configuration: load <b>mapping</b>, manage <b>namespaces</b>, and <b>save work</b>.",
-#     dark_mode=dark_mode)
-# st.markdown(header_html, unsafe_allow_html=True)
-
-# Sidebar logo------------------------------------------------------------------
-dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
-utils.render_sidebar_logo(dark_mode=dark_mode)
-
-# Import style------------------------------------------------------------------
-style_container = st.empty()
-if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
-    style_container.markdown(utils.import_st_aesthetics(), unsafe_allow_html=True)
-else:
-    style_container.markdown(utils.import_st_aesthetics_dark_mode(), unsafe_allow_html=True)
-
-
-
-# Initialise session state variables--------------------------------------------
-utils.initialise_session_state_variables()
-
-# Namespaces--------------------------------------------------------------------
+# Initialise page---------------------------------------------------------------
+utils.init_page()
 RML, QL = utils.get_required_ns_dict().values()
-
-if "base_ns" not in st.session_state and st.session_state["g_label"]:
-    st.session_state["base_ns"] = utils.get_default_base_ns()
-    prefix, ns = utils.get_default_base_ns()   # bind the default ns for the base components
-    st.session_state["g_mapping"].bind(prefix, ns)
 
 # Define on_click functions-----------------------------------------------------
 #TAB1
@@ -72,6 +40,9 @@ def create_new_g_mapping():
     # bind required namespaces___________________________
     for prefix, namespace in utils.get_required_ns_dict().items():
         utils.bind_namespace(prefix, namespace)
+    # bind base namespaces_______________________________
+    prefix, ns = utils.get_default_base_ns()
+    st.session_state["g_mapping"].bind(prefix, ns)
     # bind ontology namespaces______________________________
     ontology_ns_dict = utils.get_g_ns_dict(st.session_state["g_ontology"])
     for prefix, namespace in ontology_ns_dict.items():
