@@ -175,10 +175,15 @@ def import_existing_g_mapping():
     for prefix, namespace in ontology_ns_dict.items():
         utils.bind_namespace(prefix, namespace)
     # store information________________________
-    st.session_state["g_mapping_source_cache"] = ["file", selected_load_file.name]
+    if import_mapping_selected_option == "🌐 URL":
+        st.session_state["g_mapping_source_cache"] = ["URL", selected_mapping_input]
+    elif import_mapping_selected_option == "📁 File":
+        st.session_state["g_mapping_source_cache"] = ["file", selected_mapping_input.name]
     st.session_state["existing_g_mapping_loaded_ok_flag"] = True
     utils.empty_last_added_lists()
     # reset fields___________________________
+    st.session_state["key_mapping_link"] = ""
+    st.session_state["key_import_mapping_selected_option"] = "🌐 URL"
     st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
     st.session_state["key_g_label_temp_existing"] = ""
 
@@ -433,7 +438,7 @@ with tab1:
         st.write("______")
 
 
-    # PURPLE HEADER- Import existing mapping----------------------------------
+    # PURPLE HEADER- IMPORT EXISTING MAPPING----------------------------------
     with col1:
         st.markdown("""<div class="purple-heading">
                 📁 Import Existing Mapping
@@ -456,30 +461,56 @@ with tab1:
         time.sleep(utils.get_success_message_time())
         st.rerun()
 
-    with col1a:
-        selected_load_file = st.file_uploader(f"""🖱️
-        Upload mapping file:*""", type=mapping_format_list, key=st.session_state["key_mapping_uploader"])
-
     with col1b:
-        if selected_load_file:
+        st.write("")
+        import_mapping_selected_option = st.radio("🖱️ Select an option:*", ["🌐 URL", "📁 File"],
+            label_visibility="collapsed", horizontal=True, key="key_import_mapping_selected_option")
 
-            suggested_mapping_label = os.path.splitext(selected_load_file.name)[0]
-            suggested_mapping_label = suggested_mapping_label.replace(' ', '_')
-            suggested_mapping_label = re.sub(r'[<>"{}|\\^`]', '', suggested_mapping_label)
-            suggested_mapping_label = re.sub(r'[.-]+$', '', suggested_mapping_label)
-            suggested_mapping_label = re.sub(r'[^A-Za-z0-9_]', '', suggested_mapping_label)
+    if import_mapping_selected_option == "🌐 URL":
+        with col1a:
+            selected_mapping_input = st.text_input(f"""⌨️ Enter link to mapping:*""", key="key_mapping_link")
 
-            st.session_state["g_label_temp_existing"] = st.text_input("⌨️ Enter mapping label:*",   # just candidate until confirmed
-                key="key_g_label_temp_existing", value=suggested_mapping_label)
-            valid_mapping_label = utils.is_valid_label_hard(st.session_state["g_label_temp_existing"])
 
-            st.session_state["candidate_g_mapping"] = utils.load_mapping_from_file(
-                selected_load_file)   # we load the mapping as a candidate (until confirmed)
+        if selected_mapping_input:
+            suggested_mapping_label = split_uri(selected_mapping_input)[1]
+            suggested_mapping_label = utils.format_suggested_mapping_label(suggested_mapping_label)
+
+            with col1:
+                col1a, col1b = st.columns(2)
+
+            with col1a:
+                st.session_state["g_label_temp_existing"] = st.text_input("⌨️ Enter mapping label:*",   # just candidate until confirmed
+                    key="key_g_label_temp_existing", value=suggested_mapping_label)
+                valid_mapping_label = utils.is_valid_label_hard(st.session_state["g_label_temp_existing"])
+
+            with col1b:
+                st.write("")
+                st.session_state["candidate_g_mapping"] = utils.load_mapping_from_link(
+                    selected_mapping_input)   # we load the mapping as a candidate (until confirmed)
+
+    elif import_mapping_selected_option == "📁 File":
+
+        with col1a:
+            selected_mapping_input = st.file_uploader(f"""🖱️
+            Upload mapping file:*""", type=mapping_format_list, key=st.session_state["key_mapping_uploader"])
+
+        with col1b:
+            if selected_mapping_input:
+
+                suggested_mapping_label = os.path.splitext(selected_mapping_input.name)[0]
+                suggested_mapping_label = utils.format_suggested_mapping_label(suggested_mapping_label)
+
+                st.session_state["g_label_temp_existing"] = st.text_input("⌨️ Enter mapping label:*",   # just candidate until confirmed
+                    key="key_g_label_temp_existing", value=suggested_mapping_label)
+                valid_mapping_label = utils.is_valid_label_hard(st.session_state["g_label_temp_existing"])
+
+                st.session_state["candidate_g_mapping"] = utils.load_mapping_from_file(
+                    selected_mapping_input)   # we load the mapping as a candidate (until confirmed)
 
     # A mapping has not been loaded yet
     if st.session_state["candidate_g_mapping"] and not st.session_state["g_label"]:
 
-        if valid_mapping_label and selected_load_file:
+        if valid_mapping_label and selected_mapping_input:
             if st.session_state["db_connections_dict"] or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]:
                 with col1:
                     overwrite_g_mapping_and_session_checkbox = st.checkbox(
@@ -493,7 +524,7 @@ with tab1:
 
     # A mapping is currently loaded
     elif st.session_state["candidate_g_mapping"] and st.session_state["g_label"]:
-        if valid_mapping_label and selected_load_file:
+        if valid_mapping_label and selected_mapping_input:
             with col1b:
                 st.markdown(f"""<div class="warning-message">
                         ⚠️ Mapping <b>{st.session_state["g_label"]}</b> will be overwritten.
@@ -603,7 +634,24 @@ with tab1:
     # MAPPING INFORMATION BOX--------------------------------------------
     with col3:
         if st.session_state["g_label"]:
-            if st.session_state["g_mapping_source_cache"][0] == "file":
+
+            if st.session_state["g_mapping_source_cache"][0] == "URL":
+                max_length = 40
+                URL_for_display = st.session_state["g_mapping_source_cache"][1]
+                if len(URL_for_display) > max_length:
+                    URL_for_display = "..." + URL_for_display[-max_length:]
+                st.markdown(f"""<div class="gray-preview-message">
+                        <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
+                        style="vertical-align:middle; margin-right:8px; height:20px;">
+                        You are working with mapping
+                        <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
+                        <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
+                            <li>Mapping was loaded from URL <b>{URL_for_display}</b></li>
+                            <li>When loaded, mapping had <b>{st.session_state["original_g_size_cache"]} TriplesMaps</b></li>
+                            <li>Now mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps<b/></li>
+                        </ul></div>""", unsafe_allow_html=True)
+
+            elif st.session_state["g_mapping_source_cache"][0] == "file":
                 st.markdown(f"""<div class="gray-preview-message">
                         <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
                         style="vertical-align:middle; margin-right:8px; height:20px;">
@@ -614,6 +662,7 @@ with tab1:
                             <li>When loaded, mapping had <b>{st.session_state["original_g_size_cache"]} TriplesMaps</b></li>
                             <li>Now mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps<b/></li>
                         </ul></div>""", unsafe_allow_html=True)
+
             else:
                 st.markdown(f"""<div class="gray-preview-message">
                         <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"

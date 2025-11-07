@@ -760,6 +760,40 @@ def full_reset():
 #_____________________________________________________
 
 #_______________________________________________________
+# Function to format the suggested mapping label
+def format_suggested_mapping_label(label):
+
+    max_length = 15
+
+    label = label.replace(' ', '_')
+    label = re.sub(r'[<>"{}|\\^`]', '', label)
+    label = re.sub(r'[.-]+$', '', label)
+    label = re.sub(r'[^A-Za-z0-9_]', '', label)
+    label = label[:max_length] if len(label) > max_length else label
+
+    return label
+
+#_____________________________________________________
+
+#_______________________________________________________
+# Function to load mapping from link
+def load_mapping_from_link(url):
+
+    g = Graph()
+
+    try:
+        g.parse(url, format="turtle")
+        return g
+
+    except Exception as e:
+        st.markdown(f"""<div class="error-message">
+            ❌ Failed to parse <b>URL</b>.
+            <small><b>Full error:</b> {e}</small>
+        </div>""", unsafe_allow_html=True)
+        return None
+#_____________________________________________________
+
+#_______________________________________________________
 # Function to load mapping from file (f is a file object)
 # This should work for all formats in get_g_mapping_file_formats_dict
 # HERE - Check all formats work
@@ -808,7 +842,6 @@ def load_mapping_from_file(f):
             ❌ Unsupported file extension <b>{ext}</b>. # should not happen
         </div>""", unsafe_allow_html=True)
         return False
-
 #_____________________________________________________
 
 #_____________________________________________________
