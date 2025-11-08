@@ -284,6 +284,8 @@ with tab1:
                                 </div>""", unsafe_allow_html=True)
 
 
+    # SUCCESS MESSAGE: CONN TO DB REMOVED
+    # Shows here if there is no Remove Connections purple heaer
     if not st.session_state["db_connections_dict"] and st.session_state["db_connection_removed_ok_flag"]:
         with col1:
             col1a, col1b = st.columns([2,1])
@@ -297,6 +299,7 @@ with tab1:
         st.rerun()
 
     # PURPLE HEADER - REMOVE CONNECTIONS----------------------------------------
+    # Shows only if there are connections to be removed
     if st.session_state["db_connections_dict"]:
         with col1:
             st.write("_______")
@@ -331,7 +334,6 @@ with tab1:
         if "Select all" in connection_labels_to_remove_list:
             connection_labels_to_remove_list = list(st.session_state["db_connections_dict"].keys())
 
-            # create a single info message
             inner_html = ""
             max_length = utils.get_max_length_for_display()[4]
 
@@ -344,7 +346,7 @@ with tab1:
             full_html = f"""<div class="info-message-gray">
                 {inner_html}</div>"""
 
-            if len(connection_labels_to_remove_list) > max_length:   # many sm to remove
+            if len(connection_labels_to_remove_list) > max_length:
                 inner_html += f"""<div style="margin-bottom:4px;">
                     <small>🔌 ... <b>(+{len(connection_labels_to_remove_list[:max_length])})</b></small>
                 </div>"""
@@ -375,12 +377,10 @@ with tab1:
                 utils.update_db_connection_status_dict(connection_label)
                 if st.session_state["db_connection_status_dict"][connection_label][0] == "🚫":
                     not_working_connections_list.append(connection_label)
-                    # if for value in last_added_db_connections_df.iloc[:, -1]:
 
             connection_labels_to_remove_list.remove("Select all failed connections")
             connection_labels_to_remove_list = list(set(connection_labels_to_remove_list + not_working_connections_list))
 
-            # create a single info message
             inner_html = ""
             max_length = utils.get_max_length_for_display()[4]
 
@@ -390,7 +390,7 @@ with tab1:
                     <small><b>🔌 {conn}</b> → {jdbc_str}</small>
                 </div>"""
 
-            if len(connection_labels_to_remove_list) > max_length:   # many sm to remove
+            if len(connection_labels_to_remove_list) > max_length:
                 inner_html += f"""<div style="margin-bottom:4px;">
                     <small>🔌 ... <b>(+{len(connection_labels_to_remove_list[:max_length])})</b></small>
                 </div>"""
@@ -420,7 +420,7 @@ with tab1:
                         </div>""", unsafe_allow_html=True)
 
         elif connection_labels_to_remove_list:
-            # create a single info message
+
             inner_html = ""
             max_length = utils.get_max_length_for_display()[4]
 
@@ -430,7 +430,7 @@ with tab1:
                     <small><b>🔌 {conn}</b> → {jdbc_str}</small>
                 </div>"""
 
-            if len(connection_labels_to_remove_list) > max_length:   # many sm to remove
+            if len(connection_labels_to_remove_list) > max_length:
                 inner_html += f"""<div style="margin-bottom:4px;">
                     <small>🔌 ... <b>(+{len(connection_labels_to_remove_list[:max_length])})</b></small>
                 </div>"""
@@ -446,6 +446,7 @@ with tab1:
                     </div>""", unsafe_allow_html=True)
 
     # PURPLE HEADER: CONN INFORMATION-------------------------------------------
+    # Shows only if there are connections
     if st.session_state["db_connections_dict"]:
         with col1:
             st.write("______")
@@ -512,7 +513,6 @@ with tab2:
 
         with col2:
             col2a, col2b = st.columns([0.5, 2])
-
 
         with col2b:
             st.write("")
@@ -586,7 +586,6 @@ with tab2:
 
         with col1:
             col1a, col1b = st.columns([2,1])
-
 
         with col1a:
             list_to_choose = list(reversed(list(st.session_state["db_connections_dict"].keys())))
@@ -689,7 +688,6 @@ with tab2:
                     conn.close()
 
 
-
 #_______________________________________________________________________________
 # PANEL: VIEWS
 with tab3:
@@ -772,8 +770,7 @@ with tab3:
                     st.write("")
                     st.dataframe(sql_queries_df, hide_index=True)
 
-    # PURPLE HEADER: QUERY DATA-------------------------------------------------
-    if st.session_state["db_connections_dict"]:
+        # PURPLE HEADER: QUERY DATA---------------------------------------------
         with col1:
             st.markdown("""<div class="purple-heading">
                     🖼️ Create View
@@ -899,6 +896,8 @@ with tab3:
                             st.write("")
                         st.dataframe(limited_df.head(max_rows), hide_index=True)
 
+    # SUCCESS MESSAGE: VIEW REMOVED---------------------------------------------
+    # Shows here if no Remove views purple header
     if not st.session_state["sql_queries_dict"] and st.session_state["sql_query_removed_ok_flag"]:
         with col1:
             col1a, col1b = st.columns([2,1])
@@ -965,7 +964,8 @@ with tab3:
                     st.button("Remove", key="key_remove_views_button", on_click=remove_views)
 
 
-    #PURPLE HEADER: CONSULT SAVED VIEWS-----------------------------------------
+    # PURPLE HEADER: CONSULT SAVED VIEWS----------------------------------------
+    # Shows only if there are connections
     if st.session_state["sql_queries_dict"]:
         with col1:
             st.write("________")
@@ -1021,7 +1021,6 @@ with tab3:
                 if sql_query_to_consult != "Select query":
 
                     with col1:
-
                         st.markdown(f"""<div class="info-message-blue">
                                 🖼️ <b style="color:#F63366;"> View</b>
                                 <small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<b>Query:</b>
