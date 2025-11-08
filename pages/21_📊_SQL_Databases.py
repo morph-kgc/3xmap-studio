@@ -11,7 +11,7 @@ import pyodbc
 import io
 from streamlit_js_eval import streamlit_js_eval
 
-# Config-----------------------------------
+# Config------------------------------------------------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
     st.set_page_config(page_title="3Xmap Studio", layout="wide",
         page_icon="logo/fav_icon.png")
@@ -23,7 +23,7 @@ else:
 utils.init_page()
 RML, QL = utils.get_required_ns_dict().values()
 
-#define on_click functions-----------------------------------------
+# Define on_click functions-----------------------------------------
 # TAB1
 def update_db_connections():
     # update conenction status dict_________________________-
@@ -108,15 +108,12 @@ def remove_views():
 
 
 # START PAGE_____________________________________________________________________
-
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
-
 tab1, tab2, tab3 = st.tabs(["Connect to Database", "Display Data", "Create View"])
 
-
-#________________________________________________
-# MANAGE SQL DATA SOURCES
+#_______________________________________________________________________________
+# PANEL: CONNECT TO DATABASE
 with tab1:
 
     col1, col2 = st.columns([2,1.5])
@@ -177,14 +174,15 @@ with tab1:
                 🐢 This pannel can be slow <small>if there are <b>failed connections</b></small>.
                     </div>""", unsafe_allow_html=True)
 
+        # Option to show all connections (if too many)
+        with col2b:
+            st.write("")
+            if st.session_state["db_connections_dict"] and len(st.session_state["db_connections_dict"]) > max_length:
+                with st.expander("🔎 Show all connections"):
+                    st.write("")
+                    st.dataframe(db_connections_df, hide_index=True)
 
-        #Option to show all connections (if too many)
-        if st.session_state["db_connections_dict"] and len(st.session_state["db_connections_dict"]) > max_length:
-            with st.expander("🔎 Show all connections"):
-                st.write("")
-                st.dataframe(db_connections_df, hide_index=True)
-
-    # CONNECTION STATUS UPDATED-------------------------------------------------
+    # SUCCESS MESSAGE: UPDATE CONN STATUS---------------------------------------
     if st.session_state["db_connection_status_updated_ok_flag"]:
         with col1a:
             st.markdown(f"""<div class="success-message-flag">
@@ -194,7 +192,7 @@ with tab1:
         time.sleep(utils.get_success_message_time())
         st.rerun()
 
-    # PURPLE HEADING - ADD NEW CONNECTION
+    # PURPLE HEADER: ADD NEW CONNECTION-----------------------------------------
     with col1:
         st.markdown("""<div class="purple-heading">
                 🔌 Add Connection to Database
@@ -298,9 +296,7 @@ with tab1:
         time.sleep(utils.get_success_message_time())
         st.rerun()
 
-
-
-    # PURPLE HEADING - REMOVE CONNECTION
+    # PURPLE HEADER - REMOVE CONNECTIONS----------------------------------------
     if st.session_state["db_connections_dict"]:
         with col1:
             st.write("_______")
@@ -344,7 +340,7 @@ with tab1:
                 inner_html += f"""<div style="margin-bottom:4px;">
                     <small><b>🔌 {conn}</b> → {jdbc_str}</small>
                 </div>"""
-            # wrap it all in a single info box
+
             full_html = f"""<div class="info-message-gray">
                 {inner_html}</div>"""
 
@@ -370,7 +366,6 @@ with tab1:
                     st.markdown(f"""<div class="info-message-gray">
                             {inner_html}
                         </div>""", unsafe_allow_html=True)
-
 
         elif "Select all failed connections" in connection_labels_to_remove_list:
 
@@ -450,8 +445,7 @@ with tab1:
                         {inner_html}
                     </div>""", unsafe_allow_html=True)
 
-
-    # PURPLE HEADING - CONSULT CONNECTION
+    # PURPLE HEADER: CONN INFORMATION-------------------------------------------
     if st.session_state["db_connections_dict"]:
         with col1:
             st.write("______")
@@ -498,8 +492,8 @@ with tab1:
                         st.write("")
 
 
-#________________________________________________
-# DISPLAY DATA
+#_______________________________________________________________________________
+# PANEL: DISPLAY DATA
 with tab2:
 
     col1, col2 = st.columns([2,1.5])
@@ -573,14 +567,16 @@ with tab2:
                     🐢 This pannel can be slow <small>if there are <b>failed connections</b></small>.
                         </div>""", unsafe_allow_html=True)
 
-            #Option to show all connections (if too many)
-            if st.session_state["db_connections_dict"] and len(st.session_state["db_connections_dict"]) > max_length:
-                with st.expander("🔎 Show all connections"):
-                    st.write("")
-                    st.dataframe(db_connections_df, hide_index=True)
+            # Option to show all connections (if too many)
+            with col2b:
+                st.write("")
+                if st.session_state["db_connections_dict"] and len(st.session_state["db_connections_dict"]) > max_length:
+                    with st.expander("🔎 Show all connections"):
+                        st.write("")
+                        st.dataframe(db_connections_df, hide_index=True)
 
 
-        #PURPLE HEADING - VIEW TABLE
+        #PURPLE HEADING: VIEW TABLE---------------------------------------------
         with col1:
             st.write("")
             st.markdown("""<div class="purple-heading">
@@ -614,8 +610,8 @@ with tab2:
             except:
                 with col1a:
                     st.markdown(f"""<div class="error-message">
-                        ❌ The connection <b>{connection_label}</b> is not working.
-                        Please remove it and save it again in the <b>Manage Connections</b> pannel.
+                        ❌ The connection <b>{connection_for_table_display}</b> is not working.
+                        <small>Please check it in the <b>Manage Connections</b> pannel.</small>
                     </div>""", unsafe_allow_html=True)
                     st.write("")
                 connection_ok_flag = False
@@ -694,8 +690,8 @@ with tab2:
 
 
 
-#________________________________________________
-# VIEWS
+#_______________________________________________________________________________
+# PANEL: VIEWS
 with tab3:
 
     col1, col2 = st.columns([2,1.5])
@@ -770,13 +766,13 @@ with tab3:
                 st.dataframe(last_sql_queries_df, hide_index=True)
                 st.write("")
 
-            #Option to show all connections (if too many)
+            #Option to show all views (if too many)
             if st.session_state["sql_queries_dict"] and len(st.session_state["sql_queries_dict"]) > max_length:
                 with st.expander("🔎 Show all saved views"):
                     st.write("")
                     st.dataframe(sql_queries_df, hide_index=True)
 
-    #PURPLE HEADING - QUERY DATA
+    # PURPLE HEADER: QUERY DATA-------------------------------------------------
     if st.session_state["db_connections_dict"]:
         with col1:
             st.markdown("""<div class="purple-heading">
@@ -832,8 +828,8 @@ with tab3:
             except:
                 with col1a:
                     st.markdown(f"""<div class="error-message">
-                        ❌ The connection <b>{connection_label}</b> is not working.
-                        Please remove it and save it again in the <b>Manage Connections</b> pannel.
+                        ❌ The connection <b>{connection_for_query}</b> is not working.
+                        <small>Please check it in the <b>Manage Connections</b> pannel.</small>
                     </div>""", unsafe_allow_html=True)
                     st.write("")
                 connection_ok_flag = False
@@ -916,7 +912,7 @@ with tab3:
         st.rerun()
 
 
-    #PURPLE HEADING - REMOVE VIEW
+    # PURPLE HEADER: REMOVE VIEW------------------------------------------------
     if st.session_state["sql_queries_dict"]:
         with col1:
             st.write("_________")
@@ -969,7 +965,7 @@ with tab3:
                     st.button("Remove", key="key_remove_views_button", on_click=remove_views)
 
 
-    #PURPLE HEADING - CONSULT SAVED VIEWS
+    #PURPLE HEADER: CONSULT SAVED VIEWS-----------------------------------------
     if st.session_state["sql_queries_dict"]:
         with col1:
             st.write("________")
@@ -1008,7 +1004,7 @@ with tab3:
                 with col1a:
                     st.markdown(f"""<div class="error-message">
                         ❌ The connection <b>{connection_label}</b> is not working.
-                        Please check it in the <b>Manage Connections</b> pannel.
+                        <small>Please check it in the <b>Manage Connections</b> pannel.</small>
                     </div>""", unsafe_allow_html=True)
                     st.write("")
                 connection_ok_flag = False

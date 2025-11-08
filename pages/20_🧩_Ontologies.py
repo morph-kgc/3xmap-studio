@@ -555,8 +555,6 @@ with tab2:
                 if not isinstance(o, BNode) and o not in superclass_dict.values():
                     superclass_dict[o.split("/")[-1].split("#")[-1]] = o
 
-            tm_dict = utils.get_tm_dict()
-
             list_to_choose = ["No filter"]
             if superclass_dict:
                 list_to_choose.append("Superclass")

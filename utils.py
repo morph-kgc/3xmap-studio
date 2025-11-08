@@ -619,7 +619,7 @@ def get_max_length_for_display():
 #_______________________________________________________
 
 
-# INITILISE PAGES ==============================================================
+# INITIALISE PAGES =============================================================
 #________________________________________________________
 # Function to retrieve namespaces which are needed for our code
 def init_session_state_variables():
@@ -1491,8 +1491,6 @@ def is_valid_filename(filename):  #HEREIGO
 #______________________________________________________
 
 
-# HEREIGO - REFACTORING
-
 # PAGE: ONTOLOGIES==============================================================
 #_________________________________________________________
 # Function to get the ontology base iri
@@ -1513,11 +1511,11 @@ def get_ontology_base_iri(g_ont):
     return base_iri_list
 #________________________________________________________
 
-# GLOBAL CONFIGURATION - LOAD ONTOLOGY ----------------------------------------------------------
-#___________________________________________________________________________________
-#Function to parse an ontology to an initially empty graph
+#______________________________________________________
+# Function to parse an ontology to an initially empty graph
 @st.cache_resource
 def parse_ontology(source):
+
     # If source is a file-like object
     if isinstance(source, IOBase):
         content = source.read()
@@ -1530,6 +1528,7 @@ def parse_ontology(source):
                     return [g, fmt]
             except:
                 continue
+
         # Try auto-detecting format
         try:
             g = Graph()
@@ -1549,6 +1548,7 @@ def parse_ontology(source):
                 return [g, fmt]
         except:
             continue
+
     # Try auto-detecting format
     try:
         g = Graph()
@@ -1568,6 +1568,7 @@ def parse_ontology(source):
                 return [g, fmt]
         except:
             continue
+
     # Final fallback: auto-detect from downloaded content
     try:
         response = requests.get(source)
@@ -1579,12 +1580,12 @@ def parse_ontology(source):
         pass
 
     return [Graph(), None]
+#______________________________________________________
 
-#___________________________________________________________________________________
-
-#___________________________________________________________________________________
+#______________________________________________________
 #Function to check whether an ontology is valid
 def is_valid_ontology(g):
+
     try:
         # check for presence of OWL or RDFS classes
         classes = list(g.subjects(RDF.type, OWL.Class)) + list(g.subjects(RDF.type, RDFS.Class))
@@ -1592,14 +1593,16 @@ def is_valid_ontology(g):
             list(g.subjects(RDF.type, OWL.ObjectProperty)) + list(g.subjects(RDF.type, OWL.AnnotationProperty)))
         return bool(classes or properties)  # consider it valid if it defines at least one class or property
 
-    except:           # if failed to parse ontology
+    except:
         return False
-#___________________________________________________________________________________
+#______________________________________________________
 
-#___________________________________________________________________________________
+#______________________________________________________
 #Function to get the human-readable name of an ontology
 def get_ontology_human_readable_name(g, source_link=None, source_file=None):
+
     g_ontology_iri = next(g.subjects(RDF.type, OWL.Ontology), None)
+
     if g_ontology_iri:     # first option: look for ontology self-contained label
         g_ontology_label = (
             g.value(g_ontology_iri, RDFS.label) or
@@ -1607,21 +1610,25 @@ def get_ontology_human_readable_name(g, source_link=None, source_file=None):
             g.value(g_ontology_iri, DCTERMS.title) or
             split_uri(g_ontology_iri)[1])    # look for ontology label; if there isnt one just select the ontology iri
         return g_ontology_label
+
     elif source_link:               # if ontology is not self-labeled, use source as label (link)
         try:
             return split_uri(source_link)[1]
         except:
             return source_link.rstrip('/').split('/')[-1]
+
     elif source_file:               # if ontology is not self-labeled, use source as label (file)
         return os.path.splitext(source_file.name)[0]
+
     else:                                 # if no source is given, auto-label using subject of first triple (if it is iri)
         for s in g.subjects(None, None):
             if isinstance(s, URIRef):
                 return "Auto-label: " + split_uri(s)[1]
-    return "Unlabelled ontology"  #if nothing works
-#___________________________________________________________________________________
 
-#___________________________________________________________________________________
+    return "Unlabelled ontology"  #if nothing works
+#______________________________________________________
+
+#______________________________________________________
 #Function to get the human-readable name of an ontology
 def get_ontology_tag(g_label):
 
@@ -1633,13 +1640,14 @@ def get_ontology_tag(g_label):
     if g_ontology_iri:
         prefix = g.namespace_manager.compute_qname(g_ontology_iri)[0]
         if not any(prefix.startswith(tag) for tag in forbidden_tags_beginning):
-            return prefix
+            return prefix   # return prefix of the base ns
 
-    return g_label[:4]
-#___________________________________________________________________________________
+    return g_label[:4]    # return 4 first characters of ont name
+#______________________________________________________
 
-#___________________________________________________________________________________
-#Function to get the human-readable name of an ontology
+#______________________________________________________
+# Function to get the human-readable name of an ontology
+# Ensures uniqueness by adding numeric suffix
 def get_unique_ontology_tag(g_label):
 
     tag = get_ontology_tag(g_label)
@@ -1652,9 +1660,9 @@ def get_unique_ontology_tag(g_label):
         i += 1
 
     return f"{tag}{i}"
-#___________________________________________________________________________________
+#______________________________________________________
 
-#___________________________________________________________________________________
+#______________________________________________________
 #Function to get all allowed formats for ontology files
 def get_g_ontology_file_formats_dict():
 
@@ -1663,13 +1671,13 @@ def get_g_ontology_file_formats_dict():
     "xml": ".xml", "pretty-xml": ".xml", "trix": ".trix"}
 
     return allowed_format_dict
+#______________________________________________________
 
-#___________________________________________________________________________________
-
-#___________________________________________________________________________________
-#Function to check whether two ontologies overlap
-#Ontology overlap definition - if they share rdfs:label
+#______________________________________________________
+# Function to check whether two ontologies overlap
+# Ontology overlap definition - if they share rdfs:label
 def check_ontology_overlap(g1, g2):
+
     labels1 = set()
     for s, p, o in g1.triples((None, RDFS.label, None)):
         labels1.add(str(o))
@@ -1680,23 +1688,246 @@ def check_ontology_overlap(g1, g2):
 
     common = labels1 & labels2
     return bool(common)
-#___________________________________________________________________________________
+#______________________________________________________
 
-#___________________________________________________________________________________
-#Function to find duplicated namespaces
-def get_duplicated_ns(d):
-    value_to_keys = {}
-    for key, value in d.items():
-        if value in value_to_keys:
-            value_to_keys[value].append(key)
+
+# PAGE: SQL DATABASES===========================================================
+#______________________________________________________
+# Funtion to get jdbc str from connection
+def get_jdbc_str(conn):
+
+    if conn in st.session_state["db_connections_dict"]:
+        [engine, host, port, database, user, password] = st.session_state["db_connections_dict"][conn]
+
+        if engine == "Oracle":
+            jdbc_str = f"jdbc:oracle:thin:@{host}:{port}:{database}"
+        elif engine == "SQL Server":
+            jdbc_str = f"jdbc:sqlserver://{host}:{port};databaseName={database}"
+        elif engine == "PostgreSQL":
+            jdbc_str = f"jdbc:postgresql://{host}:{port}/{database}"
+        elif engine == "MySQL":
+            jdbc_str = f"jdbc:mysql://{host}:{port}/{database}"
+        elif engine =="MariaDB":
+            jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
         else:
-            value_to_keys[value] = [key]
+            return None
 
-    # Filter to values that appear more than once
-    duplicates = {value: keys for value, keys in value_to_keys.items() if len(keys) > 1}
-    return duplicates
+    else:
+        return None
+
+    return jdbc_str
+#______________________________________________________
+
+#______________________________________________________
+# Funtion to make a connection to a database
+def make_connection_to_db(connection_label):
+    engine, host, port, database, user, password = st.session_state["db_connections_dict"][connection_label]
+    timeout = 3
+
+    if engine == "PostgreSQL":
+        conn = psycopg.connect(host=host, port=port,
+            dbname=database, user=user, password=password,
+            connect_timeout=timeout)
+
+    elif engine in ("MySQL", "MariaDB"):
+        conn = pymysql.connect(host=host, port=int(port), user=user,
+            password=password, database=database, connect_timeout=timeout)
+
+    elif engine == "Oracle":
+        conn = oracledb.connect(user=user, password=password,
+            dsn=f"{host}:{port}/{database}", timeout=timeout)
+
+    elif engine == "SQL Server":
+        conn = pyodbc.connect(
+            f"DRIVER={{SQL Server}};"
+            f"SERVER={host},{port};"
+            f"DATABASE={database};"
+            f"UID={user};"
+            f"PWD={password}", timeout=timeout)
+
+    else:
+        conn = None
+
+    return conn
+#______________________________________________________
+
+#______________________________________________________
+# Funtion to update the connection status dict
+def update_db_connection_status_dict(conn_label):
+
+    try:
+        conn = utils.make_connection_to_db(conn_label)
+        if conn:
+            conn.close()
+        st.session_state["db_connection_status_dict"][conn_label] = ["✔️", ""]
+
+    except Exception as e:
+        st.session_state["db_connection_status_dict"][conn_label] = ["🚫", e]
+
+#______________________________________________________
+
 #________________________________________________________
+# Dictionary with default ports for the different engines
+def get_default_ports():
 
+    default_ports_dict = {"PostgreSQL": 5432, "MySQL": 3306,
+    "MariaDB": 3306, "SQL Server": 1433, "Oracle": 1521}
+
+    return default_ports_dict
+#______________________________________________________
+
+#________________________________________________________
+# Funtion with the default users for the different engines
+def get_default_users():
+
+    default_users_dict = {"PostgreSQL": "postgres", "MySQL": "root",
+    "MariaDB": "root", "SQL Server": "sa", "Oracle": "system"}
+
+    return default_users_dict
+#______________________________________________________
+
+#________________________________________________________
+# Funtion to check connection to a database
+def try_connection(db_connection_type, host, port, database, user, password):
+
+    if db_connection_type == "PostgreSQL":
+        try:
+            conn = psycopg.connect(host=host, port=port,
+                dbname=database, user=user, password=password)
+            conn.close() # optional: close immediately or keep open for queries
+            return True
+
+        except psycopg.OperationalError as e:
+            st.markdown(f"""<div class="error-message">
+                ❌ <b>Connection failed.</b><br>
+                <small><b>Full error</b>: {e.args[0]} </small>
+            </div>""", unsafe_allow_html=True)
+            st.write("")
+            return False
+
+        except Exception as e:
+            st.markdown(f"""<div class="error-message">
+                ❌ <b>Unexpected error.</b><br>
+                <small><b>Full error</b>: {str(e)} </small>
+            </div>""", unsafe_allow_html=True)
+            st.write("")
+            return False
+
+    if db_connection_type in ("MySQL", "MariaDB"):
+        try:
+            conn = pymysql.connect(host=host, port=int(port), user=user,
+                password=password, database=database)
+            conn.close() # optional: close immediately or keep open for queries
+            return True
+
+        except pymysql.MySQLError as e:
+            st.markdown(f"""<div class="error-message">
+                ❌ <b>Connection failed.</b><br>
+                <small><b>Full error</b>: {e.args[0]} </small>
+            </div>""", unsafe_allow_html=True)
+            st.write("")
+            return False
+
+        except Exception as e:
+            st.markdown(f"""<div class="error-message">
+                ❌ <b>Unexpected error.</b><br>
+                <small><b>Full error</b>: {str(e)} </small>
+            </div>""", unsafe_allow_html=True)
+            st.write("")
+            return False
+
+    if db_connection_type == "Oracle":
+        try:
+            conn = oracledb.connect(user=user, password=password,
+                dsn=f"{host}:{port}/{database}")
+            conn.close()  # optional: close immediately or keep open for queries
+            return True
+
+        except oracledb.OperationalError as e:
+            st.markdown(f"""<div class="error-message">
+                ❌ <b>Connection failed.</b><br>
+                <small><b>Full error</b>: {e.args[0]} </small>
+            </div>""", unsafe_allow_html=True)
+            st.write("")
+            return False
+
+        except Exception as e:
+            st.markdown(f"""<div class="error-message">
+                ❌ <b>Unexpected error.</b><br>
+                <small><b>Full error</b>: {str(e)} </small>
+            </div>""", unsafe_allow_html=True)
+            st.write("")
+            return False
+
+    if db_connection_type == "SQL Server":
+        try:
+            conn = pyodbc.connect(
+                f"DRIVER={{SQL Server}};"
+                f"SERVER={host},{port};"
+                f"DATABASE={database};"
+                f"UID={user};"
+                f"PWD={password}")
+            conn.close()
+            return True
+
+        except pyodbc.OperationalError as e:
+            st.markdown(f"""<div class="error-message">
+                ❌ <b>Connection failed.</b><br>
+                <small><b>Full error</b>: {e.args[0]} </small>
+            </div>""", unsafe_allow_html=True)
+            st.write("")
+            return False
+
+        except Exception as e:
+            st.markdown(f"""<div class="error-message">
+                ❌ <b>Unexpected error.</b><br>
+                <small><b>Full error</b>: {str(e)} </small>
+            </div>""", unsafe_allow_html=True)
+            st.write("")
+            return False
+#______________________________________________________
+
+#________________________________________________________
+# Funtion to get all tables in a database
+def get_tables_from_db(engine, cur, database):
+
+    if engine == "PostgreSQL":
+        cur.execute("""
+            SELECT table_name FROM information_schema.tables
+            WHERE table_schema = 'public' AND table_type = 'BASE TABLE';
+        """)
+
+    elif engine in ("MySQL", "MariaDB"):
+        cur.execute(f"""
+            SELECT table_name FROM information_schema.tables
+            WHERE table_schema = '{database}' AND table_type = 'BASE TABLE';
+        """)
+
+    elif engine == "Oracle":
+        cur.execute("""
+            SELECT table_name
+            FROM all_tables
+            WHERE owner NOT IN (
+                'SYS', 'SYSTEM', 'XDB', 'CTXSYS', 'MDSYS', 'ORDDATA', 'ORDSYS',
+                'OUTLN', 'DBSNMP', 'APPQOSSYS', 'WMSYS', 'OLAPSYS', 'EXFSYS',
+                'DVSYS', 'GGSYS', 'OJVMSYS', 'LBACSYS', 'AUDSYS',
+                'REMOTE_SCHEDULER_AGENT')""")  # filter out system tables
+
+    elif engine == "SQL Server":
+        cur.execute("""
+            SELECT TABLE_NAME
+            FROM INFORMATION_SCHEMA.TABLES
+            WHERE TABLE_TYPE = 'BASE TABLE'
+              AND TABLE_CATALOG = ?
+        """, (database,))
+
+    else:
+        pass
+#______________________________________________________
+
+
+
+# HEREIGO - REFACTORING
 
 #________________________________________________________
 # Funtion to get the dictionary of the TriplesMaps
@@ -1734,7 +1965,7 @@ def get_ls(tm_label):
 #_________________________________________________
 
 #_________________________________________________
-# Funtion to get the logical soruce of a TriplesMap
+# Funtion to get the logical source of a TriplesMap
 def get_ds(tm_label):
     tm_dict = get_tm_dict()
     tm_iri = tm_dict[tm_label]
@@ -1775,32 +2006,6 @@ def remove_triplesmap(tm_label):
 
     g.remove((tm_iri, None, None))   # remove tm triple
 #______________________________________________________
-
-#_________________________________________________
-# Funtion to get jdbc str from connection
-def get_jdbc_str(conn):
-
-    if conn in st.session_state["db_connections_dict"]:
-        [engine, host, port, database, user, password] = st.session_state["db_connections_dict"][conn]
-
-        if engine == "Oracle":
-            jdbc_str = f"jdbc:oracle:thin:@{host}:{port}:{database}"
-        elif engine == "SQL Server":
-            jdbc_str = f"jdbc:sqlserver://{host}:{port};databaseName={database}"
-        elif engine == "PostgreSQL":
-            jdbc_str = f"jdbc:postgresql://{host}:{port}/{database}"
-        elif engine == "MySQL":
-            jdbc_str = f"jdbc:mysql://{host}:{port}/{database}"
-        elif engine =="MariaDB":
-            jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
-        else:
-            return None
-
-    else:
-        return None
-
-    return jdbc_str
-#_________________________________________________
 
 #______________________________________________________
 # Function get the column list of the data source of a tm
@@ -2095,40 +2300,6 @@ def get_sm_dict():
     return sm_dict
 #___________________________________________
 
-
-# #________________________________________________________
-# # Funtion to get exclusions when looking for predicates in an ontology
-# def get_exclusion_list_for_p_search():
-#
-#     excluded_types = {
-#         # OWL base types
-#         OWL.Class, OWL.Ontology, OWL.Restriction, OWL.FunctionalProperty,
-#         OWL.AnnotationProperty, OWL.ObjectProperty, OWL.DatatypeProperty,
-#         OWL.SymmetricProperty, OWL.TransitiveProperty, OWL.InverseFunctionalProperty,
-#
-#         # RDF/RDFS base types
-#         RDF.Property, RDF.Statement, RDF.List, RDF.Seq, RDF.Bag,
-#         RDF.Alt, RDF.XMLLiteral, RDFS.Class, RDFS.Resource, RDFS.Container,
-#         RDFS.ContainerMembershipProperty,
-#         URIRef("http://www.w3.org/2000/01/rdf-schema#Datatype"),
-#
-#         # Legacy or datatype URIs
-#         XSD.string, XSD.integer, XSD.date, XSD.boolean, XSD.float, XSD.double}
-#
-#     return excluded_types
-# #________________________________________________________
-
-# #________________________________________________________
-# # Funtion to identify the ontology from which a predicate was taken
-# def get_ontology_identifier(ns):
-#
-#     parts = ns.rstrip("/").split("/")
-#     if len(parts) >= 2:
-#         return parts[-2]  # Last segment
-#     return None
-#
-# #________________________________________________________
-
 #______________________________________________
 # Funtion to get list of datatypes
 def get_datatypes_dict():
@@ -2240,213 +2411,6 @@ def get_pom_dict():
     return pom_dict
 #___________________________________________
 
-#________________________________________________________
-# Funtion to make a connection to a database
-def make_connection_to_db(connection_label):
-    engine, host, port, database, user, password = st.session_state["db_connections_dict"][connection_label]
-    timeout = 3
-
-    if engine == "PostgreSQL":
-        conn = psycopg.connect(host=host, port=port,
-            dbname=database, user=user, password=password,
-            connect_timeout=timeout)
-
-    elif engine in ("MySQL", "MariaDB"):
-        conn = pymysql.connect(host=host, port=int(port), user=user,
-            password=password, database=database, connect_timeout=timeout)
-
-    elif engine == "Oracle":
-        conn = oracledb.connect(user=user, password=password,
-            dsn=f"{host}:{port}/{database}", timeout=timeout)
-
-    elif engine == "SQL Server":
-        conn = pyodbc.connect(
-            f"DRIVER={{SQL Server}};"
-            f"SERVER={host},{port};"
-            f"DATABASE={database};"
-            f"UID={user};"
-            f"PWD={password}", timeout=timeout)
-
-    else:
-        conn = None
-
-    return conn
-
-#___________________________________________
-
-#________________________________________________________
-# Funtion to update the connection status dict
-def update_db_connection_status_dict(connection_label):
-
-    try:
-        conn = utils.make_connection_to_db(connection_label)
-        if conn:
-            conn.close() # optional: close immediately or keep open for queries
-        st.session_state["db_connection_status_dict"][connection_label] = ["✔️", ""]
-
-    except Exception as e:
-        st.session_state["db_connection_status_dict"][connection_label] = ["🚫", e]
-
-#___________________________________________
-
-#________________________________________________________
-# Dictionary with default ports for the different engines
-def get_default_ports():
-
-    default_ports_dict = {"PostgreSQL": 5432, "MySQL": 3306,
-    "MariaDB": 3306, "SQL Server": 1433, "Oracle": 1521}
-
-    return default_ports_dict
-#___________________________________________
-
-#________________________________________________________
-# Funtion with the default users for the different engines
-def get_default_users():
-
-    default_users_dict = {"PostgreSQL": "postgres", "MySQL": "root",
-    "MariaDB": "root", "SQL Server": "sa", "Oracle": "system"}
-
-    return default_users_dict
-#___________________________________________
-
-#________________________________________________________
-# Funtion to check connection to a database
-def try_connection(db_connection_type, host, port, database, user, password):
-
-    if db_connection_type == "PostgreSQL":
-        try:
-            conn = psycopg.connect(host=host, port=port,
-                dbname=database, user=user, password=password)
-            conn.close() # optional: close immediately or keep open for queries
-            return True
-
-        except psycopg.OperationalError as e:
-            st.markdown(f"""<div class="error-message">
-                ❌ <b>Connection failed.</b><br>
-                <small><b>Full error</b>: {e.args[0]} </small>
-            </div>""", unsafe_allow_html=True)
-            st.write("")
-            return False
-
-        except Exception as e:
-            st.markdown(f"""<div class="error-message">
-                ❌ <b>Unexpected error.</b><br>
-                <small><b>Full error</b>: {str(e)} </small>
-            </div>""", unsafe_allow_html=True)
-            st.write("")
-            return False
-
-    if db_connection_type in ("MySQL", "MariaDB"):
-        try:
-            conn = pymysql.connect(host=host, port=int(port), user=user,
-                password=password, database=database)
-            conn.close() # optional: close immediately or keep open for queries
-            return True
-
-        except pymysql.MySQLError as e:
-            st.markdown(f"""<div class="error-message">
-                ❌ <b>Connection failed.</b><br>
-                <small><b>Full error</b>: {e.args[0]} </small>
-            </div>""", unsafe_allow_html=True)
-            st.write("")
-            return False
-
-        except Exception as e:
-            st.markdown(f"""<div class="error-message">
-                ❌ <b>Unexpected error.</b><br>
-                <small><b>Full error</b>: {str(e)} </small>
-            </div>""", unsafe_allow_html=True)
-            st.write("")
-            return False
-
-    if db_connection_type == "Oracle":
-        try:
-            conn = oracledb.connect(user=user, password=password,
-                dsn=f"{host}:{port}/{database}")
-            conn.close()  # optional: close immediately or keep open for queries
-            return True
-
-        except oracledb.OperationalError as e:
-            st.markdown(f"""<div class="error-message">
-                ❌ <b>Connection failed.</b><br>
-                <small><b>Full error</b>: {e.args[0]} </small>
-            </div>""", unsafe_allow_html=True)
-            st.write("")
-            return False
-
-        except Exception as e:
-            st.markdown(f"""<div class="error-message">
-                ❌ <b>Unexpected error.</b><br>
-                <small><b>Full error</b>: {str(e)} </small>
-            </div>""", unsafe_allow_html=True)
-            st.write("")
-            return False
-
-    if db_connection_type == "SQL Server":
-        try:
-            conn = pyodbc.connect(
-                f"DRIVER={{SQL Server}};"
-                f"SERVER={host},{port};"
-                f"DATABASE={database};"
-                f"UID={user};"
-                f"PWD={password}")
-            conn.close()
-            return True
-
-        except pyodbc.OperationalError as e:
-            st.markdown(f"""<div class="error-message">
-                ❌ <b>Connection failed.</b><br>
-                <small><b>Full error</b>: {e.args[0]} </small>
-            </div>""", unsafe_allow_html=True)
-            st.write("")
-            return False
-
-        except Exception as e:
-            st.markdown(f"""<div class="error-message">
-                ❌ <b>Unexpected error.</b><br>
-                <small><b>Full error</b>: {str(e)} </small>
-            </div>""", unsafe_allow_html=True)
-            st.write("")
-            return False
-#___________________________________________
-
-#________________________________________________________
-# Funtion to get all tables in a database
-def get_tables_from_db(engine, cur, database):
-
-    if engine == "PostgreSQL":
-        cur.execute("""
-            SELECT table_name FROM information_schema.tables
-            WHERE table_schema = 'public' AND table_type = 'BASE TABLE';
-        """)
-
-    elif engine in ("MySQL", "MariaDB"):
-        cur.execute(f"""
-            SELECT table_name FROM information_schema.tables
-            WHERE table_schema = '{database}' AND table_type = 'BASE TABLE';
-        """)
-
-    elif engine == "Oracle":
-        cur.execute("""
-            SELECT table_name
-            FROM all_tables
-            WHERE owner NOT IN (
-                'SYS', 'SYSTEM', 'XDB', 'CTXSYS', 'MDSYS', 'ORDDATA', 'ORDSYS',
-                'OUTLN', 'DBSNMP', 'APPQOSSYS', 'WMSYS', 'OLAPSYS', 'EXFSYS',
-                'DVSYS', 'GGSYS', 'OJVMSYS', 'LBACSYS', 'AUDSYS',
-                'REMOTE_SCHEDULER_AGENT')""")  # filter out system tables
-
-    elif engine == "SQL Server":
-        cur.execute("""
-            SELECT TABLE_NAME
-            FROM INFORMATION_SCHEMA.TABLES
-            WHERE TABLE_TYPE = 'BASE TABLE'
-              AND TABLE_CATALOG = ?
-        """, (database,))
-
-    else:
-        pass
-#___________________________________________
 
 #_________________________________________________
 # Funtion to get the allowed format for the data sources
@@ -2547,27 +2511,6 @@ def read_tab_file_unsaved(file):
     file.seek(0)
 
     return read_content
-#_________________________________________________
-
-#_________________________________________________
-# Funtion to get db_url string
-def get_db_url_str(conn):
-
-    [engine, host, port, database, user, password] = st.session_state["db_connections_dict"][conn]
-
-    if engine == "Oracle":
-        db_url_str = f"oracle+oracledb://{user}:{password}@{host}:{port}/{database}"
-    elif engine == "SQL Server":
-        db_url_str = f" mssql+pymssql://{user}:{password}@{host}:{port}/{database}"
-    elif engine == "PostgreSQL":
-        db_url_str = f"postgresql+psycopg://{user}:{password}@{host}:{port}/{database}"
-    elif engine == "MySQL":
-        db_url_str = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}"
-    elif engine =="MariaDB":
-        db_url_str = f"mariadb+pymysql://{user}:{password}@{host}:{port}/{database}"
-
-    return db_url_str
-
 #_________________________________________________
 
 #_______________________________________________
@@ -2898,6 +2841,12 @@ def get_rules_for_sm(sm_iri):
     return sm_rules_list
 #_________________________________________________
 
+
+
+
+
+
+
 # FUNCTIONS TO DISPLAY STATS-----------------------------------------------
 #_________________________________________________
 # Colors for STATS dict
@@ -3108,25 +3057,6 @@ def get_average_class_frequency_metric(g_ont, superclass_filter=None, type="used
         st.metric(label="Average class freq", value=f"{format_number_for_display(average_class_use)}",
             delta=f"(over all classes)", delta_color="off")
 #_________________________________________________
-#
-# #_________________________________________________
-# # Funtion to get the used classes metric
-# def get_class_mapping_density_metric(g_ont):
-#
-#     number_of_rules = len(get_sm_dict())  #HERE FIX
-#     total_number_of_classes = len(utils.get_ontology_classes_dict(g_ont))
-#
-#     if total_number_of_classes != 0:
-#         mapping_density = number_of_rules/total_number_of_classes
-#     else:
-#         mapping_density = 0
-#
-#     st.markdown("""<style>[data-testid="stMetricDelta"] svg {
-#             display: none;
-#         }</style>""", unsafe_allow_html=True)
-#     st.metric(label="Total mapping density", value=f"{format_number_for_display(mapping_density)}",
-#         delta=f"(#Rules per class)", delta_color="off")
-# #_________________________________________________
 
 #_________________________________________________
 # Funtion to get used classses donut chart
@@ -3186,92 +3116,6 @@ def get_class_frequency_bar_plot(g_ont, selected_classes, superclass_filter=None
         st.plotly_chart(fig, use_container_width=True)
 
 #_________________________________________________
-
-# #_________________________________________________
-# # Funtion to get ontology composition
-# def get_mapping_composition_by_class_donut_chart(type="number"):
-#
-#     colors = get_colors_for_stats_dict()
-#
-#     # classify ontology classes
-#     frequency_dict = {}
-#     for ont_label, ont in st.session_state["g_ontology_components_dict"].items():
-#         ont_tag = st.session_state["g_ontology_components_tag_dict"][ont_label]
-#         if type == "number":
-#             ontology_used_classes_count_dict = get_ontology_used_classes_count_dict(ont)
-#         elif type == "rules":
-#             ontology_used_classes_count_dict = get_ontology_used_classes_count_by_rules_dict(ont)
-#         total_count = sum(ontology_used_classes_count_dict.values())
-#         if total_count:
-#             frequency_dict[ont_tag] = total_count
-#
-#     # get classes from other ontologies
-#     all_used_classes_dict = {}
-#     for s, p, o in st.session_state["g_mapping"].triples((None, RML["class"], None)):
-#         if isinstance(o, URIRef):
-#             all_used_classes_dict[split_uri(o)[1]] = o
-#
-#     other_ontologies_list = []
-#     for class_label, class_iri in all_used_classes_dict.items():
-#         other_ontologies_flag = True
-#         for ont_label, g_ont in st.session_state["g_ontology_components_dict"].items():
-#             ontology_classes_dict = get_ontology_classes_dict(g_ont)
-#             if class_iri in ontology_classes_dict.values():
-#                 other_ontologies_flag = False
-#         if other_ontologies_flag:
-#             other_ontologies_list.append(class_iri)
-#     if other_ontologies_list:
-#         if type == "number":
-#             frequency_dict["Other"] = len(other_ontologies_list)
-#         elif type == "rules":
-#             number_of_rules = 0
-#             for class_iri in other_ontologies_list:
-#                 for s, p, o in st.session_state["g_mapping"].triples((None, RML["class"], class_iri)):
-#                     sm_iri = s
-#                     rule_list = get_rules_for_sm(sm_iri)
-#                     number_of_rules += len(rule_list)
-#             if number_of_rules:
-#                 frequency_dict["Other"] = number_of_rules
-#
-#     st.write("HERE", frequency_dict)
-#     if frequency_dict:
-#         # Create and style donut chart
-#         data = {"Ontology": list(frequency_dict.keys()),
-#             "UsageCount": list(frequency_dict.values())}
-#         fig = px.pie(data, names="Ontology", values="UsageCount", hole=0.4)
-#
-#         custom_colors = [colors["salmon"], colors["purple"], colors["blue"]]
-#         fallback = px.colors.qualitative.Pastel
-#
-#         color_map = {}
-#         for label in frequency_dict.keys():
-#             if label == "Other":
-#                 color_map[label] = colors["gray"]
-#             else:
-#                 color_map[label] = custom_colors.pop(0) if custom_colors else fallback.pop(0)
-#
-#         fig.update_traces(
-#             textinfo='label+value', textposition="inside",
-#             marker=dict(colors=[color_map[label] for label in data["Ontology"]]))
-#
-#         fig.update_layout(title=dict(
-#             text="Mapping composition <br>by 🏷️ Class",
-#             font=dict(size=14),
-#             x=0.5, xanchor="center", y=0.9, yanchor="bottom"),
-#             width=400, height=300, margin=dict(t=60, b=20, l=20, r=20),
-#             showlegend=True,
-#             legend=dict(orientation="h", yanchor="top", y=0,
-#                 xanchor="center", x=0.5))
-#
-#         # Render
-#         st.plotly_chart(fig)
-#
-#     else:
-#         st.write("")
-#         st.markdown(f"""<div class="gray-preview-message">
-#                 <b>No <b style="color:#F63366;">classes</b> in mapping</b.
-#             </div>""", unsafe_allow_html=True)
-# #_________________________________________________
 
 #_________________________________________________
 # Funtion to get ontology composition
@@ -3365,7 +3209,6 @@ def get_ontology_superproperty_dict(g_ont):
 
     return superproperty_dict
 #________________________________________________________
-
 
 #________________________________________________________
 # Funtion to get the predicates defined by an ontology

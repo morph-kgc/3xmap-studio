@@ -270,7 +270,7 @@ with tab1:
     st.write("")
     st.write("")
 
-    # PURPLE HEADER - CREATE NEW MAPPING----------------------------------------
+    # PURPLE HEADER: CREATE NEW MAPPING-----------------------------------------
     col1,col2,col3 = st.columns([2,0.5, 1])
     with col1:
         st.markdown("""<div class="purple-heading">
