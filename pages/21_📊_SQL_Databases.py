@@ -43,7 +43,7 @@ def save_connection():
         host, port, database, user, password]    # to store connections
     st.session_state["db_connection_status_dict"][conn_label] = ["✔️", ""]
     # reset fields_____________________
-    st.session_state["key_db_engine"] = "Select an engine"
+    st.session_state["key_db_engine"] = "Select engine"
     st.session_state["key_conn_label"] = ""
 
 def remove_connection():
@@ -182,7 +182,7 @@ with tab1:
 
     with col1:
         col1a, col1b = st.columns([2,1])
-    db_engine_list = ["Select an engine", "PostgreSQL", "MySQL", "SQL Server", "MariaDB", "Oracle"]
+    db_engine_list = ["Select engine", "PostgreSQL", "MySQL", "SQL Server", "MariaDB", "Oracle"]
     with col1a:
         db_engine = st.selectbox("🖱️ Select a database engine:*", db_engine_list, key="key_db_engine")
     with col1b:
@@ -197,7 +197,7 @@ with tab1:
                 valid_conn_label = False
                 st.write("")
 
-    if db_engine != "Select an engine":
+    if db_engine != "Select engine":
         default_ports_dict = utils.get_default_ports()
         default_port = default_ports_dict[db_engine] if db_engine in default_ports_dict else ""
         default_users_dict = utils.get_default_users()
@@ -237,7 +237,7 @@ with tab1:
                         st.button("Save", key="key_save_connection_button", on_click=save_connection)
                         st.markdown(f"""<div class="success-message">
                                 ✔️ Valid connection to database.<br>
-                                <small>🔌 <b>{conn_label}</b> → <b style="color:#F63366;">{jdbc_str}</b>.</small>
+                                <small style="margin-left: 1em;">🔌 <b>{conn_label}</b> → <b style="color:#F63366;">{jdbc_str}</b>.</small>
                             </div>""", unsafe_allow_html=True)
 
 
@@ -280,9 +280,10 @@ with tab1:
 
         with col1:
             col1a, col1b = st.columns([2,1])
+
         with col1a:
             list_to_choose = list(reversed(list(st.session_state["db_connections_dict"].keys())))
-            list_to_choose.insert(0, "Select all ❌")
+            list_to_choose.insert(0, "Select all failed connections")
             if len(list_to_choose) > 2:
                 list_to_choose.insert(0, "Select all")
             connection_labels_to_remove_list = st.multiselect("🖱️ Select connections:*", list_to_choose,
@@ -310,6 +311,7 @@ with tab1:
                 </div>"""
 
             with col1b:
+                st.write("")
                 st.markdown(f"""<div class="warning-message">
                     ⚠️ You are removing <b>all connections</b> to databases.
                     <small>Make sure you want to go ahead.</small>
@@ -327,7 +329,7 @@ with tab1:
                         </div>""", unsafe_allow_html=True)
 
 
-        elif "Select all ❌" in connection_labels_to_remove_list:
+        elif "Select all failed connections" in connection_labels_to_remove_list:
 
             not_working_connections_list = []
 
@@ -336,7 +338,7 @@ with tab1:
                 if st.session_state["db_connection_status_dict"][connection_label][0] == "❌":
                     not_working_connections_list.append(connection_label)
 
-            connection_labels_to_remove_list.remove("Select all ❌")
+            connection_labels_to_remove_list.remove("Select all failed connections")
             connection_labels_to_remove_list = list(set(connection_labels_to_remove_list + not_working_connections_list))
 
             # create a single info message
@@ -354,19 +356,21 @@ with tab1:
                     <small>🔌 ... <b>(+{len(connection_labels_to_remove_list[:max_length])})</b></small>
                 </div>"""
 
-            if not_working_connections_list:
-                inner_html += f"""<div style="margin-bottom:4px;">
-                    <small>Complete list of ❌ connections:
-                    <b>{utils.format_list_for_markdown(not_working_connections_list)}</b></small>
-                </div>"""
-            else:
-                inner_html += f"""<div style="margin-bottom:4px;">
-                    <small>✔️ All <b>connections</b> are working. <small>No ❌ connections to remove.</small>
-                </div>"""
+            with col1b:
+                st.write("")
+                if not_working_connections_list:
+                    st.markdown(f"""<div class="info-message-gray">
+                            🚫 Failed connections:<br>
+                            <small><b>{utils.format_list_for_markdown(not_working_connections_list)}</b></small>
+                        </div>""", unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""<div class="success-message">
+                            ✔️ <b>No failed connections</b> to remove.
+                            <small>All connections are working. </small>
+                        </div>""", unsafe_allow_html=True)
 
             with col1a:
                 if connection_labels_to_remove_list:
-                    st.write("")
                     delete_all_cross_connections_checkbox= st.checkbox(
                     "🔒 I am sure I want to remove the selected connections",
                     key="key_delete_all_cross_connections_checkbox")
@@ -401,6 +405,7 @@ with tab1:
                 st.markdown(f"""<div class="info-message-gray">
                         {inner_html}
                     </div>""", unsafe_allow_html=True)
+
 
     # PURPLE HEADING - CONSULT CONNECTION
     if st.session_state["db_connections_dict"]:
