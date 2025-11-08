@@ -376,23 +376,25 @@ with tab1:
         with col1a:
             selected_mapping_input = st.text_input(f"""⌨️ Enter link to mapping:*""", key="key_mapping_link")
 
-
         if selected_mapping_input:
             suggested_mapping_label = split_uri(selected_mapping_input)[1]
             suggested_mapping_label = utils.format_suggested_mapping_label(suggested_mapping_label)
 
             with col1:
-                col1a, col1b = st.columns(2)
+                col1a, col1b = st.columns([2,1])
 
             with col1a:
                 st.session_state["g_label_temp_existing"] = st.text_input("⌨️ Enter mapping label:*",   # just candidate until confirmed
                     key="key_g_label_temp_existing", value=suggested_mapping_label)
+
+            with col1a:
                 valid_mapping_label = utils.is_valid_label_hard(st.session_state["g_label_temp_existing"])
 
             with col1b:
                 st.write("")
-                st.session_state["candidate_g_mapping"] = utils.load_mapping_from_link(
-                    selected_mapping_input)   # we load the mapping as a candidate (until confirmed)
+                
+            st.session_state["candidate_g_mapping"] = utils.load_mapping_from_link(
+                selected_mapping_input)   # we load the mapping as a candidate (until confirmed)
 
     elif import_mapping_selected_option == "📁 File":
 

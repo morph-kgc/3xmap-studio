@@ -31,6 +31,8 @@ import rdflib
 from collections import Counter
 from urllib.parse import urlparse
 
+from streamlit_js_eval import streamlit_js_eval
+
 # REQUIRED NS===================================================================
 #________________________________________________________
 # Function to retrieve namespaces which are needed for our code
