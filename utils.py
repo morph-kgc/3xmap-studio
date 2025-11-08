@@ -676,6 +676,7 @@ def init_session_state_variables():
         st.session_state["db_connection_status_dict"] = {}
         st.session_state["db_connection_saved_ok_flag"] = False
         st.session_state["db_connection_removed_ok_flag"] = False
+        st.session_state["db_connection_status_updated_ok_flag"] = False
         #TAB3
         st.session_state["sql_queries_dict"] = {}
         st.session_state["sql_query_saved_ok_flag"] = False
@@ -2272,7 +2273,7 @@ def update_db_connection_status_dict(connection_label):
         st.session_state["db_connection_status_dict"][connection_label] = ["✔️", ""]
 
     except Exception as e:
-        st.session_state["db_connection_status_dict"][connection_label] = ["❌", e]
+        st.session_state["db_connection_status_dict"][connection_label] = ["🚫", e]
 
 #___________________________________________
 
