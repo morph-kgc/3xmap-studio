@@ -172,8 +172,9 @@ with tab1:
             with col2:
                 col2a, col2b = st.columns([0.5,2])
             with col2b:
+                st.write("")
                 st.markdown("""<div class="info-message-gray">
-                🐢 This pannel can be a bit slow <small>if there are <b>failed connections</b></small>.
+                🐢 This pannel can be slow <small>if there are <b>failed connections</b></small>.
                     </div>""", unsafe_allow_html=True)
 
 
@@ -369,6 +370,7 @@ with tab1:
                 utils.update_db_connection_status_dict(connection_label)
                 if st.session_state["db_connection_status_dict"][connection_label][0] == "🚫":
                     not_working_connections_list.append(connection_label)
+                    # if for value in last_added_db_connections_df.iloc[:, -1]:
 
             connection_labels_to_remove_list.remove("Select all failed connections")
             connection_labels_to_remove_list = list(set(connection_labels_to_remove_list + not_working_connections_list))
@@ -556,8 +558,9 @@ with tab2:
                 with col2:
                     col2a, col2b = st.columns([0.5,2])
                 with col2b:
+                    st.write("")
                     st.markdown("""<div class="info-message-gray">
-                    🐢 This pannel can be a bit slow <small>if there are <b>failed connections</b></small>.
+                    🐢 This pannel can be slow <small>if there are <b>failed connections</b></small>.
                         </div>""", unsafe_allow_html=True)
 
             #Option to show all connections (if too many)
