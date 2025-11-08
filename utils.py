@@ -938,8 +938,8 @@ def load_mapping_from_link(url):
 
     except Exception as e:
         st.markdown(f"""<div class="error-message">
-            ❌ Failed to parse <b>URL</b>.
-            <small><b>Full error:</b> {e}</small>
+            ❌ Failed to parse <b>mapping</b>.
+            <small>Please check your URL and your mapping.</small>
         </div>""", unsafe_allow_html=True)
         return None
 #_____________________________________________________

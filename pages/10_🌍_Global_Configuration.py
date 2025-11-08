@@ -291,7 +291,7 @@ with tab1:
         st.rerun()
 
     with col1a:
-        st.session_state["g_label_temp_new"] = st.text_input("⌨️ Enter mapping label:*", # just a candidate until confirmed
+        st.session_state["g_label_temp_new"] = st.text_input("🏷️ Enter mapping label:*", # just a candidate until confirmed
         key="key_g_label_temp_new")
         valid_mapping_label = utils.is_valid_label_hard(st.session_state["g_label_temp_new"])
 
@@ -368,17 +368,19 @@ with tab1:
         st.rerun()
 
     with col1b:
-        st.write("")
         import_mapping_selected_option = st.radio("🖱️ Select an option:*", ["🌐 URL", "📁 File"],
-            label_visibility="collapsed", horizontal=True, key="key_import_mapping_selected_option")
+            label_visibility="hidden", horizontal=True, key="key_import_mapping_selected_option")
 
     if import_mapping_selected_option == "🌐 URL":
         with col1a:
             selected_mapping_input = st.text_input(f"""⌨️ Enter link to mapping:*""", key="key_mapping_link")
 
         if selected_mapping_input:
-            suggested_mapping_label = split_uri(selected_mapping_input)[1]
-            suggested_mapping_label = utils.format_suggested_mapping_label(suggested_mapping_label)
+            try:
+                suggested_mapping_label = split_uri(selected_mapping_input)[1]
+                suggested_mapping_label = utils.format_suggested_mapping_label(suggested_mapping_label)
+            except:
+                suggested_mapping_label = ""
 
             with col1:
                 col1a, col1b = st.columns([2,1])
@@ -392,9 +394,8 @@ with tab1:
 
             with col1b:
                 st.write("")
-                
-            st.session_state["candidate_g_mapping"] = utils.load_mapping_from_link(
-                selected_mapping_input)   # we load the mapping as a candidate (until confirmed)
+                st.session_state["candidate_g_mapping"] = utils.load_mapping_from_link(
+                    selected_mapping_input)   # we load the mapping as a candidate (until confirmed)
 
     elif import_mapping_selected_option == "📁 File":
 
@@ -1340,9 +1341,8 @@ with tab3:
 
         if file_list:
             with col1b:
-                st.write("")
                 save_session_selected_option = st.radio("🖱️ Select an option:*", ["💾 Save session", "🗑️ Delete sessions"],
-                    label_visibility="collapsed", key="key_save_session_options")
+                    label_visibility="hidden", key="key_save_session_options")
         else:
             save_session_selected_option = "💾 Save session"
 

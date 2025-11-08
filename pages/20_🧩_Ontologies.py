@@ -184,12 +184,12 @@ with tab1:
 
         with col1b:
             import_ontology_selected_option = st.radio("🖱️ Import ontology from:*", ["🌐 URL", "📁 File"],
-                label_visibility="collapsed", horizontal=True, key="key_import_ontology_selected_option")
+                label_visibility="hidden", horizontal=True, key="key_import_ontology_selected_option")
 
         if import_ontology_selected_option == "🌐 URL":
 
             with col1a:
-                ontology_link = st.text_input("⌨️ Enter link to ontology:*", key="key_ontology_link")
+                ontology_link = st.text_input("🌐 Enter link to ontology:*", key="key_ontology_link")
             st.session_state["ontology_link"] = ontology_link if ontology_link else ""
 
             if ontology_link:
@@ -308,9 +308,8 @@ with tab1:
         with col1:
             col1a,col1b = st.columns([2,1])
         with col1b:
-            st.write("")
             extend_ontology_selected_option = st.radio("🖱️ Import ontology from:*", ["🌐 URL", "📁 File"],
-                label_visibility="collapsed", horizontal=True, key="key_extend_ontology_selected_option")
+                label_visibility="hidden", horizontal=True, key="key_extend_ontology_selected_option")
 
         if extend_ontology_selected_option == "🌐 URL":
             with col1a:
@@ -492,8 +491,8 @@ with tab2:
         ontology_searches_list = ["🏷️ Classes", "🔗 Properties", "✏️ Custom search"]
 
         with col1a:
-            selected_ontology_search = st.radio("🔍️ Select search:*", ontology_searches_list,
-                horizontal=True, key="key_selected_ontology_search")
+            selected_ontology_search = st.radio("🖱️ Select search:*", ontology_searches_list,
+                label_visibility="collapsed", horizontal=True, key="key_selected_ontology_search")
 
         if len(st.session_state["g_ontology_components_dict"]) > 1:
             with col1b:
