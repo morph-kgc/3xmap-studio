@@ -266,14 +266,24 @@ with tab1:
 
                     with col1:
                         col1a, col1b = st.columns([2,1])
-                    with col1a:
-                        st.button("Save", key="key_save_connection_button", on_click=save_connection)
-                        st.markdown(f"""<div class="success-message">
-                                ✔️ Valid connection to database.<br>
-                                <small style="margin-left: 1em;">🔌 <b>{conn_label}</b> → <b style="color:#F63366;">{jdbc_str}</b>.</small>
-                            </div>""", unsafe_allow_html=True)
 
+                    duplicated_conn_flag = False
+                    for conn in st.session_state["db_connections_dict"]:
+                        if utils.get_jdbc_str(conn) == jdbc_str:
+                            duplicated_conn_flag = conn
 
+                    if duplicated_conn_flag:
+                        with col1a:
+                            st.markdown(f"""<div class="error-message">
+                                    ❌ The <b>connection</b> already exists with label {duplicated_conn_flag}.
+                                </div>""", unsafe_allow_html=True)
+                    else:
+                        with col1a:
+                            st.button("Save", key="key_save_connection_button", on_click=save_connection)
+                            st.markdown(f"""<div class="success-message">
+                                    ✔️ Valid connection to database.<br>
+                                    <small style="margin-left: 1em;">🔌 <b>{conn_label}</b> → <b style="color:#F63366;">{jdbc_str}</b>.</small>
+                                </div>""", unsafe_allow_html=True)
 
 
     if not st.session_state["db_connections_dict"] and st.session_state["db_connection_removed_ok_flag"]:
@@ -851,14 +861,12 @@ with tab3:
                             st.write("")
                         sql_query_ok_flag = False
 
+                if sql_query and sql_query_ok_flag and valid_sql_query_label:
+                    with col1:
+                        st.button("Save", key="key_save_view_button",
+                            on_click=save_view)
+
                 if sql_query and sql_query_ok_flag:
-
-                    if sql_query_label_ok_flag:
-                        with col1:
-                            st.button("Save", key="key_save_view_button",
-                                on_click=save_view)
-
-
                     rows = cur.fetchall()
                     engine = st.session_state["db_connections_dict"][connection_for_query][0]
                     if engine == "SQL Server":

@@ -1776,6 +1776,32 @@ def remove_triplesmap(tm_label):
     g.remove((tm_iri, None, None))   # remove tm triple
 #______________________________________________________
 
+#_________________________________________________
+# Funtion to get jdbc str from connection
+def get_jdbc_str(conn):
+
+    if conn in st.session_state["db_connections_dict"]:
+        [engine, host, port, database, user, password] = st.session_state["db_connections_dict"][conn]
+
+        if engine == "Oracle":
+            jdbc_str = f"jdbc:oracle:thin:@{host}:{port}:{database}"
+        elif engine == "SQL Server":
+            jdbc_str = f"jdbc:sqlserver://{host}:{port};databaseName={database}"
+        elif engine == "PostgreSQL":
+            jdbc_str = f"jdbc:postgresql://{host}:{port}/{database}"
+        elif engine == "MySQL":
+            jdbc_str = f"jdbc:mysql://{host}:{port}/{database}"
+        elif engine =="MariaDB":
+            jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
+        else:
+            return None
+
+    else:
+        return None
+
+    return jdbc_str
+#_________________________________________________
+
 #______________________________________________________
 # Function get the column list of the data source of a tm
 # It also gives warning and info messages
@@ -1789,22 +1815,8 @@ def get_column_list_and_give_info(tm_iri):
 
     jdbc_dict = {}
     for conn in st.session_state["db_connections_dict"]:
-        [engine, host, port, database, user, password] = st.session_state["db_connections_dict"][conn]
-        if engine == "Oracle":
-            jdbc_str = f"jdbc:oracle:thin:@{host}:{port}:{database}"
-            jdbc_dict[conn] = jdbc_str
-        elif engine == "SQL Server":
-            jdbc_str = f"jdbc:sqlserver://{host}:{port};databaseName={database}"
-            jdbc_dict[conn] = jdbc_str
-        elif engine == "PostgreSQL":
-            jdbc_str = f"jdbc:postgresql://{host}:{port}/{database}"
-            jdbc_dict[conn] = jdbc_str
-        elif engine == "MySQL":
-            jdbc_str = f"jdbc:mysql://{host}:{port}/{database}"
-            jdbc_dict[conn] = jdbc_str
-        elif engine =="MariaDB":
-            jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
-            jdbc_dict[conn] = jdbc_str
+        jdbc_str = get_jdbc_str(conn)
+        jdbc_dict[conn] = jdbc_str
 
     if ds in st.session_state["ds_files_dict"]:   # saved non-sql data source
 
@@ -2445,27 +2457,6 @@ def get_ds_allowed_tab_formats():
     ".sas7bdat", ".sav", ".ods"]
 
     return allowed_tab_formats_list
-#_________________________________________________
-
-#_________________________________________________
-# Funtion to get jdbc str from connection
-def get_jdbc_str(conn):
-
-    [engine, host, port, database, user, password] = st.session_state["db_connections_dict"][conn]
-
-    if engine == "Oracle":
-        jdbc_str = f"jdbc:oracle:thin:@{host}:{port}:{database}"
-    elif engine == "SQL Server":
-        jdbc_str = f"jdbc:sqlserver://{host}:{port};databaseName={database}"
-    elif engine == "PostgreSQL":
-        jdbc_str = f"jdbc:postgresql://{host}:{port}/{database}"
-    elif engine == "MySQL":
-        jdbc_str = f"jdbc:mysql://{host}:{port}/{database}"
-    elif engine =="MariaDB":
-        jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
-
-    return jdbc_str
-
 #_________________________________________________
 
 #_________________________________________________
