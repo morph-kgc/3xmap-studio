@@ -517,21 +517,13 @@ with tab2:
                 col2a, col2b = st.columns([1,3])
             with col2b:
                 st.write("")
-                st.markdown(f"""<div class="warning-message">
+                st.markdown(f"""<div class="info-message-blue">
                     🐘 <b>Your ontology is quite large</b> ({utils.format_number_for_display(len(ontology_for_search))} triples).
                     <small>Some <b>patience</b> may be required.</small>
                 </div>""", unsafe_allow_html=True)
 
 
         if selected_ontology_search == "🏷️ Classes":
-            with col1b:
-                tm_dict = utils.get_tm_dict()
-                list_to_choose = list(reversed(list(tm_dict)))
-                if len(list_to_choose) > 1:
-                    selected_tm_for_display_list = st.multiselect("🖱️ Filter TriplesMaps (optional):", list_to_choose,
-                        key="key_selected_tm_for_display_list_1")
-                else:
-                    selected_tm_for_display_list = []
 
             with col1:
                 col1a, col1b, col1c, col1d = st.columns(4)
@@ -564,6 +556,8 @@ with tab2:
                 if not isinstance(o, BNode) and o not in superclass_dict.values():
                     superclass_dict[o.split("/")[-1].split("#")[-1]] = o
 
+            tm_dict = utils.get_tm_dict()
+
             list_to_choose = ["No filter"]
             if superclass_dict:
                 list_to_choose.append("Superclass")
@@ -573,7 +567,6 @@ with tab2:
             with col1d:
                 class_filter_type = st.selectbox("⚙️ Add filter (opt):", list_to_choose,
                     key="key_class_filter_type")
-
 
             if class_filter_type == "Superclass":
 
@@ -658,9 +651,9 @@ with tab2:
                           EXISTS { ?class rdfs:comment ?comment } ) }"""
 
             if order_clause == "Ascending":
-                query += f"ORDER BY ASC(?tm) "
+                query += f"ORDER BY ASC(?class) "
             elif order_clause == "Descending":
-                query += f"ORDER BY DESC(?tm) "
+                query += f"ORDER BY DESC(?class) "
 
             if limit:
                 query += f"LIMIT {limit} "
@@ -940,9 +933,9 @@ with tab2:
                         GROUP BY ?property ?label ?comment"""
 
             if order_clause == "Ascending":
-                query += "ORDER BY ASC(?property) "
+                query += " ORDER BY ASC(?property) "
             elif order_clause == "Descending":
-                query += "ORDER BY DESC(?property) "
+                query += " ORDER BY DESC(?property) "
 
             if limit:
                 query += f"LIMIT {limit} "
@@ -1085,7 +1078,7 @@ with tab3:
         max_length = 100000
         if len(serialised_data) > max_length:
             with col1:
-                st.markdown(f"""<div class="warning-message">
+                st.markdown(f"""<div class="info-message-blue">
                     🐘 <b>Your ontology is quite large</b> ({utils.format_number_for_display(len(ontology_for_preview))} triples).
                     <small>Showing only the first {utils.format_number_for_display(max_length)} characters
                     (out of {utils.format_number_for_display(len(serialised_data))}) to avoid performance issues.</small>
