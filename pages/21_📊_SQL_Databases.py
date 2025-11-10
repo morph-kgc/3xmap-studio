@@ -11,7 +11,7 @@ import pyodbc
 import io
 from streamlit_js_eval import streamlit_js_eval
 
-# Config-----------------------------------
+# Config------------------------------------------------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
     st.set_page_config(page_title="3Xmap Studio", layout="wide",
         page_icon="logo/fav_icon.png")
@@ -19,62 +19,24 @@ else:
     st.set_page_config(page_title="3Xmap Studio", layout="wide",
         page_icon="logo/fav_icon_inverse.png")
 
-# Automatic detection of dark mode-------------------------
-if "dark_mode_flag" not in st.session_state or st.session_state["dark_mode_flag"] is None:
-    st.session_state["dark_mode_flag"] = streamlit_js_eval(js_expressions="window.matchMedia('(prefers-color-scheme: dark)').matches",
-        key="dark_mode")
+# Initialise page---------------------------------------------------------------
+utils.init_page()
+RML, QL = utils.get_required_ns_dict().values()
 
-# Header-----------------------------------
-# dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
-# header_html = utils.render_header(title="SQL Databases",
-#     description="""Manage the connections to <b>relational data sources</b>, consult the data
-#                     and <b>save views</b>.""",
-#     dark_mode=dark_mode)
-# st.markdown(header_html, unsafe_allow_html=True)
-
-# Sidebar logo-----------------------------------
-dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
-utils.render_sidebar_logo(dark_mode=dark_mode)
-
-# Import style----------------------------------------------
-style_container = st.empty()
-if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
-    style_container.markdown(utils.import_st_aesthetics(), unsafe_allow_html=True)
-else:
-    style_container.markdown(utils.import_st_aesthetics_dark_mode(), unsafe_allow_html=True)
-
-
-# Initialise session state variables------------------------------------
-#TAB1
-if "db_connections_dict" not in st.session_state:
-    st.session_state["db_connections_dict"] = {}
-if "db_connection_status_dict" not in st.session_state:
-    st.session_state["db_connection_status_dict"] = {}
-if "db_connection_saved_ok_flag" not in st.session_state:
-    st.session_state["db_connection_saved_ok_flag"] = False
-if "db_connection_removed_ok_flag" not in st.session_state:
-    st.session_state["db_connection_removed_ok_flag"] = False
-
-#TAB3
-if "sql_queries_dict" not in st.session_state:
-    st.session_state["sql_queries_dict"] = {}
-if "sql_query_saved_ok_flag" not in st.session_state:
-    st.session_state["sql_query_saved_ok_flag"] = False
-if "sql_query_removed_ok_flag" not in st.session_state:
-    st.session_state["sql_query_removed_ok_flag"] = False
-
-#define on_click functions-----------------------------------------
+# Define on_click functions-----------------------------------------
 # TAB1
 def update_db_connections():
+    # update conenction status dict_________________________-
     for connection_label in st.session_state["db_connections_dict"]:
         try:
             conn = utils.make_connection_to_db(connection_label)
             if conn:
                 conn.close() # optional: close immediately or keep open for queries
             st.session_state["db_connection_status_dict"][connection_label] = ["✔️", ""]
-
         except Exception as e:
-            st.session_state["db_connection_status_dict"][connection_label] = ["❌", e]
+            st.session_state["db_connection_status_dict"][connection_label] = ["🚫", e]
+    #store information____________________________
+    st.session_state["db_connection_status_updated_ok_flag"] = True
 
 def save_connection():
     # store information________________
@@ -83,7 +45,7 @@ def save_connection():
         host, port, database, user, password]    # to store connections
     st.session_state["db_connection_status_dict"][conn_label] = ["✔️", ""]
     # reset fields_____________________
-    st.session_state["key_db_engine"] = "Select an engine"
+    st.session_state["key_db_engine"] = "Select engine"
     st.session_state["key_conn_label"] = ""
 
 def remove_connection():
@@ -146,15 +108,12 @@ def remove_views():
 
 
 # START PAGE_____________________________________________________________________
-
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
-
 tab1, tab2, tab3 = st.tabs(["Connect to Database", "Display Data", "Create View"])
 
-
-#________________________________________________
-# MANAGE SQL DATA SOURCES
+#_______________________________________________________________________________
+# PANEL: CONNECT TO DATABASE
 with tab1:
 
     col1, col2 = st.columns([2,1.5])
@@ -193,15 +152,47 @@ with tab1:
                     </div>""", unsafe_allow_html=True)
             st.dataframe(last_added_db_connections_df, hide_index=True)
 
-            st.button("Update", key="key_update_db_connections_button", on_click=update_db_connections)
+            with col2:
+                col2a, col2b, col2c = st.columns([0.5,0.8,1.2])
+            with col2c:
+                if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
+                    highlight_color = "#fff7db"
+                else:
+                    highlight_color = "#7a6228"
+                st.markdown(f"""<div style='text-align: right; font-size: 11px; margin-top: -15px;'>
+                    <span style='background-color: {highlight_color}; padding: 2px 6px; border-radius: 4px;'>🕹️ must be manually updated</span>
+                </div>""", unsafe_allow_html=True)
 
-        #Option to show all connections (if too many)
-        if st.session_state["db_connections_dict"] and len(st.session_state["db_connections_dict"]) > max_length:
-            with st.expander("🔎 Show all connections"):
+            with col2b:
+                st.button("Update", key="key_update_db_connections_button", on_click=update_db_connections)
+
+            with col2:
+                col2a, col2b = st.columns([0.5,2])
+            with col2b:
                 st.write("")
-                st.dataframe(db_connections_df, hide_index=True)
+                st.markdown("""<div class="info-message-gray">
+                🐢 This pannel can be <b>slow</b> <small>if there are failed connections</small>.
+                    </div>""", unsafe_allow_html=True)
 
-    # PURPLE HEADING - ADD NEW CONNECTION
+        # Option to show all connections (if too many)
+        with col2b:
+            st.write("")
+            if st.session_state["db_connections_dict"] and len(st.session_state["db_connections_dict"]) > max_length:
+                with st.expander("🔎 Show all connections"):
+                    st.write("")
+                    st.dataframe(db_connections_df, hide_index=True)
+
+    # SUCCESS MESSAGE: UPDATE CONN STATUS---------------------------------------
+    if st.session_state["db_connection_status_updated_ok_flag"]:
+        with col1a:
+            st.markdown(f"""<div class="success-message-flag">
+                ✅ The <b>database connection status</b> has been updated!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["db_connection_status_updated_ok_flag"] = False
+        time.sleep(utils.get_success_message_time())
+        st.rerun()
+
+    # PURPLE HEADER: ADD NEW CONNECTION-----------------------------------------
     with col1:
         st.markdown("""<div class="purple-heading">
                 🔌 Add Connection to Database
@@ -222,11 +213,11 @@ with tab1:
 
     with col1:
         col1a, col1b = st.columns([2,1])
-    db_engine_list = ["Select an engine", "PostgreSQL", "MySQL", "SQL Server", "MariaDB", "Oracle"]
+    db_engine_list = ["Select engine", "PostgreSQL", "MySQL", "SQL Server", "MariaDB", "Oracle"]
     with col1a:
         db_engine = st.selectbox("🖱️ Select a database engine:*", db_engine_list, key="key_db_engine")
     with col1b:
-        conn_label = st.text_input("⌨️ Enter label:*", key="key_conn_label")
+        conn_label = st.text_input("🏷️ Enter label:*", key="key_conn_label")
         valid_conn_label = utils.is_valid_label(conn_label)
         if valid_conn_label and conn_label in st.session_state["db_connections_dict"]:
             with col1a:
@@ -237,7 +228,7 @@ with tab1:
                 valid_conn_label = False
                 st.write("")
 
-    if db_engine != "Select an engine":
+    if db_engine != "Select engine":
         default_ports_dict = utils.get_default_ports()
         default_port = default_ports_dict[db_engine] if db_engine in default_ports_dict else ""
         default_users_dict = utils.get_default_users()
@@ -273,16 +264,28 @@ with tab1:
 
                     with col1:
                         col1a, col1b = st.columns([2,1])
-                    with col1a:
-                        st.button("Save", key="key_save_connection_button", on_click=save_connection)
-                        st.markdown(f"""<div class="success-message">
-                                ✔️ Valid connection to database.<br>
-                                <small>🔌 <b>{conn_label}</b> → <b style="color:#F63366;">{jdbc_str}</b>.</small>
-                            </div>""", unsafe_allow_html=True)
+
+                    duplicated_conn_flag = False
+                    for conn in st.session_state["db_connections_dict"]:
+                        if utils.get_jdbc_str(conn) == jdbc_str:
+                            duplicated_conn_flag = conn
+
+                    if duplicated_conn_flag:
+                        with col1a:
+                            st.markdown(f"""<div class="error-message">
+                                    ❌ The <b>connection</b> already exists with label {duplicated_conn_flag}.
+                                </div>""", unsafe_allow_html=True)
+                    else:
+                        with col1a:
+                            st.button("Save", key="key_save_connection_button", on_click=save_connection)
+                            st.markdown(f"""<div class="success-message">
+                                    ✔️ Valid connection to database.<br>
+                                    <small style="margin-left: 1em;">🔌 <b>{conn_label}</b> → <b style="color:#F63366;">{jdbc_str}</b>.</small>
+                                </div>""", unsafe_allow_html=True)
 
 
-
-
+    # SUCCESS MESSAGE: CONN TO DB REMOVED
+    # Shows here if there is no Remove Connections purple heaer
     if not st.session_state["db_connections_dict"] and st.session_state["db_connection_removed_ok_flag"]:
         with col1:
             col1a, col1b = st.columns([2,1])
@@ -295,9 +298,8 @@ with tab1:
         time.sleep(utils.get_success_message_time())
         st.rerun()
 
-
-
-    # PURPLE HEADING - REMOVE CONNECTION
+    # PURPLE HEADER - REMOVE CONNECTIONS----------------------------------------
+    # Shows only if there are connections to be removed
     if st.session_state["db_connections_dict"]:
         with col1:
             st.write("_______")
@@ -320,9 +322,10 @@ with tab1:
 
         with col1:
             col1a, col1b = st.columns([2,1])
+
         with col1a:
             list_to_choose = list(reversed(list(st.session_state["db_connections_dict"].keys())))
-            list_to_choose.insert(0, "Select all ❌")
+            list_to_choose.insert(0, "Select all failed connections")
             if len(list_to_choose) > 2:
                 list_to_choose.insert(0, "Select all")
             connection_labels_to_remove_list = st.multiselect("🖱️ Select connections:*", list_to_choose,
@@ -331,7 +334,6 @@ with tab1:
         if "Select all" in connection_labels_to_remove_list:
             connection_labels_to_remove_list = list(st.session_state["db_connections_dict"].keys())
 
-            # create a single info message
             inner_html = ""
             max_length = utils.get_max_length_for_display()[4]
 
@@ -340,16 +342,17 @@ with tab1:
                 inner_html += f"""<div style="margin-bottom:4px;">
                     <small><b>🔌 {conn}</b> → {jdbc_str}</small>
                 </div>"""
-            # wrap it all in a single info box
+
             full_html = f"""<div class="info-message-gray">
                 {inner_html}</div>"""
 
-            if len(connection_labels_to_remove_list) > max_length:   # many sm to remove
+            if len(connection_labels_to_remove_list) > max_length:
                 inner_html += f"""<div style="margin-bottom:4px;">
                     <small>🔌 ... <b>(+{len(connection_labels_to_remove_list[:max_length])})</b></small>
                 </div>"""
 
             with col1b:
+                st.write("")
                 st.markdown(f"""<div class="warning-message">
                     ⚠️ You are removing <b>all connections</b> to databases.
                     <small>Make sure you want to go ahead.</small>
@@ -366,20 +369,18 @@ with tab1:
                             {inner_html}
                         </div>""", unsafe_allow_html=True)
 
-
-        elif "Select all ❌" in connection_labels_to_remove_list:
+        elif "Select all failed connections" in connection_labels_to_remove_list:
 
             not_working_connections_list = []
 
             for connection_label in st.session_state["db_connections_dict"]:
                 utils.update_db_connection_status_dict(connection_label)
-                if st.session_state["db_connection_status_dict"][connection_label][0] == "❌":
+                if st.session_state["db_connection_status_dict"][connection_label][0] == "🚫":
                     not_working_connections_list.append(connection_label)
 
-            connection_labels_to_remove_list.remove("Select all ❌")
+            connection_labels_to_remove_list.remove("Select all failed connections")
             connection_labels_to_remove_list = list(set(connection_labels_to_remove_list + not_working_connections_list))
 
-            # create a single info message
             inner_html = ""
             max_length = utils.get_max_length_for_display()[4]
 
@@ -389,24 +390,26 @@ with tab1:
                     <small><b>🔌 {conn}</b> → {jdbc_str}</small>
                 </div>"""
 
-            if len(connection_labels_to_remove_list) > max_length:   # many sm to remove
+            if len(connection_labels_to_remove_list) > max_length:
                 inner_html += f"""<div style="margin-bottom:4px;">
                     <small>🔌 ... <b>(+{len(connection_labels_to_remove_list[:max_length])})</b></small>
                 </div>"""
 
-            if not_working_connections_list:
-                inner_html += f"""<div style="margin-bottom:4px;">
-                    <small>Complete list of ❌ connections:
-                    <b>{utils.format_list_for_markdown(not_working_connections_list)}</b></small>
-                </div>"""
-            else:
-                inner_html += f"""<div style="margin-bottom:4px;">
-                    <small>✔️ All <b>connections</b> are working. <small>No ❌ connections to remove.</small>
-                </div>"""
+            with col1b:
+                st.write("")
+                if not_working_connections_list:
+                    st.markdown(f"""<div class="info-message-gray">
+                            🚫 Failed connections:<br>
+                            <small><b>{utils.format_list_for_markdown(not_working_connections_list)}</b></small>
+                        </div>""", unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""<div class="success-message">
+                            ✔️ <b>No failed connections</b> to remove.
+                            <small>All connections are working. </small>
+                        </div>""", unsafe_allow_html=True)
 
             with col1a:
                 if connection_labels_to_remove_list:
-                    st.write("")
                     delete_all_cross_connections_checkbox= st.checkbox(
                     "🔒 I am sure I want to remove the selected connections",
                     key="key_delete_all_cross_connections_checkbox")
@@ -417,7 +420,7 @@ with tab1:
                         </div>""", unsafe_allow_html=True)
 
         elif connection_labels_to_remove_list:
-            # create a single info message
+
             inner_html = ""
             max_length = utils.get_max_length_for_display()[4]
 
@@ -427,7 +430,7 @@ with tab1:
                     <small><b>🔌 {conn}</b> → {jdbc_str}</small>
                 </div>"""
 
-            if len(connection_labels_to_remove_list) > max_length:   # many sm to remove
+            if len(connection_labels_to_remove_list) > max_length:
                 inner_html += f"""<div style="margin-bottom:4px;">
                     <small>🔌 ... <b>(+{len(connection_labels_to_remove_list[:max_length])})</b></small>
                 </div>"""
@@ -442,7 +445,8 @@ with tab1:
                         {inner_html}
                     </div>""", unsafe_allow_html=True)
 
-    # PURPLE HEADING - CONSULT CONNECTION
+    # PURPLE HEADER: CONN INFORMATION-------------------------------------------
+    # Shows only if there are connections
     if st.session_state["db_connections_dict"]:
         with col1:
             st.write("______")
@@ -489,8 +493,8 @@ with tab1:
                         st.write("")
 
 
-#________________________________________________
-# DISPLAY DATA
+#_______________________________________________________________________________
+# PANEL: DISPLAY DATA
 with tab2:
 
     col1, col2 = st.columns([2,1.5])
@@ -507,11 +511,8 @@ with tab2:
 
     else:
 
-        col1, col2 = st.columns([2,1.5])
-
         with col2:
             col2a, col2b = st.columns([0.5, 2])
-
 
         with col2b:
             st.write("")
@@ -539,18 +540,43 @@ with tab2:
                     st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
                             (complete list below)
                         </div>""", unsafe_allow_html=True)
+                    st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                        </div>""", unsafe_allow_html=True)
+
                 st.dataframe(last_added_db_connections_df, hide_index=True)
 
-                st.button("Update", key="key_update_db_connections_button_2", on_click=update_db_connections)
+                with col2:
+                    col2a, col2b, col2c = st.columns([0.5,0.8,1.2])
+                with col2c:
+                    if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
+                        highlight_color = "#fff7db"
+                    else:
+                        highlight_color = "#7a6228"
+                    st.markdown(f"""<div style='text-align: right; font-size: 11px; margin-top: -15px;'>
+                        <span style='background-color: {highlight_color}; padding: 2px 6px; border-radius: 4px;'>🕹️ must be manually updated</span>
+                    </div>""", unsafe_allow_html=True)
 
-            #Option to show all connections (if too many)
-            if st.session_state["db_connections_dict"] and len(st.session_state["db_connections_dict"]) > max_length:
-                with st.expander("🔎 Show all connections"):
+                with col2b:
+                    st.button("Update", key="key_update_db_connections_button_2", on_click=update_db_connections)
+
+                with col2:
+                    col2a, col2b = st.columns([0.5,2])
+                with col2b:
                     st.write("")
-                    st.dataframe(db_connections_df, hide_index=True)
+                    st.markdown("""<div class="info-message-gray">
+                    🐢 This pannel can be <b>slow</b> <small>if there are failed connections</small>.
+                        </div>""", unsafe_allow_html=True)
+
+            # Option to show all connections (if too many)
+            with col2b:
+                st.write("")
+                if st.session_state["db_connections_dict"] and len(st.session_state["db_connections_dict"]) > max_length:
+                    with st.expander("🔎 Show all connections"):
+                        st.write("")
+                        st.dataframe(db_connections_df, hide_index=True)
 
 
-        #PURPLE HEADING - VIEW TABLE
+        #PURPLE HEADING: VIEW TABLE---------------------------------------------
         with col1:
             st.write("")
             st.markdown("""<div class="purple-heading">
@@ -560,7 +586,6 @@ with tab2:
 
         with col1:
             col1a, col1b = st.columns([2,1])
-
 
         with col1a:
             list_to_choose = list(reversed(list(st.session_state["db_connections_dict"].keys())))
@@ -584,8 +609,8 @@ with tab2:
             except:
                 with col1a:
                     st.markdown(f"""<div class="error-message">
-                        ❌ The connection <b>{connection_label}</b> is not working.
-                        Please remove it and save it again in the <b>Manage Connections</b> pannel.
+                        ❌ The connection <b>{connection_for_table_display}</b> is not working.
+                        <small>Please check it in the <b>Manage Connections</b> pannel.</small>
                     </div>""", unsafe_allow_html=True)
                     st.write("")
                 connection_ok_flag = False
@@ -663,9 +688,8 @@ with tab2:
                     conn.close()
 
 
-
-#________________________________________________
-# VIEWS
+#_______________________________________________________________________________
+# PANEL: VIEWS
 with tab3:
 
     col1, col2 = st.columns([2,1.5])
@@ -740,14 +764,13 @@ with tab3:
                 st.dataframe(last_sql_queries_df, hide_index=True)
                 st.write("")
 
-            #Option to show all connections (if too many)
+            #Option to show all views (if too many)
             if st.session_state["sql_queries_dict"] and len(st.session_state["sql_queries_dict"]) > max_length:
                 with st.expander("🔎 Show all saved views"):
                     st.write("")
                     st.dataframe(sql_queries_df, hide_index=True)
 
-    #PURPLE HEADING - QUERY DATA
-    if st.session_state["db_connections_dict"]:
+        # PURPLE HEADER: QUERY DATA---------------------------------------------
         with col1:
             st.markdown("""<div class="purple-heading">
                     🖼️ Create View
@@ -779,7 +802,7 @@ with tab3:
         if connection_for_query != "Select a connection":
 
             with col1b:
-                sql_query_label = st.text_input("⌨️ Enter label for the view (to save it):*",
+                sql_query_label = st.text_input("🏷️ Enter label for the view (to save it):*",
                     key="key_sql_query_label")
                 valid_sql_query_label = utils.is_valid_label(sql_query_label)
                 if sql_query_label and sql_query_label not in st.session_state["sql_queries_dict"]:
@@ -802,8 +825,8 @@ with tab3:
             except:
                 with col1a:
                     st.markdown(f"""<div class="error-message">
-                        ❌ The connection <b>{connection_label}</b> is not working.
-                        Please remove it and save it again in the <b>Manage Connections</b> pannel.
+                        ❌ The connection <b>{connection_for_query}</b> is not working.
+                        <small>Please check it in the <b>Manage Connections</b> pannel.</small>
                     </div>""", unsafe_allow_html=True)
                     st.write("")
                 connection_ok_flag = False
@@ -831,14 +854,12 @@ with tab3:
                             st.write("")
                         sql_query_ok_flag = False
 
+                if sql_query and sql_query_ok_flag and valid_sql_query_label:
+                    with col1:
+                        st.button("Save", key="key_save_view_button",
+                            on_click=save_view)
+
                 if sql_query and sql_query_ok_flag:
-
-                    if sql_query_label_ok_flag:
-                        with col1:
-                            st.button("Save", key="key_save_view_button",
-                                on_click=save_view)
-
-
                     rows = cur.fetchall()
                     engine = st.session_state["db_connections_dict"][connection_for_query][0]
                     if engine == "SQL Server":
@@ -875,6 +896,8 @@ with tab3:
                             st.write("")
                         st.dataframe(limited_df.head(max_rows), hide_index=True)
 
+    # SUCCESS MESSAGE: VIEW REMOVED---------------------------------------------
+    # Shows here if no Remove views purple header
     if not st.session_state["sql_queries_dict"] and st.session_state["sql_query_removed_ok_flag"]:
         with col1:
             col1a, col1b = st.columns([2,1])
@@ -888,7 +911,7 @@ with tab3:
         st.rerun()
 
 
-    #PURPLE HEADING - REMOVE VIEW
+    # PURPLE HEADER: REMOVE VIEW------------------------------------------------
     if st.session_state["sql_queries_dict"]:
         with col1:
             st.write("_________")
@@ -941,7 +964,8 @@ with tab3:
                     st.button("Remove", key="key_remove_views_button", on_click=remove_views)
 
 
-    #PURPLE HEADING - CONSULT SAVED VIEWS
+    # PURPLE HEADER: CONSULT SAVED VIEWS----------------------------------------
+    # Shows only if there are connections
     if st.session_state["sql_queries_dict"]:
         with col1:
             st.write("________")
@@ -980,7 +1004,7 @@ with tab3:
                 with col1a:
                     st.markdown(f"""<div class="error-message">
                         ❌ The connection <b>{connection_label}</b> is not working.
-                        Please check it in the <b>Manage Connections</b> pannel.
+                        <small>Please check it in the <b>Manage Connections</b> pannel.</small>
                     </div>""", unsafe_allow_html=True)
                     st.write("")
                 connection_ok_flag = False
@@ -997,7 +1021,6 @@ with tab3:
                 if sql_query_to_consult != "Select query":
 
                     with col1:
-
                         st.markdown(f"""<div class="info-message-blue">
                                 🖼️ <b style="color:#F63366;"> View</b>
                                 <small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<b>Query:</b>
