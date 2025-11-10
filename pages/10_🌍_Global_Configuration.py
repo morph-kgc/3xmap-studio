@@ -386,7 +386,7 @@ with tab1:
                 col1a, col1b = st.columns([2,1])
 
             with col1a:
-                st.session_state["g_label_temp_existing"] = st.text_input("⌨️ Enter mapping label:*",   # just candidate until confirmed
+                st.session_state["g_label_temp_existing"] = st.text_input("🏷️ Enter mapping label:*",   # just candidate until confirmed
                     key="key_g_label_temp_existing", value=suggested_mapping_label)
 
             with col1a:
@@ -409,7 +409,7 @@ with tab1:
                 suggested_mapping_label = os.path.splitext(selected_mapping_input.name)[0]
                 suggested_mapping_label = utils.format_suggested_mapping_label(suggested_mapping_label)
 
-                st.session_state["g_label_temp_existing"] = st.text_input("⌨️ Enter mapping label:*",   # just candidate until confirmed
+                st.session_state["g_label_temp_existing"] = st.text_input("🏷️ Enter mapping label:*",   # just candidate until confirmed
                     key="key_g_label_temp_existing", value=suggested_mapping_label)
                 valid_mapping_label = utils.is_valid_label_hard(st.session_state["g_label_temp_existing"])
 
@@ -1066,7 +1066,7 @@ with tab2:
             with col1:
                 if base_ns_prefix_candidate != "Select prefix":
                     base_ns_iri_candidate = mapping_ns_dict[base_ns_prefix_candidate]
-                    unbind_previous_base_ns_checkbox = st.checkbox(f"🗑️ Unbind {st.session_state["base_ns"][0]} namespace",
+                    unbind_previous_base_ns_checkbox = st.checkbox(f"""🗑️ Unbind {st.session_state["base_ns"][0]} namespace""",
                         key="key_unbind_previous_base_ns_checkbox", value=True)
                     st.button("Confirm", key="key_change_base_ns_button", on_click=change_base_ns)
 

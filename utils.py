@@ -1441,6 +1441,9 @@ def retrieve_project_state(project_state_list):
     st.session_state["g_mapping_source_cache"] = project_state_list[10]
     st.session_state["original_g_size_cache"] = project_state_list[11]
     st.session_state["original_g_mapping_ns_dict"] = project_state_list[12]
+
+    for conn in st.session_state["db_connection_status_dict"]:
+        update_db_connection_status_dict(conn)
 #______________________________________________________
 
 #_________________________________________________
@@ -1928,6 +1931,13 @@ def get_tables_from_db(engine, cur, database):
 
 
 # HEREIGO - REFACTORING
+
+#________________________________________________________
+# Funtion to get the name of the folder to save large files
+def get_ds_folder_name():
+
+        return "data_sources"
+#________________________________________________________
 
 #________________________________________________________
 # Funtion to get the dictionary of the TriplesMaps

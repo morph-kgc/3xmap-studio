@@ -174,7 +174,7 @@ with tab1:
                     </div>""", unsafe_allow_html=True)
                     st.write("")
                     update_file_checkbox = st.checkbox(
-                    ":gray-badge[⚠️ I am sure I want to update the file]",
+                    "🔒 I am sure I want to update the file",
                     key="key_update_file_checkbox")
                     if update_file_checkbox:
                         st.button("Save", key="key_save_ds_file_button", on_click=save_ds_file)
@@ -200,65 +200,76 @@ with tab1:
 
         if large_file_checkbox:
 
-            folder_name = "data_sources"
-
-            with col1a:
-                st.markdown(f"""<div class="info-message-blue">
-                        ℹ️ Please add your file to the <b style="color:#F63366;">
-                        {folder_name}</b> folder inside the main folder. Then, select it
-                        from list below <small><b>(do not use uploader)</b></small>.
-                    </span></div>""", unsafe_allow_html=True)
-
+            folder_name = utils.get_ds_folder_name()
             folder_path = os.path.join(os.getcwd(), folder_name)
 
+            with col1:
+                col1a, col1b = st.columns([2,1])
+
             if not os.path.isdir(folder_path):
-                with col1a:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ Folder <b>{folder_name}</b> does not exist. Please,
-                            create it within the main folder and add your file to it.
-                        </div>""", unsafe_allow_html=True)
+                with col1b:
                     st.write("")
+                    st.markdown(f"""<div class="error-message">
+                            ❌ Folder <b>{folder_name}</b> does not exist. <small>Please,
+                            create it within the main folder and <b>add your file</b> to it</small>.
+                        </div>""", unsafe_allow_html=True)
+
             else:
                 tab_files = [f for f in os.listdir(folder_path)
                     if os.path.isfile(os.path.join(folder_path, f)) and any(f.endswith(ext)
                     for ext in ds_allowed_formats)]
-                list_to_choose = tab_files
-                list_to_choose.insert(0, "Select file")
-                with col1a:
-                    st.write("")
-                    ds_large_filename = st.selectbox("🖱️ Select file*:", tab_files)
 
-                if ds_large_filename != "Select file":
 
-                    ds_file_path = os.path.join(folder_path, ds_large_filename)
-                    ds_file = open(ds_file_path, "rb")
-                    try:
-                        columns_df = utils.read_tab_file_unsaved(ds_file)
+                if not tab_files:
+                    with col1b:
+                        st.write("")
+                        st.markdown(f"""<div class="error-message">
+                                ❌ The folder <b>{folder_name}</b> is empty. <small>Please,
+                                <b>add your file</b> to it</small>.
+                            </div>""", unsafe_allow_html=True)
 
-                        if ds_large_filename in st.session_state["ds_files_dict"]:
+                else:
+                    with col1b:
+                        st.write("")
+                        st.markdown(f"""<div class="info-message-blue">
+                                ℹ️ <b>Add your file</b> to the <b style="color:#F63366;">
+                                {folder_name}</b> folder to select it
+                                from the list below <small><b>(do not use uploader)</b></small>.
+                            </span></div>""", unsafe_allow_html=True)
+                    list_to_choose = tab_files
+                    list_to_choose.insert(0, "Select file")
+                    with col1a:
+                        ds_large_filename = st.selectbox("🖱️ Select file*:", tab_files)
+
+                    if ds_large_filename != "Select file":
+
+                        ds_file_path = os.path.join(folder_path, ds_large_filename)
+                        ds_file = open(ds_file_path, "rb")
+                        try:
+                            columns_df = utils.read_tab_file_unsaved(ds_file)
+
+                            if ds_large_filename in st.session_state["ds_files_dict"]:
+                                with col1a:
+                                    st.markdown(f"""<div class="warning-message">
+                                        ⚠️ File <b>{ds_large_filename}</b> is already loaded.
+                                        <small>If you continue, its content <b>will be updated</b>.</small>
+                                    </div>""", unsafe_allow_html=True)
+                                    update_large_file_checkbox = st.checkbox(
+                                    "🔒 I am sure I want to update the file",
+                                    key="key_update_large_file_checkbox")
+                                    if update_large_file_checkbox:
+                                        st.button("Save", key="key_save_large_ds_file_button", on_click=save_large_ds_file)
+                            else:
+                                with col1a:
+                                    st.button("Save", key="key_save_large_ds_file_button",
+                                    on_click=save_large_ds_file)
+
+                        except:    # empty file
                             with col1a:
-                                st.write("")
-                                st.markdown(f"""<div class="warning-message">
-                                    ⚠️ File <b>{ds_large_filename}</b> is already loaded.<br>
-                                    <small>If you continue its content will be updated.</small>
+                                st.markdown(f"""<div class="error-message">
+                                    ❌ The file <b>{ds_large_filename}</b> appears to be empty or corrupted. Please select a valid file.
                                 </div>""", unsafe_allow_html=True)
                                 st.write("")
-                                update_large_file_checkbox = st.checkbox(
-                                ":gray-badge[⚠️ I am sure I want to update the file]",
-                                key="key_update_large_file_checkbox")
-                                if update_large_file_checkbox:
-                                    st.button("Save", key="key_save_large_ds_file_button", on_click=save_large_ds_file)
-                        else:
-                            with col1a:
-                                st.button("Save", key="key_save_large_ds_file_button",
-                                on_click=save_large_ds_file)
-
-                    except:    # empty file
-                        with col1a:
-                            st.markdown(f"""<div class="error-message">
-                                ❌ The file <b>{ds_large_filename}</b> appears to be empty or corrupted. Please select a valid file.
-                            </div>""", unsafe_allow_html=True)
-                            st.write("")
 
 
     if not st.session_state["ds_files_dict"] and st.session_state["ds_file_removed_ok_flag"]:

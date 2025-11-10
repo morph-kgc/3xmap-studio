@@ -171,7 +171,7 @@ with tab1:
             with col2b:
                 st.write("")
                 st.markdown("""<div class="info-message-gray">
-                🐢 This pannel can be slow <small>if there are <b>failed connections</b></small>.
+                🐢 This pannel can be <b>slow</b> <small>if there are failed connections</small>.
                     </div>""", unsafe_allow_html=True)
 
         # Option to show all connections (if too many)
@@ -217,7 +217,7 @@ with tab1:
     with col1a:
         db_engine = st.selectbox("🖱️ Select a database engine:*", db_engine_list, key="key_db_engine")
     with col1b:
-        conn_label = st.text_input("⌨️ Enter label:*", key="key_conn_label")
+        conn_label = st.text_input("🏷️ Enter label:*", key="key_conn_label")
         valid_conn_label = utils.is_valid_label(conn_label)
         if valid_conn_label and conn_label in st.session_state["db_connections_dict"]:
             with col1a:
@@ -564,7 +564,7 @@ with tab2:
                 with col2b:
                     st.write("")
                     st.markdown("""<div class="info-message-gray">
-                    🐢 This pannel can be slow <small>if there are <b>failed connections</b></small>.
+                    🐢 This pannel can be <b>slow</b> <small>if there are failed connections</small>.
                         </div>""", unsafe_allow_html=True)
 
             # Option to show all connections (if too many)
@@ -802,7 +802,7 @@ with tab3:
         if connection_for_query != "Select a connection":
 
             with col1b:
-                sql_query_label = st.text_input("⌨️ Enter label for the view (to save it):*",
+                sql_query_label = st.text_input("🏷️ Enter label for the view (to save it):*",
                     key="key_sql_query_label")
                 valid_sql_query_label = utils.is_valid_label(sql_query_label)
                 if sql_query_label and sql_query_label not in st.session_state["sql_queries_dict"]:
