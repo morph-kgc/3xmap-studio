@@ -63,6 +63,7 @@ def remove_connection():
     st.session_state["db_connection_removed_ok_flag"] = True  # for success message
     # reset fields_____________________
     st.session_state["key_connection_labels_to_remove_list"] = []
+    st.session_state["key_manage_connection_option"] = "🔎 Inspect"
 
 # TAB2
 def save_ds_file():
@@ -331,37 +332,58 @@ with tab1:
 
             with col1a:
 
-                list_to_choose = list(reversed(list(st.session_state["db_connections_dict"].keys())))
-                list_to_choose.insert(0, "Select connection")
-                connection_label_to_check = st.selectbox("🖱️ Select connection:*", list_to_choose,
-                    key="key_connection_label_to_check")
+                list_to_choose = sorted(st.session_state["db_connections_dict"].keys())
+                list_to_choose.insert(0, "Select all")
+                connection_label_to_check_list = st.multiselect("🖱️ Select connections:*", list_to_choose,
+                    key="key_connection_label_to_check_list")
 
-                if connection_label_to_check != "Select connection":
+                if "Select all" in connection_label_to_check_list:
+                    connection_label_to_check_list = sorted(st.session_state["db_connections_dict"].keys())
 
-                    utils.update_db_connection_status_dict(connection_label_to_check)
+                if connection_label_to_check_list:
 
-                    engine = st.session_state["db_connections_dict"][connection_label_to_check][0]
-                    host = st.session_state["db_connections_dict"][connection_label_to_check][1]
-                    port= st.session_state["db_connections_dict"][connection_label_to_check][2]
-                    database = st.session_state["db_connections_dict"][connection_label_to_check][3]
-                    user = st.session_state["db_connections_dict"][connection_label_to_check][4]
-                    password = st.session_state["db_connections_dict"][connection_label_to_check][5]
+                    rows = []
+                    failed_conn_list = []
+                    for conn in connection_label_to_check_list:
 
-                    status = st.session_state["db_connection_status_dict"][connection_label_to_check][0]
+                        utils.update_db_connection_status_dict(conn)
 
-                    df = pd.DataFrame([{"Label": connection_label_to_check, "Engine": engine,
-                        "Host": host, "Port": port, "Database": database,
-                        "User": user, "Status": status}])
+                        engine = st.session_state["db_connections_dict"][conn][0]
+                        host = st.session_state["db_connections_dict"][conn][1]
+                        port= st.session_state["db_connections_dict"][conn][2]
+                        database = st.session_state["db_connections_dict"][conn][3]
+                        user = st.session_state["db_connections_dict"][conn][4]
+                        password = st.session_state["db_connections_dict"][conn][5]
+                        status = st.session_state["db_connection_status_dict"][conn][0]
+
+                        if status == "🚫":
+                            failed_conn_list.append(conn)
+
+                        rows.append({
+                            "Label": conn,
+                            "Engine": engine,
+                            "Host": host,
+                            "Port": port,
+                            "Database": database,
+                            "User": user,
+                            "Status": status
+                        })
+
+                    df = pd.DataFrame(rows)
 
                     with col1:
                         st.dataframe(df, use_container_width=True, hide_index=True)
 
-                    if status == "🚫":
+                    inner_html = ""
+                    for conn in failed_conn_list:
+                        inner_html += f"""<div style="margin-left: 20px;"><b>{conn}:</b>
+                        <small>{str(st.session_state["db_connection_status_dict"][conn][1])}</small><br></div>"""
+
+                    if inner_html:
                         with col1:
                             st.markdown(f"""<div class="error-message">
-                                🚫 <b>Connection not working.</b>
-                                <small><b>Full error</b>
-                                {str(st.session_state["db_connection_status_dict"][connection_label_to_check][1])}</small>
+                                🚫 <b>Connection/s not working:</b><br>
+                                {inner_html}
                             </div>""", unsafe_allow_html=True)
                             st.write("")
 
