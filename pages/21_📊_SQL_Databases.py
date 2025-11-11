@@ -231,13 +231,11 @@ with tab1:
     if db_engine != "Select engine":
         default_ports_dict = utils.get_default_ports()
         default_port = default_ports_dict[db_engine] if db_engine in default_ports_dict else ""
-        default_users_dict = utils.get_default_users()
-        default_user = default_users_dict[db_engine] if db_engine in default_users_dict else ""
         with col1:
             col1a, col1b, col1c = st.columns(3)
         with col1a:
             host = st.text_input("⌨️ Enter host:*", value="localhost")
-            user = st.text_input("⌨️ Enter user:*", value=default_user)
+            user = st.text_input("⌨️ Enter user:*")
         with col1b:
             port = st.text_input("⌨️ Enter port:*", value=default_port)
             password = st.text_input("⌨️ Enter password:*", type="password")

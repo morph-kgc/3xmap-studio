@@ -1782,16 +1782,6 @@ def get_default_ports():
 #______________________________________________________
 
 #________________________________________________________
-# Funtion with the default users for the different engines
-def get_default_users():
-
-    default_users_dict = {"PostgreSQL": "postgres", "MySQL": "root",
-    "MariaDB": "root", "SQL Server": "sa", "Oracle": "system"}
-
-    return default_users_dict
-#______________________________________________________
-
-#________________________________________________________
 # Funtion to check connection to a database
 def try_connection(db_connection_type, host, port, database, user, password):
 
