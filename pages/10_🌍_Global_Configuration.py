@@ -1063,48 +1063,15 @@ with tab2:
                 base_ns_prefix_candidate = st.selectbox("🖱️ Select new base namespace:",
                     list_to_choose, key="key_base_ns_prefix_candidate")
 
-            with col1b:
+            with col1:
+                if base_ns_prefix_candidate != "Select prefix":
+                    base_ns_iri_candidate = mapping_ns_dict[base_ns_prefix_candidate]
+                    unbind_previous_base_ns_checkbox = st.checkbox(f"""🗑️ Unbind {st.session_state["base_ns"][0]} namespace""",
+                        key="key_unbind_previous_base_ns_checkbox", value=True)
+                    st.button("Confirm", key="key_change_base_ns_button", on_click=change_base_ns)
 
-                if structural_ns_iri_candidate:
-                    valid_iri_input = False
-                    if not utils.is_valid_iri(structural_ns_iri_candidate):
-                        st.markdown(f"""<div class="error-message">
-                            ❌ <b> Invalid IRI. </b>
-                            <small>Please make sure it starts with a valid scheme (e.g., http, https), includes no illegal characters
-                            and ends with a delimiter (/, # or :).</small>
-                        </div>""", unsafe_allow_html=True)
-                    elif structural_ns_iri_candidate in mapping_ns_dict.values():
-                        for pr, ns in mapping_ns_dict.items():
-                            if ns == structural_ns_iri_candidate:
-                                bound_prefix = pr
-                                break
-                        if structural_ns_prefix_candidate == bound_prefix:
-                            st.markdown(f"""<div class="error-message">
-                                ❌ <b> Namespace is already bound to prefix {bound_prefix}.</b>
-                            </div>""", unsafe_allow_html=True)
-                        else:
-                            st.markdown(f"""<div class="warning-message">
-                                ⚠️ <b> Namespace is already bound to prefix {bound_prefix}. </b>
-                                <small>If you continue, that prefix will be overwritten <b>({bound_prefix} → {structural_ns_prefix_candidate})</b>.</small>
-                            </div>""", unsafe_allow_html=True)
-                            valid_iri_input = True
-                    else:
-                        valid_iri_input = True
-
-
-
-
-
-
-                if structural_ns_iri_candidate and structural_ns_prefix_candidate:
-                    if valid_iri_input and valid_prefix_input:
-                        with col1:
-                            unbind_previous_base_ns_checkbox = st.checkbox(f"🗑️ Unbind {st.session_state['structural_ns'][0]} namespace",
-                                key="key_unbind_previous_base_ns_checkbox", value=True)
-                            st.button("Confirm", key="key_change_structural_ns_button", on_click=change_structural_ns)
-
-                if not structural_ns_iri_candidate and not structural_ns_prefix_candidate:
-                    if st.session_state["structural_ns"] != utils.get_default_structural_ns():
+                if base_ns_prefix_candidate == "Select prefix":
+                    if st.session_state["base_ns"] != utils.get_default_base_ns():
                         with col1:
                             default_base_ns = utils.get_default_base_ns()
                             base_ns_prefix_candidate = default_base_ns[0]

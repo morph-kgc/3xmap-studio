@@ -30,9 +30,9 @@ RML, QL = utils.get_required_ns_dict().values()
 # TAB1
 def save_tm_w_existing_ls():
     # add triples___________________
-    NS = st.session_state["structural_ns"][1]
+    NS = st.session_state["base_ns"][1]
     tm_iri = NS[f"{st.session_state['tm_label']}"]  # change so that is can be defined by user
-    NS = st.session_state["structural_ns"][1]
+    NS = st.session_state["base_ns"][1]
     ls_iri =  NS[f"{existing_ls}"]   # idem ns
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    #bind to logical source
     st.session_state["g_mapping"].add((tm_iri, RDF.type, RML.TriplesMap))
@@ -44,7 +44,7 @@ def save_tm_w_existing_ls():
 
 def save_tm_w_tabular_ls():
     # add triples__________________
-    NS = st.session_state["structural_ns"][1]
+    NS = st.session_state["base_ns"][1]
     tm_iri = NS[f"{st.session_state['tm_label']}"]
     ds_filename = ds_file.name
     if ls_label:
@@ -83,7 +83,7 @@ def save_tm_w_query():
     elif engine =="MariaDB":
         jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
     # add triples__________________
-    NS = st.session_state["structural_ns"][1]
+    NS = st.session_state["base_ns"][1]
     tm_iri = NS[f"{st.session_state['tm_label']}"]
     if ls_label:
         NS = st.session_state["base_ns"][1]
@@ -114,7 +114,7 @@ def save_tm_w_table_name():
     elif engine =="MariaDB":
         jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
     # add triples__________________
-    NS = st.session_state["structural_ns"][1]
+    NS = st.session_state["base_ns"][1]
     tm_iri = NS[f"{st.session_state['tm_label']}"]
     if ls_label:
         NS = st.session_state["base_ns"][1]
@@ -2749,7 +2749,7 @@ with tab4:
             col1a, col1b = st.columns([1.5,1])
         with col1a:
             clean_g_mapping_checkbox = st.checkbox(
-            f"🔒 I am sure I want to clean mapping {st.session_state['g_label']}",
+            f"""🔒 I am sure I want to clean mapping {st.session_state["g_label"]}""",
             key="key_clean_g_mapping_checkbox")
         if clean_g_mapping_checkbox:
             with col1a:
