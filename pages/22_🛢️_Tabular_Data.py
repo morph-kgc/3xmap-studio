@@ -12,8 +12,6 @@ import uuid   # to handle uploader keys
 import io
 from streamlit_js_eval import streamlit_js_eval
 
-#HEREIGO
-
 # Config-----------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
     st.set_page_config(page_title="3Xmap Studio", layout="wide",
