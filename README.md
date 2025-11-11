@@ -24,7 +24,7 @@ You can run 3Xmap Studio by cloning this repository and executing:
 
 ```bash
 pip install -r requirements.txt
-python -m streamlit run 3xmap-studio.py
+python -m streamlit run 0_3xmap-studio.py
 ```
 
 We recommend to use [virtual environments](https://docs.python.org/3/library/venv.html#) to install 3Xmap Studio.
