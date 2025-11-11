@@ -110,7 +110,7 @@ def remove_views():
 # START PAGE_____________________________________________________________________
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
-tab1, tab2, tab3 = st.tabs(["Connect to Database", "Display Data", "Create View"])
+tab1, tab2, tab3 = st.tabs(["Manage Connections", "Display Data", "Manage Views"])
 
 #_______________________________________________________________________________
 # PANEL: CONNECT TO DATABASE
