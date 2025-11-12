@@ -63,6 +63,7 @@ def remove_connection():
     st.session_state["db_connection_removed_ok_flag"] = True  # for success message
     # reset fields_____________________
     st.session_state["key_connection_labels_to_remove_list"] = []
+    st.session_state["key_manage_connection_option"] = "🔎 Inspect"
 
 # TAB2
 def save_ds_file():
@@ -105,15 +106,16 @@ def remove_views():
         del st.session_state["sql_queries_dict"][query]
     # store information____________________
     st.session_state["sql_query_removed_ok_flag"] = True
+    st.session_state["key_manage_view_option"] = "🖼️ View results"
 
 
 # START PAGE_____________________________________________________________________
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
-tab1, tab2, tab3 = st.tabs(["Connect to Database", "Display Data", "Create View"])
+tab1, tab2, tab3 = st.tabs(["Manage Connections", "Inspect Data", "Manage Views"])
 
 #_______________________________________________________________________________
-# PANEL: CONNECT TO DATABASE
+# PANEL: MANAGE CONNECTIONS
 with tab1:
 
     col1, col2 = st.columns([2,1.5])
@@ -231,13 +233,11 @@ with tab1:
     if db_engine != "Select engine":
         default_ports_dict = utils.get_default_ports()
         default_port = default_ports_dict[db_engine] if db_engine in default_ports_dict else ""
-        default_users_dict = utils.get_default_users()
-        default_user = default_users_dict[db_engine] if db_engine in default_users_dict else ""
         with col1:
             col1a, col1b, col1c = st.columns(3)
         with col1a:
             host = st.text_input("⌨️ Enter host:*", value="localhost")
-            user = st.text_input("⌨️ Enter user:*", value=default_user)
+            user = st.text_input("⌨️ Enter user:*")
         with col1b:
             port = st.text_input("⌨️ Enter port:*", value=default_port)
             password = st.text_input("⌨️ Enter password:*", type="password")
@@ -285,7 +285,7 @@ with tab1:
 
 
     # SUCCESS MESSAGE: CONN TO DB REMOVED
-    # Shows here if there is no Remove Connections purple heaer
+    # Shows here if there is no Remove Connections purple header
     if not st.session_state["db_connections_dict"] and st.session_state["db_connection_removed_ok_flag"]:
         with col1:
             col1a, col1b = st.columns([2,1])
@@ -304,7 +304,7 @@ with tab1:
         with col1:
             st.write("_______")
             st.markdown("""<div class="purple-heading">
-                    🗑️ Remove Connections
+                    ⚙️ Manage Connections
                 </div>""", unsafe_allow_html=True)
             st.write("")
 
@@ -323,178 +323,245 @@ with tab1:
         with col1:
             col1a, col1b = st.columns([2,1])
 
-        with col1a:
-            list_to_choose = list(reversed(list(st.session_state["db_connections_dict"].keys())))
-            list_to_choose.insert(0, "Select all failed connections")
-            if len(list_to_choose) > 2:
+        with col1b:
+            st.write("")
+            list_to_choose = ["🔎 Inspect", "🗑️ Remove"]
+            manage_connection_option = st.radio("🖱️ Select an option:*", list_to_choose,
+                label_visibility="collapsed", key="key_manage_connection_option")
+
+        if manage_connection_option == "🔎 Inspect":
+
+            with col1a:
+
+                list_to_choose = sorted(st.session_state["db_connections_dict"].keys())
                 list_to_choose.insert(0, "Select all")
-            connection_labels_to_remove_list = st.multiselect("🖱️ Select connections:*", list_to_choose,
-                key="key_connection_labels_to_remove_list")
+                connection_label_to_check_list = st.multiselect("🖱️ Select connections:*", list_to_choose,
+                    key="key_connection_label_to_check_list")
 
-        if "Select all" in connection_labels_to_remove_list:
-            connection_labels_to_remove_list = list(st.session_state["db_connections_dict"].keys())
+                if "Select all" in connection_label_to_check_list:
+                    connection_label_to_check_list = sorted(st.session_state["db_connections_dict"].keys())
 
-            inner_html = ""
-            max_length = utils.get_max_length_for_display()[4]
+                if connection_label_to_check_list:
 
-            for conn in connection_labels_to_remove_list[:max_length]:
-                jdbc_str = utils.get_jdbc_str(conn)
-                inner_html += f"""<div style="margin-bottom:4px;">
-                    <small><b>🔌 {conn}</b> → {jdbc_str}</small>
-                </div>"""
+                    rows = []
+                    failed_conn_list = []
+                    for conn in connection_label_to_check_list:
 
-            full_html = f"""<div class="info-message-gray">
-                {inner_html}</div>"""
+                        utils.update_db_connection_status_dict(conn)
 
-            if len(connection_labels_to_remove_list) > max_length:
-                inner_html += f"""<div style="margin-bottom:4px;">
-                    <small>🔌 ... <b>(+{len(connection_labels_to_remove_list[:max_length])})</b></small>
-                </div>"""
+                        engine = st.session_state["db_connections_dict"][conn][0]
+                        host = st.session_state["db_connections_dict"][conn][1]
+                        port= st.session_state["db_connections_dict"][conn][2]
+                        database = st.session_state["db_connections_dict"][conn][3]
+                        user = st.session_state["db_connections_dict"][conn][4]
+                        password = st.session_state["db_connections_dict"][conn][5]
+                        status = st.session_state["db_connection_status_dict"][conn][0]
 
-            with col1b:
-                st.write("")
-                st.markdown(f"""<div class="warning-message">
-                    ⚠️ You are removing <b>all connections</b> to databases.
-                    <small>Make sure you want to go ahead.</small>
-                </div>""", unsafe_allow_html=True)
+                        if status == "🚫":
+                            failed_conn_list.append(conn)
 
-            with col1a:
-                delete_all_connections_checkbox = st.checkbox(
-                "🔒 I am sure I want to remove all connections",
-                key="key_delete_all_connections_checkbox")
-                if delete_all_connections_checkbox:
-                    st.button("Remove", key="key_remove_connection_button", on_click=remove_connection)
-                if len(connection_labels_to_remove_list) > 0:
-                    st.markdown(f"""<div class="info-message-gray">
-                            {inner_html}
-                        </div>""", unsafe_allow_html=True)
+                        rows.append({
+                            "Label": conn,
+                            "Engine": engine,
+                            "Host": host,
+                            "Port": port,
+                            "Database": database,
+                            "User": user,
+                            "Status": status
+                        })
 
-        elif "Select all failed connections" in connection_labels_to_remove_list:
+                    df = pd.DataFrame(rows)
 
-            not_working_connections_list = []
+                    with col1:
+                        st.dataframe(df, use_container_width=True, hide_index=True)
 
-            for connection_label in st.session_state["db_connections_dict"]:
-                utils.update_db_connection_status_dict(connection_label)
-                if st.session_state["db_connection_status_dict"][connection_label][0] == "🚫":
-                    not_working_connections_list.append(connection_label)
+                    inner_html = ""
+                    for conn in failed_conn_list:
+                        inner_html += f"""<div style="margin-left: 20px;"><b>{conn}:</b>
+                        <small>{str(st.session_state["db_connection_status_dict"][conn][1])}</small><br></div>"""
 
-            connection_labels_to_remove_list.remove("Select all failed connections")
-            connection_labels_to_remove_list = list(set(connection_labels_to_remove_list + not_working_connections_list))
+                    if inner_html:
+                        with col1:
+                            st.markdown(f"""<div class="error-message">
+                                🚫 <b>Connection/s not working:</b><br>
+                                {inner_html}
+                            </div>""", unsafe_allow_html=True)
+                            st.write("")
 
-            inner_html = ""
-            max_length = utils.get_max_length_for_display()[4]
-
-            for conn in connection_labels_to_remove_list[:max_length]:
-                jdbc_str = utils.get_jdbc_str(conn)
-                inner_html += f"""<div style="margin-bottom:4px;">
-                    <small><b>🔌 {conn}</b> → {jdbc_str}</small>
-                </div>"""
-
-            if len(connection_labels_to_remove_list) > max_length:
-                inner_html += f"""<div style="margin-bottom:4px;">
-                    <small>🔌 ... <b>(+{len(connection_labels_to_remove_list[:max_length])})</b></small>
-                </div>"""
-
-            with col1b:
-                st.write("")
-                if not_working_connections_list:
-                    st.markdown(f"""<div class="info-message-gray">
-                            🚫 Failed connections:<br>
-                            <small><b>{utils.format_list_for_markdown(not_working_connections_list)}</b></small>
-                        </div>""", unsafe_allow_html=True)
-                else:
-                    st.markdown(f"""<div class="success-message">
-                            ✔️ <b>No failed connections</b> to remove.
-                            <small>All connections are working. </small>
-                        </div>""", unsafe_allow_html=True)
+        elif manage_connection_option == "🗑️ Remove":
 
             with col1a:
-                if connection_labels_to_remove_list:
-                    delete_all_cross_connections_checkbox= st.checkbox(
+                list_to_choose = list(reversed(list(st.session_state["db_connections_dict"].keys())))
+                list_to_choose.insert(0, "Select all failed connections")
+                if len(list_to_choose) > 2:
+                    list_to_choose.insert(0, "Select all")
+                connection_labels_to_remove_list = st.multiselect("🖱️ Select connections:*", list_to_choose,
+                    key="key_connection_labels_to_remove_list")
+
+            if "Select all" in connection_labels_to_remove_list:
+                connection_labels_to_remove_list = list(st.session_state["db_connections_dict"].keys())
+
+                inner_html = ""
+                max_length = utils.get_max_length_for_display()[4]
+
+                for conn in connection_labels_to_remove_list[:max_length]:
+                    jdbc_str = utils.get_jdbc_str(conn)
+                    inner_html += f"""<div style="margin-bottom:4px;">
+                        <small><b>🔌 {conn}</b> → {jdbc_str}</small>
+                    </div>"""
+
+                full_html = f"""<div class="info-message-gray">
+                    {inner_html}</div>"""
+
+                if len(connection_labels_to_remove_list) > max_length:
+                    inner_html += f"""<div style="margin-bottom:4px;">
+                        <small>🔌 ... <b>(+{len(connection_labels_to_remove_list[:max_length])})</b></small>
+                    </div>"""
+
+                with col1b:
+                    st.write("")
+                    st.markdown(f"""<div class="warning-message">
+                        ⚠️ You are removing <b>all connections</b> to databases.
+                        <small>Make sure you want to go ahead.</small>
+                    </div>""", unsafe_allow_html=True)
+
+                with col1a:
+                    delete_all_connections_checkbox = st.checkbox(
+                    "🔒 I am sure I want to remove all connections",
+                    key="key_delete_all_connections_checkbox")
+                    if delete_all_connections_checkbox:
+                        st.button("Remove", key="key_remove_connection_button", on_click=remove_connection)
+                    if len(connection_labels_to_remove_list) > 0:
+                        st.markdown(f"""<div class="info-message-gray">
+                                {inner_html}
+                            </div>""", unsafe_allow_html=True)
+
+            elif "Select all failed connections" in connection_labels_to_remove_list:
+
+                not_working_connections_list = []
+
+                for connection_label in st.session_state["db_connections_dict"]:
+                    utils.update_db_connection_status_dict(connection_label)
+                    if st.session_state["db_connection_status_dict"][connection_label][0] == "🚫":
+                        not_working_connections_list.append(connection_label)
+
+                connection_labels_to_remove_list.remove("Select all failed connections")
+                connection_labels_to_remove_list = list(set(connection_labels_to_remove_list + not_working_connections_list))
+
+                inner_html = ""
+                max_length = utils.get_max_length_for_display()[4]
+
+                for conn in connection_labels_to_remove_list[:max_length]:
+                    jdbc_str = utils.get_jdbc_str(conn)
+                    inner_html += f"""<div style="margin-bottom:4px;">
+                        <small><b>🔌 {conn}</b> → {jdbc_str}</small>
+                    </div>"""
+
+                if len(connection_labels_to_remove_list) > max_length:
+                    inner_html += f"""<div style="margin-bottom:4px;">
+                        <small>🔌 ... <b>(+{len(connection_labels_to_remove_list[:max_length])})</b></small>
+                    </div>"""
+
+                with col1b:
+                    st.write("")
+                    if not_working_connections_list:
+                        st.markdown(f"""<div class="info-message-gray">
+                                🚫 Failed connections:<br>
+                                <small><b>{utils.format_list_for_markdown(not_working_connections_list)}</b></small>
+                            </div>""", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""<div class="success-message">
+                                ✔️ <b>No failed connections</b> to remove.
+                                <small>All connections are working. </small>
+                            </div>""", unsafe_allow_html=True)
+
+                with col1a:
+                    if connection_labels_to_remove_list:
+                        delete_all_cross_connections_checkbox= st.checkbox(
+                        "🔒 I am sure I want to remove the selected connections",
+                        key="key_delete_all_cross_connections_checkbox")
+                        if delete_all_cross_connections_checkbox:
+                            st.button("Remove", key="key_remove_connection_button", on_click=remove_connection)
+                        st.markdown(f"""<div class="info-message-gray">
+                                {inner_html}
+                            </div>""", unsafe_allow_html=True)
+
+            elif connection_labels_to_remove_list:
+
+                inner_html = ""
+                max_length = utils.get_max_length_for_display()[4]
+
+                for conn in connection_labels_to_remove_list[:max_length]:
+                    jdbc_str = utils.get_jdbc_str(conn)
+                    inner_html += f"""<div style="margin-bottom:4px;">
+                        <small><b>🔌 {conn}</b> → {jdbc_str}</small>
+                    </div>"""
+
+                if len(connection_labels_to_remove_list) > max_length:
+                    inner_html += f"""<div style="margin-bottom:4px;">
+                        <small>🔌 ... <b>(+{len(connection_labels_to_remove_list[:max_length])})</b></small>
+                    </div>"""
+
+                with col1a:
+                    delete_connections_checkbox= st.checkbox(
                     "🔒 I am sure I want to remove the selected connections",
-                    key="key_delete_all_cross_connections_checkbox")
-                    if delete_all_cross_connections_checkbox:
+                    key="key_delete_connections_checkbox")
+                    if delete_connections_checkbox:
                         st.button("Remove", key="key_remove_connection_button", on_click=remove_connection)
                     st.markdown(f"""<div class="info-message-gray">
                             {inner_html}
                         </div>""", unsafe_allow_html=True)
 
-        elif connection_labels_to_remove_list:
-
-            inner_html = ""
-            max_length = utils.get_max_length_for_display()[4]
-
-            for conn in connection_labels_to_remove_list[:max_length]:
-                jdbc_str = utils.get_jdbc_str(conn)
-                inner_html += f"""<div style="margin-bottom:4px;">
-                    <small><b>🔌 {conn}</b> → {jdbc_str}</small>
-                </div>"""
-
-            if len(connection_labels_to_remove_list) > max_length:
-                inner_html += f"""<div style="margin-bottom:4px;">
-                    <small>🔌 ... <b>(+{len(connection_labels_to_remove_list[:max_length])})</b></small>
-                </div>"""
-
-            with col1a:
-                delete_connections_checkbox= st.checkbox(
-                "🔒 I am sure I want to remove the selected connections",
-                key="key_delete_connections_checkbox")
-                if delete_connections_checkbox:
-                    st.button("Remove", key="key_remove_connection_button", on_click=remove_connection)
-                st.markdown(f"""<div class="info-message-gray">
-                        {inner_html}
-                    </div>""", unsafe_allow_html=True)
-
-    # PURPLE HEADER: CONN INFORMATION-------------------------------------------
-    # Shows only if there are connections
-    if st.session_state["db_connections_dict"]:
-        with col1:
-            st.write("______")
-            st.markdown("""<div class="purple-heading">
-                    ℹ️ Connection Information
-                </div>""", unsafe_allow_html=True)
-            st.write("")
-
-        with col1:
-            col1a, col1b = st.columns([2,1])
-        with col1a:
-
-            list_to_choose = list(reversed(list(st.session_state["db_connections_dict"].keys())))
-            list_to_choose.insert(0, "Select connection")
-            connection_label_to_check = st.selectbox("🖱️ Select connection:*", list_to_choose,
-                key="key_connection_label_to_check")
-
-            if connection_label_to_check != "Select connection":
-
-                utils.update_db_connection_status_dict(connection_label_to_check)
-
-                engine = st.session_state["db_connections_dict"][connection_label_to_check][0]
-                host = st.session_state["db_connections_dict"][connection_label_to_check][1]
-                port= st.session_state["db_connections_dict"][connection_label_to_check][2]
-                database = st.session_state["db_connections_dict"][connection_label_to_check][3]
-                user = st.session_state["db_connections_dict"][connection_label_to_check][4]
-                password = st.session_state["db_connections_dict"][connection_label_to_check][5]
-
-                status = st.session_state["db_connection_status_dict"][connection_label_to_check][0]
-
-                df = pd.DataFrame([{"Label": connection_label_to_check, "Engine": engine,
-                    "Host": host, "Port": port, "Database": database,
-                    "User": user, "Status": status}])
-
-                with col1:
-                    st.dataframe(df, use_container_width=True, hide_index=True)
-
-                if status == "❌":
-                    with col1:
-                        st.markdown(f"""<div class="error-message">
-                            ❌ <b>Connection error:</b>
-                            {str(st.session_state["db_connection_status_dict"][connection_label_to_check][1])}
-                        </div>""", unsafe_allow_html=True)
-                        st.write("")
+    # # PURPLE HEADER: CONN INFORMATION-------------------------------------------
+    # # Shows only if there are connections
+    # if st.session_state["db_connections_dict"]:
+    #     with col1:
+    #         st.write("______")
+    #         st.markdown("""<div class="purple-heading">
+    #                 ℹ️ Connection Information
+    #             </div>""", unsafe_allow_html=True)
+    #         st.write("")
+    #
+    #     with col1:
+    #         col1a, col1b = st.columns([2,1])
+    #     with col1a:
+    #
+    #         list_to_choose = list(reversed(list(st.session_state["db_connections_dict"].keys())))
+    #         list_to_choose.insert(0, "Select connection")
+    #         connection_label_to_check = st.selectbox("🖱️ Select connection:*", list_to_choose,
+    #             key="key_connection_label_to_check")
+    #
+    #         if connection_label_to_check != "Select connection":
+    #
+    #             utils.update_db_connection_status_dict(connection_label_to_check)
+    #
+    #             engine = st.session_state["db_connections_dict"][connection_label_to_check][0]
+    #             host = st.session_state["db_connections_dict"][connection_label_to_check][1]
+    #             port= st.session_state["db_connections_dict"][connection_label_to_check][2]
+    #             database = st.session_state["db_connections_dict"][connection_label_to_check][3]
+    #             user = st.session_state["db_connections_dict"][connection_label_to_check][4]
+    #             password = st.session_state["db_connections_dict"][connection_label_to_check][5]
+    #
+    #             status = st.session_state["db_connection_status_dict"][connection_label_to_check][0]
+    #
+    #             df = pd.DataFrame([{"Label": connection_label_to_check, "Engine": engine,
+    #                 "Host": host, "Port": port, "Database": database,
+    #                 "User": user, "Status": status}])
+    #
+    #             with col1:
+    #                 st.dataframe(df, use_container_width=True, hide_index=True)
+    #
+    #             if status == "❌":
+    #                 with col1:
+    #                     st.markdown(f"""<div class="error-message">
+    #                         ❌ <b>Connection error:</b>
+    #                         {str(st.session_state["db_connection_status_dict"][connection_label_to_check][1])}
+    #                     </div>""", unsafe_allow_html=True)
+    #                     st.write("")
 
 
 #_______________________________________________________________________________
-# PANEL: DISPLAY DATA
+# PANEL: INSPECT DATA
 with tab2:
 
     col1, col2 = st.columns([2,1.5])
@@ -689,7 +756,7 @@ with tab2:
 
 
 #_______________________________________________________________________________
-# PANEL: VIEWS
+# PANEL: MANAGE VIEWS
 with tab3:
 
     col1, col2 = st.columns([2,1.5])
@@ -715,33 +782,17 @@ with tab3:
             st.write("")
             st.write("")
 
-            check_sql_query_dict = {}
-            for sql_query_label in st.session_state["sql_queries_dict"]:
-                sql_query = st.session_state["sql_queries_dict"][sql_query_label][1]
-                connection_label = st.session_state["sql_queries_dict"][sql_query_label][0]
-
-                try:
-                    conn = utils.make_connection_to_db(connection_label)
-                    cur = conn.cursor()
-                    cur.execute(sql_query)
-                    conn.close() # optional: close immediately or keep open for queries
-                    check_sql_query_dict[sql_query_label] = "✔️"
-
-                except:
-                    check_sql_query_dict[sql_query_label] = "❌"
-
             rows = []
             for label in reversed(list(st.session_state["sql_queries_dict"].keys())):
                 connection = st.session_state["sql_queries_dict"][label][0]
                 database =  st.session_state["db_connections_dict"][connection][3]
-                sql_query_ok_flag = check_sql_query_dict[sql_query_label]
-                if len(st.session_state["sql_queries_dict"][label][1]) > 20:
-                    sql_query = st.session_state["sql_queries_dict"][label][1][:20] + "..."
-                else:
-                    sql_query = st.session_state["sql_queries_dict"][label][1]
+
+                sql_query = st.session_state["sql_queries_dict"][label][1]
+                max_length = utils.get_max_length_for_display()[10]
+                sql_query = sql_query[:max_length] + "..." if len(sql_query) > max_length else sql_query
+
                 rows.append({"Label": label, "Source": connection,
-                        "Database": database, "Query": sql_query,
-                        "Query OK": sql_query_ok_flag})
+                        "Database": database, "Query": sql_query})
 
             sql_queries_df = pd.DataFrame(rows)
             last_sql_queries_df = sql_queries_df.head(utils.get_max_length_for_display()[1])
@@ -769,6 +820,13 @@ with tab3:
                 with st.expander("🔎 Show all saved views"):
                     st.write("")
                     st.dataframe(sql_queries_df, hide_index=True)
+
+            with col2:
+                col2a, col2b = st.columns([0.5,2])
+            with col2b:
+                st.markdown("""<div class="info-message-gray">
+                🐢 This pannel can be <b>slow</b> <small>if there are failed connections</small>.
+                    </div>""", unsafe_allow_html=True)
 
         # PURPLE HEADER: QUERY DATA---------------------------------------------
         with col1:
@@ -897,7 +955,7 @@ with tab3:
                         st.dataframe(limited_df.head(max_rows), hide_index=True)
 
     # SUCCESS MESSAGE: VIEW REMOVED---------------------------------------------
-    # Shows here if no Remove views purple header
+    # Shows here if no Manage saved views purple header
     if not st.session_state["sql_queries_dict"] and st.session_state["sql_query_removed_ok_flag"]:
         with col1:
             col1a, col1b = st.columns([2,1])
@@ -911,12 +969,13 @@ with tab3:
         st.rerun()
 
 
-    # PURPLE HEADER: REMOVE VIEW------------------------------------------------
+    # PURPLE HEADER: MANAGE SAVED VIEWS----------------------------------------
+    # Shows only if there are connections
     if st.session_state["sql_queries_dict"]:
         with col1:
-            st.write("_________")
+            st.write("________")
             st.markdown("""<div class="purple-heading">
-                    🗑️Remove View
+                    ⚙️ Manage Saved Views
                 </div>""", unsafe_allow_html=True)
             st.write("")
 
@@ -933,104 +992,83 @@ with tab3:
             st.rerun()
 
         with col1:
-            col1a, col1b = st.columns(2)
-
-        with col1a:
-            list_to_choose = list(reversed(st.session_state["sql_queries_dict"]))
-            if len(list_to_choose) > 1:
-                list_to_choose.insert(0, "Select all")
-            queries_to_drop_list = st.multiselect("🖱️ Select views:*", list_to_choose,
-                key="key_queries_to_drop_list")
-
-        if queries_to_drop_list:
-            with col1a:
-                if "Select all" in queries_to_drop_list:
-                    st.markdown(f"""<div class="warning-message">
-                        ⚠️ You are deleting <b>all views ({len(st.session_state["sql_queries_dict"])})</b>.
-                        <small>Make sure you want to go ahead.</small>
-                    </div>""", unsafe_allow_html=True)
-                    st.write("")
-                    remove_views_checkbox = st.checkbox(
-                    "🔒 I am sure I want to remove all views",
-                    key="key_remove_views_checkbox")
-                    queries_to_drop_list = list(st.session_state["sql_queries_dict"].keys())
-                else:
-                    remove_views_checkbox = st.checkbox(
-                    "🔒 I am sure I want to remove the selected views",
-                    key="key_remove_views_checkbox")
-
-            if remove_views_checkbox:
-                with col1a:
-                    st.button("Remove", key="key_remove_views_button", on_click=remove_views)
-
-
-    # PURPLE HEADER: CONSULT SAVED VIEWS----------------------------------------
-    # Shows only if there are connections
-    if st.session_state["sql_queries_dict"]:
-        with col1:
-            st.write("________")
-            st.markdown("""<div class="purple-heading">
-                    🔍 Consult Saved Views
-                </div>""", unsafe_allow_html=True)
-            st.write("")
-
-        with col1:
-            col1a, col1b = st.columns(2)
+            col1a, col1b, col1c = st.columns([1,1.2,0.8])
 
         connections_w_queries_set = set()
         for query in st.session_state["sql_queries_dict"]:
             connections_w_queries_set.add(st.session_state["sql_queries_dict"][query][0])
         connections_w_queries_list = list(connections_w_queries_set)
 
+        with col1c:
+            st.write("")
+            list_to_choose = ["🖼️ View results", "🔎 Inspect", "🗑️ Remove"]
+            manage_view_option = st.radio("🖱️ Select an option:*", list_to_choose,
+                label_visibility="collapsed", key="key_manage_view_option")
 
         with col1a:
             list_to_choose = connections_w_queries_list
-            list_to_choose.insert(0, "Select a connection")
-            connection_to_consult_query = st.selectbox("🖱️ Select a connection:*", list_to_choose,
-                key="key_connection_to_consult_query")
+            list_to_choose.insert(0, "No filter")
+            connection_to_manage_query_filter = st.selectbox("⚙️ Filter by connection (opt):", list_to_choose,
+                key="key_connection_to_manage_query_filter")
 
-        if connection_to_consult_query != "Select a connection":
+            if connection_to_manage_query_filter == "No filter":
 
-            sql_queries_to_consult_list = []
-            for query in st.session_state["sql_queries_dict"]:
-                if st.session_state["sql_queries_dict"][query][0] == connection_to_consult_query:
-                    sql_queries_to_consult_list.append(query)
+                sql_queries_to_manage_list = list(st.session_state["sql_queries_dict"])
+                for query in st.session_state["sql_queries_dict"]:
+                    if st.session_state["sql_queries_dict"][query][0] == connection_to_manage_query_filter:
+                        sql_queries_to_manage_list.append(query)
 
-            try:
-                conn = utils.make_connection_to_db(connection_to_consult_query)
                 connection_ok_flag = True
 
-            except:
-                with col1a:
-                    st.markdown(f"""<div class="error-message">
-                        ❌ The connection <b>{connection_label}</b> is not working.
-                        <small>Please check it in the <b>Manage Connections</b> pannel.</small>
-                    </div>""", unsafe_allow_html=True)
-                    st.write("")
-                connection_ok_flag = False
+            else:
 
-            if connection_ok_flag:
+                sql_queries_to_manage_list = []
+                for query in st.session_state["sql_queries_dict"]:
+                    if st.session_state["sql_queries_dict"][query][0] == connection_to_manage_query_filter:
+                        sql_queries_to_manage_list.append(query)
 
-                with col1b:
-                    list_to_choose = sql_queries_to_consult_list
-                    list_to_choose.insert(0, "Select query")
-                    sql_query_to_consult = st.selectbox("🖱️ Select query:*", sql_queries_to_consult_list,
-                        key="key_sql_query_to_consult")
+        if manage_view_option == "🖼️ View results":
 
+            with col1b:
+                list_to_choose = sql_queries_to_manage_list
+                list_to_choose.insert(0, "Select view")
+                sql_query_to_inspect = st.selectbox("🖱️ Select view:*", sql_queries_to_manage_list,
+                    key="key_sql_query_to_inspect")
 
-                if sql_query_to_consult != "Select query":
+            if sql_query_to_inspect != "Select view":
+
+                connection_for_query = st.session_state["sql_queries_dict"][sql_query_to_inspect][0]
+
+                try:
+                    conn = utils.make_connection_to_db(connection_for_query)
+                    connection_ok_flag = True
+
+                except:
+                    with col1:
+                        st.markdown(f"""<div class="error-message">
+                            ❌ The connection <b>{connection_for_query}</b> is not working.
+                            <small>Please check it in the <b>Manage Connections</b> pannel.</small>
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
+                    connection_ok_flag = False
+
+                if connection_ok_flag:
 
                     with col1:
+                        max_length = utils.get_max_length_for_display()[10]
+                        query_for_display = st.session_state["sql_queries_dict"][sql_query_to_inspect][1]
+                        query_for_display = query_for_display[:max_length] + "..." if len(query_for_display) > max_length else query_for_display
                         st.markdown(f"""<div class="info-message-blue">
-                                🖼️ <b style="color:#F63366;"> View</b>
-                                <small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<b>Query:</b>
-                                {st.session_state["sql_queries_dict"][sql_query_to_consult][1]})</small>
+                                🖼️ <b style="color:#F63366;"> View results:</b>
+                                <small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                (<b>Query:</b> {query_for_display})</small>
                             </div></div>""", unsafe_allow_html=True)
 
                     cur = conn.cursor()   # create a cursor
 
                     try:
-                        cur.execute(st.session_state["sql_queries_dict"][sql_query_to_consult][1])
+                        cur.execute(st.session_state["sql_queries_dict"][sql_query_to_inspect][1])
                         sql_query_ok_flag = True
 
                     except Exception as e:
@@ -1045,9 +1083,9 @@ with tab3:
 
 
                     rows = cur.fetchall()
-                    engine = st.session_state["db_connections_dict"][connection_to_consult_query][0]
+                    engine = st.session_state["db_connections_dict"][connection_for_query][0]
                     if engine == "SQL Server":
-                        rows = [tuple(row) for row in rows]   # rows are of type <class 'pyodbc.Row'> -> convert to tuple
+                        rows = [tuple(row) for row in rows]   # for SQL Server rows are of type <class 'pyodbc.Row'> -> convert to tuple
                     columns = [desc[0] for desc in cur.description]
                     df = pd.DataFrame(rows, columns=columns)
 
@@ -1078,3 +1116,75 @@ with tab3:
                             st.write("")
 
                         st.dataframe(limited_df.head(max_rows), hide_index=True)
+
+
+        if manage_view_option == "🔎 Inspect":
+
+            with col1b:
+                list_to_choose = sql_queries_to_manage_list.copy()
+                if len(list_to_choose) > 1:
+                    list_to_choose.insert(0, "Select all")
+                queries_to_inspect_list = st.multiselect("🖱️ Select views:*", list_to_choose,
+                    key="key_queries_to_inspect_list")
+
+            if "Select all" in queries_to_inspect_list:
+                queries_to_inspect_list = sql_queries_to_manage_list
+
+
+            if queries_to_inspect_list:
+
+                rows = []
+                for label in queries_to_inspect_list:
+                    connection = st.session_state["sql_queries_dict"][label][0]
+                    database =  st.session_state["db_connections_dict"][connection][3]
+
+                    sql_query = st.session_state["sql_queries_dict"][label][1]
+                    max_length = utils.get_max_length_for_display()[10]
+                    sql_query = sql_query[:max_length] + "..." if len(sql_query) > max_length else sql_query
+
+                    rows.append({"Label": label, "Source": connection,
+                            "Database": database, "Complete query": sql_query})
+
+                sql_queries_df = pd.DataFrame(rows)
+
+                with col1:
+                    st.markdown(f"""<div class="info-message-blue">
+                            🔎 <b> Views ({len(rows)}):</b>
+                        </div></div>""", unsafe_allow_html=True)
+                    st.dataframe(sql_queries_df , hide_index=True)
+
+
+        if manage_view_option == "🗑️ Remove":
+
+            with col1b:
+                list_to_choose = sql_queries_to_manage_list
+                if len(list_to_choose) > 1:
+                    list_to_choose.insert(0, "Select all")
+                queries_to_drop_list = st.multiselect("🖱️ Select views:*", list_to_choose,
+                    key="key_queries_to_drop_list")
+
+            if queries_to_drop_list:
+
+                with col1:
+                    col1a, col1b = st.columns([2.5,1])
+
+                if "Select all" in queries_to_drop_list:
+                    with col1b:
+                        st.markdown(f"""<div class="warning-message">
+                            ⚠️ You are deleting <b>all views ({len(st.session_state["sql_queries_dict"])})</b>.
+                            <small>Make sure you want to go ahead.</small>
+                        </div>""", unsafe_allow_html=True)
+                    with col1a:
+                        remove_views_checkbox = st.checkbox(
+                        "🔒 I am sure I want to remove all views",
+                        key="key_remove_views_checkbox")
+                        queries_to_drop_list = list(st.session_state["sql_queries_dict"].keys())
+                else:
+                    with col1a:
+                        remove_views_checkbox = st.checkbox(
+                        "🔒 I am sure I want to remove the selected views",
+                        key="key_remove_views_checkbox")
+
+                if remove_views_checkbox:
+                    with col1a:
+                        st.button("Remove", key="key_remove_views_button", on_click=remove_views)

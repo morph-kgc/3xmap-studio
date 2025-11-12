@@ -5,17 +5,16 @@ import base64
 
 # Config---------------------------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
-    st.set_page_config(page_title="3Xmap Studio", layout="wide",
+    st.set_page_config(page_title="3xmap Studio", layout="wide",
         page_icon="logo/fav_icon.png")
 else:
-    st.set_page_config(page_title="3Xmap Studio", layout="wide",
+    st.set_page_config(page_title="3xmap Studio", layout="wide",
         page_icon="logo/fav_icon_inverse.png")
 
 # Automatic detection of dark mode-------------------------
 if "dark_mode_flag" not in st.session_state or st.session_state["dark_mode_flag"] is None:
     st.session_state["dark_mode_flag"] = streamlit_js_eval(js_expressions="window.matchMedia('(prefers-color-scheme: dark)').matches",
         key="dark_mode")
-
 
 
 image_path = "logo/logo_inverse.png" if st.session_state["dark_mode_flag"] else "logo/logo.png"

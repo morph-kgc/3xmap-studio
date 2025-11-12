@@ -545,7 +545,7 @@ with tab1:
         if st.session_state["g_label"]:
 
             if st.session_state["g_mapping_source_cache"][0] == "URL":
-                max_length = 40
+                max_length = utils.get_max_length_for_display()[8]
                 URL_for_display = st.session_state["g_mapping_source_cache"][1]
                 if len(URL_for_display) > max_length:
                     URL_for_display = "..." + URL_for_display[-max_length:]
@@ -744,25 +744,23 @@ with tab2:
             time.sleep(utils.get_success_message_time())
             st.rerun()
 
+        predefined_ns_dict = utils.get_predefined_ns_dict()
+        default_ns_dict = utils.get_default_ns_dict()
+        default_base_ns = utils.get_default_base_ns()
         ontology_ns_dict = utils.get_g_ns_dict(st.session_state["g_ontology"])
         mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
         ontology_ns_list = [key for key in ontology_ns_dict if key not in mapping_ns_dict]
-        add_ns_options = ["✏️ Custom", "📋 Predefined", "🏛️ Base"]
+        add_ns_options = ["✏️ Custom", "🏛️ Base"]
+        if predefined_ns_dict:
+            add_ns_options.insert(1, "📋 Predefined")
         if st.session_state["g_ontology_components_dict"]:
             add_ns_options.insert(1, "🧩 Ontology")
-
         if st.session_state["original_g_mapping_ns_dict"]:
             add_ns_options.insert(1, "🗺️ Mapping")
 
         with col1:
             add_ns_selected_option = st.radio("🖱️ Select an option:*", add_ns_options, key="key_add_ns_radio",
                 label_visibility="collapsed", horizontal=True)
-
-        predefined_ns_dict = utils.get_predefined_ns_dict()
-        default_ns_dict = utils.get_default_ns_dict()
-        default_base_ns = utils.get_default_base_ns()
-        ontology_ns_dict = utils.get_g_ns_dict(st.session_state["g_ontology"])
-        mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
 
         # CUSTOM NAMESPACE
         if add_ns_selected_option == "✏️ Custom":

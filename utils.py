@@ -612,10 +612,13 @@ def format_number_for_display(number):
 # 0. complete dataframes      1. last added dataframes
 # 2. Query display (rows)    3. Query display (columns)
 # 4. List of multiselect items for hard display     # 5 Long lists for soft display
-# 6. max characters to set label in network visualisation
+# 6. Label in network visualisation (characters)
+# 7. Suggested mapping label (characters)    8. URL for display (characters)
+# 9. Max number of triples for ontology to be considered large
+# 10. Query for display
 def get_max_length_for_display():
 
-    return [50, 10, 100, 20, 5, 5, 20]
+    return [50, 10, 100, 20, 5, 5, 20, 15, 40, 10000, 30]
 #_______________________________________________________
 
 
@@ -915,7 +918,7 @@ def full_reset():
 # Function to format the suggested mapping label
 def format_suggested_mapping_label(label):
 
-    max_length = 15
+    max_length = get_max_length_for_display()[7]
 
     label = label.replace(' ', '_')
     label = re.sub(r'[<>"{}|\\^`]', '', label)
@@ -1110,24 +1113,26 @@ def get_default_ns_dict():
 def get_predefined_ns_dict():
 
     predefined_ns_dict = {
-        "fnml": URIRef("http://semweb.mmlab.be/ns/fnml#"),
-        "fno": URIRef("https://w3id.org/function/ontology#"),
-        "idlab-fn": URIRef("http://example.com/idlab/function#"),
-        "ex": URIRef("http://example.org/"),
-        "vcard": URIRef("http://www.w3.org/2006/vcard/ns#"),
+        "rdf": URIRef("http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
+        "rdfs": URIRef("http://www.w3.org/2000/01/rdf-schema#"),
+        "owl": URIRef("http://www.w3.org/2002/07/owl#"),
+        "xsd": URIRef("http://www.w3.org/2001/XMLSchema#"),
+        "schema": URIRef("http://schema.org/"),
+        "foaf": URIRef("http://xmlns.com/foaf/0.1/"),
+        "dc": URIRef("http://purl.org/dc/elements/1.1/"),
+        "dcterms": URIRef("http://purl.org/dc/terms/"),
+        "skos": URIRef("http://www.w3.org/2004/02/skos/core#"),
         "geo": URIRef("http://www.w3.org/2003/01/geo/wgs84_pos#"),
-        "xhv": URIRef("http://www.w3.org/1999/xhtml/vocab#"),
-        "gr": URIRef("http://purl.org/goodrelations/v1#"),
-        "event": URIRef("http://purl.org/NET/c4dm/event.owl#"),
-        "bioc": URIRef("http://purl.org/bioc#"),
-        "mo": URIRef("http://purl.org/ontology/mo/"),
-        "bibo": URIRef("http://purl.org/ontology/bibo/"),
-        "org": URIRef("http://www.w3.org/ns/org#"),
-        "cnt": URIRef("http://www.w3.org/2008/content#"),
-        "doap": URIRef("http://usefulinc.com/ns/doap#"),
-        "media": URIRef("http://purl.org/media#"),
-        "oa": URIRef("http://www.w3.org/ns/oa#"),
-        "time": URIRef("http://www.w3.org/2006/time#")}
+        "time": URIRef("http://www.w3.org/2006/time#"),
+        "prov": URIRef("http://www.w3.org/ns/prov#")}
+
+    default_dict = get_default_ns_dict()
+    filtered_ns_dict = {}
+    for k, v in predefined_ns_dict.items():
+        if v not in default_dict.values():
+            filtered_ns_dict[k] = v
+
+    predefined_ns_dict = filtered_ns_dict
 
     return predefined_ns_dict
 #_____________________________________________________
@@ -1777,16 +1782,6 @@ def get_default_ports():
     "MariaDB": 3306, "SQL Server": 1433, "Oracle": 1521}
 
     return default_ports_dict
-#______________________________________________________
-
-#________________________________________________________
-# Funtion with the default users for the different engines
-def get_default_users():
-
-    default_users_dict = {"PostgreSQL": "postgres", "MySQL": "root",
-    "MariaDB": "root", "SQL Server": "sa", "Oracle": "system"}
-
-    return default_users_dict
 #______________________________________________________
 
 #________________________________________________________
