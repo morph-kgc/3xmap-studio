@@ -130,6 +130,8 @@ def change_g_label():
 def full_reset():
     # full reset___________________________
     utils.full_reset()
+    #store information___________________________
+    st.session_state["everything_reseted_ok_flag"] = True
     # reset fields___________________________
     st.session_state["key_full_reset_checkbox"] = False
 
@@ -519,7 +521,9 @@ with tab1:
             else:
                 st.button("Retrieve", key="key_retrieve_session_button_2", on_click=retrieve_session)
 
-    # SUCCESS MESSAGES for retrieve cached mapping and change label-------------
+    # SUCCESS MESSAGES----------------------------------------------------------
+    # for retrieve cached mapping, change label and full reset
+
     if st.session_state["cached_mapping_retrieved_ok_flag"]:
         with col3:
             st.write("")
@@ -537,6 +541,16 @@ with tab1:
                 ✅ Mapping was renamed to <b style="color:#F63366;">{st.session_state["g_label"]}</b>!
             </div>""", unsafe_allow_html=True)
         st.session_state["g_label_changed_ok_flag"] = False
+        time.sleep(utils.get_success_message_time())
+        st.rerun()
+
+    if st.session_state["everything_reseted_ok_flag"]:
+        with col3:
+            st.write("")
+            st.markdown(f"""<div class="success-message-flag">
+                ✅ <b>Clean slate:</b> Everything has been <b style="color:#F63366;">reset</b>!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["everything_reseted_ok_flag"] = False
         time.sleep(utils.get_success_message_time())
         st.rerun()
 
@@ -1211,9 +1225,7 @@ with tab3:
 
 
         if st.session_state["progress_saved_ok_flag"]:
-            with col1:
-                col1a, col1b = st.columns([2,1])
-            with col1a:
+            with col2b:
                 st.write("")
                 st.markdown(f"""<div class="success-message-flag">
                     ✅ Current state of mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> has been cached!

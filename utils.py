@@ -645,6 +645,7 @@ def init_session_state_variables():
         st.session_state["original_g_size_cache"] = 0
         st.session_state["original_g_mapping_ns_dict"] = {}
         st.session_state["cached_mapping_retrieved_ok_flag"] = False
+        st.session_state["everything_reseted_ok_flag"] = False
         st.session_state["g_label_changed_ok_flag"] = False
         st.session_state["candidate_g_mapping"] = Graph()
         # TAB2
