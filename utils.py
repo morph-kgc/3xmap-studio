@@ -1588,7 +1588,7 @@ def parse_ontology(source):
     except:
         pass
 
-    return [Graph(), None]
+    return [Graph(), "error"]
 #______________________________________________________
 
 #______________________________________________________
@@ -1697,6 +1697,65 @@ def check_ontology_overlap(g1, g2):
 
     common = labels1 & labels2
     return bool(common)
+#______________________________________________________
+
+#______________________________________________________
+def get_candidate_ontology_info_messages(g, g_label):
+
+    valid_ontology_flag = True
+    error_html = ""
+    warning_html = ""
+    success_html = ""
+
+    # error message
+    if not utils.is_valid_ontology(g):
+        error_html += f"""❌ URL <b>does not</b> link to a valid ontology."""
+        valid_ontology_flag = False
+
+    if g_label in st.session_state["g_ontology_components_dict"]:
+        error_html = f"""❌ The ontology <b>
+                    {g_label}</b>
+                    has already been imported.</div>"""
+        valid_ontology_flag = False
+
+    if valid_ontology_flag:
+        # warning message
+        ontology_ns_dict = get_g_ns_dict(g)
+        mapping_ns_dict = get_g_ns_dict(st.session_state["g_mapping"])
+        already_used_prefix_list = []
+        already_bound_ns_list = []
+
+        for pr, ns in ontology_ns_dict.items():
+            if ns in mapping_ns_dict.values() and (pr not in mapping_ns_dict or mapping_ns_dict[pr] != ns):
+                already_bound_ns_list.append(ns)
+            elif pr in mapping_ns_dict and str(ns) != mapping_ns_dict[pr]:
+                already_used_prefix_list.append(pr)
+
+        if already_used_prefix_list and already_bound_ns_list:
+            warning_html += f"""⚠️ <small><b>Prefixes already in use ({len(already_used_prefix_list)})</b>
+                    will be auto-renamed.
+                    <b>Already bound namespaces ({len(already_bound_ns_list)})</b>
+                    will be ignored.</small>"""
+        elif already_used_prefix_list:
+            warning_html += f"""⚠️ <b>Prefixes already in use ({len(already_used_prefix_list)})</b>
+                    <small>will be auto-renamed.</small><br>"""
+        elif already_bound_ns_list:
+            warning_html += f"""<b>Already bound namespaces ({len(already_bound_ns_list)})</b>
+                    <small> will be ignored.</small></div>"""
+
+        if utils.check_ontology_overlap(g, st.session_state["g_ontology"]):
+            warning_html += f"""⚠️ <b>Ontologies overlap</b>. <small>Check them
+                        externally to make sure they are aligned and compatible.</small></div>"""
+
+        # success message
+        success_html += f"""✔️ <b>Valid ontology:</b> <b style="color:#F63366;">
+                {st.session_state["g_ontology_from_link_candidate_label"]}</b>
+                <small>(parsed successfully with format
+                <b>{st.session_state["g_ontology_from_link_candidate_fmt"]}</b>).</small>"""
+
+
+    return [valid_ontology_flag, success_html, warning_html, error_html]
+
 #______________________________________________________
 
 

@@ -146,19 +146,6 @@ with tab1:
         <small> Some <b>patience</b> may be required.</small>
             </div>""", unsafe_allow_html=True)
 
-    # SUCCESS MESSAGES----------------------------------------------------------
-    if st.session_state["g_ontology_reduced_ok_flag"]:
-        with col1:
-            col1a, col1b = st.columns([2,1])
-        with col1a:
-            st.write("")
-            st.markdown(f"""<div class="success-message-flag">
-                ✅ The <b>ontology/ies</b> have been removed!
-            </div>""", unsafe_allow_html=True)
-        st.session_state["g_ontology_reduced_ok_flag"] = False
-        time.sleep(utils.get_success_message_time())
-        st.rerun()
-
     #PURPLE HEADING: ADD NEW ONTOLOGY-------------------------------------------
     with col1:
         st.write("")
@@ -191,7 +178,7 @@ with tab1:
 
         with col1a:
             ontology_link = st.text_input("⌨️ Enter link to ontology:*", key="key_ontology_link")
-        st.session_state["ontology_link"] = ontology_link if ontology_link else ""
+            st.session_state["ontology_link"] = ontology_link if ontology_link else ""
 
         if ontology_link:
 
@@ -200,79 +187,36 @@ with tab1:
             st.session_state["g_ontology_from_link_candidate_fmt"] = fmt_candidate
             st.session_state["g_ontology_from_link_candidate_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_from_link_candidate"], source_link=st.session_state["ontology_link"])
 
-            if not utils.is_valid_ontology(g_candidate):
-                with col1a:
-                    st.markdown(f"""<div class="error-message">
-                        ❌ URL <b>does not</b> link to a valid ontology.
-                    </div>""", unsafe_allow_html=True)
-                    st.write("")
+            valid_ontology_flag, success_html, warning_html, error_html = utils.get_candidate_ontology_info_messages(st.session_state["g_ontology_from_link_candidate"], st.session_state["g_ontology_from_link_candidate_label"])
 
-            else:
+            if valid_ontology_flag:
+
                 with col1:
-                    col1a, col1b = st.columns(2)
+                    col1a, col1b, col1c = st.columns([1,3,3])
 
-                with col1b:
-                    st.markdown(f"""<div class="success-message">
-                            ✔️ <b>Valid ontology:</b> <b style="color:#F63366;">
-                            {st.session_state["g_ontology_from_link_candidate_label"]}</b>
-                            <small>(parsed successfully with format
-                            <b>{st.session_state["g_ontology_from_link_candidate_fmt"]}</b>).</small>
-                        </div>""", unsafe_allow_html=True)
-
-                ontology_ns_dict = utils.get_g_ns_dict(st.session_state["g_ontology_from_link_candidate"])
-                mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
-                already_used_prefix_list = []
-                already_bound_ns_list = []
-                for pr, ns in ontology_ns_dict.items():
-                    if ns in mapping_ns_dict.values() and (pr not in mapping_ns_dict or mapping_ns_dict[pr] != ns):
-                        already_bound_ns_list.append(ns)
-                    elif pr in mapping_ns_dict and str(ns) != mapping_ns_dict[pr]:
-                        already_used_prefix_list.append(pr)
-
-                if already_used_prefix_list and already_bound_ns_list:
-                    with col1a:
-                        st.markdown(f"""<div class="warning-message">
-                            ⚠️ <small><b>Some prefixes ({len(already_used_prefix_list)}) are already in use</b>
-                            (or reserved) and will be auto-renamed.
-                            <b>Some namespaces ({len(already_bound_ns_list)}) are already bound</b>
-                            (or reserved) to other prefixes and will be ignored.</small>
-                        </div>""", unsafe_allow_html=True)
-                elif already_used_prefix_list:
-                    with col1a:
-                        st.markdown(f"""<div class="warning-message">
-                            ⚠️ <b>Some prefixes ({len(already_used_prefix_list)}) are already in use</b>
-                            <small>(or reserved) and will be auto-renamed with a numeric suffix.</small><br>
-                        </div>""", unsafe_allow_html=True)
-                elif already_bound_ns_list:
-                    with col1a:
-                        st.markdown(f"""<div class="warning-message">
-                            <b>Some namespaces ({len(already_bound_ns_list)}) are already bound</b>
-                            <small>to other prefixes (or reserved) and will be ignored.</small>
-                        </div>""", unsafe_allow_html=True)
-
-                if not st.session_state["g_ontology"]:   #no ontology imported yet
+                if st.session_state["g_ontology"]:   #no ontology imported yet
                     with col1a:
                         st.button("Add", key="key_load_ontology_from_link_button", on_click=load_ontology_from_link)
 
                 else:  # an ontology is already imported
+                    with col1a:
+                        st.button("Add", key="key_extend_ontology_from_link_button", on_click=extend_ontology_from_link)
 
-                    if st.session_state["g_ontology_from_link_candidate_label"] in st.session_state["g_ontology_components_dict"]:
-                        with col1a:
-                            st.markdown(f"""<div class="error-message">
-                                    ❌ The ontology <b>
-                                    {st.session_state["g_ontology_from_link_candidate_label"]}</b>
-                                    has already been imported.
-                                </div>""", unsafe_allow_html=True)
-                    else:
-                        with col1a:
-                            st.button("Add", key="key_extend_ontology_from_link_button", on_click=extend_ontology_from_link)
+                if warning_html:
+                    with col1b:
+                        st.markdown(f"""<div class="warning-message">
+                                {warning_html}
+                            </div>""", unsafe_allow_html=True)
 
-                        if utils.check_ontology_overlap(st.session_state["g_ontology_from_link_candidate"], st.session_state["g_ontology"]):
-                            with col1b:
-                                st.markdown(f"""<div class="warning-message">
-                                        ⚠️ <b>Ontologies overlap</b>. <small>Check them
-                                        externally to make sure they are aligned and compatible.</small>
-                                    </div>""", unsafe_allow_html=True)
+                    with col1c:
+                        st.markdown(f"""<div class="success-message">
+                                {success_html}
+                            </div>""", unsafe_allow_html=True)
+            else:
+                with col1a:
+                    st.markdown(f"""<div class="error-message">
+                            {error_html}
+                        </div>""", unsafe_allow_html=True)
 
 
     elif import_ontology_selected_option == "📁 File":
@@ -290,52 +234,52 @@ with tab1:
             st.session_state["g_ontology_from_file_candidate"] = g_candidate
             st.session_state["g_ontology_from_file_candidate_fmt"] = fmt_candidate
             st.session_state["g_ontology_from_file_candidate_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_from_file_candidate"], source_file=st.session_state["ontology_file"])
+            valid_ontology_flag, success_html, warning_html, error_html = utils.get_candidate_ontology_info_messages(st.session_state["g_ontology_from_file_candidate"], st.session_state["g_ontology_from_file_candidate_label"])
 
-
-            if not utils.is_valid_ontology(g_candidate):
+            if valid_ontology_flag:
                 with col1b:
-                    st.markdown(f"""<div class="error-message">
-                        ❌ File <b>does not</b> contain a valid ontology.
-                    </div>""", unsafe_allow_html=True)
-                    st.write("")
+                    if warning_html:
+                        st.markdown(f"""<div class="warning-message">
+                                {warning_html}
+                            </div>""", unsafe_allow_html=True)
+
+                    st.markdown(f"""<div class="success-message">
+                            {success_html}
+                        </div>""", unsafe_allow_html=True)
+
+                with col1a:
+
+                    if not st.session_state["g_ontology"]:   #no ontology imported yet
+                        st.button("Add", key="key_load_ontology_from_file_button", on_click=load_ontology_from_file)
+                    else:   # an ontology is already imported
+                        st.button("Add", key="key_extend_ontology_from_file_button", on_click=extend_ontology_from_file)
 
             else:
                 with col1b:
-                    st.markdown(f"""<div class="success-message">
-                            ✔️ <b>Valid ontology:</b> <b style="color:#F63366;">
-                            {st.session_state["g_ontology_from_file_candidate_label"]}</b>
-                            <small>(parsed successfully with format
-                            <b>{st.session_state["g_ontology_from_file_candidate_fmt"]}</b>).</small>
+                    st.markdown(f"""<div class="error-message">
+                            {error_html}
                         </div>""", unsafe_allow_html=True)
 
-            if not st.session_state["g_ontology"]:   #no ontology imported yet
-                with col1a:
-                    st.button("Add", key="key_load_ontology_from_file_button", on_click=load_ontology_from_file)
-
-            else:   # an ontology is already imported
-
-                if st.session_state["g_ontology_from_file_candidate_label"] in st.session_state["g_ontology_components_dict"]:
-                    with col1a:
-                        st.markdown(f"""<div class="error-message">
-                                ❌ The ontology <b>
-                                {st.session_state["g_ontology_from_file_candidate_label"]}</b>
-                                has already been imported.
-                            </div>""", unsafe_allow_html=True)
-
-                else:
-                    with col1a:
-                        st.button("Add", key="key_extend_ontology_from_file_button", on_click=extend_ontology_from_file)
-
-                    if utils.check_ontology_overlap(st.session_state["g_ontology_from_file_candidate"], st.session_state["g_ontology"]):
-                        with col1b:
-                            st.markdown(f"""<div class="warning-message">
-                                    ⚠️ <b>Ontologies overlap</b>. <small>Check them
-                                    externally to make sure they are aligned and compatible.</small>
-                                </div>""", unsafe_allow_html=True)
-                            st.write("")
 
 
-    #DISCARD ONTOLOGY___________________________________
+
+
+    # SUCCESS MESSAGE: ONTOLOGY REMOVED-----------------------------------------
+    # Shows here if there is no Remove ontology purple heading
+    if not st.session_state["g_ontology"] and st.session_state["g_ontology_reduced_ok_flag"]:
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.write("")
+            st.markdown(f"""<div class="success-message-flag">
+                ✅ The <b>ontology/ies</b> have been removed!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["g_ontology_reduced_ok_flag"] = False
+        time.sleep(utils.get_success_message_time())
+        st.rerun()
+
+    # PURPLE HEADING: REMOVE ONTOLOGY-------------------------------------------
+    # Shows only if there is at least one ontology
     if st.session_state["g_ontology"]:   #ontology loaded and more than 1 component
         with col1:
             st.write("________")
@@ -343,6 +287,18 @@ with tab1:
                     🗑️ Remove Ontology
                 </div>""", unsafe_allow_html=True)
             st.write("")
+
+        if st.session_state["g_ontology_reduced_ok_flag"]:
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                st.write("")
+                st.markdown(f"""<div class="success-message-flag">
+                    ✅ The <b>ontology/ies</b> have been removed!
+                </div>""", unsafe_allow_html=True)
+            st.session_state["g_ontology_reduced_ok_flag"] = False
+            time.sleep(utils.get_success_message_time())
+            st.rerun()
 
         with col1:
             col1a, col1b = st.columns([2,1])
