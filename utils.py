@@ -562,7 +562,7 @@ def format_number_for_display(number):
 
     # >10 M  eg. 21M
     if number >= 10*10**6:
-        number_for_display = f"{round(int(number)/ 10**6)}M"
+        number_for_display = f"{int(number/ 10**6)}M"
 
     # 1-10 M  eg. 3.4M
     elif number >= 10**6:
@@ -574,7 +574,7 @@ def format_number_for_display(number):
 
     # 1k-10k  eg. 2.9k
     elif number >= 10**3:
-        number_for_display = f"{int(number / 1000)}k"
+        number_for_display = f"{round(number / 1000, 1)}k"
 
     # 10-1k  eg. 545
     elif number >= 10:
@@ -614,11 +614,11 @@ def format_number_for_display(number):
 # 4. List of multiselect items for hard display     # 5 Long lists for soft display
 # 6. Label in network visualisation (characters)
 # 7. Suggested mapping label (characters)    8. URL for display (characters)
-# 9. Max number of triples for ontology to be considered large
+# 9. Max characters when displaying ontology/mapping serialisation (ttl or nt)
 # 10. Query for display
 def get_max_length_for_display():
 
-    return [50, 10, 100, 20, 5, 5, 20, 15, 40, 10000, 30]
+    return [50, 10, 100, 20, 5, 5, 20, 15, 40, 100000, 30]
 #_______________________________________________________
 
 

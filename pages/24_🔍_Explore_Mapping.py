@@ -1240,12 +1240,19 @@ with tab4:
     list_to_choose.remove("jsonld")
 
     with col1a:
-        format_options_dict = {"🐢 turtle": "turtle", "3️⃣ ntriples": "nt",
-            "📐 trig": "trig"}
+        format_options_dict = {"🐢 turtle": "turtle", "3️⃣ ntriples": "nt"}
         preview_format_display = st.radio("🖱️ Select format:*", format_options_dict,
             horizontal=True, label_visibility="collapsed", key="key_export_format_selectbox")
         preview_format = format_options_dict[preview_format_display]
 
     if preview_format != "Select format":
         serialised_data = st.session_state["g_mapping"].serialize(format=preview_format)
-        st.code(serialised_data)
+        max_length = utils.get_max_length_for_display()[9]
+        if len(serialised_data) > max_length:
+            with col1:
+                st.markdown(f"""<div class="info-message-blue">
+                    🐘 <b>Your mapping is quite large</b> ({utils.format_number_for_display(len(st.session_state["g_mapping"]))} triples).
+                    <small>Showing only the first {utils.format_number_for_display(max_length)} characters
+                    (out of {utils.format_number_for_display(len(serialised_data))}) to avoid performance issues.</small>
+                </div>""", unsafe_allow_html=True)
+        st.code(serialised_data[:max_length])

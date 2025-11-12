@@ -468,10 +468,10 @@ with tab2:
     with col2b:
         utils.get_corner_status_message_mapping()
 
-    #PURPLE HEADING - SEARCH ONTOLOGY
+    #PURPLE HEADING - EXPLORE ONTOLOGY
     with col1:
         st.markdown("""<div class="purple-heading">
-                🔍 Search Ontology
+                🔍 Explore Ontology
             </div>""", unsafe_allow_html=True)
         st.write("")
 
@@ -1049,10 +1049,9 @@ with tab3:
         with col1:
             col1a, col1b = st.columns([2,1])
         with col1a:
-            format_options_dict = {"🐢 turtle": "turtle", "3️⃣ ntriples": "nt",
-                "📐 trig": "trig"}
+            format_options_dict = {"🐢 turtle": "turtle", "3️⃣ ntriples": "nt"}
             preview_format_display = st.radio("🖱️ Select format:*", format_options_dict,
-                horizontal=True, key="key_export_format_selectbox")
+                label_visibility="collapsed", horizontal=True, key="key_export_format_selectbox")
             preview_format = format_options_dict[preview_format_display]
 
         if len(st.session_state["g_ontology_components_dict"]) > 1:
