@@ -1731,18 +1731,6 @@ def get_candidate_ontology_info_messages(g, g_label):
             elif pr in mapping_ns_dict and str(ns) != str(mapping_ns_dict[pr]):
                 already_used_prefix_list.append(pr)
 
-        # if already_used_prefix_list and already_bound_ns_list:
-        #     warning_html += f"""⚠️ <small><b>Prefixes already in use ({len(already_used_prefix_list)})</b>
-        #             will be auto-renamed.
-        #             <b>Already bound namespaces ({len(already_bound_ns_list)})</b>
-        #             will be ignored.</small><br>"""
-        # elif already_used_prefix_list:
-        #     warning_html += f"""⚠️ <b>Prefixes already in use ({len(already_used_prefix_list)})</b>
-        #             <small>will be auto-renamed.</small><br>"""
-        # elif already_bound_ns_list:
-        #     warning_html += f"""⚠️ <b>Already bound namespaces ({len(already_bound_ns_list)})</b>
-        #             <small> will be ignored.</small><br>"""
-
         if utils.check_ontology_overlap(g, st.session_state["g_ontology"]):
             warning_html += f"""⚠️ <b>Ontologies overlap</b>. <small>Check them
                         externally to make sure they are aligned and compatible.</small><br>"""
@@ -1754,8 +1742,6 @@ def get_candidate_ontology_info_messages(g, g_label):
                 {st.session_state["g_ontology_from_link_candidate_label"]}</b>
                 <small>(parsed successfully with format
                 <b>{st.session_state["g_ontology_from_link_candidate_fmt"]}</b>).</small>"""
-
-    st.write("HERE", already_used_prefix_list, already_bound_ns_list)
 
     return [valid_ontology_flag, success_html, warning_html, error_html]
 
