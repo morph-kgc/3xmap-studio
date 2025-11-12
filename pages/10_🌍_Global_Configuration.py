@@ -206,7 +206,6 @@ def unbind_all_namespaces():
     # reset fields_____________________________
     st.session_state["key_unbind_multiselect"] = []
 
-
 #TAB3
 def save_progress():
     # name of temporary file_____________
@@ -272,7 +271,7 @@ with tab1:
     st.write("")
     st.write("")
 
-    # PURPLE HEADER: CREATE NEW MAPPING-----------------------------------------
+    # PURPLE HEADING: CREATE NEW MAPPING----------------------------------------
     col1,col2,col3 = st.columns([2,0.5, 1])
     with col1:
         st.markdown("""<div class="purple-heading">
@@ -346,7 +345,7 @@ with tab1:
         st.write("______")
 
 
-    # PURPLE HEADER- IMPORT EXISTING MAPPING------------------------------------
+    # PURPLE HEADING- IMPORT EXISTING MAPPING-----------------------------------
     with col1:
         st.markdown("""<div class="purple-heading">
                 📁 Import Existing Mapping
@@ -554,7 +553,7 @@ with tab1:
         time.sleep(utils.get_success_message_time())
         st.rerun()
 
-    # MAPPING INFORMATION BOX---------------------------------------------------
+    # RIGHT COLUMN: MAPPING INFORMATION BOX-------------------------------------
     with col3:
         if st.session_state["g_label"]:
 
@@ -604,7 +603,7 @@ with tab1:
             </div>
             """, unsafe_allow_html=True)
 
-    # OPTION - Retrieve cached mapping------------------------------------------
+    # RIGHT COLUMN OPTION: Retrieve cached mapping------------------------------
     # Only shows if not working with a mapping
     if not st.session_state["g_label"]:
         pkl_cache_filename = next((f for f in os.listdir() if f.endswith("_cache__.pkl")), None)  # fallback if no match is found
@@ -627,7 +626,7 @@ with tab1:
                     st.write("")
                     st.button("Load", key="key_retrieve_cached_mapping_button", on_click=retrieve_cached_mapping)
 
-    # OPTION - Change the mapping label-----------------------------------------
+    # RIGHT COLUMN OPTION: Change the mapping label-----------------------------
     # Only shows if working with a mapping
     if st.session_state["g_label"]:
 
@@ -647,7 +646,7 @@ with tab1:
                             {g_label_candidate}</b> (currently <b>{st.session_state["g_label"]}</b>).
                         </span></div>""", unsafe_allow_html=True)
 
-    # OPTION - Full reset-------------------------------------------------------
+    # RIGHT COLUMN OPTION: Full reset-------------------------------------------
     # Only shows if there is a mapping, ontology or data source
     if (st.session_state["g_label"] or st.session_state["db_connections_dict"]
         or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]):
@@ -685,7 +684,7 @@ with tab2:
 
         col1,col2 = st.columns([2,1.5])
 
-        # Display last added namespaces in dataframe (if any)
+        # RIGHT COLUMN: ADDED NS INFO-------------------------------------------
         mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
         used_mapping_ns_dict = utils.get_used_g_ns_dict(st.session_state["g_mapping"])
 
@@ -724,7 +723,7 @@ with tab2:
                 st.dataframe(mapping_ns_df, hide_index=True)
 
 
-        # PURPLE HEADING - ADD NEW NAMESPACE------------------------------------
+        # PURPLE HEADING: ADD NEW NAMESPACE-------------------------------------
         with col1:
             st.markdown("""<div class="purple-heading">
                     🆕 Add New Namespace
@@ -1115,7 +1114,7 @@ with tab2:
                 time.sleep(utils.get_success_message_time())
                 st.rerun()
 
-        # PURPLE HEADING - UNBIND NAMESPACE-------------------------------------
+        # PURPLE HEADING: UNBIND NAMESPACE--------------------------------------
         # Only shows if there are bound namespaces
         if list_to_choose:
             with col1:
@@ -1203,7 +1202,7 @@ with tab3:
         with col2:
             col2a,col2b = st.columns([1,2])
 
-        # OPTION - SAVE PROGRESS------------------------------------------------
+        # RIGHT COLUMN OPTION: SAVE PROGRESS------------------------------------
         with col2b:
             st.write("")
             save_progress_checkbox = st.checkbox(
@@ -1235,7 +1234,7 @@ with tab3:
             st.rerun()
 
 
-        # PURPLE HEADING - EXPORT MAPPING---------------------------------------
+        # PURPLE HEADING: EXPORT MAPPING----------------------------------------
         with col1:
             st.markdown("""<div class="purple-heading">
                     📤 Export mapping
@@ -1308,7 +1307,7 @@ with tab3:
                             {inner_html}
                         </div>""", unsafe_allow_html=True)
 
-        # PURPLE HEADING - SAVE SESSION-----------------------------------------
+        # PURPLE HEADING: SAVE SESSION------------------------------------------
         with col1:
             st.write("________")
             st.markdown("""<div class="purple-heading">
@@ -1425,7 +1424,7 @@ with tab4:
     with col2:
         col2a,col2b = st.columns([1,2])
 
-    # PURPLE HEADING - STYLE CONFIGURATION--------------------------------------
+    # PURPLE HEADING: STYLE CONFIGURATION---------------------------------------
     with col1:
         st.markdown("""<div class="purple-heading">
                 🎨 Style Configuration
