@@ -562,7 +562,7 @@ def format_number_for_display(number):
 
     # >10 M  eg. 21M
     if number >= 10*10**6:
-        number_for_display = f"{round(int(number)/ 10**6)}M"
+        number_for_display = f"{int(number/ 10**6)}M"
 
     # 1-10 M  eg. 3.4M
     elif number >= 10**6:
@@ -574,7 +574,7 @@ def format_number_for_display(number):
 
     # 1k-10k  eg. 2.9k
     elif number >= 10**3:
-        number_for_display = f"{int(number / 1000)}k"
+        number_for_display = f"{round(number / 1000, 1)}k"
 
     # 10-1k  eg. 545
     elif number >= 10:
@@ -614,11 +614,11 @@ def format_number_for_display(number):
 # 4. List of multiselect items for hard display     # 5 Long lists for soft display
 # 6. Label in network visualisation (characters)
 # 7. Suggested mapping label (characters)    8. URL for display (characters)
-# 9. Max number of triples for ontology to be considered large
+# 9. Max characters when displaying ontology/mapping serialisation (ttl or nt)
 # 10. Query for display
 def get_max_length_for_display():
 
-    return [50, 10, 100, 20, 5, 5, 20, 15, 40, 10000, 30]
+    return [50, 10, 100, 20, 5, 5, 20, 15, 40, 100000, 30]
 #_______________________________________________________
 
 
@@ -645,6 +645,7 @@ def init_session_state_variables():
         st.session_state["original_g_size_cache"] = 0
         st.session_state["original_g_mapping_ns_dict"] = {}
         st.session_state["cached_mapping_retrieved_ok_flag"] = False
+        st.session_state["everything_reseted_ok_flag"] = False
         st.session_state["g_label_changed_ok_flag"] = False
         st.session_state["candidate_g_mapping"] = Graph()
         # TAB2
@@ -1587,7 +1588,7 @@ def parse_ontology(source):
     except:
         pass
 
-    return [Graph(), None]
+    return [Graph(), "error"]
 #______________________________________________________
 
 #______________________________________________________
@@ -1696,6 +1697,54 @@ def check_ontology_overlap(g1, g2):
 
     common = labels1 & labels2
     return bool(common)
+#______________________________________________________
+
+#______________________________________________________
+def get_candidate_ontology_info_messages(g, g_label):
+
+    valid_ontology_flag = True
+    error_html = ""
+    warning_html = ""
+    success_html = ""
+
+    # error message
+    if not utils.is_valid_ontology(g):
+        error_html += f"""❌ URL <b>does not</b> link to a valid ontology."""
+        valid_ontology_flag = False
+
+    if g_label in st.session_state["g_ontology_components_dict"]:
+        error_html = f"""❌ The ontology <b>
+                    {g_label}</b>
+                    has already been imported.</div>"""
+        valid_ontology_flag = False
+
+    if valid_ontology_flag:
+        # warning message
+        ontology_ns_dict = get_g_ns_dict(g)
+        mapping_ns_dict = get_g_ns_dict(st.session_state["g_mapping"])
+        already_used_prefix_list = []
+        already_bound_ns_list = []
+
+        for pr, ns in ontology_ns_dict.items():
+            if ns in mapping_ns_dict.values() and (pr not in mapping_ns_dict or str(mapping_ns_dict[pr]) != str(ns)):
+                already_bound_ns_list.append(ns)
+            elif pr in mapping_ns_dict and str(ns) != str(mapping_ns_dict[pr]):
+                already_used_prefix_list.append(pr)
+
+        if utils.check_ontology_overlap(g, st.session_state["g_ontology"]):
+            warning_html += f"""⚠️ <b>Ontologies overlap</b>. <small>Check them
+                        externally to make sure they are aligned and compatible.</small><br>"""
+
+        if already_used_prefix_list or already_bound_ns_list:
+            warning_html += f"""⚠️ <b>Duplicated namespaces</b> <small>handled automatically.</small>"""
+        # success message
+        success_html += f"""✔️ <b>Valid ontology:</b> <b style="color:#F63366;">
+                {st.session_state["g_ontology_from_link_candidate_label"]}</b>
+                <small>(parsed successfully with format
+                <b>{st.session_state["g_ontology_from_link_candidate_fmt"]}</b>).</small>"""
+
+    return [valid_ontology_flag, success_html, warning_html, error_html]
+
 #______________________________________________________
 
 

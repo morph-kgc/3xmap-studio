@@ -77,7 +77,7 @@ with tab1:
         if class_flag or property_flag:
             with col2b:
                 st.markdown(f"""<div class="info-message-gray">
-                        🧮 Composition calculated with the number of rules which use the class or property.
+                        🧮 Composition calculated with the <b>number of rules</b> which use the class or property.
                     </div>""", unsafe_allow_html=True)
 
 #________________________________________________

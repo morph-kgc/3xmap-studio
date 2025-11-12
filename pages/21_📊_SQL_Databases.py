@@ -130,13 +130,24 @@ with tab1:
         st.write("")
         st.write("")
 
-        rows = [{"Label": label, "Engine": st.session_state["db_connections_dict"][label][0],
-                "Database": st.session_state["db_connections_dict"][label][3],
-                "Status": st.session_state["db_connection_status_dict"][label][0]}
-                for label in reversed(list(st.session_state["db_connections_dict"].keys()))]
-        db_connections_df = pd.DataFrame(rows)
-        last_added_db_connections_df = db_connections_df.head(utils.get_max_length_for_display()[1])
+    # SUCCESS MESSAGE: UPDATE CONNECTION STATUS---------------------------------
+    if st.session_state["db_connection_status_updated_ok_flag"]:
+        with col2b:
+            st.markdown(f"""<div class="success-message-flag">
+                ✅ The <b>database connection status</b> has been updated!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["db_connection_status_updated_ok_flag"] = False
+        time.sleep(utils.get_success_message_time())
+        st.rerun()
 
+    rows = [{"Label": label, "Engine": st.session_state["db_connections_dict"][label][0],
+            "Database": st.session_state["db_connections_dict"][label][3],
+            "Status": st.session_state["db_connection_status_dict"][label][0]}
+            for label in reversed(list(st.session_state["db_connections_dict"].keys()))]
+    db_connections_df = pd.DataFrame(rows)
+    last_added_db_connections_df = db_connections_df.head(utils.get_max_length_for_display()[1])
+
+    with col2b:
         max_length = utils.get_max_length_for_display()[1]   # max number of connections to show directly
         if st.session_state["db_connections_dict"]:
             if len(st.session_state["db_connections_dict"]) < max_length:
@@ -154,27 +165,27 @@ with tab1:
                     </div>""", unsafe_allow_html=True)
             st.dataframe(last_added_db_connections_df, hide_index=True)
 
-            with col2:
-                col2a, col2b, col2c = st.columns([0.5,0.8,1.2])
-            with col2c:
-                if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
-                    highlight_color = "#fff7db"
-                else:
-                    highlight_color = "#7a6228"
-                st.markdown(f"""<div style='text-align: right; font-size: 11px; margin-top: -15px;'>
-                    <span style='background-color: {highlight_color}; padding: 2px 6px; border-radius: 4px;'>🕹️ must be manually updated</span>
+        with col2:
+            col2a, col2b, col2c = st.columns([0.5,0.8,1.2])
+        with col2c:
+            if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
+                highlight_color = "#fff7db"
+            else:
+                highlight_color = "#7a6228"
+            st.markdown(f"""<div style='text-align: right; font-size: 11px; margin-top: -15px;'>
+                <span style='background-color: {highlight_color}; padding: 2px 6px; border-radius: 4px;'>🕹️ must be manually updated</span>
+            </div>""", unsafe_allow_html=True)
+
+        with col2b:
+            st.button("Update", key="key_update_db_connections_button", on_click=update_db_connections)
+
+        with col2:
+            col2a, col2b = st.columns([0.5,2])
+        with col2b:
+            st.write("")
+            st.markdown("""<div class="info-message-gray">
+            🐢 This pannel can be <b>slow</b> <small>if there are failed connections</small>.
                 </div>""", unsafe_allow_html=True)
-
-            with col2b:
-                st.button("Update", key="key_update_db_connections_button", on_click=update_db_connections)
-
-            with col2:
-                col2a, col2b = st.columns([0.5,2])
-            with col2b:
-                st.write("")
-                st.markdown("""<div class="info-message-gray">
-                🐢 This pannel can be <b>slow</b> <small>if there are failed connections</small>.
-                    </div>""", unsafe_allow_html=True)
 
         # Option to show all connections (if too many)
         with col2b:
@@ -183,16 +194,6 @@ with tab1:
                 with st.expander("🔎 Show all connections"):
                     st.write("")
                     st.dataframe(db_connections_df, hide_index=True)
-
-    # SUCCESS MESSAGE: UPDATE CONN STATUS---------------------------------------
-    if st.session_state["db_connection_status_updated_ok_flag"]:
-        with col1a:
-            st.markdown(f"""<div class="success-message-flag">
-                ✅ The <b>database connection status</b> has been updated!
-            </div>""", unsafe_allow_html=True)
-        st.session_state["db_connection_status_updated_ok_flag"] = False
-        time.sleep(utils.get_success_message_time())
-        st.rerun()
 
     # PURPLE HEADER: ADD NEW CONNECTION-----------------------------------------
     with col1:
