@@ -545,7 +545,7 @@ with tab1:
         if st.session_state["g_label"]:
 
             if st.session_state["g_mapping_source_cache"][0] == "URL":
-                max_length = 40
+                max_length = utils.get_max_length_for_display()[8]
                 URL_for_display = st.session_state["g_mapping_source_cache"][1]
                 if len(URL_for_display) > max_length:
                     URL_for_display = "..." + URL_for_display[-max_length:]

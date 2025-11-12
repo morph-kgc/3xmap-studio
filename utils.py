@@ -612,10 +612,13 @@ def format_number_for_display(number):
 # 0. complete dataframes      1. last added dataframes
 # 2. Query display (rows)    3. Query display (columns)
 # 4. List of multiselect items for hard display     # 5 Long lists for soft display
-# 6. max characters to set label in network visualisation
+# 6. Label in network visualisation (characters)
+# 7. Suggested mapping label (characters)    8. URL for display (characters)
+# 9. Max number of triples for ontology to be considered large
+# 10. Query for display
 def get_max_length_for_display():
 
-    return [50, 10, 100, 20, 5, 5, 20]
+    return [50, 10, 100, 20, 5, 5, 20, 15, 40, 10000, 30]
 #_______________________________________________________
 
 
@@ -915,7 +918,7 @@ def full_reset():
 # Function to format the suggested mapping label
 def format_suggested_mapping_label(label):
 
-    max_length = 15
+    max_length = get_max_length_for_display()[7]
 
     label = label.replace(' ', '_')
     label = re.sub(r'[<>"{}|\\^`]', '', label)

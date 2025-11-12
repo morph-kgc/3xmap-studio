@@ -510,7 +510,7 @@ with tab2:
         else:
             ontology_for_search = st.session_state["g_ontology"]
 
-        max_length = 10000
+        max_length = utils.get_max_length_for_display()[9]
         if len(ontology_for_search) > max_length:
             with col2:
                 col2a, col2b = st.columns([1,3])
@@ -1072,7 +1072,7 @@ with tab3:
             ontology_for_preview = st.session_state["g_ontology"]
 
         serialised_data = ontology_for_preview.serialize(format=preview_format)
-        max_length = 100000
+        max_length = utils.get_max_length_for_display()[9]
         if len(serialised_data) > max_length:
             with col1:
                 st.markdown(f"""<div class="info-message-blue">
