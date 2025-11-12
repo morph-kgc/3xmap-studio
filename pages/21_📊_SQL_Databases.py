@@ -184,9 +184,9 @@ with tab1:
                     st.write("")
                     st.dataframe(db_connections_df, hide_index=True)
 
-    # SUCCESS MESSAGE: UPDATE CONN STATUS---------------------------------------
+    # SUCCESS MESSAGE: UPDATE CONNECTION STATUS---------------------------------
     if st.session_state["db_connection_status_updated_ok_flag"]:
-        with col1a:
+        with col2b:
             st.markdown(f"""<div class="success-message-flag">
                 ✅ The <b>database connection status</b> has been updated!
             </div>""", unsafe_allow_html=True)
