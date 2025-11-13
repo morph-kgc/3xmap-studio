@@ -1069,10 +1069,7 @@ with tab2:
                     with col1:
                         col1a, col1b = st.columns([1,1.5])
                     with col1a:
-                        if sm_term_type_template == "🌐 IRI":
-                            list_to_choose = ["🏷️ Add Namespace*", "🔒 Add fixed part", "📈 Add variable part", "🗑️ Reset template"]
-                        else:
-                            list_to_choose = ["🏷️ Add Namespace", "🔒 Add fixed part", "📈 Add variable part", "🗑️ Reset template"]
+                        list_to_choose = ["🔒 Add fixed part", "📈 Add variable part", "🏷️ Add fixed namespace", "🗑️ Reset template"]
                         build_template_action_sm = st.selectbox(
                             "🖱️ Add template part:", list_to_choose,
                             label_visibility="collapsed", key="key_build_template_action_sm")
@@ -1115,7 +1112,7 @@ with tab2:
                                     st.button("Add", key="save_sm_template_variable_part_button", on_click=save_sm_template_variable_part)
 
 
-                    elif build_template_action_sm in ["🏷️ Add Namespace*", "🏷️ Add Namespace"]:
+                    elif build_template_action_sm == "🏷️ Add Namespace":
                         with col1b:
                             mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                             list_to_choose = sorted(mapping_ns_dict.keys())
@@ -1536,11 +1533,10 @@ with tab2:
                             inner_html_error += "<small>· The <b>reference</b> has not been selected.<small><br>"
 
                 if sm_generation_rule == "Template 📐":
-                    if sm_template and sm_term_type_template == "🌐 IRI":   # if term type is IRI the NS is compulsory
+                    if sm_template and sm_term_type_template == "🌐 IRI":   # if term type is IRI the NS is recommended
                         if not st.session_state["sm_template_prefix"]:
-                            sm_complete_flag = False
-                            inner_html_error += """<small>· Term type is <b>🌐 IRI</b>. You must <b>add a namespace</b>
-                                to the template or change the term type</small>.<br>"""
+                            inner_html_warning += """<small>· Term type is <b>🌐 IRI</b>.
+                                We recommend <b>adding a namespace</b>.</small><br>"""
 
                 if sm_generation_rule == "Reference 📊":
                     if sm_column_name and sm_term_type_reference == "🌐 IRI":
@@ -1869,7 +1865,7 @@ with tab3:
 
                 with col1a:
                     build_template_action_om = st.selectbox("🖱️ Add template part:",
-                        ["🏷️ Add Namespace", "🔒 Add fixed part", "📈 Add variable part", "🗑️ Reset template"],
+                        ["🔒 Add fixed part", "📈 Add variable part", "🏷️ Add fixed namespace", "🗑️ Reset template"],
                         label_visibility="collapsed", key="key_build_template_action_om")
 
 
@@ -1977,7 +1973,7 @@ with tab3:
                     list_to_choose = sorted(mapping_ns_dict.keys())
                     list_to_choose.insert(0, "Select a namespace")
                     with col1c:
-                        om_constant_ns_prefix = st.selectbox("🖱️ Namespace for the constant:*", list_to_choose,
+                        om_constant_ns_prefix = st.selectbox("🖱️ Namespace (opt):", list_to_choose,
                             key="key_om_constant_ns")
 
                 elif om_term_type_constant == "🌐 IRI":
@@ -2106,8 +2102,8 @@ with tab3:
 
                 if om_template and om_term_type_template == "🌐 IRI":
                     if not st.session_state["template_om_is_iri_flag"]:
-                        pom_complete_flag = False
-                        inner_html_error += "<small>· Term type is <b>🌐 IRI</b>. You must add a namespace to the template.</small><br>"
+                        inner_html_warning += """<small>· Term type is <b>🌐 IRI</b>.
+                            We recommend <b>adding a namespace</b>.<br>"""
 
                 if om_template and om_term_type_template == "📘 Literal":
                     if om_datatype == "Natural language tag" and om_language_tag == "Select language tag":
@@ -2127,8 +2123,8 @@ with tab3:
 
                 elif om_term_type_constant == "🌐 IRI":
                     if om_constant and om_constant_ns_prefix == "Select a namespace":
-                        pom_complete_flag = False
-                        inner_html_error += "<small>· Term type is <b>🌐 IRI</b>. You must select a namespace for the constant.</small><br>"
+                        inner_html_warning += """<small>· Term type is <b>🌐 IRI</b>.
+                            We recommend <b>adding a namespace</b>.</small><br>"""
 
 
             # OBJECT MAP - REFERENCE___________________________
