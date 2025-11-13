@@ -3603,6 +3603,147 @@ def get_colors_for_network_dict():
 
 #_________________________________________________
 
+#_________________________________________________
+# Function to check conn status and show error
+def check_conn_status(conn_label):
+
+    try:
+        conn = utils.make_connection_to_db(conn_label)
+        connection_ok_flag = True
+
+    except:
+        conn = None
+        connection_ok_flag = False
+
+    return [conn, connection_ok_flag]
+#_________________________________________________
+
+#_________________________________________________
+#Function to display view results
+def display_db_view_results(view):
+
+    connection_for_query = st.session_state["sql_queries_dict"][view][0]
+    conn, connection_ok_flag = check_conn_status(connection_for_query)
+
+    if connection_ok_flag:
+
+        max_length = utils.get_max_length_for_display()[10]
+        query_for_display = st.session_state["sql_queries_dict"][view][1]
+        query_for_display = query_for_display[:max_length] + "..." if len(query_for_display) > max_length else query_for_display
+
+        cur = conn.cursor()   # create a cursor
+
+        try:
+            cur.execute(st.session_state["sql_queries_dict"][view][1])
+            sql_query_ok_flag = True
+
+        except Exception as e:
+            with col1:
+                st.markdown(f"""<div class="error-message">
+                    ❌ <b>Invalid SQL syntax</b>. Please check your query.<br>
+                    <small><b> Full error:</b> {e}</small>
+                </div>""", unsafe_allow_html=True)
+                st.write("")
+            sql_query_ok_flag = False
+
+        if sql_query_ok_flag:
+            rows = cur.fetchall()
+            engine = st.session_state["db_connections_dict"][connection_for_query][0]
+            if engine == "SQL Server":
+                rows = [tuple(row) for row in rows]   # for SQL Server rows are of type <class 'pyodbc.Row'> -> convert to tuple
+            columns = [desc[0] for desc in cur.description]
+            df = pd.DataFrame(rows, columns=columns)
+
+            max_rows = utils.get_max_length_for_display()[2]
+            max_cols = utils.get_max_length_for_display()[3]
+
+            limited_df = df.iloc[:, :max_cols]   # limit number of columns
+
+            # Slice rows if needed
+            if len(df) > max_rows and df.shape[1] > max_cols:
+                st.markdown(f"""<div class="warning-message">
+                    ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
+                    and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+                </div>""", unsafe_allow_html=True)
+                st.write("")
+            elif len(df) > max_rows:
+                st.markdown(f"""<div class="warning-message">
+                    ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
+                </div>""", unsafe_allow_html=True)
+                st.write("")
+            elif df.shape[1] > max_cols:
+                st.markdown(f"""<div class="warning-message">
+                    ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+                </div>""", unsafe_allow_html=True)
+                st.write("")
+
+            st.markdown(f"""<div class="info-message-blue">
+                    🖼️ <b style="color:#F63366;"> View results ({len(df)}):</b>
+                    <small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    (<b>Query:</b> {query_for_display})</small>
+                </div></div>""", unsafe_allow_html=True)
+            st.dataframe(limited_df.head(max_rows), hide_index=True)
+
+    return connection_ok_flag
+#_________________________________________________
+
+#_________________________________________________
+#Function to display database table
+def display_db_table(table, conn_label):
+
+    conn, connection_ok_flag = check_conn_status(conn_label)
+
+    if connection_ok_flag:
+
+        cur.execute(f"SELECT * FROM {selected_db_table}")
+        rows = cur.fetchall()
+        if engine == "SQL Server":
+            rows = [tuple(row) for row in rows]   # rows are of type <class 'pyodbc.Row'> -> convert to tuple
+        columns = [desc[0] for desc in cur.description]
+
+        df = pd.DataFrame(rows, columns=columns)
+
+        max_rows = utils.get_max_length_for_display()[2]
+        max_cols = utils.get_max_length_for_display()[3]
+
+        limited_df = df.iloc[:, :max_cols]   # limit number of columns
+
+        # Slice rows if needed
+        if len(df) > max_rows and df.shape[1] > max_cols:
+            st.markdown(f"""<div class="warning-message">
+                ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
+                and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+            </div>""", unsafe_allow_html=True)
+            st.write("")
+        elif len(df) > max_rows:
+            st.markdown(f"""<div class="warning-message">
+                ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
+            </div>""", unsafe_allow_html=True)
+            st.write("")
+        elif df.shape[1] > max_cols:
+            st.markdown(f"""<div class="warning-message">
+                ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+            </div>""", unsafe_allow_html=True)
+            st.write("")
+
+        table_len = f"{len(df)} rows" if len(df) != 1 else f"{len(df)} row"
+        st.markdown(f"""<div class="info-message-blue">
+                🖼️ <b style="color:#F63366;"> Table ({table_len}):</b>
+                <small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                <b>({selected_db_table})</b></small>
+            </div></div>""", unsafe_allow_html=True)
+        st.dataframe(limited_df.head(max_rows), hide_index=True)
+
+
+        cur.close()
+        conn.close()
+
+    return connection_ok_flag
+#_________________________________________________
+
+
 #HEREIGO
 
 
