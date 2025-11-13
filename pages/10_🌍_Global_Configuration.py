@@ -618,13 +618,13 @@ with tab1:
                     "🗃️ Retrieve cached mapping",
                     key="key_retrieve_cached_mapping_checkbox")
                 if retrieve_cached_mapping_checkbox:
+                    st.button("Retrieve", key="key_retrieve_cached_mapping_button", on_click=retrieve_cached_mapping)
                     st.markdown(f"""<div class="info-message-blue">
                             ℹ️ Mapping <b style="color:#F63366;">
                             {cached_mapping_name}</b> will be loaded, together
                             with any imported ontologies and data sources.
                         </span></div>""", unsafe_allow_html=True)
-                    st.write("")
-                    st.button("Load", key="key_retrieve_cached_mapping_button", on_click=retrieve_cached_mapping)
+
 
     # RIGHT COLUMN OPTION: Change the mapping label-----------------------------
     # Only shows if working with a mapping
@@ -781,7 +781,7 @@ with tab2:
                 col1a, col1b = st.columns([1,2])
 
             with col1a:
-                prefix_input = st.text_input("⌨️ Enter prefix*: ", key = "key_prefix_input")
+                prefix_input = st.text_input("⌨️ Enter prefix:* ", key = "key_prefix_input")
 
             with col1b:
                 iri_input = st.text_input("⌨️ Enter an IRI for the new namespace:*", key="key_iri_input")

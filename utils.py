@@ -1118,12 +1118,10 @@ def get_predefined_ns_dict():
         "rdfs": URIRef("http://www.w3.org/2000/01/rdf-schema#"),
         "owl": URIRef("http://www.w3.org/2002/07/owl#"),
         "xsd": URIRef("http://www.w3.org/2001/XMLSchema#"),
-        "schema": URIRef("http://schema.org/"),
         "foaf": URIRef("http://xmlns.com/foaf/0.1/"),
         "dc": URIRef("http://purl.org/dc/elements/1.1/"),
         "dcterms": URIRef("http://purl.org/dc/terms/"),
         "skos": URIRef("http://www.w3.org/2004/02/skos/core#"),
-        "geo": URIRef("http://www.w3.org/2003/01/geo/wgs84_pos#"),
         "time": URIRef("http://www.w3.org/2006/time#"),
         "prov": URIRef("http://www.w3.org/ns/prov#")}
 
