@@ -848,7 +848,7 @@ with tab1:
                                 with col1a:
                                     list_to_choose = db_tables
                                     list_to_choose.insert(0, "Select a table")
-                                    selected_table_for_ls = st.selectbox("🖱️ Choose a table:*", list_to_choose,
+                                    selected_table_for_ls = st.selectbox("🖱️ Select a table:*", list_to_choose,
                                         key="key_selected_table_for_ls")
 
                                 if selected_table_for_ls != "Select a table":

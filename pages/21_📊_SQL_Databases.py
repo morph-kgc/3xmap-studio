@@ -696,7 +696,7 @@ with tab2:
                 with col1b:
                     list_to_choose = db_tables
                     list_to_choose.insert(0, "Select a table")
-                    selected_db_table = st.selectbox("🖱️ Choose a table:*", list_to_choose,
+                    selected_db_table = st.selectbox("🖱️ Select a table:*", list_to_choose,
                         key="key_selected_db_table")
 
                 if selected_db_table != "Select a table":
@@ -993,20 +993,19 @@ with tab3:
             st.rerun()
 
         with col1:
-            col1a, col1b, col1c = st.columns([1,1.2,0.8])
+            col1a, col1b, col1c = st.columns([0.8,1,1])
 
         connections_w_queries_set = set()
         for query in st.session_state["sql_queries_dict"]:
             connections_w_queries_set.add(st.session_state["sql_queries_dict"][query][0])
         connections_w_queries_list = list(connections_w_queries_set)
 
-        with col1c:
-            st.write("")
+        with col1a:
             list_to_choose = ["🖼️ View results", "🔎 Inspect", "🗑️ Remove"]
             manage_view_option = st.radio("🖱️ Select an option:*", list_to_choose,
                 label_visibility="collapsed", key="key_manage_view_option")
 
-        with col1a:
+        with col1b:
             list_to_choose = connections_w_queries_list
             list_to_choose.insert(0, "No filter")
             connection_to_manage_query_filter = st.selectbox("⚙️ Filter by connection (opt):", list_to_choose,
@@ -1030,7 +1029,7 @@ with tab3:
 
         if manage_view_option == "🖼️ View results":
 
-            with col1b:
+            with col1c:
                 list_to_choose = sql_queries_to_manage_list
                 list_to_choose.insert(0, "Select view")
                 sql_query_to_inspect = st.selectbox("🖱️ Select view:*", sql_queries_to_manage_list,
@@ -1092,7 +1091,6 @@ with tab3:
 
 
                     with col1:
-                        st.write("")
                         max_rows = utils.get_max_length_for_display()[2]
                         max_cols = utils.get_max_length_for_display()[3]
 
@@ -1121,7 +1119,7 @@ with tab3:
 
         if manage_view_option == "🔎 Inspect":
 
-            with col1b:
+            with col1c:
                 list_to_choose = sql_queries_to_manage_list.copy()
                 if len(list_to_choose) > 1:
                     list_to_choose.insert(0, "Select all")
@@ -1157,7 +1155,7 @@ with tab3:
 
         if manage_view_option == "🗑️ Remove":
 
-            with col1b:
+            with col1c:
                 list_to_choose = sql_queries_to_manage_list
                 if len(list_to_choose) > 1:
                     list_to_choose.insert(0, "Select all")

@@ -818,7 +818,7 @@ with tab2:
                         if prefix_input == bound_prefix:
                             st.markdown(f"""<div class="error-message">
                                 ❌ Namespace <b>{iri_input}</b> is already bound to prefix <b>{bound_prefix}</b>.
-                                <small> Please choose a different namespace and/or prefix.</small>
+                                <small> Please pick a different namespace and/or prefix.</small>
                             </div>""", unsafe_allow_html=True)
                             valid_iri_input = False
                         elif prefix_input:
@@ -1059,7 +1059,7 @@ with tab2:
                         🔗 {st.session_state["base_ns"][0]}</b> →
                         <b style="color:#F63366;">{st.session_state["base_ns"][1]}
                         </span></b><br>
-                        <small>To change it, choose another option below
+                        <small>To change it, select another option below
                         (go to <b>✏️ Custom</b> option to add more).</small>
                     </div>""", unsafe_allow_html=True)
                 st.write("")
