@@ -1394,8 +1394,8 @@ def get_ns_warning_message(ns_to_bind_list):
 
     elif already_used_prefix_list:
         st.markdown(f"""<div class="warning-message">
-                    <small>⚠️ <b>Prefixes {utils.format_list_for_markdown(already_used_prefix_list)} are already in use</b>
-                    and will be auto-renamed with a numeric suffix.</small>
+                    ⚠️ Prefixes <b>{utils.format_list_for_markdown(already_used_prefix_list)}</b> are already in use
+                    <small>and will be auto-renamed with a numeric suffix.</small>
             </div>""", unsafe_allow_html=True)
 #_________________________________________________
 

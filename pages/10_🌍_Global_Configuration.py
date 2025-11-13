@@ -177,10 +177,6 @@ def bind_ontology_namespaces():
     st.session_state["key_ontology_filter_for_ns"] = "Select ontology"
 
 def change_base_ns():
-    # unbind original namespace (optional)____________________
-    if unbind_previous_base_ns_checkbox:
-        prefix = st.session_state["base_ns"][0]
-        utils.unbind_namespaces([prefix])
     # bind new namespace and store________________________
     st.session_state["base_ns"] = [base_ns_prefix_candidate, Namespace(base_ns_iri_candidate)]
     utils.bind_namespace(base_ns_prefix_candidate, base_ns_iri_candidate)
@@ -1007,6 +1003,11 @@ with tab2:
                     </div>""", unsafe_allow_html=True)
                     st.write("")
             else:
+                with col1b:
+                    st.write("")
+                    st.markdown(f"""<div class="info-message-blue">
+                        ℹ️ This option offers quick binding of <b>common namespaces</b>.
+                    </div>""", unsafe_allow_html=True)
 
                 with col1a:
                     predefined_ns_list_not_duplicated = [k for k, v in predefined_ns_dict.items() if v not in mapping_ns_dict.values()]
@@ -1077,8 +1078,6 @@ with tab2:
             with col1:
                 if base_ns_prefix_candidate != "Select prefix":
                     base_ns_iri_candidate = mapping_ns_dict[base_ns_prefix_candidate]
-                    unbind_previous_base_ns_checkbox = st.checkbox(f"""🗑️ Unbind {st.session_state["base_ns"][0]} namespace""",
-                        key="key_unbind_previous_base_ns_checkbox", value=True)
                     st.button("Confirm", key="key_change_base_ns_button", on_click=change_base_ns)
 
                 if base_ns_prefix_candidate == "Select prefix":
@@ -1087,7 +1086,6 @@ with tab2:
                             default_base_ns = utils.get_default_base_ns()
                             base_ns_prefix_candidate = default_base_ns[0]
                             base_ns_iri_candidate = default_base_ns[1]
-                            unbind_previous_base_ns_checkbox = False
                             st.button("Set to default", key="key_base_ns_set_to_default_button", on_click=change_base_ns)
 
 
