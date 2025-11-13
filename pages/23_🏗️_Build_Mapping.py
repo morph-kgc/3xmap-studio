@@ -85,7 +85,7 @@ def save_tm_w_query():
     # add triples__________________
     NS = st.session_state["base_ns"][1]
     tm_iri = NS[f"{st.session_state['tm_label']}"]
-    if ls_label:
+    if label_ls_option == "Yes (add label)":
         NS = st.session_state["base_ns"][1]
         ls_iri = NS[f"{ls_label}"]
     else:
@@ -703,10 +703,13 @@ with tab1:
                 with col1b:
                     label_ls_option = st.selectbox("♻️ Reuse Logical Source:",
                         ["No", "Yes (add label)"], key="key_label_ls_option")
+                    valid_ls_label = True
+
                     if label_ls_option == "Yes (add label)":
                         with col1a:
                             ls_label = st.text_input("⌨️ Enter label for the Logical Source:*")
                         with col1b:
+                            st.write("")
                             valid_ls_label = utils.is_valid_label_hard(ls_label)
                             if valid_ls_label and ls_label in labelled_ls_list:
                                 st.markdown(f"""<div class="error-message">
@@ -714,8 +717,6 @@ with tab1:
                                         is already in use. <small>Please, pick a different label.</small>
                                     </div>""", unsafe_allow_html=True)
                                 valid_ls_label = False
-                    else:
-                        valid_ls_label = False
 
                 with col1a:
                     if db_connection_for_ls != "Select a connection":
@@ -769,14 +770,8 @@ with tab1:
 
                                     if sql_query_ok_flag:
 
-                                        if label_ls_option == "Yes (add label)":
-                                            if valid_ls_label:
-                                                with col1a:
-                                                    st.button("Save", key="key_save_tm_w_saved_query", on_click=save_tm_w_query)
-
-                                        else:
-                                            with col1a:
-                                                st.button("Save", key="key_save_tm_w_saved_query", on_click=save_tm_w_query)
+                                        with col1a:
+                                            st.button("Save", key="key_save_tm_w_saved_query", on_click=save_tm_w_query)
 
                                         with col1:
                                             utils.display_db_view_results(selected_query_for_ls)
