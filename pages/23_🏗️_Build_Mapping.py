@@ -1536,7 +1536,7 @@ with tab2:
                     if sm_template and sm_term_type_template == "🌐 IRI":   # if term type is IRI the NS is recommended
                         if not st.session_state["sm_template_prefix"]:
                             inner_html_warning += """<small>· Term type is <b>🌐 IRI</b>.
-                                We recommend <b>adding a namespace</b>.</small><br>"""
+                                We recommend <b>adding a namespace to the template</b>.</small><br>"""
 
                 if sm_generation_rule == "Reference 📊":
                     if sm_column_name and sm_term_type_reference == "🌐 IRI":
@@ -2103,7 +2103,7 @@ with tab3:
                 if om_template and om_term_type_template == "🌐 IRI":
                     if not st.session_state["template_om_is_iri_flag"]:
                         inner_html_warning += """<small>· Term type is <b>🌐 IRI</b>.
-                            We recommend <b>adding a namespace</b>.<br>"""
+                            We recommend <b>adding a namespace to the template</b>.<br>"""
 
                 if om_template and om_term_type_template == "📘 Literal":
                     if om_datatype == "Natural language tag" and om_language_tag == "Select language tag":
@@ -2124,7 +2124,7 @@ with tab3:
                 elif om_term_type_constant == "🌐 IRI":
                     if om_constant and om_constant_ns_prefix == "Select a namespace":
                         inner_html_warning += """<small>· Term type is <b>🌐 IRI</b>.
-                            We recommend <b>adding a namespace</b>.</small><br>"""
+                            We recommend <b>adding a namespace</b> to the constant.</small><br>"""
 
 
             # OBJECT MAP - REFERENCE___________________________
