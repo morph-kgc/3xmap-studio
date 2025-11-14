@@ -226,7 +226,7 @@ with tab1:
             with col1a:
                 st.markdown(f"""<div class="error-message">
                     ❌ Label <b>{conn_label}</b> is already in use.<br>
-                    You must choose a different label for this connection.
+                    You must pick a different label for this connection.
                         </div>""", unsafe_allow_html=True)
                 valid_conn_label = False
                 st.write("")
@@ -648,7 +648,7 @@ with tab2:
         with col1:
             st.write("")
             st.markdown("""<div class="purple-heading">
-                    🔎 Display Table
+                    📅 Display Table
                 </div>""", unsafe_allow_html=True)
             st.write("")
 
@@ -656,32 +656,21 @@ with tab2:
             col1a, col1b = st.columns([2,1])
 
         with col1a:
-            list_to_choose = list(reversed(list(st.session_state["db_connections_dict"].keys())))
-            list_to_choose.insert(0, "Select a SQL data source")
-            connection_for_table_display = st.selectbox("🖱️ Select a SQL data source:*", list_to_choose,
+            list_to_choose = sorted(st.session_state["db_connections_dict"].keys())
+            list_to_choose.insert(0, "Select SQL data source")
+            connection_for_table_display = st.selectbox("🖱️ Select SQL data source:*", list_to_choose,
                 key="key_connection_for_table_display")
 
-            # this avoids persistence in the choose a table selectbox when changing the connection
+            # this avoids persistence in the table selectbox when changing the connection
             if "last_connection_for_table_display" not in st.session_state:
                 st.session_state["last_connection_for_table_display"] = None
             if connection_for_table_display != st.session_state["last_connection_for_table_display"]:
-                st.session_state["key_selected_db_table"] = "Select a table"
+                st.session_state["key_selected_db_table"] = "Select table"
                 st.session_state["last_connection_for_table_display"] = connection_for_table_display
 
-        if connection_for_table_display != "Select a SQL data source":
+        if connection_for_table_display != "Select SQL data source":
 
-            try:
-                conn = utils.make_connection_to_db(connection_for_table_display)
-                connection_ok_flag = True
-
-            except:
-                with col1a:
-                    st.markdown(f"""<div class="error-message">
-                        ❌ The connection <b>{connection_for_table_display}</b> is not working.
-                        <small>Please check it in the <b>Manage Connections</b> pannel.</small>
-                    </div>""", unsafe_allow_html=True)
-                    st.write("")
-                connection_ok_flag = False
+            conn, connection_ok_flag = utils.check_conn_status(connection_for_table_display)
 
             if connection_ok_flag:
 
@@ -695,11 +684,11 @@ with tab2:
 
                 with col1b:
                     list_to_choose = db_tables
-                    list_to_choose.insert(0, "Select a table")
-                    selected_db_table = st.selectbox("🖱️ Choose a table:*", list_to_choose,
+                    list_to_choose.insert(0, "Select table")
+                    selected_db_table = st.selectbox("🖱️ Select table:*", list_to_choose,
                         key="key_selected_db_table")
 
-                if selected_db_table != "Select a table":
+                if selected_db_table != "Select table":
 
                     cur.execute(f"SELECT * FROM {selected_db_table}")
                     rows = cur.fetchall()
@@ -708,6 +697,10 @@ with tab2:
                     columns = [desc[0] for desc in cur.description]
 
                     df = pd.DataFrame(rows, columns=columns)
+
+                    table_len = f"{len(df)} rows" if len(df) != 1 else f"{len(df)} row"
+                    inner_html = f"""📅 <b style="color:#F63366;"> Table ({table_len}):</b>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"""
 
                     with col1a:
                         column_list = df.columns.tolist()
@@ -719,26 +712,20 @@ with tab2:
                         with col1:
                             max_rows = utils.get_max_length_for_display()[2]
                             max_cols = utils.get_max_length_for_display()[3]
-
                             limited_df = df.iloc[:, :max_cols]   # limit number of columns
 
                             # Slice rows if needed
                             if len(df) > max_rows and df.shape[1] > max_cols:
-                                st.markdown(f"""<div class="warning-message">
-                                    ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
-                                    and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
-                                </div>""", unsafe_allow_html=True)
-                                st.write("")
+                                inner_html += f"""<small>Showing the <b>first {max_rows} rows</b> (out of {len(df)})
+                                    and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).</small>"""
                             elif len(df) > max_rows:
-                                st.markdown(f"""<div class="warning-message">
-                                    ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
-                                </div>""", unsafe_allow_html=True)
-                                st.write("")
+                                inner_html += f"""<small>Showing the <b>first {max_rows} rows</b> (out of {len(df)}).</small>"""
                             elif df.shape[1] > max_cols:
-                                st.markdown(f"""<div class="warning-message">
-                                    ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+                                inner_html += f"""<small>Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).</small>"""
+
+                            st.markdown(f"""<div class="info-message-blue">
+                                    {inner_html}
                                 </div>""", unsafe_allow_html=True)
-                                st.write("")
                             st.dataframe(limited_df.head(max_rows), hide_index=True)
 
                     else:
@@ -750,6 +737,10 @@ with tab2:
                                 </div>""", unsafe_allow_html=True)
                         else:
                             with col1:
+                                table_len = f"{len(df)} rows" if len(df) != 1 else f"{len(df)} row"
+                                st.markdown(f"""<div class="info-message-blue">
+                                        {inner_html}
+                                    </div>""", unsafe_allow_html=True)
                                 st.dataframe(df[sql_column_filter_list], hide_index=True)
 
                     cur.close()
@@ -993,20 +984,19 @@ with tab3:
             st.rerun()
 
         with col1:
-            col1a, col1b, col1c = st.columns([1,1.2,0.8])
+            col1a, col1b, col1c = st.columns([0.8,1,1])
 
         connections_w_queries_set = set()
         for query in st.session_state["sql_queries_dict"]:
             connections_w_queries_set.add(st.session_state["sql_queries_dict"][query][0])
         connections_w_queries_list = list(connections_w_queries_set)
 
-        with col1c:
-            st.write("")
+        with col1a:
             list_to_choose = ["🖼️ View results", "🔎 Inspect", "🗑️ Remove"]
             manage_view_option = st.radio("🖱️ Select an option:*", list_to_choose,
                 label_visibility="collapsed", key="key_manage_view_option")
 
-        with col1a:
+        with col1b:
             list_to_choose = connections_w_queries_list
             list_to_choose.insert(0, "No filter")
             connection_to_manage_query_filter = st.selectbox("⚙️ Filter by connection (opt):", list_to_choose,
@@ -1030,7 +1020,7 @@ with tab3:
 
         if manage_view_option == "🖼️ View results":
 
-            with col1b:
+            with col1c:
                 list_to_choose = sql_queries_to_manage_list
                 list_to_choose.insert(0, "Select view")
                 sql_query_to_inspect = st.selectbox("🖱️ Select view:*", sql_queries_to_manage_list,
@@ -1038,90 +1028,18 @@ with tab3:
 
             if sql_query_to_inspect != "Select view":
 
-                connection_for_query = st.session_state["sql_queries_dict"][sql_query_to_inspect][0]
-
-                try:
-                    conn = utils.make_connection_to_db(connection_for_query)
-                    connection_ok_flag = True
-
-                except:
-                    with col1:
+                with col1:
+                    connection_ok_flag = utils.display_db_view_results(sql_query_to_inspect)
+                    if not connection_ok_flag:
                         st.markdown(f"""<div class="error-message">
-                            ❌ The connection <b>{connection_for_query}</b> is not working.
+                            ❌ The connection <b>{st.session_state["sql_queries_dict"][query][0]}</b> is not working.
                             <small>Please check it in the <b>Manage Connections</b> pannel.</small>
                         </div>""", unsafe_allow_html=True)
-                        st.write("")
-                    connection_ok_flag = False
-
-                if connection_ok_flag:
-
-                    with col1:
-                        max_length = utils.get_max_length_for_display()[10]
-                        query_for_display = st.session_state["sql_queries_dict"][sql_query_to_inspect][1]
-                        query_for_display = query_for_display[:max_length] + "..." if len(query_for_display) > max_length else query_for_display
-                        st.markdown(f"""<div class="info-message-blue">
-                                🖼️ <b style="color:#F63366;"> View results:</b>
-                                <small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                (<b>Query:</b> {query_for_display})</small>
-                            </div></div>""", unsafe_allow_html=True)
-
-                    cur = conn.cursor()   # create a cursor
-
-                    try:
-                        cur.execute(st.session_state["sql_queries_dict"][sql_query_to_inspect][1])
-                        sql_query_ok_flag = True
-
-                    except Exception as e:
-                        with col1:
-                            st.write("")
-                            st.markdown(f"""<div class="error-message">
-                                ❌ <b>Invalid SQL syntax</b>. Please check your query.<br>
-                                <small><b> Full error:</b> {e}</small>
-                            </div>""", unsafe_allow_html=True)
-                            st.write("")
-                        sql_query_ok_flag = False
-
-
-                    rows = cur.fetchall()
-                    engine = st.session_state["db_connections_dict"][connection_for_query][0]
-                    if engine == "SQL Server":
-                        rows = [tuple(row) for row in rows]   # for SQL Server rows are of type <class 'pyodbc.Row'> -> convert to tuple
-                    columns = [desc[0] for desc in cur.description]
-                    df = pd.DataFrame(rows, columns=columns)
-
-
-                    with col1:
-                        st.write("")
-                        max_rows = utils.get_max_length_for_display()[2]
-                        max_cols = utils.get_max_length_for_display()[3]
-
-                        limited_df = df.iloc[:, :max_cols]   # limit number of columns
-
-                        # Slice rows if needed
-                        if len(df) > max_rows and df.shape[1] > max_cols:
-                            st.markdown(f"""<div class="warning-message">
-                                ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
-                                and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
-                            </div>""", unsafe_allow_html=True)
-                            st.write("")
-                        elif len(df) > max_rows:
-                            st.markdown(f"""<div class="warning-message">
-                                ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
-                            </div>""", unsafe_allow_html=True)
-                            st.write("")
-                        elif df.shape[1] > max_cols:
-                            st.markdown(f"""<div class="warning-message">
-                                ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
-                            </div>""", unsafe_allow_html=True)
-                            st.write("")
-
-                        st.dataframe(limited_df.head(max_rows), hide_index=True)
 
 
         if manage_view_option == "🔎 Inspect":
 
-            with col1b:
+            with col1c:
                 list_to_choose = sql_queries_to_manage_list.copy()
                 if len(list_to_choose) > 1:
                     list_to_choose.insert(0, "Select all")
@@ -1157,7 +1075,7 @@ with tab3:
 
         if manage_view_option == "🗑️ Remove":
 
-            with col1b:
+            with col1c:
                 list_to_choose = sql_queries_to_manage_list
                 if len(list_to_choose) > 1:
                     list_to_choose.insert(0, "Select all")

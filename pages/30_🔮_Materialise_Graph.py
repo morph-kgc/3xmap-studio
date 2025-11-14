@@ -29,6 +29,9 @@ else:
 utils.init_page()
 RML, QL = utils.get_required_ns_dict().values()
 
+# Temporal folder to store intermediate files-----------------------------------
+temp_folder_path = "materialisation_files_temp"
+
 #define on_click functions--------------------------------------------
 # TAB1
 def autoconfig():

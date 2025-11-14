@@ -85,7 +85,7 @@ def save_tm_w_query():
     # add triples__________________
     NS = st.session_state["base_ns"][1]
     tm_iri = NS[f"{st.session_state['tm_label']}"]
-    if ls_label:
+    if label_ls_option == "Yes (add label)":
         NS = st.session_state["base_ns"][1]
         ls_iri = NS[f"{ls_label}"]
     else:
@@ -116,7 +116,7 @@ def save_tm_w_table_name():
     # add triples__________________
     NS = st.session_state["base_ns"][1]
     tm_iri = NS[f"{st.session_state['tm_label']}"]
-    if ls_label:
+    if label_ls_option == "Yes (add label)":
         NS = st.session_state["base_ns"][1]
         ls_iri = NS[f"{ls_label}"]
     else:
@@ -703,10 +703,13 @@ with tab1:
                 with col1b:
                     label_ls_option = st.selectbox("♻️ Reuse Logical Source:",
                         ["No", "Yes (add label)"], key="key_label_ls_option")
+                    valid_ls_label = True
+
                     if label_ls_option == "Yes (add label)":
                         with col1a:
                             ls_label = st.text_input("⌨️ Enter label for the Logical Source:*")
                         with col1b:
+                            st.write("")
                             valid_ls_label = utils.is_valid_label_hard(ls_label)
                             if valid_ls_label and ls_label in labelled_ls_list:
                                 st.markdown(f"""<div class="error-message">
@@ -714,8 +717,6 @@ with tab1:
                                         is already in use. <small>Please, pick a different label.</small>
                                     </div>""", unsafe_allow_html=True)
                                 valid_ls_label = False
-                    else:
-                        valid_ls_label = False
 
                 with col1a:
                     if db_connection_for_ls != "Select a connection":
@@ -726,7 +727,7 @@ with tab1:
                         except Exception as e:
                             conn = ""
                             st.markdown(f"""<div class="error-message">
-                                ❌ Connection <b>{db_connection_for_ls}</b> is not working. <small>Please go to the <b>
+                                ❌ The connection <b>{db_connection_for_ls}</b> is not working. <small>Please go to the <b>
                                 Manage Logical Sources</b> page to manage the connections to Databases.</small>
                             </div>""", unsafe_allow_html=True)
                             connection_ok_flag = False
@@ -741,7 +742,7 @@ with tab1:
                             with col1:
                                 col1a, col1b = st.columns(2)
                             with col1b:
-                                list_to_choose = ["🖼️ View", "🔖 Table name"] if query_for_selected_db_list else ["🔖 Table name"]
+                                list_to_choose = ["🖼️ View", "📅 Table"] if query_for_selected_db_list else ["📅 Table"]
                                 query_option = st.radio("🖱️ Select option:*", list_to_choose,
                                     horizontal=True, key="key_query_option_radio")
 
@@ -769,76 +770,15 @@ with tab1:
 
                                     if sql_query_ok_flag:
 
-                                        if label_ls_option == "Yes (add label)":
-                                            if valid_ls_label:
-                                                with col1a:
-                                                    st.button("Save", key="key_save_tm_w_saved_query", on_click=save_tm_w_query)
-
-                                        else:
-                                            with col1a:
-                                                st.button("Save", key="key_save_tm_w_saved_query", on_click=save_tm_w_query)
+                                        with col1a:
+                                            st.button("Save", key="key_save_tm_w_saved_query", on_click=save_tm_w_query)
 
                                         with col1:
-
-                                            st.markdown(f"""<div class="info-message-blue">
-                                                    🖼️ <b style="color:#F63366;"> View previsualisation</b>
-                                                    <small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<b>Query:</b>
-                                                    {st.session_state["sql_queries_dict"][selected_query_for_ls][1]})</small>
-                                                </div></div>""", unsafe_allow_html=True)
-
-                                        cur = conn.cursor()   # create a cursor
-
-                                        try:
-                                            cur.execute(st.session_state["sql_queries_dict"][selected_query_for_ls][1])
-                                            sql_query_ok_flag = True
-
-                                        except Exception as e:
-                                            with col1:
-                                                st.write("")
-                                                st.markdown(f"""<div class="error-message">
-                                                    ❌ <b>Invalid SQL syntax</b>. Please check your query.<br>
-                                                    <small><b> Full error:</b> {e}</small>
-                                                </div>""", unsafe_allow_html=True)
-                                                st.write("")
-                                            sql_query_ok_flag = False
+                                            utils.display_db_view_results(selected_query_for_ls)
 
 
-                                        rows = cur.fetchall()
-                                        engine = st.session_state["db_connections_dict"][db_connection_for_ls][0]
-                                        if engine == "SQL Server":
-                                            rows = [tuple(row) for row in rows]   # rows are of type <class 'pyodbc.Row'> -> convert to tuple
-                                        columns = [desc[0] for desc in cur.description]
-                                        df = pd.DataFrame(rows, columns=columns)
+                            if query_option == "📅 Table" and db_connection_for_ls != "Select a connection" and conn:
 
-
-                                        with col1:
-                                            max_rows = utils.get_max_length_for_display()[2]
-                                            max_cols = utils.get_max_length_for_display()[3]
-
-                                            limited_df = df.iloc[:, :max_cols]   # limit number of columns
-
-                                            # Slice rows if needed
-                                            if len(df) > max_rows and df.shape[1] > max_cols:
-                                                st.markdown(f"""<div class="warning-message">
-                                                    ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
-                                                    and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
-                                                </div>""", unsafe_allow_html=True)
-                                                st.write("")
-                                            elif len(df) > max_rows:
-                                                st.markdown(f"""<div class="warning-message">
-                                                    ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
-                                                </div>""", unsafe_allow_html=True)
-                                                st.write("")
-                                            elif df.shape[1] > max_cols:
-                                                st.markdown(f"""<div class="warning-message">
-                                                    ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
-                                                </div>""", unsafe_allow_html=True)
-                                                st.write("")
-
-                                            st.dataframe(limited_df.head(max_rows), hide_index=True)
-
-
-                            if query_option == "🔖 Table name" and db_connection_for_ls != "Select a connection" and conn:
                                 cur = conn.cursor()   # create a cursor
                                 engine = st.session_state["db_connections_dict"][db_connection_for_ls][0]
                                 database = st.session_state["db_connections_dict"][db_connection_for_ls][3]
@@ -848,14 +788,51 @@ with tab1:
                                 with col1a:
                                     list_to_choose = db_tables
                                     list_to_choose.insert(0, "Select a table")
-                                    selected_table_for_ls = st.selectbox("🖱️ Choose a table:*", list_to_choose,
+                                    selected_table_for_ls = st.selectbox("🖱️ Select a table:*", list_to_choose,
                                         key="key_selected_table_for_ls")
 
-                                if selected_table_for_ls != "Select a table":
 
+                                if selected_table_for_ls != "Select a table":
                                     if (label_ls_option == "Yes (add label)" and valid_ls_label) or label_ls_option == "No":
                                         with col1a:
                                             st.button("Save", key="key_save_tm_w_table_name", on_click=save_tm_w_table_name)
+
+                                    cur.execute(f"SELECT * FROM {selected_table_for_ls}")
+                                    rows = cur.fetchall()
+                                    if engine == "SQL Server":
+                                        rows = [tuple(row) for row in rows]   # rows are of type <class 'pyodbc.Row'> -> convert to tuple
+                                    columns = [desc[0] for desc in cur.description]
+
+                                    df = pd.DataFrame(rows, columns=columns)
+
+                                    table_len = f"{len(df)} rows" if len(df) != 1 else f"{len(df)} row"
+                                    inner_html = f"""📅 <b style="color:#F63366;"> Table ({table_len}):</b>
+                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"""
+
+
+                                    with col1:
+                                        max_rows = utils.get_max_length_for_display()[2]
+                                        max_cols = utils.get_max_length_for_display()[3]
+                                        limited_df = df.iloc[:, :max_cols]   # limit number of columns
+
+                                        # Slice rows if needed
+                                        if len(df) > max_rows and df.shape[1] > max_cols:
+                                            inner_html += f"""<small>Showing the <b>first {max_rows} rows</b> (out of {len(df)})
+                                                and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).</small>"""
+                                        elif len(df) > max_rows:
+                                            inner_html += f"""<small>Showing the <b>first {max_rows} rows</b> (out of {len(df)}).</small>"""
+                                        elif df.shape[1] > max_cols:
+                                            inner_html += f"""<small>Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).</small>"""
+
+                                        st.markdown(f"""<div class="info-message-blue">
+                                                {inner_html}
+                                            </div>""", unsafe_allow_html=True)
+                                        st.dataframe(limited_df.head(max_rows), hide_index=True)
+
+                                    cur.close()
+                                    conn.close()
+
+
 
             if ls_option == "🛢️ Tabular data":
 
@@ -1092,10 +1069,7 @@ with tab2:
                     with col1:
                         col1a, col1b = st.columns([1,1.5])
                     with col1a:
-                        if sm_term_type_template == "🌐 IRI":
-                            list_to_choose = ["🏷️ Add Namespace*", "🔒 Add fixed part", "📈 Add variable part", "🗑️ Reset template"]
-                        else:
-                            list_to_choose = ["🏷️ Add Namespace", "🔒 Add fixed part", "📈 Add variable part", "🗑️ Reset template"]
+                        list_to_choose = ["🔒 Add fixed part", "📈 Add variable part", "🏷️ Add fixed namespace", "🗑️ Reset template"]
                         build_template_action_sm = st.selectbox(
                             "🖱️ Add template part:", list_to_choose,
                             label_visibility="collapsed", key="key_build_template_action_sm")
@@ -1138,7 +1112,7 @@ with tab2:
                                     st.button("Add", key="save_sm_template_variable_part_button", on_click=save_sm_template_variable_part)
 
 
-                    elif build_template_action_sm in ["🏷️ Add Namespace*", "🏷️ Add Namespace"]:
+                    elif build_template_action_sm == "🏷️ Add Namespace":
                         with col1b:
                             mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                             list_to_choose = sorted(mapping_ns_dict.keys())
@@ -1559,11 +1533,10 @@ with tab2:
                             inner_html_error += "<small>· The <b>reference</b> has not been selected.<small><br>"
 
                 if sm_generation_rule == "Template 📐":
-                    if sm_template and sm_term_type_template == "🌐 IRI":   # if term type is IRI the NS is compulsory
+                    if sm_template and sm_term_type_template == "🌐 IRI":   # if term type is IRI the NS is recommended
                         if not st.session_state["sm_template_prefix"]:
-                            sm_complete_flag = False
-                            inner_html_error += """<small>· Term type is <b>🌐 IRI</b>. You must <b>add a namespace</b>
-                                to the template or change the term type</small>.<br>"""
+                            inner_html_warning += """<small>· Term type is <b>🌐 IRI</b>.
+                                We recommend <b>adding a namespace to the template</b>.</small><br>"""
 
                 if sm_generation_rule == "Reference 📊":
                     if sm_column_name and sm_term_type_reference == "🌐 IRI":
@@ -1892,7 +1865,7 @@ with tab3:
 
                 with col1a:
                     build_template_action_om = st.selectbox("🖱️ Add template part:",
-                        ["🏷️ Add Namespace", "🔒 Add fixed part", "📈 Add variable part", "🗑️ Reset template"],
+                        ["🔒 Add fixed part", "📈 Add variable part", "🏷️ Add fixed namespace", "🗑️ Reset template"],
                         label_visibility="collapsed", key="key_build_template_action_om")
 
 
@@ -2000,7 +1973,7 @@ with tab3:
                     list_to_choose = sorted(mapping_ns_dict.keys())
                     list_to_choose.insert(0, "Select a namespace")
                     with col1c:
-                        om_constant_ns_prefix = st.selectbox("🖱️ Namespace for the constant:*", list_to_choose,
+                        om_constant_ns_prefix = st.selectbox("🖱️ Namespace (opt):", list_to_choose,
                             key="key_om_constant_ns")
 
                 elif om_term_type_constant == "🌐 IRI":
@@ -2129,8 +2102,8 @@ with tab3:
 
                 if om_template and om_term_type_template == "🌐 IRI":
                     if not st.session_state["template_om_is_iri_flag"]:
-                        pom_complete_flag = False
-                        inner_html_error += "<small>· Term type is <b>🌐 IRI</b>. You must add a namespace to the template.</small><br>"
+                        inner_html_warning += """<small>· Term type is <b>🌐 IRI</b>.
+                            We recommend <b>adding a namespace to the template</b>.<br>"""
 
                 if om_template and om_term_type_template == "📘 Literal":
                     if om_datatype == "Natural language tag" and om_language_tag == "Select language tag":
@@ -2150,8 +2123,8 @@ with tab3:
 
                 elif om_term_type_constant == "🌐 IRI":
                     if om_constant and om_constant_ns_prefix == "Select a namespace":
-                        pom_complete_flag = False
-                        inner_html_error += "<small>· Term type is <b>🌐 IRI</b>. You must select a namespace for the constant.</small><br>"
+                        inner_html_warning += """<small>· Term type is <b>🌐 IRI</b>.
+                            We recommend <b>adding a namespace</b> to the constant.</small><br>"""
 
 
             # OBJECT MAP - REFERENCE___________________________
@@ -2261,14 +2234,7 @@ with tab3:
                 om_iri_for_display = utils.format_iri_to_prefix_label(om_iri_for_display)
 
 
-                # display rule
                 with col1:
-                    col1a, col1b = st.columns([1,4])
-                with col1b:
-                    utils.preview_rule(sm_rule, selected_p_for_display, om_iri_for_display)
-
-                with col1a:
-                    st.write("")
                     st.session_state["pom_iri_to_create"] = pom_iri    # otherwise it will change value in the on_click function
                     st.session_state["tm_iri_for_pom"] = tm_iri_for_pom
                     if om_generation_rule == "Template 📐":
@@ -2277,6 +2243,8 @@ with tab3:
                         save_pom_constant_button = st.button("Save", on_click=save_pom_constant, key="key_save_pom_constant_button")
                     elif om_generation_rule == "Reference 📊":
                         save_pom_reference_button = st.button("Save", on_click=save_pom_reference, key="key_save_pom_reference_button")
+
+                    utils.preview_rule(sm_rule, selected_p_for_display, om_iri_for_display)  # display rule
 
     with col2b:
         st.markdown("""<div class='info-message-gray'>

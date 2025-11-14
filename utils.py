@@ -621,6 +621,38 @@ def get_max_length_for_display():
     return [50, 10, 100, 20, 5, 5, 20, 15, 40, 100000, 30]
 #_______________________________________________________
 
+#_________________________________________________
+# Funtion to get label of a node
+def get_node_label(node):
+
+    if isinstance(node, URIRef):
+        label = split_uri(node)[1]
+    elif isinstance(node, BNode):
+        label = "_:" + str(node)[:7] + "..."
+    elif node:
+        label = str(node)
+    else:
+        label = ""
+
+    return label
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to get label of a node
+def get_node_label_w_prefix(node):
+
+    if isinstance(node, BNode):
+        return node
+
+    try:
+        prefix, ns, local = st.session_state["g_mapping"].namespace_manager.compute_qname(node)
+        return prefix + ": " + local
+    except Exception:
+        return get_node_label(node)
+
+    return get_node_label(node)   # return label without prefix
+#_________________________________________________
+
 
 # INITIALISE PAGES =============================================================
 #________________________________________________________
@@ -654,6 +686,7 @@ def init_session_state_variables():
         st.session_state["base_ns_changed_ok_flag"] = False
         st.session_state["ns_unbound_ok_flag"] = False
         st.session_state["last_added_ns_list"] = []
+        st.session_state["ontology_downloaded_ok_flag"] = False
         # TAB3
         st.session_state["progress_saved_ok_flag"] = False
         st.session_state["mapping_downloaded_ok_flag"] = False
@@ -877,7 +910,7 @@ def is_valid_label_hard(label, display_option=True):
 def get_g_mapping_file_formats_dict():
 
     allowed_format_dict = {"turtle": ".ttl",
-        "ntriples": ".nt", "trig": ".trig", "jsonld": ".jsonld"}    # missing hdt, nquads
+        "ntriples": ".nt", "jsonld": ".jsonld"}
 
     return allowed_format_dict
 #_______________________________________________________
@@ -1118,12 +1151,10 @@ def get_predefined_ns_dict():
         "rdfs": URIRef("http://www.w3.org/2000/01/rdf-schema#"),
         "owl": URIRef("http://www.w3.org/2002/07/owl#"),
         "xsd": URIRef("http://www.w3.org/2001/XMLSchema#"),
-        "schema": URIRef("http://schema.org/"),
         "foaf": URIRef("http://xmlns.com/foaf/0.1/"),
         "dc": URIRef("http://purl.org/dc/elements/1.1/"),
         "dcterms": URIRef("http://purl.org/dc/terms/"),
         "skos": URIRef("http://www.w3.org/2004/02/skos/core#"),
-        "geo": URIRef("http://www.w3.org/2003/01/geo/wgs84_pos#"),
         "time": URIRef("http://www.w3.org/2006/time#"),
         "prov": URIRef("http://www.w3.org/ns/prov#")}
 
@@ -1396,8 +1427,8 @@ def get_ns_warning_message(ns_to_bind_list):
 
     elif already_used_prefix_list:
         st.markdown(f"""<div class="warning-message">
-                    <small>⚠️ <b>Prefixes {utils.format_list_for_markdown(already_used_prefix_list)} are already in use</b>
-                    and will be auto-renamed with a numeric suffix.</small>
+                    ⚠️ Prefixes <b>{utils.format_list_for_markdown(already_used_prefix_list)}</b> are already in use
+                    <small>and will be auto-renamed with a numeric suffix.</small>
             </div>""", unsafe_allow_html=True)
 #_________________________________________________
 
@@ -1775,6 +1806,28 @@ def get_jdbc_str(conn):
     return jdbc_str
 #______________________________________________________
 
+#_________________________________________________
+# Funtion to get db_url string
+def get_db_url_str(conn):
+
+    [engine, host, port, database, user, password] = st.session_state["db_connections_dict"][conn]
+
+    if engine == "Oracle":
+        db_url_str = f"oracle+oracledb://{user}:{password}@{host}:{port}/{database}"
+    elif engine == "SQL Server":
+        db_url_str = f" mssql+pymssql://{user}:{password}@{host}:{port}/{database}"
+    elif engine == "PostgreSQL":
+        db_url_str = f"postgresql+psycopg://{user}:{password}@{host}:{port}/{database}"
+    elif engine == "MySQL":
+        db_url_str = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}"
+    elif engine =="MariaDB":
+        db_url_str = f"mariadb+pymysql://{user}:{password}@{host}:{port}/{database}"
+    else:
+        return None
+
+    return db_url_str
+
+#_________________________________________________
 #______________________________________________________
 # Funtion to make a connection to a database
 def make_connection_to_db(connection_label):
@@ -2671,37 +2724,6 @@ def check_g_mapping(g):
 #_________________________________________________
 
 #_________________________________________________
-# Funtion to get label of a node
-def get_node_label(node):
-
-    if isinstance(node, URIRef):
-        label = split_uri(node)[1]
-    elif isinstance(node, BNode):
-        label = "_:" + str(node)[:7] + "..."
-    elif node:
-        label = str(node)
-    else:
-        label = ""
-
-    return label
-#_________________________________________________
-
-#_________________________________________________
-# Funtion to get label of a node
-def get_node_label_w_prefix(node):
-
-    if isinstance(node, URIRef):
-        try:
-            prefix, ns, local = st.session_state["g_mapping"].namespace_manager.compute_qname(node)
-            return prefix + ": " + local
-        except Exception:
-            return get_node_label(node)
-
-    return get_node_label(node)   # return label without prefix
-#_________________________________________________
-
-
-#_________________________________________________
 # Funtion to check a mapping loaded from URL is ok
 def is_valid_url_mapping(mapping_url, show_info):
     mapping_url_ok_flag = True
@@ -2768,47 +2790,71 @@ def is_valid_url_mapping(mapping_url, show_info):
 
 #________________________________________________
 # Function to display a rule
-def preview_rule(sm_rule_for_display, selected_p_for_display, om_iri_for_display):
+def preview_rule(s_for_display, p_for_display, o_for_display):
 
-    if len(om_iri_for_display) < 40:
-        st.markdown(f"""
-        <div class="blue-preview-message" style="margin-top:0px; padding-top:4px;">
-            <small><b style="color:#F63366; font-size:10px; margin-top:0px;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:0px;">
-                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{sm_rule_for_display}</b></div>
-                </div>
-                <div style="flex:0; font-size:18px;">🡆</div>
-                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{selected_p_for_display}</b></div>
-                </div>
-                <div style="flex:0; font-size:18px;">🡆</div>
-                <div style="flex:1.3; min-width:140px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{om_iri_for_display}</b></div>
-                </div>
+    inner_html = ""
+    max_length = 40
+
+    s_for_display = "" if not s_for_display else s_for_display
+    p_for_display = "" if not p_for_display else p_for_display
+    o_for_display = "" if not o_for_display else o_for_display
+
+    formatted_s = f"""{s_for_display}""" if len(s_for_display) < max_length else "<small>" + f"""{s_for_display}""" + "</small>"
+    formatted_p = f"""{p_for_display}""" if len(p_for_display) < max_length else "<small>" + f"""{p_for_display}""" + "</small>"
+    formatted_o = f"""{o_for_display}""" if len(o_for_display) < max_length else "<small>" + f"""{o_for_display}""" + "</small>"
+
+    st.markdown(f"""<div class="blue-preview-message" style="margin-top:0px; padding-top:4px;">
+        <small><b style="color:#F63366; font-size:10px; margin-top:0px;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:0px;">
+            <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{formatted_s}</b></div>
+            </div>
+            <div style="flex:0; font-size:18px;">🡆</div>
+            <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{formatted_p}</b></div>
+            </div>
+            <div style="flex:0; font-size:18px;">🡆</div>
+            <div style="flex:1; min-width:140px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b><small>{formatted_o}</small></b></div>
             </div>
         </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown(f"""
-        <div class="blue-preview-message" style="margin-top:0px; padding-top:4px;">
-            <small><b style="color:#F63366; font-size:10px; margin-top:0px;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:0px;">
-                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{sm_rule_for_display}</b></div>
-                </div>
-                <div style="flex:0; font-size:18px;">🡆</div>
-                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{selected_p_for_display}</b></div>
-                </div>
-                <div style="flex:0; font-size:18px;">🡆</div>
-                <div style="flex:1.3; min-width:140px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b><small>{om_iri_for_display}</small></b></div>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+    </div>""", unsafe_allow_html=True)
 #_________________________________________________
+
+#________________________________________________
+# Function to display a rule
+def preview_rule_list(s_for_display, p_for_display, o_for_display):
+
+    small_header = """<small><b style="color:#F63366; font-size:10px;margin-top:8px; margin-bottom:8px; display:block;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>"""
+
+    inner_html = ""
+    max_length = 40
+
+    s_for_display = "" if not s_for_display else s_for_display
+    p_for_display = "" if not p_for_display else p_for_display
+    o_for_display = "" if not o_for_display else o_for_display
+
+    formatted_s = f"""{s_for_display}""" if len(s_for_display) < max_length else "<small>" + f"""{s_for_display}""" + "</small>"
+    formatted_p = f"""{p_for_display}""" if len(p_for_display) < max_length else "<small>" + f"""{p_for_display}""" + "</small>"
+    formatted_o = f"""{o_for_display}""" if len(o_for_display) < max_length else "<small>" + f"""{o_for_display}""" + "</small>"
+
+    inner_html += f"""<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:0px;">
+            <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{formatted_s}</b></div>
+            </div>
+            <div style="flex:0; font-size:18px;">🡆</div>
+            <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{formatted_p}</b></div>
+            </div>
+            <div style="flex:0; font-size:18px;">🡆</div>
+            <div style="flex:1; min-width:140px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b><small>{formatted_o}</small></b></div>
+            </div>
+        </div><br>"""
+
+    return [small_header, inner_html]
+#_________________________________________________
+
 
 #________________________________________________
 # Function to display a rule
@@ -3604,6 +3650,147 @@ def get_colors_for_network_dict():
     return colors_for_network_dict
 
 #_________________________________________________
+
+#_________________________________________________
+# Function to check conn status and show error
+def check_conn_status(conn_label):
+
+    try:
+        conn = utils.make_connection_to_db(conn_label)
+        connection_ok_flag = True
+
+    except:
+        conn = None
+        connection_ok_flag = False
+
+    return [conn, connection_ok_flag]
+#_________________________________________________
+
+#_________________________________________________
+#Function to display view results
+def display_db_view_results(view):
+
+    connection_for_query = st.session_state["sql_queries_dict"][view][0]
+    conn, connection_ok_flag = check_conn_status(connection_for_query)
+
+    if connection_ok_flag:
+
+        max_length = utils.get_max_length_for_display()[10]
+        query_for_display = st.session_state["sql_queries_dict"][view][1]
+        query_for_display = query_for_display[:max_length] + "..." if len(query_for_display) > max_length else query_for_display
+
+        cur = conn.cursor()   # create a cursor
+
+        try:
+            cur.execute(st.session_state["sql_queries_dict"][view][1])
+            sql_query_ok_flag = True
+
+        except Exception as e:
+            with col1:
+                st.markdown(f"""<div class="error-message">
+                    ❌ <b>Invalid SQL syntax</b>. Please check your query.<br>
+                    <small><b> Full error:</b> {e}</small>
+                </div>""", unsafe_allow_html=True)
+                st.write("")
+            sql_query_ok_flag = False
+
+        if sql_query_ok_flag:
+            rows = cur.fetchall()
+            engine = st.session_state["db_connections_dict"][connection_for_query][0]
+            if engine == "SQL Server":
+                rows = [tuple(row) for row in rows]   # for SQL Server rows are of type <class 'pyodbc.Row'> -> convert to tuple
+            columns = [desc[0] for desc in cur.description]
+            df = pd.DataFrame(rows, columns=columns)
+
+            max_rows = utils.get_max_length_for_display()[2]
+            max_cols = utils.get_max_length_for_display()[3]
+
+            limited_df = df.iloc[:, :max_cols]   # limit number of columns
+
+            # Slice rows if needed
+            if len(df) > max_rows and df.shape[1] > max_cols:
+                st.markdown(f"""<div class="warning-message">
+                    ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
+                    and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+                </div>""", unsafe_allow_html=True)
+                st.write("")
+            elif len(df) > max_rows:
+                st.markdown(f"""<div class="warning-message">
+                    ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
+                </div>""", unsafe_allow_html=True)
+                st.write("")
+            elif df.shape[1] > max_cols:
+                st.markdown(f"""<div class="warning-message">
+                    ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+                </div>""", unsafe_allow_html=True)
+                st.write("")
+
+            st.markdown(f"""<div class="info-message-blue">
+                    🖼️ <b style="color:#F63366;"> View results ({len(df)}):</b>
+                    <small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    (<b>Query:</b> {query_for_display})</small>
+                </div></div>""", unsafe_allow_html=True)
+            st.dataframe(limited_df.head(max_rows), hide_index=True)
+
+    return connection_ok_flag
+#_________________________________________________
+
+#_________________________________________________
+#Function to display database table
+def display_db_table(table, conn_label):
+
+    conn, connection_ok_flag = check_conn_status(conn_label)
+
+    if connection_ok_flag:
+
+        cur.execute(f"SELECT * FROM {selected_db_table}")
+        rows = cur.fetchall()
+        if engine == "SQL Server":
+            rows = [tuple(row) for row in rows]   # rows are of type <class 'pyodbc.Row'> -> convert to tuple
+        columns = [desc[0] for desc in cur.description]
+
+        df = pd.DataFrame(rows, columns=columns)
+
+        max_rows = utils.get_max_length_for_display()[2]
+        max_cols = utils.get_max_length_for_display()[3]
+
+        limited_df = df.iloc[:, :max_cols]   # limit number of columns
+
+        # Slice rows if needed
+        if len(df) > max_rows and df.shape[1] > max_cols:
+            st.markdown(f"""<div class="warning-message">
+                ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
+                and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+            </div>""", unsafe_allow_html=True)
+            st.write("")
+        elif len(df) > max_rows:
+            st.markdown(f"""<div class="warning-message">
+                ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
+            </div>""", unsafe_allow_html=True)
+            st.write("")
+        elif df.shape[1] > max_cols:
+            st.markdown(f"""<div class="warning-message">
+                ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
+            </div>""", unsafe_allow_html=True)
+            st.write("")
+
+        table_len = f"{len(df)} rows" if len(df) != 1 else f"{len(df)} row"
+        st.markdown(f"""<div class="info-message-blue">
+                🖼️ <b style="color:#F63366;"> Table ({table_len}):</b>
+                <small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                <b>({selected_db_table})</b></small>
+            </div></div>""", unsafe_allow_html=True)
+        st.dataframe(limited_df.head(max_rows), hide_index=True)
+
+
+        cur.close()
+        conn.close()
+
+    return connection_ok_flag
+#_________________________________________________
+
 
 #HEREIGO
 

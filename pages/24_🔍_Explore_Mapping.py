@@ -8,6 +8,7 @@ from rdflib.namespace import split_uri
 from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL, XSD
 from streamlit_js_eval import streamlit_js_eval
 import io
+import time   # for success messages
 
 import rdflib, networkx as nx, matplotlib.pyplot as plt
 from pyvis.network import Network
@@ -207,10 +208,10 @@ with tab2:
         st.write("")
 
     with col1:
-        col1a, col1b = st.columns([2,1])
+        col1a, col1b = st.columns([1,2])
 
     predefined_searches_list = ["Select search", "Rules", "TriplesMaps", "Subject Maps", "Predicate-Object Maps",
-        "Used Classes", "Incomplete Nodes", "Orphaned Nodes", "All Triples"]
+        "Used Classes", "Used Properties", "Incomplete Nodes", "Orphaned Nodes", "All Triples"]
 
     with col1a:
         selected_predefined_search = st.selectbox("🔍 Select search:*", predefined_searches_list,
@@ -222,21 +223,25 @@ with tab2:
             list_to_choose = list(reversed(list(tm_dict)))
             if len(list_to_choose) > 1:
                 selected_tm_for_display_list = st.multiselect("⚙️ Filter by TriplesMaps (opt):", list_to_choose,
-                    key="key_selected_tm_for_display_list_1")
+                    placeholder="No filter", key="key_selected_tm_for_display_list_1")
             else:
                 selected_tm_for_display_list = []
 
         with col1:
-            col1a, col1b, col1c = st.columns(3)
+            col1a, col1b, col1c, col1d = st.columns(4)
 
         with col1a:
-            limit = st.text_input("⌨️ Enter limit (optional):", key="key_limit")
+            limit = st.text_input("⌨️ Enter limit (opt):", key="key_limit")
         with col1b:
-            offset = st.text_input("⌨️ Enter offset (optional):", key="key_offset")
+            offset = st.text_input("⌨️ Enter offset (opt):", key="key_offset")
         with col1c:
             list_to_choose = ["No order", "Ascending", "Descending"]
-            order_clause = st.selectbox("🖱️ Select order (optional):", list_to_choose,
+            order_clause = st.selectbox("🖱️ Select order (opt):", list_to_choose,
                 key="key_order_clause")
+        with col1d:
+            st.write("")
+            visualisation_option = st.radio("", ["👁️ Visual", "📅 Table"], label_visibility="collapsed",
+                key="key_visualisation_option")
 
             query = """PREFIX rml: <http://w3id.org/rml/>
 
@@ -282,24 +287,17 @@ with tab2:
 
                 # Optional: apply label formatting
                 tm_label = utils.get_node_label(tm)
-                sm_label = utils.get_node_label(sm)
-                pom_label = utils.get_node_label(pom)
-                om_label = utils.get_node_label(om)
-                subject_label = utils.get_node_label(subject)
-                predicate_label = utils.get_node_label(predicate)
-                object_label = utils.get_node_label(object_)
 
                 selected_tm_for_display_list = list(tm_dict) if not selected_tm_for_display_list else selected_tm_for_display_list
                 if tm_label in selected_tm_for_display_list:
                     row_dict = {
-                        "Subject": subject_label,
-                        "Predicate": predicate_label,
-                        "Object": object_label,
-                        "TriplesMap": tm_label,
-                        "SubjectMap": sm_label,
-                        "PredicateObjectMap": pom_label,
-                        "ObjectMap": om_label
-                    }
+                        "Subject": utils.get_node_label_w_prefix(subject),
+                        "Predicate": utils.get_node_label_w_prefix(predicate),
+                        "Object": utils.get_node_label_w_prefix(object_),
+                        "TriplesMap": utils.get_node_label_w_prefix(tm),
+                        "Subject Map": utils.get_node_label_w_prefix(sm),
+                        "Predicate-Object Map": utils.get_node_label_w_prefix(pom),
+                        "Object Map": utils.get_node_label_w_prefix(om)}
                     df_data.append(row_dict)
 
             # Create DataFrame
@@ -310,7 +308,23 @@ with tab2:
 
             # Display
             with col1:
-                if not df.empty:
+                if visualisation_option == "👁️ Visual":
+                    inner_html = ""
+                    for row in df.itertuples(index=False):
+                        s = row.Subject
+                        p = row.Predicate
+                        o = row.Object
+                        small_header, new_inner_html = utils.preview_rule_list(s, p, o)
+                        inner_html += new_inner_html
+
+                    st.markdown(f"""<div class="info-message-blue">
+                        <b>RESULTS ({len(df)}):</b>
+                    </div>""", unsafe_allow_html=True)
+                    st.markdown(f"""<div class="gray-preview-message" style="margin-top:0px; padding-top:4px;">
+                            {small_header}{inner_html}
+                        </div>""", unsafe_allow_html=True)
+
+                elif visualisation_option == "📅 Table":
                     st.markdown(f"""<div class="info-message-blue">
                         <b>RESULTS ({len(df)}):</b>
                     </div>""", unsafe_allow_html=True)
@@ -328,8 +342,8 @@ with tab2:
             tm_dict = utils.get_tm_dict()
             list_to_choose = list(reversed(list(tm_dict)))
             if len(list_to_choose) > 1:
-                selected_tm_for_display_list = st.multiselect("🖱️ Filter TriplesMaps (optional):", list_to_choose,
-                    key="key_selected_tm_for_display_list_1")
+                selected_tm_for_display_list = st.multiselect("️⚙️ Filter by TriplesMaps (optional):", list_to_choose,
+                    placeholder="No filter", key="key_selected_tm_for_display_list_1")
             else:
                 selected_tm_for_display_list = []
 
@@ -345,22 +359,15 @@ with tab2:
             order_clause = st.selectbox("🖱️ Select order (optional):", list_to_choose,
                 key="key_order_clause")
 
-            query = """SELECT ?tm ?logicalTable ?tableName ?sqlQuery ?logicalSource ?source ?referenceFormulation ?iterator WHERE {
-              {
-                ?tm a <http://www.w3.org/ns/r2rml#TriplesMap> ;
-                    <http://www.w3.org/ns/r2rml#logicalTable> ?logicalTable .
-                OPTIONAL { ?logicalTable <http://www.w3.org/ns/r2rml#tableName> ?tableName }
-                OPTIONAL { ?logicalTable <http://www.w3.org/ns/r2rml#sqlQuery> ?sqlQuery }
-              }
-              UNION
-              {
-                ?tm a <http://www.w3.org/ns/r2rml#TriplesMap> ;
-                    <http://w3id.org/rml/logicalSource> ?logicalSource .
-                OPTIONAL { ?logicalSource <http://w3id.org/rml/source> ?source }
-                OPTIONAL { ?logicalSource <http://w3id.org/rml/referenceFormulation> ?referenceFormulation }
-              }
-            }
-            """
+            query = """PREFIX rml: <http://w3id.org/rml/>
+                SELECT ?tm ?logicalSource ?source ?referenceFormulation ?iterator ?tableName ?sqlQuery WHERE {
+                  ?tm rml:logicalSource ?logicalSource .
+                  OPTIONAL { ?logicalSource rml:source ?source }
+                  OPTIONAL { ?logicalSource rml:referenceFormulation ?referenceFormulation }
+                  OPTIONAL { ?logicalSource rml:iterator ?iterator }
+                  OPTIONAL { ?logicalSource rml:tableName ?tableName }
+                  OPTIONAL { ?logicalSource rml:query ?sqlQuery }
+                }"""
 
             if order_clause == "Ascending":
                 query += f"ORDER BY ASC(?tm) "
@@ -387,20 +394,16 @@ with tab2:
                 reference_formulation = str(row.referenceFormulation) if hasattr(row, "referenceFormulation") and row.referenceFormulation else ""
 
                 tm_label = utils.get_node_label(tm)
-                lt_label = utils.get_node_label(logical_table)
-                ls_label = utils.get_node_label(logical_source)
 
                 selected_tm_for_display_list = list(tm_dict) if not selected_tm_for_display_list else selected_tm_for_display_list
                 if tm_label in selected_tm_for_display_list:
-                    row_dict = {"TriplesMap label": tm_label,
+                    row_dict = {"TriplesMap": utils.get_node_label_w_prefix(tm),
+                        "View": sql_query,
+                        "Table": table_name,
                         "Source": source,
-                        "Logical Table": lt_label,
-                        "Table Name": table_name,
-                        "SQL Query": sql_query,
-                        "Reference Formulation": reference_formulation,
+                        "Reference Formulation": utils.get_node_label_w_prefix(reference_formulation),
                         "Logical Source": logical_source}
                     df_data.append(row_dict)
-
 
             # Create DataFrame
             df = pd.DataFrame(df_data)
@@ -426,8 +429,8 @@ with tab2:
             tm_dict = utils.get_tm_dict()
             list_to_choose = list(reversed(list(tm_dict)))
             if len(list_to_choose) > 1:
-                selected_tm_for_display_list = st.multiselect("🖱️ Filter TriplesMaps (optional):", list_to_choose,
-                    key="key_selected_tm_for_display_list_2")
+                selected_tm_for_display_list = st.multiselect("⚙️ Filter by TriplesMaps (optional):", list_to_choose,
+                    placeholder="No filter", key="key_selected_tm_for_display_list_2")
             else:
                 selected_tm_for_display_list = []
 
@@ -443,15 +446,15 @@ with tab2:
             order_clause = st.selectbox("🖱️ Select order (optional):", list_to_choose,
                 key="key_order_clause")
 
-        query = f"""SELECT ?tm ?subjectMap ?template ?constant ?reference ?column ?termType ?graph (GROUP_CONCAT(?class; separator=", ") AS ?classes) WHERE {{
-              ?tm a <http://www.w3.org/ns/r2rml#TriplesMap> ;
-                  <http://www.w3.org/ns/r2rml#subjectMap> ?subjectMap .
-              OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#template> ?template }}
-              OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#constant> ?constant }}
-              OPTIONAL {{ ?subjectMap <http://w3id.org/rml/reference> ?reference }}
-              OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#class> ?class }}
-              OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#termType> ?termType }}
-              OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#graph> ?graph }}
+        query = f"""PREFIX rml: <http://w3id.org/rml/>
+            SELECT ?tm ?subjectMap ?template ?constant ?reference ?column ?termType ?graph (GROUP_CONCAT(?class; separator=", ") AS ?classes) WHERE {{
+              ?tm rml:subjectMap ?subjectMap .
+              OPTIONAL {{ ?subjectMap rml:template ?template }}
+              OPTIONAL {{ ?subjectMap rml:constant ?constant }}
+              OPTIONAL {{ ?subjectMap rml:reference ?reference }}
+              OPTIONAL {{ ?subjectMap rml:class ?class }}
+              OPTIONAL {{ ?subjectMap rml:termType ?termType }}
+              OPTIONAL {{ ?subjectMap rml:graph ?graph }}
             }}
             GROUP BY ?tm ?subjectMap ?template ?reference ?column ?termType ?graph
         """
@@ -490,10 +493,9 @@ with tab2:
                 sm_rule_type = ""
                 sm_rule = ""
             raw_classes = str(row["classes"]) if row["classes"] else ""
-            class_list = [split_uri(c.strip())[1] for c in raw_classes.split(",") if c.strip()]
-            class_ = ", ".join(class_list)
+            class_list = [utils.get_node_label_w_prefix(c) for c in raw_classes.split(",") if c.strip()]
+            class_list_to_string = ", ".join(class_list)
             term_type = str(row.termType) if row.termType else ""
-            term_type = split_uri(term_type)[1] if term_type else ""
             graph = str(row.graph) if row.graph else ""
 
             tm_label = utils.get_node_label(tm)
@@ -501,9 +503,13 @@ with tab2:
 
             selected_tm_for_display_list = list(tm_dict) if not selected_tm_for_display_list else selected_tm_for_display_list
             if tm_label in selected_tm_for_display_list:
-                row_dict = {"Type": sm_rule_type, "Rule": sm_rule,
-                "Class": class_, "Term Type": term_type, "TriplesMap label": tm_label,
-                    "Graph": graph, "Subject Map": subject_map}
+                row_dict = {"Rule": utils.get_node_label_w_prefix(sm_rule),
+                    "Type": sm_rule_type,
+                    "Class": class_list_to_string,
+                    "Term Type": utils.get_node_label_w_prefix(term_type),
+                    "TriplesMap": utils.get_node_label_w_prefix(tm),
+                    "Graph": utils.get_node_label_w_prefix(graph),
+                    "Subject Map": utils.get_node_label_w_prefix(subject_map)}
                 df_data.append(row_dict)
 
         df = pd.DataFrame(df_data)
@@ -531,19 +537,20 @@ with tab2:
             tm_label_for_search = st.selectbox("🖱️ Select TriplesMap:*", list_to_choose,
                 key="key_tm_label_for_search")
 
-
         if tm_label_for_search != "Select TriplesMap":
             tm_iri_for_search = tm_dict[tm_label_for_search]
 
-            with col1a:
-                list_to_choose = []
-                for pom in st.session_state["g_mapping"].objects(tm_iri_for_search, RML.predicateObjectMap):
-                    list_to_choose.append(pom)
-                if len(list_to_choose) > 1:
-                    selected_pom_for_display_list = st.multiselect("🖱️ Filter Predicate-Object Maps (optional):", list_to_choose,
-                        key="key_selected_pom_for_display_list")
-                else:
-                    selected_pom_for_display_list = []
+            list_to_choose = []
+            for pom in st.session_state["g_mapping"].objects(tm_iri_for_search, RML.predicateObjectMap):
+                list_to_choose.append(pom)
+            if len(list_to_choose) > 1:
+                with col1:
+                    col1a, col1b = st.columns([2,1])
+                with col1a:
+                    selected_pom_for_display_list = st.multiselect("⚙️ Filter by Predicate-Object Maps (optional):", list_to_choose,
+                        placeholder="No filter", key="key_selected_pom_for_display_list")
+            else:
+                selected_pom_for_display_list = []
 
             with col1:
                 col1a, col1b, col1c = st.columns(3)
@@ -557,19 +564,18 @@ with tab2:
                 order_clause = st.selectbox("🖱️ Select order (optional):", list_to_choose,
                     key="key_order_clause")
 
-            query = f"""
+            query = f"""PREFIX rml: <http://w3id.org/rml/>
                 SELECT ?pom ?predicate ?objectMap ?template ?constant ?reference ?termType ?datatype ?language ?graphMap WHERE {{
-                  <{tm_iri_for_search}> a <http://www.w3.org/ns/r2rml#TriplesMap> ;
-                                         <http://www.w3.org/ns/r2rml#predicateObjectMap> ?pom .
-                  OPTIONAL {{ ?pom <http://www.w3.org/ns/r2rml#predicate> ?predicate }}
-                  OPTIONAL {{ ?pom <http://www.w3.org/ns/r2rml#objectMap> ?objectMap }}
-                  OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#template> ?template }}
-                  OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#constant> ?constant }}
-                  OPTIONAL {{ ?objectMap <http://w3id.org/rml/reference> ?reference }}
-                  OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#termType> ?termType }}
-                  OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#datatype> ?datatype }}
-                  OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#language> ?language }}
-                  OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#graphMap> ?graphMap }}
+                  <{tm_iri_for_search}> rml:predicateObjectMap ?pom .
+                  OPTIONAL {{ ?pom rml:predicate ?predicate }}
+                  OPTIONAL {{ ?pom rml:objectMap ?objectMap }}
+                  OPTIONAL {{ ?objectMap rml:template ?template }}
+                  OPTIONAL {{ ?objectMap rml:constant ?constant }}
+                  OPTIONAL {{ ?objectMap rml:reference ?reference }}
+                  OPTIONAL {{ ?objectMap rml:termType ?termType }}
+                  OPTIONAL {{ ?objectMap rml:datatype ?datatype }}
+                  OPTIONAL {{ ?objectMap rml:language ?language }}
+                  OPTIONAL {{ ?objectMap rml:graphMap ?graphMap }}
                 }}
             """
 
@@ -608,7 +614,6 @@ with tab2:
                     pom_rule_type = ""
                     pom_rule = ""
                 term_type = str(row.termType) if row.termType else ""
-                term_type = split_uri(term_type)[1] if term_type else ""
                 datatype = str(row.datatype) if row.datatype else ""
                 language = str(row.language) if row.language else ""
                 graph_map = str(row.graphMap) if row.graphMap else ""
@@ -619,11 +624,15 @@ with tab2:
                 all_pom_list = list(utils.get_pom_dict())
                 selected_pom_for_display_list = all_pom_list if not selected_pom_for_display_list else selected_pom_for_display_list
                 if pom in selected_pom_for_display_list:
-                    row_dict = {"Predicate": predicate,
-                        "Type": pom_rule_type, "Rule": pom_rule,
-                        "TermType": term_type, "Datatype": datatype, "Language": language,
-                        "Graph Map": graph_map, "Predicate-Object Map": pom,
-                        "Object Map": object_map}
+                    row_dict = {"Predicate": utils.get_node_label_w_prefix(predicate),
+                        "Rule": utils.get_node_label_w_prefix(pom_rule),
+                        "Type": pom_rule_type,
+                        "TermType": utils.get_node_label_w_prefix(term_type),
+                        "Datatype": utils.get_node_label_w_prefix(datatype),
+                        "Language": utils.get_node_label_w_prefix(language),
+                        "Graph Map": utils.get_node_label_w_prefix(graph_map),
+                        "Predicate-Object Map": utils.get_node_label_w_prefix(pom),
+                        "Object Map": utils.get_node_label_w_prefix(object_map)}
 
                     df_data.append(row_dict)
             df = pd.DataFrame(df_data)
@@ -649,10 +658,10 @@ with tab2:
                 rdf_class_label = utils.get_node_label(rdf_class)
                 classes_set.add(rdf_class_label)
 
-            list_to_choose_classes = list(classes_set)
+            list_to_choose_classes = sorted(list(classes_set))
             if len(list_to_choose_classes) > 1:
-                selected_classes_for_display_list = st.multiselect("🖱️ Filter Classes (optional):", list_to_choose_classes,
-                    key="key_selected_classes_for_display_list")
+                selected_classes_for_display_list = st.multiselect("⚙️ Filter by Class (optional):", list_to_choose_classes,
+                    placeholder="No filter", key="key_selected_classes_for_display_list")
             else:
                 selected_classes_for_display_list = []
 
@@ -668,16 +677,16 @@ with tab2:
             order_clause = st.selectbox("🖱️ Select order (optional):", list_to_choose,
                 key="key_order_clause")
 
-        query = """SELECT DISTINCT ?tm ?sm ?class WHERE {
-              ?tm a <http://www.w3.org/ns/r2rml#TriplesMap> ;
-                  <http://www.w3.org/ns/r2rml#subjectMap> ?sm .
-              ?sm <http://www.w3.org/ns/r2rml#class> ?class .
+        query = """PREFIX rml: <http://w3id.org/rml/>
+            SELECT DISTINCT ?tm ?sm ?class WHERE {
+              ?tm rml:subjectMap ?sm .
+              ?sm rml:class ?class .
             }"""
 
         if order_clause == "Ascending":
-            query += f"ORDER BY ASC(?subjectMap) "
+            query += f"ORDER BY ASC(?class) "
         elif order_clause == "Descending":
-            query += f"ORDER BY DESC(?subjectMap) "
+            query += f"ORDER BY DESC(?class) "
 
         if limit:
             query += f"LIMIT {limit} "
@@ -695,16 +704,90 @@ with tab2:
             rdf_class = row.get("class") if row.get("class") else ""
             class_label = utils.get_node_label(rdf_class)
 
-            tm_label = utils.get_node_label(tm)
-            sm_label = utils.get_node_label(sm)
-
             selected_classes_for_display_list = list_to_choose_classes if not selected_classes_for_display_list else selected_classes_for_display_list
             if class_label in selected_classes_for_display_list:
-                df_data.append({"Class": class_label, "TriplesMap label": tm_label,
-                    "Subject Map": sm_label, "Class (complete)": rdf_class})
+                df_data.append({"Class": utils.get_node_label_w_prefix(rdf_class),
+                    "TriplesMap": utils.get_node_label_w_prefix(tm),
+                    "Subject Map": utils.get_node_label_w_prefix(sm)})
 
         df = pd.DataFrame(df_data)
         # Drop columns that are entirely empty (all values are NaN or empty strings)
+        df = df.loc[:, df.apply(lambda col: col.replace('', pd.NA).notna().any())]
+
+        with col1:
+            if not df.empty:
+                st.markdown(f"""<div class="info-message-blue">
+                    <b>RESULTS ({len(df)}):</b>
+                </div>""", unsafe_allow_html=True)
+                st.dataframe(df, hide_index=True)
+            else:
+                st.markdown(f"""<div class="warning-message">
+                    ⚠️ No results.
+                </div>""", unsafe_allow_html=True)
+
+    if selected_predefined_search == "Used Properties":
+
+        with col1b:
+            properties_set = set()
+            for pom, predicate in st.session_state["g_mapping"].subject_objects(predicate=RML["predicate"]):
+                predicate_label = utils.get_node_label(predicate)
+                properties_set.add(predicate_label)
+
+            list_to_choose_properties = sorted(list(properties_set))
+            if len(list_to_choose_properties) > 1:
+                selected_properties_for_display_list = st.multiselect("⚙️ Filter by Property (optional):", list_to_choose_properties,
+                    placeholder="No filter", key="key_selected_properties_for_display_list")
+            else:
+                selected_properties_for_display_list = []
+
+        with col1:
+            col1a, col1b, col1c = st.columns(3)
+
+        with col1a:
+            limit = st.text_input("⌨️ Enter limit (optional):", key="key_limit")
+        with col1b:
+            offset = st.text_input("⌨️ Enter offset (optional):", key="key_offset")
+        with col1c:
+            list_to_choose = ["No order", "Ascending", "Descending"]
+            order_clause = st.selectbox("🖱️ Select order (optional):", list_to_choose,
+                key="key_order_clause")
+
+        query = """PREFIX rml: <http://w3id.org/rml/>
+        SELECT DISTINCT ?tm ?pom ?predicate WHERE {
+          ?tm rml:predicateObjectMap ?pom .
+          ?pom rml:predicate ?predicate .
+        }"""
+
+        if order_clause == "Ascending":
+            query += f"ORDER BY ASC(?predicate) "
+        elif order_clause == "Descending":
+            query += f"ORDER BY DESC(?predicate) "
+
+        if limit:
+            query += f"LIMIT {limit} "
+
+        if offset:
+            query += f"OFFSET {offset}"
+
+        results = st.session_state["g_mapping"].query(query)
+
+        df_data = []
+
+        for row in results:
+            tm = row.tm if hasattr(row, "tm") and row.tm else ""
+            pom = row.pom if hasattr(row, "pom") and row.pom else ""
+            predicate = row.get("predicate") if row.get("predicate") else ""
+            predicate_label = utils.get_node_label(predicate)
+
+            selected_properties_for_display_list = list_to_choose_properties if not selected_properties_for_display_list else selected_properties_for_display_list
+            if predicate_label in selected_properties_for_display_list:
+                df_data.append({
+                    "Property": utils.get_node_label_w_prefix(predicate),
+                    "TriplesMap": utils.get_node_label_w_prefix(tm),
+                    "Predicate-Object Map": utils.get_node_label_w_prefix(pom)
+                })
+
+        df = pd.DataFrame(df_data)
         df = df.loc[:, df.apply(lambda col: col.replace('', pd.NA).notna().any())]
 
         with col1:
@@ -739,13 +822,14 @@ with tab2:
                 key="key_order_clause")
 
         if selected_incomplete_node_type == "TriplesMaps":
-            query = """SELECT DISTINCT ?tm WHERE {
-              {?tm <http://w3id.org/rml/logicalSource> ?ls .
-                FILTER NOT EXISTS { ?tm <http://www.w3.org/ns/r2rml#subjectMap> ?sm . }
+            query = """PREFIX rml: <http://w3id.org/rml/>
+             SELECT DISTINCT ?tm WHERE {
+              {?tm rml:logicalSource ?ls .
+                FILTER NOT EXISTS { ?tm rml:subjectMap ?sm . }
               }
               UNION
-              {?tm <http://w3id.org/rml/logicalSource> ?ls .
-                FILTER NOT EXISTS { ?tm <http://www.w3.org/ns/r2rml#predicateObjectMap> ?pom . }
+              {?tm rml:logicalSource ?ls .
+                FILTER NOT EXISTS { ?tm rml:predicateObjectMap ?pom . }
               }}"""
 
             if order_clause == "Ascending":
@@ -765,15 +849,14 @@ with tab2:
 
             for row in results:
                 tm = row.get("tm")
-                tm_label = utils.get_node_label(tm) if tm else "(missing)"
+                tm_label = utils.get_node_label_w_prefix(tm) if tm else "(missing)"
 
                 has_sm = bool(list(st.session_state["g_mapping"].objects(subject=tm, predicate=RML["subjectMap"])))
                 has_pom = bool(list(st.session_state["g_mapping"].objects(subject=tm, predicate=RML["predicateObjectMap"])))
 
-                df_data.append({"TriplesMap label": tm_label,
+                df_data.append({"TriplesMap": tm_label,
                     "Has Subject Map": "❌" if not has_sm else "✔️",
-                    "Has Predicate-Object Map": "❌" if not has_pom else "✔️",
-                    "TriplesMap (complete)": str(tm) if tm else ""})
+                    "Has Predicate-Object Map": "❌" if not has_pom else "✔️"})
 
             df = pd.DataFrame(df_data)
             # Drop columns that are entirely empty (all values are NaN or empty strings)
@@ -793,10 +876,11 @@ with tab2:
                     </div>""", unsafe_allow_html=True)
 
         if selected_incomplete_node_type == "Predicate-Object Maps":
-            query = """SELECT DISTINCT ?pom WHERE {
-              ?pom a <http://www.w3.org/ns/r2rml#PredicateObjectMap> .
+            query = """PREFIX rml: <http://w3id.org/rml/>
+             SELECT DISTINCT ?pom WHERE {
+              ?pom a rml:PredicateObjectMap .
               FILTER NOT EXISTS {
-                ?pom <http://www.w3.org/ns/r2rml#objectMap> ?om .}}"""
+                ?pom rml:objectMap ?om .}}"""
 
             if order_clause == "Ascending":
                 query += f"ORDER BY ASC(?pom) "
@@ -865,18 +949,19 @@ with tab2:
                 key="key_order_clause")
 
         if selected_orphaned_node_type == "Subject Maps":
-            query = """SELECT DISTINCT ?sm WHERE {{
-              {{?sm <http://www.w3.org/ns/r2rml#template> ?template .
-              }} UNION {{?sm <http://www.w3.org/ns/r2rml#class> ?class .
-              }} UNION {{?sm <http://www.w3.org/ns/r2rml#constant> ?constant .
-              }} UNION {{?sm <http://www.w3.org/ns/r2rml#column> ?column .
-              }} UNION {{?sm <http://www.w3.org/ns/r2rml#termType> ?termType .
-              }} UNION {{?sm <http://www.w3.org/ns/r2rml#graphMap> ?graphMap .
-              }} UNION {{?sm <http://w3id.org/rml/reference> ?reference .}}
+            query = """PREFIX rml: <http://w3id.org/rml/>
+             SELECT DISTINCT ?sm WHERE {{
+              {{?sm rml:template ?template .
+              }} UNION {{?sm rml:class ?class .
+              }} UNION {{?sm rml:constant ?constant .
+              }} UNION {{?sm rml:column ?column .
+              }} UNION {{?sm rml:termType ?termType .
+              }} UNION {{?sm rml:graphMap ?graphMap .
+              }} UNION {{?sm rml:reference ?reference .}}
 
-              FILTER NOT EXISTS {{?tm <http://www.w3.org/ns/r2rml#subjectMap> ?sm .}}
-              FILTER NOT EXISTS {{?pom <http://www.w3.org/ns/r2rml#predicateObjectMap> ?sm .}}
-              FILTER NOT EXISTS {{?om <http://www.w3.org/ns/r2rml#objectMap> ?sm .}}
+              FILTER NOT EXISTS {{?tm rml:subjectMap ?sm .}}
+              FILTER NOT EXISTS {{?pom rml:predicateObjectMap ?sm .}}
+              FILTER NOT EXISTS {{?om rml:objectMap ?sm .}}
             }}"""
 
             if order_clause == "Ascending":
@@ -896,7 +981,6 @@ with tab2:
 
             for row in results:
                 sm = row.get("sm") if row.get("sm") else ""
-                sm_label = utils.get_node_label(sm)
 
                 # Extract known properties from the graph
                 g = st.session_state["g_mapping"]
@@ -922,15 +1006,15 @@ with tab2:
                 term_type = g.value(subject=sm, predicate=RML["termType"])
                 graph_map = g.value(subject=sm, predicate=RML["graphMap"])
 
-                row_dict = {"Subject Map": sm_label,
-                    "Type": str(sm_rule_type),
+                row_dict = {"Subject Map": utils.get_node_label_w_prefix(sm),
                     "Rule": str(sm_rule),
-                    "Class": utils.get_node_label(rdf_class) if rdf_class else "",
-                    "Term Type": str(term_type) if term_type else "",
-                    "Graph Map": str(graph_map) if graph_map else "",
-                    "Subject Map (complete)": sm}
+                    "Type": str(sm_rule_type),
+                    "Class": utils.get_node_label_w_prefix(rdf_class),
+                    "Term Type": utils.get_node_label_w_prefix(term_type),
+                    "Graph Map": utils.get_node_label_w_prefix(graph_map)}
 
                 df_data.append(row_dict)
+
             df = pd.DataFrame(df_data)
             df = df.loc[:, df.apply(lambda col: col.replace('', pd.NA).notna().any())]
 
@@ -949,14 +1033,15 @@ with tab2:
 
         if selected_orphaned_node_type == "Predicate-Object Maps":
 
-            query = """SELECT DISTINCT ?pom WHERE {
+            query = """PREFIX rml: <http://w3id.org/rml/>
+             SELECT DISTINCT ?pom WHERE {
               {
-                ?pom <http://www.w3.org/ns/r2rml#predicate> ?p .
+                ?pom rml:predicate ?p .
               } UNION {
-                ?pom <http://www.w3.org/ns/r2rml#objectMap> ?o .
+                ?pom rml:objectMap ?o .
               }
               FILTER NOT EXISTS {
-                ?tm <http://www.w3.org/ns/r2rml#predicateObjectMap> ?pom .
+                ?tm rml:predicateObjectMap ?pom .
               }}"""
 
             if order_clause == "Ascending":
@@ -976,11 +1061,10 @@ with tab2:
 
             for row in results:
                 pom = row.get("pom") if row.get("pom") else ""
-                pom_label = utils.get_node_label(pom)
                 predicate = st.session_state["g_mapping"].value(subject=pom, predicate=RML["predicate"])
 
-                row_dict = {"Predicate-Object Map": pom_label,
-                    "Predicate": predicate, "Predicate-Object Map (complete)": pom,}
+                row_dict = {"Predicate-Object Map": utils.get_node_label_w_prefix(pom),
+                    "Predicate": utils.get_node_label_w_prefix(predicate)}
 
                 df_data.append(row_dict)
 
@@ -1001,19 +1085,20 @@ with tab2:
 
         if selected_orphaned_node_type == "Object Maps":
 
-            query = """SELECT DISTINCT ?om WHERE {{
-              {{?om <http://www.w3.org/ns/r2rml#constant> ?c .
-              }} UNION {{?om <http://www.w3.org/ns/r2rml#column> ?col .
-              }} UNION {{?om <http://www.w3.org/ns/r2rml#template> ?tpl .
-              }} UNION {{?om <http://www.w3.org/ns/r2rml#termType> ?tt .
-              }} UNION {{?om <http://www.w3.org/ns/r2rml#datatype> ?dt .
-              }} UNION {{?om <http://www.w3.org/ns/r2rml#language> ?lang .
-              }} UNION {{?om <http://www.w3.org/ns/r2rml#parentTriplesMap> ?ptm .
-              }} UNION {{?om <http://www.w3.org/ns/r2rml#joinCondition> ?jc .
-              }} UNION {{?om <http://w3id.org/rml/reference> ?ref .}}
+            query = """PREFIX rml: <http://w3id.org/rml/>
+              SELECT DISTINCT ?om WHERE {{
+              {{?om rml:constant ?c .
+              }} UNION {{?om rml:column ?col .
+              }} UNION {{?om rml:template ?tpl .
+              }} UNION {{?om rml:termType ?tt .
+              }} UNION {{?om rml:datatype ?dt .
+              }} UNION {{?om rml:language ?lang .
+              }} UNION {{?om rml:parentTriplesMap ?ptm .
+              }} UNION {{?om rml:joinCondition ?jc .
+              }} UNION {{?om rml:reference ?ref .}}
 
-              FILTER NOT EXISTS {{?pom <http://www.w3.org/ns/r2rml#objectMap> ?om .}}
-              FILTER NOT EXISTS {{?tm <http://www.w3.org/ns/r2rml#subjectMap> ?om .}}
+              FILTER NOT EXISTS {{?pom rml:objectMap ?om .}}
+              FILTER NOT EXISTS {{?tm rml:subjectMap ?om .}}
             }}
             """
 
@@ -1034,7 +1119,6 @@ with tab2:
 
             for row in results:
                 om = row.get("om") if row.get("om") else ""
-                om_label = utils.get_node_label(om)
 
                 g = st.session_state["g_mapping"]
 
@@ -1059,15 +1143,14 @@ with tab2:
                 parent_tm = g.value(subject=om, predicate=RML["parentTriplesMap"])
                 join_condition = g.value(subject=om, predicate=RML["joinCondition"])
 
-                row_dict = {"Object Map": om_label,
+                row_dict = {"Object Map": utils.get_node_label_w_prefix(om),
+                        "Rule": utils.get_node_label_w_prefix(om_rule),
                         "Type": str(om_rule_type),
-                        "Rule": str(om_rule),
-                        "Term Type": str(term_type) if term_type else "",
-                        "Datatype": str(datatype) if datatype else "",
-                        "Language": str(language) if language else "",
-                        "Parent TriplesMap": str(parent_tm) if parent_tm else "",
-                        "Join Condition": str(join_condition) if join_condition else "",
-                        "Object Map (complete)": str(om) if om else ""}
+                        "Term Type": utils.get_node_label_w_prefix(term_type),
+                        "Datatype": utils.get_node_label_w_prefix(datatype),
+                        "Language": utils.get_node_label_w_prefix(language),
+                        "Parent TriplesMap": utils.get_node_label_w_prefix(parent_tm),
+                        "Join Condition": utils.get_node_label_w_prefix(join_condition)}
 
                 df_data.append(row_dict)
 
@@ -1127,9 +1210,9 @@ with tab2:
                 p_label = utils.get_node_label(p)
                 o_label = utils.get_node_label(o)
 
-                df_data.append({"Subject label": s_label, "Predicate label": p_label,
-                    "Object label": o_label, "Subject (complete)": str(s),
-                    "Predicate (complete)": str(p), "Object (complete)": str(o)})
+                df_data.append({"Subject": utils.get_node_label_w_prefix(s),
+                    "Predicate": utils.get_node_label_w_prefix(p),
+                    "Object": utils.get_node_label_w_prefix(o)})
 
             df = pd.DataFrame(df_data)
             df = df.loc[:, df.apply(lambda col: col.replace('', pd.NA).notna().any())]
@@ -1235,12 +1318,26 @@ with tab4:
     with col1:
         col1a, col1b = st.columns([2,1])
 
+        if st.session_state["mapping_downloaded_ok_flag"]:
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                st.write("")
+                st.markdown(f"""<div class="success-message-flag">
+                    ✅ The mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> has been downloaded!
+                </div>""", unsafe_allow_html=True)
+            st.session_state["mapping_downloaded_ok_flag"] = False
+            time.sleep(utils.get_success_message_time())
+            st.rerun()
+
 
     list_to_choose = list(utils.get_g_mapping_file_formats_dict())
     list_to_choose.remove("jsonld")
 
     with col1a:
-        format_options_dict = {"🐢 turtle": "turtle", "3️⃣ ntriples": "nt"}
+        if not "key_export_format_selectbox" in st.session_state:
+            st.session_state["key_export_format_selectbox"] = "🐢 turtle"  # this ensures the ntriples wont keep selected after download
+        format_options_dict = {"🐢 turtle": "turtle", "3️⃣ ntriples": "ntriples"}
         preview_format_display = st.radio("🖱️ Select format:*", format_options_dict,
             horizontal=True, label_visibility="collapsed", key="key_export_format_selectbox")
         preview_format = format_options_dict[preview_format_display]
@@ -1256,3 +1353,13 @@ with tab4:
                     (out of {utils.format_number_for_display(len(serialised_data))}) to avoid performance issues.</small>
                 </div>""", unsafe_allow_html=True)
         st.code(serialised_data[:max_length])
+
+        with col1b:
+            allowed_format_dict = utils.get_g_mapping_file_formats_dict()
+            extension = allowed_format_dict[preview_format]
+            download_filename = st.session_state["g_label"] + extension
+            st.session_state["mapping_downloaded_ok_flag"] = st.download_button(label="Download", data=serialised_data,
+                file_name=download_filename, mime="text/plain")
+
+        if st.session_state["mapping_downloaded_ok_flag"]:
+            st.rerun()

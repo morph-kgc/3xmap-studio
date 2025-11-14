@@ -7,9 +7,11 @@ import base64
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
     st.set_page_config(page_title="3xmap Studio", layout="wide",
         page_icon="logo/fav_icon.png")
+    color = "#511D66"
 else:
     st.set_page_config(page_title="3xmap Studio", layout="wide",
         page_icon="logo/fav_icon_inverse.png")
+    color = "#d8c3f0"
 
 # Automatic detection of dark mode-------------------------
 if "dark_mode_flag" not in st.session_state or st.session_state["dark_mode_flag"] is None:
@@ -29,5 +31,8 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-st.title("Welcome to 3xmap Studio")
+
+st.markdown(f"""
+<h1>Welcome to <span style='color:{color};'>3Xmap Studio</span></h1>
+""", unsafe_allow_html=True)
 st.write("Use sidebar to work with existing or new mapping.")
