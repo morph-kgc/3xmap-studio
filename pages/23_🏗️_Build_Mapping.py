@@ -2234,14 +2234,7 @@ with tab3:
                 om_iri_for_display = utils.format_iri_to_prefix_label(om_iri_for_display)
 
 
-                # display rule
                 with col1:
-                    col1a, col1b = st.columns([1,4])
-                with col1b:
-                    utils.preview_rule(sm_rule, selected_p_for_display, om_iri_for_display)
-
-                with col1a:
-                    st.write("")
                     st.session_state["pom_iri_to_create"] = pom_iri    # otherwise it will change value in the on_click function
                     st.session_state["tm_iri_for_pom"] = tm_iri_for_pom
                     if om_generation_rule == "Template 📐":
@@ -2250,6 +2243,8 @@ with tab3:
                         save_pom_constant_button = st.button("Save", on_click=save_pom_constant, key="key_save_pom_constant_button")
                     elif om_generation_rule == "Reference 📊":
                         save_pom_reference_button = st.button("Save", on_click=save_pom_reference, key="key_save_pom_reference_button")
+
+                    utils.preview_rule(sm_rule, selected_p_for_display, om_iri_for_display)  # display rule
 
     with col2b:
         st.markdown("""<div class='info-message-gray'>

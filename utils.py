@@ -643,7 +643,7 @@ def get_node_label_w_prefix(node):
 
     if isinstance(node, BNode):
         return node
-        
+
     try:
         prefix, ns, local = st.session_state["g_mapping"].namespace_manager.compute_qname(node)
         return prefix + ": " + local
@@ -2790,47 +2790,71 @@ def is_valid_url_mapping(mapping_url, show_info):
 
 #________________________________________________
 # Function to display a rule
-def preview_rule(sm_rule_for_display, selected_p_for_display, om_iri_for_display):
+def preview_rule(s_for_display, p_for_display, o_for_display):
 
-    if len(om_iri_for_display) < 40:
-        st.markdown(f"""
-        <div class="blue-preview-message" style="margin-top:0px; padding-top:4px;">
-            <small><b style="color:#F63366; font-size:10px; margin-top:0px;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:0px;">
-                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{sm_rule_for_display}</b></div>
-                </div>
-                <div style="flex:0; font-size:18px;">🡆</div>
-                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{selected_p_for_display}</b></div>
-                </div>
-                <div style="flex:0; font-size:18px;">🡆</div>
-                <div style="flex:1.3; min-width:140px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{om_iri_for_display}</b></div>
-                </div>
+    inner_html = ""
+    max_length = 40
+
+    s_for_display = "" if not s_for_display else s_for_display
+    p_for_display = "" if not p_for_display else p_for_display
+    o_for_display = "" if not o_for_display else o_for_display
+
+    formatted_s = f"""{s_for_display}""" if len(s_for_display) < max_length else "<small>" + f"""{s_for_display}""" + "</small>"
+    formatted_p = f"""{p_for_display}""" if len(p_for_display) < max_length else "<small>" + f"""{p_for_display}""" + "</small>"
+    formatted_o = f"""{o_for_display}""" if len(o_for_display) < max_length else "<small>" + f"""{o_for_display}""" + "</small>"
+
+    st.markdown(f"""<div class="blue-preview-message" style="margin-top:0px; padding-top:4px;">
+        <small><b style="color:#F63366; font-size:10px; margin-top:0px;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:0px;">
+            <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{formatted_s}</b></div>
+            </div>
+            <div style="flex:0; font-size:18px;">🡆</div>
+            <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{formatted_p}</b></div>
+            </div>
+            <div style="flex:0; font-size:18px;">🡆</div>
+            <div style="flex:1; min-width:140px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b><small>{formatted_o}</small></b></div>
             </div>
         </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown(f"""
-        <div class="blue-preview-message" style="margin-top:0px; padding-top:4px;">
-            <small><b style="color:#F63366; font-size:10px; margin-top:0px;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:0px;">
-                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{sm_rule_for_display}</b></div>
-                </div>
-                <div style="flex:0; font-size:18px;">🡆</div>
-                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{selected_p_for_display}</b></div>
-                </div>
-                <div style="flex:0; font-size:18px;">🡆</div>
-                <div style="flex:1.3; min-width:140px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                    <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b><small>{om_iri_for_display}</small></b></div>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+    </div>""", unsafe_allow_html=True)
 #_________________________________________________
+
+#________________________________________________
+# Function to display a rule
+def preview_rule_list(s_for_display, p_for_display, o_for_display):
+
+    small_header = """<small><b style="color:#F63366; font-size:10px;margin-top:8px; margin-bottom:8px; display:block;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>"""
+
+    inner_html = ""
+    max_length = 40
+
+    s_for_display = "" if not s_for_display else s_for_display
+    p_for_display = "" if not p_for_display else p_for_display
+    o_for_display = "" if not o_for_display else o_for_display
+
+    formatted_s = f"""{s_for_display}""" if len(s_for_display) < max_length else "<small>" + f"""{s_for_display}""" + "</small>"
+    formatted_p = f"""{p_for_display}""" if len(p_for_display) < max_length else "<small>" + f"""{p_for_display}""" + "</small>"
+    formatted_o = f"""{o_for_display}""" if len(o_for_display) < max_length else "<small>" + f"""{o_for_display}""" + "</small>"
+
+    inner_html += f"""<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:0px;">
+            <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{formatted_s}</b></div>
+            </div>
+            <div style="flex:0; font-size:18px;">🡆</div>
+            <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{formatted_p}</b></div>
+            </div>
+            <div style="flex:0; font-size:18px;">🡆</div>
+            <div style="flex:1; min-width:140px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b><small>{formatted_o}</small></b></div>
+            </div>
+        </div><br>"""
+
+    return [small_header, inner_html]
+#_________________________________________________
+
 
 #________________________________________________
 # Function to display a rule

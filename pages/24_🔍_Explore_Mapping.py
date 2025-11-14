@@ -228,16 +228,20 @@ with tab2:
                 selected_tm_for_display_list = []
 
         with col1:
-            col1a, col1b, col1c = st.columns(3)
+            col1a, col1b, col1c, col1d = st.columns(4)
 
         with col1a:
-            limit = st.text_input("⌨️ Enter limit (optional):", key="key_limit")
+            limit = st.text_input("⌨️ Enter limit (opt):", key="key_limit")
         with col1b:
-            offset = st.text_input("⌨️ Enter offset (optional):", key="key_offset")
+            offset = st.text_input("⌨️ Enter offset (opt):", key="key_offset")
         with col1c:
             list_to_choose = ["No order", "Ascending", "Descending"]
-            order_clause = st.selectbox("🖱️ Select order (optional):", list_to_choose,
+            order_clause = st.selectbox("🖱️ Select order (opt):", list_to_choose,
                 key="key_order_clause")
+        with col1d:
+            st.write("")
+            visualisation_option = st.radio("", ["👁️ Visual", "📅 Table"], label_visibility="collapsed",
+                key="key_visualisation_option")
 
             query = """PREFIX rml: <http://w3id.org/rml/>
 
@@ -304,7 +308,23 @@ with tab2:
 
             # Display
             with col1:
-                if not df.empty:
+                if visualisation_option == "👁️ Visual":
+                    inner_html = ""
+                    for row in df.itertuples(index=False):
+                        s = row.Subject
+                        p = row.Predicate
+                        o = row.Object
+                        small_header, new_inner_html = utils.preview_rule_list(s, p, o)
+                        inner_html += new_inner_html
+
+                    st.markdown(f"""<div class="info-message-blue">
+                        <b>RESULTS ({len(df)}):</b>
+                    </div>""", unsafe_allow_html=True)
+                    st.markdown(f"""<div class="gray-preview-message" style="margin-top:0px; padding-top:4px;">
+                            {small_header}{inner_html}
+                        </div>""", unsafe_allow_html=True)
+
+                elif visualisation_option == "📅 Table":
                     st.markdown(f"""<div class="info-message-blue">
                         <b>RESULTS ({len(df)}):</b>
                     </div>""", unsafe_allow_html=True)
