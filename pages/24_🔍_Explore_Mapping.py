@@ -211,7 +211,7 @@ with tab2:
         col1a, col1b = st.columns([1,2])
 
     predefined_searches_list = ["Select search", "Rules", "TriplesMaps", "Subject Maps", "Predicate-Object Maps",
-        "Used Classes", "Incomplete Nodes", "Orphaned Nodes", "All Triples"]
+        "Used Classes", "Used Properties", "Incomplete Nodes", "Orphaned Nodes", "All Triples"]
 
     with col1a:
         selected_predefined_search = st.selectbox("🔍 Select search:*", predefined_searches_list,
@@ -520,17 +520,17 @@ with tab2:
         if tm_label_for_search != "Select TriplesMap":
             tm_iri_for_search = tm_dict[tm_label_for_search]
 
-            with col1:
-                col1a, col1b = st.columns([2,1])
-            with col1a:
-                list_to_choose = []
-                for pom in st.session_state["g_mapping"].objects(tm_iri_for_search, RML.predicateObjectMap):
-                    list_to_choose.append(pom)
-                if len(list_to_choose) > 1:
+            list_to_choose = []
+            for pom in st.session_state["g_mapping"].objects(tm_iri_for_search, RML.predicateObjectMap):
+                list_to_choose.append(pom)
+            if len(list_to_choose) > 1:
+                with col1:
+                    col1a, col1b = st.columns([2,1])
+                with col1a:
                     selected_pom_for_display_list = st.multiselect("⚙️ Filter by Predicate-Object Maps (optional):", list_to_choose,
                         placeholder="No filter", key="key_selected_pom_for_display_list")
-                else:
-                    selected_pom_for_display_list = []
+            else:
+                selected_pom_for_display_list = []
 
             with col1:
                 col1a, col1b, col1c = st.columns(3)
@@ -638,10 +638,10 @@ with tab2:
                 rdf_class_label = utils.get_node_label(rdf_class)
                 classes_set.add(rdf_class_label)
 
-            list_to_choose_classes = list(classes_set)
+            list_to_choose_classes = sorted(list(classes_set))
             if len(list_to_choose_classes) > 1:
-                selected_classes_for_display_list = st.multiselect("🖱️ Filter Classes (optional):", list_to_choose_classes,
-                    key="key_selected_classes_for_display_list")
+                selected_classes_for_display_list = st.multiselect("⚙️ Filter by Class (optional):", list_to_choose_classes,
+                    placeholder="No filter", key="key_selected_classes_for_display_list")
             else:
                 selected_classes_for_display_list = []
 
@@ -659,15 +659,14 @@ with tab2:
 
         query = """PREFIX rml: <http://w3id.org/rml/>
             SELECT DISTINCT ?tm ?sm ?class WHERE {
-              ?tm a rml:TriplesMap ;
-                  rml:subjectMap ?sm .
+              ?tm rml:subjectMap ?sm .
               ?sm rml:class ?class .
             }"""
 
         if order_clause == "Ascending":
-            query += f"ORDER BY ASC(?subjectMap) "
+            query += f"ORDER BY ASC(?class) "
         elif order_clause == "Descending":
-            query += f"ORDER BY DESC(?subjectMap) "
+            query += f"ORDER BY DESC(?class) "
 
         if limit:
             query += f"LIMIT {limit} "
@@ -685,13 +684,11 @@ with tab2:
             rdf_class = row.get("class") if row.get("class") else ""
             class_label = utils.get_node_label(rdf_class)
 
-            tm_label = utils.get_node_label(tm)
-            sm_label = utils.get_node_label(sm)
-
             selected_classes_for_display_list = list_to_choose_classes if not selected_classes_for_display_list else selected_classes_for_display_list
             if class_label in selected_classes_for_display_list:
-                df_data.append({"Class": class_label, "TriplesMap label": tm_label,
-                    "Subject Map": sm_label, "Class (complete)": rdf_class})
+                df_data.append({"Class": utils.get_node_label_w_prefix(rdf_class),
+                    "TriplesMap label": utils.get_node_label_w_prefix(tm),
+                    "Subject Map": utils.get_node_label_w_prefix(sm)})
 
         df = pd.DataFrame(df_data)
         # Drop columns that are entirely empty (all values are NaN or empty strings)
@@ -707,6 +704,84 @@ with tab2:
                 st.markdown(f"""<div class="warning-message">
                     ⚠️ No results.
                 </div>""", unsafe_allow_html=True)
+
+    if selected_predefined_search == "Used Properties":
+        
+        with col1b:
+            properties_set = set()
+            for pom, predicate in st.session_state["g_mapping"].subject_objects(predicate=RML["predicate"]):
+                predicate_label = utils.get_node_label(predicate)
+                properties_set.add(predicate_label)
+
+            list_to_choose_properties = sorted(list(properties_set))
+            if len(list_to_choose_properties) > 1:
+                selected_properties_for_display_list = st.multiselect("⚙️ Filter by Property (optional):", list_to_choose_properties,
+                    placeholder="No filter", key="key_selected_properties_for_display_list")
+            else:
+                selected_properties_for_display_list = []
+
+        with col1:
+            col1a, col1b, col1c = st.columns(3)
+
+        with col1a:
+            limit = st.text_input("⌨️ Enter limit (optional):", key="key_limit")
+        with col1b:
+            offset = st.text_input("⌨️ Enter offset (optional):", key="key_offset")
+        with col1c:
+            list_to_choose = ["No order", "Ascending", "Descending"]
+            order_clause = st.selectbox("🖱️ Select order (optional):", list_to_choose,
+                key="key_order_clause")
+
+        query = """PREFIX rml: <http://w3id.org/rml/>
+        SELECT DISTINCT ?tm ?pom ?predicate WHERE {
+          ?tm rml:predicateObjectMap ?pom .
+          ?pom rml:predicate ?predicate .
+        }"""
+
+        if order_clause == "Ascending":
+            query += f"ORDER BY ASC(?predicate) "
+        elif order_clause == "Descending":
+            query += f"ORDER BY DESC(?predicate) "
+
+        if limit:
+            query += f"LIMIT {limit} "
+
+        if offset:
+            query += f"OFFSET {offset}"
+
+        results = st.session_state["g_mapping"].query(query)
+
+        df_data = []
+
+        for row in results:
+            tm = row.tm if hasattr(row, "tm") and row.tm else ""
+            pom = row.pom if hasattr(row, "pom") and row.pom else ""
+            predicate = row.get("predicate") if row.get("predicate") else ""
+            predicate_label = utils.get_node_label(predicate)
+
+            selected_properties_for_display_list = list_to_choose_properties if not selected_properties_for_display_list else selected_properties_for_display_list
+            if predicate_label in selected_properties_for_display_list:
+                df_data.append({
+                    "Property": utils.get_node_label_w_prefix(predicate),
+                    "TriplesMap label": utils.get_node_label_w_prefix(tm),
+                    "Predicate-Object Map": utils.get_node_label_w_prefix(pom)
+                })
+
+        df = pd.DataFrame(df_data)
+        df = df.loc[:, df.apply(lambda col: col.replace('', pd.NA).notna().any())]
+
+        with col1:
+            if not df.empty:
+                st.markdown(f"""<div class="info-message-blue">
+                    <b>RESULTS ({len(df)}):</b>
+                </div>""", unsafe_allow_html=True)
+                st.dataframe(df, hide_index=True)
+            else:
+                st.markdown(f"""<div class="warning-message">
+                    ⚠️ No results.
+                </div>""", unsafe_allow_html=True)
+
+
 
     if selected_predefined_search == "Incomplete Nodes":
 
