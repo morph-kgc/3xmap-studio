@@ -654,6 +654,7 @@ def init_session_state_variables():
         st.session_state["base_ns_changed_ok_flag"] = False
         st.session_state["ns_unbound_ok_flag"] = False
         st.session_state["last_added_ns_list"] = []
+        st.session_state["ontology_downloaded_ok_flag"] = False
         # TAB3
         st.session_state["progress_saved_ok_flag"] = False
         st.session_state["mapping_downloaded_ok_flag"] = False

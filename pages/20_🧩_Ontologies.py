@@ -919,6 +919,18 @@ with tab3:
             </div>""", unsafe_allow_html=True)
         st.write("")
 
+    if st.session_state["ontology_downloaded_ok_flag"]:
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.write("")
+            st.markdown(f"""<div class="success-message-flag">
+                ✅ The <b>ontology</b> has been downloaded!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["ontology_downloaded_ok_flag"] = False
+        time.sleep(utils.get_success_message_time())
+        st.rerun()
+
     if not st.session_state["g_ontology_components_dict"]:
         with col1:
             col1a, col1b = st.columns([2,1])
@@ -930,7 +942,9 @@ with tab3:
         with col1:
             col1a, col1b = st.columns([2,1])
         with col1a:
-            format_options_dict = {"🐢 turtle": "turtle", "3️⃣ ntriples": "nt"}
+            if not "key_export_format_selectbox" in st.session_state:
+                st.session_state["key_export_format_selectbox"] = "🐢 turtle"  # this ensures the ntriples wont keep selected after download
+            format_options_dict = {"🐢 turtle": "turtle", "3️⃣ ntriples": "ntriples"}
             preview_format_display = st.radio("🖱️ Select format:*", format_options_dict,
                 label_visibility="collapsed", horizontal=True, key="key_export_format_selectbox")
             preview_format = format_options_dict[preview_format_display]
@@ -939,6 +953,8 @@ with tab3:
             with col1b:
                 list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
                 list_to_choose.insert(0, "All ontologies")
+                if not "key_ontology_component_for_preview_tag" in st.session_state:
+                    st.session_state["key_ontology_component_for_preview_tag"] = "All ontologies"  # this ensures the all ontologies selected after download
                 ontology_component_for_preview_tag = st.selectbox("🧩 Select ontology (optional):", list_to_choose,
                     key="key_ontology_component_for_preview_tag")
             if ontology_component_for_preview_tag == "All ontologies":
@@ -962,3 +978,27 @@ with tab3:
                 </div>""", unsafe_allow_html=True)
 
         st.code(serialised_data[:max_length])
+
+
+        allowed_format_dict = utils.get_g_mapping_file_formats_dict()
+        extension = allowed_format_dict[preview_format]
+        if len(st.session_state["g_ontology_components_dict"])> 1 and ontology_for_preview == st.session_state["g_ontology"]:
+            download_filename = "merged_ontology" + extension
+        elif len(st.session_state["g_ontology_components_dict"]) == 1:
+            ont_tag = st.session_state["g_ontology_components_tag_dict"].get(ont_label, "UNKNOWN")
+            ont_tag = st.session_state["g_ontology_components_tag_dict"][ont_label]
+            download_filename = ont_tag + extension
+        else:
+            download_filename = ontology_component_for_preview_tag + extension
+
+        if len(st.session_state["g_ontology_components_dict"]) > 1:
+            with col1a:
+                st.session_state["ontology_downloaded_ok_flag"] = st.download_button(label="Download", data=serialised_data,
+                    file_name=download_filename, mime="text/plain")
+        else:
+            with col1b:
+                st.session_state["ontology_downloaded_ok_flag"] = st.download_button(label="Download", data=serialised_data,
+                    file_name=download_filename, mime="text/plain")
+
+        if st.session_state["ontology_downloaded_ok_flag"]:
+            st.rerun()

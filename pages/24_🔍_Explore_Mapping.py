@@ -1242,10 +1242,8 @@ with tab4:
             with col1a:
                 st.write("")
                 st.markdown(f"""<div class="success-message-flag">
-                    ✅ The <b>mapping</b> has been downloaded!
+                    ✅ The mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> has been downloaded!
                 </div>""", unsafe_allow_html=True)
-            st.write("")
-            st.write("")
             st.session_state["mapping_downloaded_ok_flag"] = False
             time.sleep(utils.get_success_message_time())
             st.rerun()
