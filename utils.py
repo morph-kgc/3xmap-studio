@@ -877,7 +877,7 @@ def is_valid_label_hard(label, display_option=True):
 def get_g_mapping_file_formats_dict():
 
     allowed_format_dict = {"turtle": ".ttl",
-        "ntriples": ".nt", "trig": ".trig", "jsonld": ".jsonld"}    # missing hdt, nquads
+        "ntriples": ".nt", "jsonld": ".jsonld"}
 
     return allowed_format_dict
 #_______________________________________________________
