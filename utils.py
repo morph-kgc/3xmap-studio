@@ -1774,6 +1774,28 @@ def get_jdbc_str(conn):
     return jdbc_str
 #______________________________________________________
 
+#_________________________________________________
+# Funtion to get db_url string
+def get_db_url_str(conn):
+
+    [engine, host, port, database, user, password] = st.session_state["db_connections_dict"][conn]
+
+    if engine == "Oracle":
+        db_url_str = f"oracle+oracledb://{user}:{password}@{host}:{port}/{database}"
+    elif engine == "SQL Server":
+        db_url_str = f" mssql+pymssql://{user}:{password}@{host}:{port}/{database}"
+    elif engine == "PostgreSQL":
+        db_url_str = f"postgresql+psycopg://{user}:{password}@{host}:{port}/{database}"
+    elif engine == "MySQL":
+        db_url_str = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}"
+    elif engine =="MariaDB":
+        db_url_str = f"mariadb+pymysql://{user}:{password}@{host}:{port}/{database}"
+    else:
+        return None
+
+    return db_url_str
+
+#_________________________________________________
 #______________________________________________________
 # Funtion to make a connection to a database
 def make_connection_to_db(connection_label):
