@@ -208,7 +208,7 @@ with tab2:
         st.write("")
 
     with col1:
-        col1a, col1b = st.columns([2,1])
+        col1a, col1b = st.columns([1,2])
 
     predefined_searches_list = ["Select search", "Rules", "TriplesMaps", "Subject Maps", "Predicate-Object Maps",
         "Used Classes", "Incomplete Nodes", "Orphaned Nodes", "All Triples"]
@@ -223,7 +223,7 @@ with tab2:
             list_to_choose = list(reversed(list(tm_dict)))
             if len(list_to_choose) > 1:
                 selected_tm_for_display_list = st.multiselect("⚙️ Filter by TriplesMaps (opt):", list_to_choose,
-                    key="key_selected_tm_for_display_list_1")
+                    placeholder="No filter", key="key_selected_tm_for_display_list_1")
             else:
                 selected_tm_for_display_list = []
 
@@ -283,24 +283,17 @@ with tab2:
 
                 # Optional: apply label formatting
                 tm_label = utils.get_node_label(tm)
-                sm_label = utils.get_node_label(sm)
-                pom_label = utils.get_node_label(pom)
-                om_label = utils.get_node_label(om)
-                subject_label = utils.get_node_label(subject)
-                predicate_label = utils.get_node_label(predicate)
-                object_label = utils.get_node_label(object_)
 
                 selected_tm_for_display_list = list(tm_dict) if not selected_tm_for_display_list else selected_tm_for_display_list
                 if tm_label in selected_tm_for_display_list:
                     row_dict = {
-                        "Subject": subject_label,
-                        "Predicate": predicate_label,
-                        "Object": object_label,
-                        "TriplesMap": tm_label,
-                        "SubjectMap": sm_label,
-                        "PredicateObjectMap": pom_label,
-                        "ObjectMap": om_label
-                    }
+                        "Subject": utils.get_node_label_w_prefix(subject),
+                        "Predicate": utils.get_node_label_w_prefix(predicate),
+                        "Object": utils.get_node_label_w_prefix(object_),
+                        "TriplesMap": utils.get_node_label_w_prefix(tm),
+                        "SubjectMap": utils.get_node_label_w_prefix(sm),
+                        "PredicateObjectMap": utils.get_node_label_w_prefix(pom),
+                        "ObjectMap": utils.get_node_label_w_prefix(om)}
                     df_data.append(row_dict)
 
             # Create DataFrame
@@ -329,8 +322,8 @@ with tab2:
             tm_dict = utils.get_tm_dict()
             list_to_choose = list(reversed(list(tm_dict)))
             if len(list_to_choose) > 1:
-                selected_tm_for_display_list = st.multiselect("🖱️ Filter TriplesMaps (optional):", list_to_choose,
-                    key="key_selected_tm_for_display_list_1")
+                selected_tm_for_display_list = st.multiselect("️⚙️ Filter by TriplesMaps (optional):", list_to_choose,
+                    placeholder="No filter", key="key_selected_tm_for_display_list_1")
             else:
                 selected_tm_for_display_list = []
 
@@ -347,22 +340,14 @@ with tab2:
                 key="key_order_clause")
 
             query = """PREFIX rml: <http://w3id.org/rml/>
-                SELECT ?tm ?logicalTable ?tableName ?sqlQuery ?logicalSource ?source ?referenceFormulation ?iterator WHERE {
-                  {
-                    ?tm a rml:TriplesMap ;
-                        rml:logicalTable ?logicalTable .
-                    OPTIONAL { ?logicalTable rml:tableName ?tableName }
-                    OPTIONAL { ?logicalTable rml:sqlQuery ?sqlQuery }
-                  }
-                  UNION
-                  {
-                    ?tm a rml:TriplesMap ;
-                        rml:logicalSource ?logicalSource .
-                    OPTIONAL { ?logicalSource rml:source ?source }
-                    OPTIONAL { ?logicalSource rml:referenceFormulation ?referenceFormulation }
-                  }
-                }
-            """
+                SELECT ?tm ?logicalSource ?source ?referenceFormulation ?iterator ?tableName ?sqlQuery WHERE {
+                  ?tm rml:logicalSource ?logicalSource .
+                  OPTIONAL { ?logicalSource rml:source ?source }
+                  OPTIONAL { ?logicalSource rml:referenceFormulation ?referenceFormulation }
+                  OPTIONAL { ?logicalSource rml:iterator ?iterator }
+                  OPTIONAL { ?logicalSource rml:tableName ?tableName }
+                  OPTIONAL { ?logicalSource rml:query ?sqlQuery }
+                }"""
 
             if order_clause == "Ascending":
                 query += f"ORDER BY ASC(?tm) "
@@ -389,17 +374,14 @@ with tab2:
                 reference_formulation = str(row.referenceFormulation) if hasattr(row, "referenceFormulation") and row.referenceFormulation else ""
 
                 tm_label = utils.get_node_label(tm)
-                lt_label = utils.get_node_label(logical_table)
-                ls_label = utils.get_node_label(logical_source)
 
                 selected_tm_for_display_list = list(tm_dict) if not selected_tm_for_display_list else selected_tm_for_display_list
                 if tm_label in selected_tm_for_display_list:
-                    row_dict = {"TriplesMap label": tm_label,
-                        "Source": source,
-                        "Logical Table": lt_label,
-                        "Table Name": table_name,
+                    row_dict = {"TriplesMap label": utils.get_node_label_w_prefix(tm),
                         "SQL Query": sql_query,
-                        "Reference Formulation": reference_formulation,
+                        "Table Name": table_name,
+                        "Source": source,
+                        "Reference Formulation": utils.get_node_label_w_prefix(reference_formulation),
                         "Logical Source": logical_source}
                     df_data.append(row_dict)
 
@@ -427,8 +409,8 @@ with tab2:
             tm_dict = utils.get_tm_dict()
             list_to_choose = list(reversed(list(tm_dict)))
             if len(list_to_choose) > 1:
-                selected_tm_for_display_list = st.multiselect("🖱️ Filter TriplesMaps (optional):", list_to_choose,
-                    key="key_selected_tm_for_display_list_2")
+                selected_tm_for_display_list = st.multiselect("⚙️ Filter by TriplesMaps (optional):", list_to_choose,
+                    placeholder="No filter", key="key_selected_tm_for_display_list_2")
             else:
                 selected_tm_for_display_list = []
 
@@ -446,8 +428,7 @@ with tab2:
 
         query = f"""PREFIX rml: <http://w3id.org/rml/>
             SELECT ?tm ?subjectMap ?template ?constant ?reference ?column ?termType ?graph (GROUP_CONCAT(?class; separator=", ") AS ?classes) WHERE {{
-              ?tm a rml:TriplesMap ;
-                  rml:subjectMap ?subjectMap .
+              ?tm rml:subjectMap ?subjectMap .
               OPTIONAL {{ ?subjectMap rml:template ?template }}
               OPTIONAL {{ ?subjectMap rml:constant ?constant }}
               OPTIONAL {{ ?subjectMap rml:reference ?reference }}
@@ -492,10 +473,9 @@ with tab2:
                 sm_rule_type = ""
                 sm_rule = ""
             raw_classes = str(row["classes"]) if row["classes"] else ""
-            class_list = [split_uri(c.strip())[1] for c in raw_classes.split(",") if c.strip()]
-            class_ = ", ".join(class_list)
+            class_list = [utils.get_node_label_w_prefix(c) for c in raw_classes.split(",") if c.strip()]
+            class_list_to_string = ", ".join(class_list)
             term_type = str(row.termType) if row.termType else ""
-            term_type = split_uri(term_type)[1] if term_type else ""
             graph = str(row.graph) if row.graph else ""
 
             tm_label = utils.get_node_label(tm)
@@ -503,9 +483,13 @@ with tab2:
 
             selected_tm_for_display_list = list(tm_dict) if not selected_tm_for_display_list else selected_tm_for_display_list
             if tm_label in selected_tm_for_display_list:
-                row_dict = {"Type": sm_rule_type, "Rule": sm_rule,
-                "Class": class_, "Term Type": term_type, "TriplesMap label": tm_label,
-                    "Graph": graph, "Subject Map": subject_map}
+                row_dict = {"Rule": utils.get_node_label_w_prefix(sm_rule),
+                    "Type": sm_rule_type,
+                    "Class": class_list_to_string,
+                    "Term Type": utils.get_node_label_w_prefix(term_type),
+                    "TriplesMap": utils.get_node_label_w_prefix(tm),
+                    "Graph": utils.get_node_label_w_prefix(graph),
+                    "Subject Map": utils.get_node_label_w_prefix(subject_map)}
                 df_data.append(row_dict)
 
         df = pd.DataFrame(df_data)
@@ -533,17 +517,18 @@ with tab2:
             tm_label_for_search = st.selectbox("🖱️ Select TriplesMap:*", list_to_choose,
                 key="key_tm_label_for_search")
 
-
         if tm_label_for_search != "Select TriplesMap":
             tm_iri_for_search = tm_dict[tm_label_for_search]
 
+            with col1:
+                col1a, col1b = st.columns([2,1])
             with col1a:
                 list_to_choose = []
                 for pom in st.session_state["g_mapping"].objects(tm_iri_for_search, RML.predicateObjectMap):
                     list_to_choose.append(pom)
                 if len(list_to_choose) > 1:
-                    selected_pom_for_display_list = st.multiselect("🖱️ Filter Predicate-Object Maps (optional):", list_to_choose,
-                        key="key_selected_pom_for_display_list")
+                    selected_pom_for_display_list = st.multiselect("⚙️ Filter by Predicate-Object Maps (optional):", list_to_choose,
+                        placeholder="No filter", key="key_selected_pom_for_display_list")
                 else:
                     selected_pom_for_display_list = []
 
@@ -561,8 +546,7 @@ with tab2:
 
             query = f"""PREFIX rml: <http://w3id.org/rml/>
                 SELECT ?pom ?predicate ?objectMap ?template ?constant ?reference ?termType ?datatype ?language ?graphMap WHERE {{
-                  <{tm_iri_for_search}> a rml:TriplesMap ;
-                                         rml:predicateObjectMap ?pom .
+                  <{tm_iri_for_search}> rml:predicateObjectMap ?pom .
                   OPTIONAL {{ ?pom rml:predicate ?predicate }}
                   OPTIONAL {{ ?pom rml:objectMap ?objectMap }}
                   OPTIONAL {{ ?objectMap rml:template ?template }}
@@ -610,7 +594,6 @@ with tab2:
                     pom_rule_type = ""
                     pom_rule = ""
                 term_type = str(row.termType) if row.termType else ""
-                term_type = split_uri(term_type)[1] if term_type else ""
                 datatype = str(row.datatype) if row.datatype else ""
                 language = str(row.language) if row.language else ""
                 graph_map = str(row.graphMap) if row.graphMap else ""
@@ -621,11 +604,15 @@ with tab2:
                 all_pom_list = list(utils.get_pom_dict())
                 selected_pom_for_display_list = all_pom_list if not selected_pom_for_display_list else selected_pom_for_display_list
                 if pom in selected_pom_for_display_list:
-                    row_dict = {"Predicate": predicate,
-                        "Type": pom_rule_type, "Rule": pom_rule,
-                        "TermType": term_type, "Datatype": datatype, "Language": language,
-                        "Graph Map": graph_map, "Predicate-Object Map": pom,
-                        "Object Map": object_map}
+                    row_dict = {"Predicate": utils.get_node_label_w_prefix(predicate),
+                        "Rule": utils.get_node_label_w_prefix(pom_rule),
+                        "Type": pom_rule_type,
+                        "TermType": utils.get_node_label_w_prefix(term_type),
+                        "Datatype": utils.get_node_label_w_prefix(datatype),
+                        "Language": utils.get_node_label_w_prefix(language),
+                        "Graph Map": utils.get_node_label_w_prefix(graph_map),
+                        "Predicate-Object Map": utils.get_node_label_w_prefix(pom),
+                        "Object Map": utils.get_node_label_w_prefix(object_map)}
 
                     df_data.append(row_dict)
             df = pd.DataFrame(df_data)

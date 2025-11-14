@@ -621,6 +621,38 @@ def get_max_length_for_display():
     return [50, 10, 100, 20, 5, 5, 20, 15, 40, 100000, 30]
 #_______________________________________________________
 
+#_________________________________________________
+# Funtion to get label of a node
+def get_node_label(node):
+
+    if isinstance(node, URIRef):
+        label = split_uri(node)[1]
+    elif isinstance(node, BNode):
+        label = "_:" + str(node)[:7] + "..."
+    elif node:
+        label = str(node)
+    else:
+        label = ""
+
+    return label
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to get label of a node
+def get_node_label_w_prefix(node):
+
+    if isinstance(node, BNode):
+        return node
+        
+    try:
+        prefix, ns, local = st.session_state["g_mapping"].namespace_manager.compute_qname(node)
+        return prefix + ": " + local
+    except Exception:
+        return get_node_label(node)
+
+    return get_node_label(node)   # return label without prefix
+#_________________________________________________
+
 
 # INITIALISE PAGES =============================================================
 #________________________________________________________
@@ -2690,37 +2722,6 @@ def check_g_mapping(g):
     return ""
 
 #_________________________________________________
-
-#_________________________________________________
-# Funtion to get label of a node
-def get_node_label(node):
-
-    if isinstance(node, URIRef):
-        label = split_uri(node)[1]
-    elif isinstance(node, BNode):
-        label = "_:" + str(node)[:7] + "..."
-    elif node:
-        label = str(node)
-    else:
-        label = ""
-
-    return label
-#_________________________________________________
-
-#_________________________________________________
-# Funtion to get label of a node
-def get_node_label_w_prefix(node):
-
-    if isinstance(node, URIRef):
-        try:
-            prefix, ns, local = st.session_state["g_mapping"].namespace_manager.compute_qname(node)
-            return prefix + ": " + local
-        except Exception:
-            return get_node_label(node)
-
-    return get_node_label(node)   # return label without prefix
-#_________________________________________________
-
 
 #_________________________________________________
 # Funtion to check a mapping loaded from URL is ok
