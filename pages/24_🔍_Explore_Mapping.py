@@ -8,6 +8,7 @@ from rdflib.namespace import split_uri
 from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL, XSD
 from streamlit_js_eval import streamlit_js_eval
 import io
+import time   # for success messages
 
 import rdflib, networkx as nx, matplotlib.pyplot as plt
 from pyvis.network import Network
@@ -1235,12 +1236,28 @@ with tab4:
     with col1:
         col1a, col1b = st.columns([2,1])
 
+        if st.session_state["mapping_downloaded_ok_flag"]:
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                st.write("")
+                st.markdown(f"""<div class="success-message-flag">
+                    ✅ The <b>mapping</b> has been downloaded!
+                </div>""", unsafe_allow_html=True)
+            st.write("")
+            st.write("")
+            st.session_state["mapping_downloaded_ok_flag"] = False
+            time.sleep(utils.get_success_message_time())
+            st.rerun()
+
 
     list_to_choose = list(utils.get_g_mapping_file_formats_dict())
     list_to_choose.remove("jsonld")
 
     with col1a:
-        format_options_dict = {"🐢 turtle": "turtle", "3️⃣ ntriples": "nt"}
+        if not "key_export_format_selectbox" in st.session_state:
+            st.session_state["key_export_format_selectbox"] = "🐢 turtle"  # this ensures the ntriples wont keep selected after download
+        format_options_dict = {"🐢 turtle": "turtle", "3️⃣ ntriples": "ntriples"}
         preview_format_display = st.radio("🖱️ Select format:*", format_options_dict,
             horizontal=True, label_visibility="collapsed", key="key_export_format_selectbox")
         preview_format = format_options_dict[preview_format_display]
@@ -1256,3 +1273,13 @@ with tab4:
                     (out of {utils.format_number_for_display(len(serialised_data))}) to avoid performance issues.</small>
                 </div>""", unsafe_allow_html=True)
         st.code(serialised_data[:max_length])
+
+        with col1b:
+            allowed_format_dict = utils.get_g_mapping_file_formats_dict()
+            extension = allowed_format_dict[preview_format]
+            download_filename = st.session_state["g_label"] + extension
+            st.session_state["mapping_downloaded_ok_flag"] = st.download_button(label="Download", data=serialised_data,
+                file_name=download_filename, mime="text/plain")
+
+        if st.session_state["mapping_downloaded_ok_flag"]:
+            st.rerun()
