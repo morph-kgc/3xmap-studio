@@ -346,21 +346,22 @@ with tab2:
             order_clause = st.selectbox("🖱️ Select order (optional):", list_to_choose,
                 key="key_order_clause")
 
-            query = """SELECT ?tm ?logicalTable ?tableName ?sqlQuery ?logicalSource ?source ?referenceFormulation ?iterator WHERE {
-              {
-                ?tm a <http://www.w3.org/ns/r2rml#TriplesMap> ;
-                    <http://www.w3.org/ns/r2rml#logicalTable> ?logicalTable .
-                OPTIONAL { ?logicalTable <http://www.w3.org/ns/r2rml#tableName> ?tableName }
-                OPTIONAL { ?logicalTable <http://www.w3.org/ns/r2rml#sqlQuery> ?sqlQuery }
-              }
-              UNION
-              {
-                ?tm a <http://www.w3.org/ns/r2rml#TriplesMap> ;
-                    <http://w3id.org/rml/logicalSource> ?logicalSource .
-                OPTIONAL { ?logicalSource <http://w3id.org/rml/source> ?source }
-                OPTIONAL { ?logicalSource <http://w3id.org/rml/referenceFormulation> ?referenceFormulation }
-              }
-            }
+            query = """PREFIX rml: <http://w3id.org/rml/>
+                SELECT ?tm ?logicalTable ?tableName ?sqlQuery ?logicalSource ?source ?referenceFormulation ?iterator WHERE {
+                  {
+                    ?tm a rml:TriplesMap ;
+                        rml:logicalTable ?logicalTable .
+                    OPTIONAL { ?logicalTable rml:tableName ?tableName }
+                    OPTIONAL { ?logicalTable rml:sqlQuery ?sqlQuery }
+                  }
+                  UNION
+                  {
+                    ?tm a rml:TriplesMap ;
+                        rml:logicalSource ?logicalSource .
+                    OPTIONAL { ?logicalSource rml:source ?source }
+                    OPTIONAL { ?logicalSource rml:referenceFormulation ?referenceFormulation }
+                  }
+                }
             """
 
             if order_clause == "Ascending":
@@ -401,7 +402,6 @@ with tab2:
                         "Reference Formulation": reference_formulation,
                         "Logical Source": logical_source}
                     df_data.append(row_dict)
-
 
             # Create DataFrame
             df = pd.DataFrame(df_data)
@@ -444,15 +444,16 @@ with tab2:
             order_clause = st.selectbox("🖱️ Select order (optional):", list_to_choose,
                 key="key_order_clause")
 
-        query = f"""SELECT ?tm ?subjectMap ?template ?constant ?reference ?column ?termType ?graph (GROUP_CONCAT(?class; separator=", ") AS ?classes) WHERE {{
-              ?tm a <http://www.w3.org/ns/r2rml#TriplesMap> ;
-                  <http://www.w3.org/ns/r2rml#subjectMap> ?subjectMap .
-              OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#template> ?template }}
-              OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#constant> ?constant }}
-              OPTIONAL {{ ?subjectMap <http://w3id.org/rml/reference> ?reference }}
-              OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#class> ?class }}
-              OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#termType> ?termType }}
-              OPTIONAL {{ ?subjectMap <http://www.w3.org/ns/r2rml#graph> ?graph }}
+        query = f"""PREFIX rml: <http://w3id.org/rml/>
+            SELECT ?tm ?subjectMap ?template ?constant ?reference ?column ?termType ?graph (GROUP_CONCAT(?class; separator=", ") AS ?classes) WHERE {{
+              ?tm a rml:TriplesMap ;
+                  rml:subjectMap ?subjectMap .
+              OPTIONAL {{ ?subjectMap rml:template ?template }}
+              OPTIONAL {{ ?subjectMap rml:constant ?constant }}
+              OPTIONAL {{ ?subjectMap rml:reference ?reference }}
+              OPTIONAL {{ ?subjectMap rml:class ?class }}
+              OPTIONAL {{ ?subjectMap rml:termType ?termType }}
+              OPTIONAL {{ ?subjectMap rml:graph ?graph }}
             }}
             GROUP BY ?tm ?subjectMap ?template ?reference ?column ?termType ?graph
         """
@@ -558,19 +559,19 @@ with tab2:
                 order_clause = st.selectbox("🖱️ Select order (optional):", list_to_choose,
                     key="key_order_clause")
 
-            query = f"""
+            query = f"""PREFIX rml: <http://w3id.org/rml/>
                 SELECT ?pom ?predicate ?objectMap ?template ?constant ?reference ?termType ?datatype ?language ?graphMap WHERE {{
-                  <{tm_iri_for_search}> a <http://www.w3.org/ns/r2rml#TriplesMap> ;
-                                         <http://www.w3.org/ns/r2rml#predicateObjectMap> ?pom .
-                  OPTIONAL {{ ?pom <http://www.w3.org/ns/r2rml#predicate> ?predicate }}
-                  OPTIONAL {{ ?pom <http://www.w3.org/ns/r2rml#objectMap> ?objectMap }}
-                  OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#template> ?template }}
-                  OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#constant> ?constant }}
-                  OPTIONAL {{ ?objectMap <http://w3id.org/rml/reference> ?reference }}
-                  OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#termType> ?termType }}
-                  OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#datatype> ?datatype }}
-                  OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#language> ?language }}
-                  OPTIONAL {{ ?objectMap <http://www.w3.org/ns/r2rml#graphMap> ?graphMap }}
+                  <{tm_iri_for_search}> a rml:TriplesMap ;
+                                         rml:predicateObjectMap ?pom .
+                  OPTIONAL {{ ?pom rml:predicate ?predicate }}
+                  OPTIONAL {{ ?pom rml:objectMap ?objectMap }}
+                  OPTIONAL {{ ?objectMap rml:template ?template }}
+                  OPTIONAL {{ ?objectMap rml:constant ?constant }}
+                  OPTIONAL {{ ?objectMap rml:reference ?reference }}
+                  OPTIONAL {{ ?objectMap rml:termType ?termType }}
+                  OPTIONAL {{ ?objectMap rml:datatype ?datatype }}
+                  OPTIONAL {{ ?objectMap rml:language ?language }}
+                  OPTIONAL {{ ?objectMap rml:graphMap ?graphMap }}
                 }}
             """
 
@@ -669,10 +670,11 @@ with tab2:
             order_clause = st.selectbox("🖱️ Select order (optional):", list_to_choose,
                 key="key_order_clause")
 
-        query = """SELECT DISTINCT ?tm ?sm ?class WHERE {
-              ?tm a <http://www.w3.org/ns/r2rml#TriplesMap> ;
-                  <http://www.w3.org/ns/r2rml#subjectMap> ?sm .
-              ?sm <http://www.w3.org/ns/r2rml#class> ?class .
+        query = """PREFIX rml: <http://w3id.org/rml/>
+            SELECT DISTINCT ?tm ?sm ?class WHERE {
+              ?tm a rml:TriplesMap ;
+                  rml:subjectMap ?sm .
+              ?sm rml:class ?class .
             }"""
 
         if order_clause == "Ascending":
@@ -740,13 +742,14 @@ with tab2:
                 key="key_order_clause")
 
         if selected_incomplete_node_type == "TriplesMaps":
-            query = """SELECT DISTINCT ?tm WHERE {
-              {?tm <http://w3id.org/rml/logicalSource> ?ls .
-                FILTER NOT EXISTS { ?tm <http://www.w3.org/ns/r2rml#subjectMap> ?sm . }
+            query = """PREFIX rml: <http://w3id.org/rml/>
+             SELECT DISTINCT ?tm WHERE {
+              {?tm rml:logicalSource ?ls .
+                FILTER NOT EXISTS { ?tm rml:subjectMap ?sm . }
               }
               UNION
-              {?tm <http://w3id.org/rml/logicalSource> ?ls .
-                FILTER NOT EXISTS { ?tm <http://www.w3.org/ns/r2rml#predicateObjectMap> ?pom . }
+              {?tm rml:logicalSource ?ls .
+                FILTER NOT EXISTS { ?tm rml:predicateObjectMap ?pom . }
               }}"""
 
             if order_clause == "Ascending":
@@ -794,10 +797,11 @@ with tab2:
                     </div>""", unsafe_allow_html=True)
 
         if selected_incomplete_node_type == "Predicate-Object Maps":
-            query = """SELECT DISTINCT ?pom WHERE {
-              ?pom a <http://www.w3.org/ns/r2rml#PredicateObjectMap> .
+            query = """PREFIX rml: <http://w3id.org/rml/>
+             SELECT DISTINCT ?pom WHERE {
+              ?pom a rml:PredicateObjectMap .
               FILTER NOT EXISTS {
-                ?pom <http://www.w3.org/ns/r2rml#objectMap> ?om .}}"""
+                ?pom rml:objectMap ?om .}}"""
 
             if order_clause == "Ascending":
                 query += f"ORDER BY ASC(?pom) "
@@ -866,18 +870,19 @@ with tab2:
                 key="key_order_clause")
 
         if selected_orphaned_node_type == "Subject Maps":
-            query = """SELECT DISTINCT ?sm WHERE {{
-              {{?sm <http://www.w3.org/ns/r2rml#template> ?template .
-              }} UNION {{?sm <http://www.w3.org/ns/r2rml#class> ?class .
-              }} UNION {{?sm <http://www.w3.org/ns/r2rml#constant> ?constant .
-              }} UNION {{?sm <http://www.w3.org/ns/r2rml#column> ?column .
-              }} UNION {{?sm <http://www.w3.org/ns/r2rml#termType> ?termType .
-              }} UNION {{?sm <http://www.w3.org/ns/r2rml#graphMap> ?graphMap .
-              }} UNION {{?sm <http://w3id.org/rml/reference> ?reference .}}
+            query = """PREFIX rml: <http://w3id.org/rml/>
+             SELECT DISTINCT ?sm WHERE {{
+              {{?sm rml:template ?template .
+              }} UNION {{?sm rml:class ?class .
+              }} UNION {{?sm rml:constant ?constant .
+              }} UNION {{?sm rml:column ?column .
+              }} UNION {{?sm rml:termType ?termType .
+              }} UNION {{?sm rml:graphMap ?graphMap .
+              }} UNION {{?sm rml:reference ?reference .}}
 
-              FILTER NOT EXISTS {{?tm <http://www.w3.org/ns/r2rml#subjectMap> ?sm .}}
-              FILTER NOT EXISTS {{?pom <http://www.w3.org/ns/r2rml#predicateObjectMap> ?sm .}}
-              FILTER NOT EXISTS {{?om <http://www.w3.org/ns/r2rml#objectMap> ?sm .}}
+              FILTER NOT EXISTS {{?tm rml:subjectMap ?sm .}}
+              FILTER NOT EXISTS {{?pom rml:predicateObjectMap ?sm .}}
+              FILTER NOT EXISTS {{?om rml:objectMap ?sm .}}
             }}"""
 
             if order_clause == "Ascending":
@@ -950,14 +955,15 @@ with tab2:
 
         if selected_orphaned_node_type == "Predicate-Object Maps":
 
-            query = """SELECT DISTINCT ?pom WHERE {
+            query = """PREFIX rml: <http://w3id.org/rml/>
+             SELECT DISTINCT ?pom WHERE {
               {
-                ?pom <http://www.w3.org/ns/r2rml#predicate> ?p .
+                ?pom rml:predicate ?p .
               } UNION {
-                ?pom <http://www.w3.org/ns/r2rml#objectMap> ?o .
+                ?pom rml:objectMap ?o .
               }
               FILTER NOT EXISTS {
-                ?tm <http://www.w3.org/ns/r2rml#predicateObjectMap> ?pom .
+                ?tm rml:predicateObjectMap ?pom .
               }}"""
 
             if order_clause == "Ascending":
@@ -1002,19 +1008,20 @@ with tab2:
 
         if selected_orphaned_node_type == "Object Maps":
 
-            query = """SELECT DISTINCT ?om WHERE {{
-              {{?om <http://www.w3.org/ns/r2rml#constant> ?c .
-              }} UNION {{?om <http://www.w3.org/ns/r2rml#column> ?col .
-              }} UNION {{?om <http://www.w3.org/ns/r2rml#template> ?tpl .
-              }} UNION {{?om <http://www.w3.org/ns/r2rml#termType> ?tt .
-              }} UNION {{?om <http://www.w3.org/ns/r2rml#datatype> ?dt .
-              }} UNION {{?om <http://www.w3.org/ns/r2rml#language> ?lang .
-              }} UNION {{?om <http://www.w3.org/ns/r2rml#parentTriplesMap> ?ptm .
-              }} UNION {{?om <http://www.w3.org/ns/r2rml#joinCondition> ?jc .
-              }} UNION {{?om <http://w3id.org/rml/reference> ?ref .}}
+            query = """PREFIX rml: <http://w3id.org/rml/>
+              SELECT DISTINCT ?om WHERE {{
+              {{?om rml:constant ?c .
+              }} UNION {{?om rml:column ?col .
+              }} UNION {{?om rml:template ?tpl .
+              }} UNION {{?om rml:termType ?tt .
+              }} UNION {{?om rml:datatype ?dt .
+              }} UNION {{?om rml:language ?lang .
+              }} UNION {{?om rml:parentTriplesMap ?ptm .
+              }} UNION {{?om rml:joinCondition ?jc .
+              }} UNION {{?om rml:reference ?ref .}}
 
-              FILTER NOT EXISTS {{?pom <http://www.w3.org/ns/r2rml#objectMap> ?om .}}
-              FILTER NOT EXISTS {{?tm <http://www.w3.org/ns/r2rml#subjectMap> ?om .}}
+              FILTER NOT EXISTS {{?pom rml:objectMap ?om .}}
+              FILTER NOT EXISTS {{?tm rml:subjectMap ?om .}}
             }}
             """
 

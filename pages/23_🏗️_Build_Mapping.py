@@ -116,7 +116,7 @@ def save_tm_w_table_name():
     # add triples__________________
     NS = st.session_state["base_ns"][1]
     tm_iri = NS[f"{st.session_state['tm_label']}"]
-    if ls_label:
+    if label_ls_option == "Yes (add label)":
         NS = st.session_state["base_ns"][1]
         ls_iri = NS[f"{ls_label}"]
     else:
