@@ -551,7 +551,7 @@ with tab2:
 
                 if isinstance(class_iri, URIRef):  # filter out BNodes
                     df_data.append({
-                        "Class": utils.get_node_label_w_prefix(class_iri),
+                        "Class": utils.format_iri_to_prefix_label(class_iri),
                         "Label": label, "Comment": comment,
                         "Class Type": ("owl: Class" if str(class_type) == "http://www.w3.org/2002/07/owl#Class" else
                             "rdfs: Class" if str(class_type) == "http://www.w3.org/2000/01/rdf-schema#Class" else
@@ -842,7 +842,7 @@ with tab2:
                     prop_types_list.append("owl: AnnotationProperty")
                 prop_types = utils.format_list_for_markdown(prop_types_list)
 
-                df_data.append({"Property": utils.get_node_label_w_prefix(prop_iri),
+                df_data.append({"Property": utils.format_iri_to_prefix_label(prop_iri),
                     "Label": label, "Comment": comment, "Property Type": prop_types,
                      "Property IRI": prop_iri  })
 

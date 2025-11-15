@@ -543,18 +543,37 @@ def format_list_for_markdown(xlist):
     return formatted_list
 #______________________________________________________
 
-#______________________________________________________
-# Function to format iri to prefix:label
-def format_iri_to_prefix_label(iri):
+#_________________________________________________
+# Funtion to get label of a node
+def get_node_label(node):
 
-        if isinstance(iri, URIRef):
-            iri_ns = URIRef(split_uri(iri)[0])
-            iri_prefix = st.session_state["g_mapping"].namespace_manager.store.prefix(iri_ns)
-            if iri_prefix:
-                return f"{iri_prefix}: {split_uri(iri)[1]}"
-        else:
-            return iri
-#______________________________________________________
+    if isinstance(node, URIRef):
+        label = split_uri(node)[1]
+    elif isinstance(node, BNode):
+        label = "_:" + str(node)[:7] + "..."
+    elif node:
+        label = str(node)
+    else:
+        label = ""
+
+    return label
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to get label of a node
+def format_iri_to_prefix_label(node):
+
+    if isinstance(node, BNode):
+        return node
+
+    try:
+        prefix, ns, local = st.session_state["g_mapping"].namespace_manager.compute_qname(node)
+        return prefix + ": " + local
+    except Exception:
+        return get_node_label(node)
+
+    return get_node_label(node)   # return label without prefix
+#_________________________________________________
 
 #______________________________________________________
 # Funtion to get the used classes metric
@@ -620,38 +639,6 @@ def get_max_length_for_display():
 
     return [50, 10, 100, 20, 5, 5, 20, 15, 40, 100000, 30]
 #_______________________________________________________
-
-#_________________________________________________
-# Funtion to get label of a node
-def get_node_label(node):
-
-    if isinstance(node, URIRef):
-        label = split_uri(node)[1]
-    elif isinstance(node, BNode):
-        label = "_:" + str(node)[:7] + "..."
-    elif node:
-        label = str(node)
-    else:
-        label = ""
-
-    return label
-#_________________________________________________
-
-#_________________________________________________
-# Funtion to get label of a node
-def get_node_label_w_prefix(node):
-
-    if isinstance(node, BNode):
-        return node
-
-    try:
-        prefix, ns, local = st.session_state["g_mapping"].namespace_manager.compute_qname(node)
-        return prefix + ": " + local
-    except Exception:
-        return get_node_label(node)
-
-    return get_node_label(node)   # return label without prefix
-#_________________________________________________
 
 
 # INITIALISE PAGES =============================================================
@@ -2936,7 +2923,7 @@ def get_rules_for_sm(sm_iri):
         p_for_display = format_iri_to_prefix_label(p_for_display)
         om_for_display = format_iri_to_prefix_label(om_for_display)
 
-        sm_rules_list.append([sm_for_display, p_for_display, om_for_display, split_uri(tm)[1]])
+        sm_rules_list.append([sm_for_display, p_for_display, om_for_display, format_iri_to_prefix_label(tm)])
 
     return sm_rules_list
 #_________________________________________________
@@ -3604,6 +3591,8 @@ def get_mapping_composition_by_property_donut_chart():
 
 #_________________________________________________
 # Funtion to get unique node label for network display
+# Takes the legend dict and updates it
+# Max length can be modified, default given
 def get_unique_node_label(complete_node_id, constant_string, legend_dict, max_length=utils.get_max_length_for_display()[6]):
 
     i = 1
