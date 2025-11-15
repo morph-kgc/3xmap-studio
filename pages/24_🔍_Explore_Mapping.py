@@ -109,14 +109,14 @@ with tab1:
         for rule in utils.get_rules_for_sm(sm):
             s, p, o, tm = rule
 
-            s_id, legend_dict = utils.get_unique_node_label(s, "s", legend_dict, max_length=0)
+            s_id, legend_dict = utils.get_unique_node_label(s, "s", legend_dict)
             p_label, legend_dict = utils.get_unique_node_label(p, "p", legend_dict)
             o_id, legend_dict = utils.get_unique_node_label(o, "o", legend_dict)
 
             # Add nodes and edge
             G.add_node(s_id, label=s_id, color=s_node_color, shape="ellipse")
             if o_id not in G:
-                G.add_node(o_id, label=o_id, color=o_node_color, shape="ellipse")  # conditional so that if node is sm it will have s_node_color
+                G.add_node(o_id, label=o_id, color=o_node_color, shape="ellipse")  # conditional so that if node is also sm it will have s_node_color
             G.add_edge(s_id, o_id, label=p_label, color=p_edge_color, font={"color": p_edge_label_color})
 
 
@@ -291,13 +291,13 @@ with tab2:
                 selected_tm_for_display_list = list(tm_dict) if not selected_tm_for_display_list else selected_tm_for_display_list
                 if tm_label in selected_tm_for_display_list:
                     row_dict = {
-                        "Subject": utils.get_node_label_w_prefix(subject),
-                        "Predicate": utils.get_node_label_w_prefix(predicate),
-                        "Object": utils.get_node_label_w_prefix(object_),
-                        "TriplesMap": utils.get_node_label_w_prefix(tm),
-                        "Subject Map": utils.get_node_label_w_prefix(sm),
-                        "Predicate-Object Map": utils.get_node_label_w_prefix(pom),
-                        "Object Map": utils.get_node_label_w_prefix(om)}
+                        "Subject": utils.format_iri_to_prefix_label(subject),
+                        "Predicate": utils.format_iri_to_prefix_label(predicate),
+                        "Object": utils.format_iri_to_prefix_label(object_),
+                        "TriplesMap": utils.format_iri_to_prefix_label(tm),
+                        "Subject Map": utils.format_iri_to_prefix_label(sm),
+                        "Predicate-Object Map": utils.format_iri_to_prefix_label(pom),
+                        "Object Map": utils.format_iri_to_prefix_label(om)}
                     df_data.append(row_dict)
 
             # Create DataFrame
@@ -397,11 +397,11 @@ with tab2:
 
                 selected_tm_for_display_list = list(tm_dict) if not selected_tm_for_display_list else selected_tm_for_display_list
                 if tm_label in selected_tm_for_display_list:
-                    row_dict = {"TriplesMap": utils.get_node_label_w_prefix(tm),
+                    row_dict = {"TriplesMap": utils.format_iri_to_prefix_label(tm),
                         "View": sql_query,
                         "Table": table_name,
                         "Source": source,
-                        "Reference Formulation": utils.get_node_label_w_prefix(reference_formulation),
+                        "Reference Formulation": utils.format_iri_to_prefix_label(reference_formulation),
                         "Logical Source": logical_source}
                     df_data.append(row_dict)
 
@@ -493,7 +493,7 @@ with tab2:
                 sm_rule_type = ""
                 sm_rule = ""
             raw_classes = str(row["classes"]) if row["classes"] else ""
-            class_list = [utils.get_node_label_w_prefix(c) for c in raw_classes.split(",") if c.strip()]
+            class_list = [utils.format_iri_to_prefix_label(c) for c in raw_classes.split(",") if c.strip()]
             class_list_to_string = ", ".join(class_list)
             term_type = str(row.termType) if row.termType else ""
             graph = str(row.graph) if row.graph else ""
@@ -503,13 +503,13 @@ with tab2:
 
             selected_tm_for_display_list = list(tm_dict) if not selected_tm_for_display_list else selected_tm_for_display_list
             if tm_label in selected_tm_for_display_list:
-                row_dict = {"Rule": utils.get_node_label_w_prefix(sm_rule),
+                row_dict = {"Rule": utils.format_iri_to_prefix_label(sm_rule),
                     "Type": sm_rule_type,
                     "Class": class_list_to_string,
-                    "Term Type": utils.get_node_label_w_prefix(term_type),
-                    "TriplesMap": utils.get_node_label_w_prefix(tm),
-                    "Graph": utils.get_node_label_w_prefix(graph),
-                    "Subject Map": utils.get_node_label_w_prefix(subject_map)}
+                    "Term Type": utils.format_iri_to_prefix_label(term_type),
+                    "TriplesMap": utils.format_iri_to_prefix_label(tm),
+                    "Graph": utils.format_iri_to_prefix_label(graph),
+                    "Subject Map": utils.format_iri_to_prefix_label(subject_map)}
                 df_data.append(row_dict)
 
         df = pd.DataFrame(df_data)
@@ -624,15 +624,15 @@ with tab2:
                 all_pom_list = list(utils.get_pom_dict())
                 selected_pom_for_display_list = all_pom_list if not selected_pom_for_display_list else selected_pom_for_display_list
                 if pom in selected_pom_for_display_list:
-                    row_dict = {"Predicate": utils.get_node_label_w_prefix(predicate),
-                        "Rule": utils.get_node_label_w_prefix(pom_rule),
+                    row_dict = {"Predicate": utils.format_iri_to_prefix_label(predicate),
+                        "Rule": utils.format_iri_to_prefix_label(pom_rule),
                         "Type": pom_rule_type,
-                        "TermType": utils.get_node_label_w_prefix(term_type),
-                        "Datatype": utils.get_node_label_w_prefix(datatype),
-                        "Language": utils.get_node_label_w_prefix(language),
-                        "Graph Map": utils.get_node_label_w_prefix(graph_map),
-                        "Predicate-Object Map": utils.get_node_label_w_prefix(pom),
-                        "Object Map": utils.get_node_label_w_prefix(object_map)}
+                        "TermType": utils.format_iri_to_prefix_label(term_type),
+                        "Datatype": utils.format_iri_to_prefix_label(datatype),
+                        "Language": utils.format_iri_to_prefix_label(language),
+                        "Graph Map": utils.format_iri_to_prefix_label(graph_map),
+                        "Predicate-Object Map": utils.format_iri_to_prefix_label(pom),
+                        "Object Map": utils.format_iri_to_prefix_label(object_map)}
 
                     df_data.append(row_dict)
             df = pd.DataFrame(df_data)
@@ -706,9 +706,9 @@ with tab2:
 
             selected_classes_for_display_list = list_to_choose_classes if not selected_classes_for_display_list else selected_classes_for_display_list
             if class_label in selected_classes_for_display_list:
-                df_data.append({"Class": utils.get_node_label_w_prefix(rdf_class),
-                    "TriplesMap": utils.get_node_label_w_prefix(tm),
-                    "Subject Map": utils.get_node_label_w_prefix(sm)})
+                df_data.append({"Class": utils.format_iri_to_prefix_label(rdf_class),
+                    "TriplesMap": utils.format_iri_to_prefix_label(tm),
+                    "Subject Map": utils.format_iri_to_prefix_label(sm)})
 
         df = pd.DataFrame(df_data)
         # Drop columns that are entirely empty (all values are NaN or empty strings)
@@ -782,9 +782,9 @@ with tab2:
             selected_properties_for_display_list = list_to_choose_properties if not selected_properties_for_display_list else selected_properties_for_display_list
             if predicate_label in selected_properties_for_display_list:
                 df_data.append({
-                    "Property": utils.get_node_label_w_prefix(predicate),
-                    "TriplesMap": utils.get_node_label_w_prefix(tm),
-                    "Predicate-Object Map": utils.get_node_label_w_prefix(pom)
+                    "Property": utils.format_iri_to_prefix_label(predicate),
+                    "TriplesMap": utils.format_iri_to_prefix_label(tm),
+                    "Predicate-Object Map": utils.format_iri_to_prefix_label(pom)
                 })
 
         df = pd.DataFrame(df_data)
@@ -849,7 +849,7 @@ with tab2:
 
             for row in results:
                 tm = row.get("tm")
-                tm_label = utils.get_node_label_w_prefix(tm) if tm else "(missing)"
+                tm_label = utils.format_iri_to_prefix_label(tm) if tm else "(missing)"
 
                 has_sm = bool(list(st.session_state["g_mapping"].objects(subject=tm, predicate=RML["subjectMap"])))
                 has_pom = bool(list(st.session_state["g_mapping"].objects(subject=tm, predicate=RML["predicateObjectMap"])))
@@ -1006,12 +1006,12 @@ with tab2:
                 term_type = g.value(subject=sm, predicate=RML["termType"])
                 graph_map = g.value(subject=sm, predicate=RML["graphMap"])
 
-                row_dict = {"Subject Map": utils.get_node_label_w_prefix(sm),
+                row_dict = {"Subject Map": utils.format_iri_to_prefix_label(sm),
                     "Rule": str(sm_rule),
                     "Type": str(sm_rule_type),
-                    "Class": utils.get_node_label_w_prefix(rdf_class),
-                    "Term Type": utils.get_node_label_w_prefix(term_type),
-                    "Graph Map": utils.get_node_label_w_prefix(graph_map)}
+                    "Class": utils.format_iri_to_prefix_label(rdf_class),
+                    "Term Type": utils.format_iri_to_prefix_label(term_type),
+                    "Graph Map": utils.format_iri_to_prefix_label(graph_map)}
 
                 df_data.append(row_dict)
 
@@ -1063,8 +1063,8 @@ with tab2:
                 pom = row.get("pom") if row.get("pom") else ""
                 predicate = st.session_state["g_mapping"].value(subject=pom, predicate=RML["predicate"])
 
-                row_dict = {"Predicate-Object Map": utils.get_node_label_w_prefix(pom),
-                    "Predicate": utils.get_node_label_w_prefix(predicate)}
+                row_dict = {"Predicate-Object Map": utils.format_iri_to_prefix_label(pom),
+                    "Predicate": utils.format_iri_to_prefix_label(predicate)}
 
                 df_data.append(row_dict)
 
@@ -1143,14 +1143,14 @@ with tab2:
                 parent_tm = g.value(subject=om, predicate=RML["parentTriplesMap"])
                 join_condition = g.value(subject=om, predicate=RML["joinCondition"])
 
-                row_dict = {"Object Map": utils.get_node_label_w_prefix(om),
-                        "Rule": utils.get_node_label_w_prefix(om_rule),
+                row_dict = {"Object Map": utils.format_iri_to_prefix_label(om),
+                        "Rule": utils.format_iri_to_prefix_label(om_rule),
                         "Type": str(om_rule_type),
-                        "Term Type": utils.get_node_label_w_prefix(term_type),
-                        "Datatype": utils.get_node_label_w_prefix(datatype),
-                        "Language": utils.get_node_label_w_prefix(language),
-                        "Parent TriplesMap": utils.get_node_label_w_prefix(parent_tm),
-                        "Join Condition": utils.get_node_label_w_prefix(join_condition)}
+                        "Term Type": utils.format_iri_to_prefix_label(term_type),
+                        "Datatype": utils.format_iri_to_prefix_label(datatype),
+                        "Language": utils.format_iri_to_prefix_label(language),
+                        "Parent TriplesMap": utils.format_iri_to_prefix_label(parent_tm),
+                        "Join Condition": utils.format_iri_to_prefix_label(join_condition)}
 
                 df_data.append(row_dict)
 
@@ -1210,9 +1210,9 @@ with tab2:
                 p_label = utils.get_node_label(p)
                 o_label = utils.get_node_label(o)
 
-                df_data.append({"Subject": utils.get_node_label_w_prefix(s),
-                    "Predicate": utils.get_node_label_w_prefix(p),
-                    "Object": utils.get_node_label_w_prefix(o)})
+                df_data.append({"Subject": utils.format_iri_to_prefix_label(s),
+                    "Predicate": utils.format_iri_to_prefix_label(p),
+                    "Object": utils.format_iri_to_prefix_label(o)})
 
             df = pd.DataFrame(df_data)
             df = df.loc[:, df.apply(lambda col: col.replace('', pd.NA).notna().any())]
