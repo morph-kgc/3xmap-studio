@@ -2112,6 +2112,9 @@ def get_column_list_and_give_info(tm_iri):
     query_as_ds = next(st.session_state["g_mapping"].objects(ls_iri, RML.query), None)
     table_name_as_ds = next(st.session_state["g_mapping"].objects(ls_iri, RML.tableName), None)
 
+    inner_html = ""
+    column_list_ok_flag = False
+
     jdbc_dict = {}
     for conn in st.session_state["db_connections_dict"]:
         jdbc_str = get_jdbc_str(conn)
@@ -2122,9 +2125,8 @@ def get_column_list_and_give_info(tm_iri):
         df = utils.read_tab_file(ds)
         column_list = df.columns.tolist()
 
-        st.markdown(f"""<div class="info-message-blue">
-                🛢️ The data source is <b>{ds}</b>.
-            </div>""", unsafe_allow_html=True)
+        inner_html = f"""🛢️ The data source is <b>{ds}</b>."""
+        column_list_ok_flag = True
 
     elif ds in jdbc_dict.values():        # saved sql data source
 
@@ -2145,26 +2147,19 @@ def get_column_list_and_give_info(tm_iri):
                 column_list = [description[0] for description in cur.description]
                 conn.close() # optional: close immediately or keep open for queries
                 if not column_list:
-                    st.markdown(f"""<div class="warning-message">
-                        ⚠️ Logical source's query yielded no columns. <small>Please,
-                        check the query in the <b>📊 Manage Logical Sources</b> page
-                        to enable automatic column detection.
-                        Manual entry of column references is discouraged.</small>
-                    </div>""", unsafe_allow_html=True)
+                    inner_html = f"""⚠️ <b>No columns found</b> in logical source query.
+                    <small>Go to <b>📊 SQL Databases</b> page to fix it.
+                    <b>Manual reference entry is discouraged.</b></small>"""
+
                 else:
-                    st.markdown(f"""<div class="info-message-blue">
-                            📊 The data source is the database <b style="color:#F63366;">{database}</b>.<br>
-                             <small>🔌 {conn_label} → <b>{jdbc_str}</b></small>
-                        </div>""", unsafe_allow_html=True)
+                    inner_html = f"""📊 The data source is the database <b style="color:#F63366;">{database}</b>.<br>
+                        <small>🔌 {conn_label} → <b>{jdbc_str}</b></small>"""
+                    column_list_ok_flag = True
 
             except:
-                st.markdown(f"""<div class="warning-message">
-                    ⚠️ Connection to database or logical source's query failed.
-                    <small>Please, check them in the <b>📊 Manage Logical Sources</b> page
-                    to enable automatic column detection.
-                    Manual entry of column references is discouraged.</small>
-
-                </div>""", unsafe_allow_html=True)
+                inner_html = f"""⚠️ Connection to database <b>{database}</b> failed.
+                    <small>Check <b>📊 SQL Databases</b> page to fix it.
+                    <b>Manual reference entry is discouraged.</b></small>"""
                 column_list = []
 
         elif table_name_as_ds:
@@ -2178,35 +2173,25 @@ def get_column_list_and_give_info(tm_iri):
                 conn.close()
 
                 if not column_list:
-                    st.markdown(f"""<div class="warning-message">
-                        ⚠️ Table <b>{table_name_as_ds}</b> contains no columns.
-                        <small>Please check the table definition in the <b>📊 Manage Logical Sources</b> page
-                        to enable automatic column detection.
-                        Manual entry of column references is discouraged.</small>
-                    </div>""", unsafe_allow_html=True)
+                    inner_html = f"""⚠️ <b>{table_name_as_ds}</b> has no columns.
+                        <small>Check <b>📊 SQL Databases</b> page to fix it.
+                        <b>Manual reference entry is discouraged.</b></small>"""
+
                 else:
-                    st.markdown(f"""<div class="info-message-blue">
-                            📊 The data source is the database <b style="color:#F63366;">{database}</b>.<br>
-                             <small>🔌 {conn_label} → <b>{jdbc_str}</b></small>
-                        </div>""", unsafe_allow_html=True)
+                    inner_html = f"""📊 The data source is the database <b style="color:#F63366;">{database}</b>.<br>
+                             <small>🔌 {conn_label} → <b>{jdbc_str}</b></small>"""
+                    column_list_ok_flag = True
 
             except:
-                st.markdown(f"""<div class="warning-message">
-                    ⚠️ Failed to connect to the database or access table <b>{table_name_as_ds}</b>.
-                    <small>Please verify the connection and table name in the <b>📊 Manage Logical Sources</b> page
-                    to enable automatic column detection.
-                    Manual entry of column references is discouraged.</small>
-                </div>""", unsafe_allow_html=True)
+                inner_html = f"""⚠️ <b>Connection failed</b> for table <b>{table_name_as_ds}</b>.
+                    <small>Check it in <b>📊 SQL Databases</b> page to enable column detection.
+                    <b>Manual reference entry is discouraged.</b></small>"""
                 column_list = []
 
         else:
-            st.markdown(f"""<div class="warning-message">
-                ⚠️ Triple indicating either <code>RML.query</code> or <code>RML.tableName</code>
-                is missing.<br>
-                <small>Please check the <b>Logical Source</b> of the TriplesMap
-                to enable automatic column detection.
-                Manual entry of column references is discouraged.</small>
-            </div>""", unsafe_allow_html=True)
+            inner_html = f"""⚠️ Missing <code>RML.query</code> or <code>RML.tableName</code>.
+                <small>Check the <b>Logical Source</b> to enable column detection.
+                <b>Manual reference entry is discouraged.</b></small>"""
             column_list = []
 
     elif query_as_ds:    # try to look for the columns in the query
@@ -2214,40 +2199,27 @@ def get_column_list_and_give_info(tm_iri):
         column_list = [str(col) for col in parsed.find_all(sqlglot.expressions.Column)]
 
         if column_list:
-            st.markdown(f"""<div class="warning-message">
-                    ⚠️ The data source <b>{ds}</b> is not available,
-                    but column references have been taken from the
-                    logical source's query.
-                    <small> However, connecting to the database is still recommended.</small>
-                </div>""", unsafe_allow_html=True)
-
+            inner_html = f"""⚠️ <b>{ds}</b> is unavailable. Columns were inferred from the logical source query.
+                <small>Connecting to the database is still recommended.</small>"""
         else:
-            st.markdown(f"""<div class="warning-message">
-                    ⚠️ The data source <b>{ds}</b> is not available.
-                    <small>Please load it in the <b>📊 Manage Logical Sources</b> page
-                    to enable automatic column detection.
-                    Manual entry of column references is strongly discouraged.</small>
-                </div>""", unsafe_allow_html=True)
+            inner_html = f"""⚠️ <b>{ds}</b> is unavailable.
+                <small>Load it via <b>📊 SQL Databases</b> page to enable column detection.
+                <b>Manual reference entry is discouraged.</b></small>"""
 
 
     else:                                                           # data source not saved
         if reference_formulation == QL.SQL:
-            st.markdown(f"""<div class="warning-message">
-                    ⚠️ The data source <b>{ds}</b> is not available.<br>
-                    <small>Please connect to the database in the <b>📊 Manage Logical Sources</b> page
-                    to enable automatic column detection.
-                    Manual entry of column references is strongly discouraged.</small>
-                </div>""", unsafe_allow_html=True)
+            inner_html = f"""⚠️ <b>{ds}</b> is unavailable.
+                <small>Connect via <b>📊 SQL Databases</b> page to enable column detection.
+                <b>Manual reference entry is discouraged.</b></small>"""
+
         else:
-            st.markdown(f"""<div class="warning-message">
-                    ⚠️ The data source <b>{ds}</b> is not available.
-                    <small>Please load it in the <b>📊 Manage Logical Sources</b> page
-                    to enable automatic column detection.
-                    Manual entry of column references is strongly discouraged.</small>
-                </div>""", unsafe_allow_html=True)
+            inner_html = f"""⚠️ <b>{ds}</b> is unavailable.
+                <small>Load it via <b>📊 SQL Databases</b> page to enable column detection.
+                <b>Manual reference entry is discouraged.</b></small>"""
         column_list = []
 
-    return column_list
+    return [column_list, column_list_ok_flag, inner_html]
 #________________________________________________________
 
 #______________________________________________________
