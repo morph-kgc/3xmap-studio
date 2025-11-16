@@ -22,19 +22,17 @@ utils.init_page()
 RML, QL = utils.get_required_ns_dict().values()
 
 # START PAGE_____________________________________________________________________
-col1, col2 = st.columns([2,1.5])
-if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
-    with col1:
-        st.write("")
-        st.write("")
-        utils.get_missing_g_mapping_error_message_different_page()
-        st.stop()
-
 
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
-
 tab1, tab2, tab3 = st.tabs(["Mapping", "Properties", "Classes"])
+
+# ERROR IF NO MAPPING LOADED----------------------------------------------------
+col1, col2 = st.columns([2,1])
+if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
+    with col1:
+        utils.get_missing_g_mapping_error_message_different_page()
+        st.stop()
 
 #________________________________________________
 # ONTOLOGY COVERAGE - MAPPING

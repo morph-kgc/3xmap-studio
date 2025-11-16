@@ -432,7 +432,7 @@ def get_missing_g_mapping_error_message_different_page():
 
     st.markdown(f"""<div class="error-message">
         ❌ You need to create or import a mapping from the
-        <b>Global Configuration</b> page <small>(Select Mapping pannel).</small>
+        <b>🌍 Global Configuration</b> page <small>(<b>Select Mapping</b> pannel).</small>
     </div>""", unsafe_allow_html=True)
 #______________________________________________________
 
