@@ -229,7 +229,7 @@ def save_sm_constant():   #function to save subject map (constant option)
     # add triples________________________
     if not sm_label:
         sm_iri = BNode()
-        st.session_state["sm_label"] = "_:" + str(sm_iri)[:7] + "..."   # to be displayed
+        st.session_state["sm_label"] = utils.get_node_label(sm_iri)   # to be displayed
     else:
         NS = st.session_state["base_ns"][1]
         sm_iri = NS[sm_label]
@@ -240,7 +240,7 @@ def save_sm_constant():   #function to save subject map (constant option)
         NS = Namespace(sm_constant_ns)
         sm_constant_iri = NS[sm_constant]
     else:
-        sm_constant_iri = sm_constant
+        sm_constant_iri = URIRef(sm_constant)
     st.session_state["g_mapping"].add((sm_iri, RML.constant, sm_constant_iri))
     if add_subject_class_option != "No Class":
         for subject_class_iri in st.session_state["multiple_subject_class_list"]:
@@ -475,6 +475,7 @@ def unassign_sm():
         if pair[1] not in tm_to_unassign_sm_list]
     # reset fields__________________
     st.session_state["key_tm_to_unassign_sm"] = []
+    st.session_state["key_map_type_to_remove"] = "🗺️ TriplesMap"
 
 def delete_pom():           #function to delete a Predicate-Object Map
     for pom_iri in pom_to_delete_iri_list:
@@ -489,6 +490,7 @@ def delete_pom():           #function to delete a Predicate-Object Map
         if pair[0] not in pom_to_delete_iri_list]
     # reset fields
     st.session_state["key_tm_to_delete_pom"] = "Select a TriplesMap"
+    st.session_state["key_map_type_to_remove"] = "🗺️ TriplesMap"
 
 
 def delete_all_pom():           #function to delete a Predicate-Object Map
@@ -504,6 +506,7 @@ def delete_all_pom():           #function to delete a Predicate-Object Map
         if pair[0] not in pom_to_delete_all_iri_list]
     # reset fields
     st.session_state["key_tm_to_delete_pom"] = "Select a TriplesMap"
+    st.session_state["key_map_type_to_remove"] = "🗺️ TriplesMap"
 
 def clean_g_mapping():
     # REMOVE TRIPLESMAPS
@@ -1543,8 +1546,12 @@ with tab2:
                     if not sm_constant:
                         sm_complete_flag = False
                         inner_html_error += "<small>· No <b>constant</b> entered.</small><br>"
+
                     if not (sm_constant_ns_prefix != "Select a namespace" and sm_constant):
-                        inner_html_warning += "<small>· We recommend selecting a <b>namespace</b> for the constant.</small><br>"
+                        if not utils.is_valid_iri(sm_constant, delimiter_ending=False):
+                            sm_complete_flag = False
+                            inner_html_error += """<small>· If <b>no namespace</b> is selected,
+                                the constant must be a <b>valid IRI</b>.</small><br>"""
 
 
                 if sm_generation_rule == "Reference 📊":

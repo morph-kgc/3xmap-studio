@@ -1273,7 +1273,7 @@ def bind_namespace_wo_overwriting(prefix, namespace):
 
 #_________________________________________________________
 #Function to check whether an IRI is valid
-def is_valid_iri(iri):
+def is_valid_iri(iri, delimiter_ending=True):
 
     valid_iri_schemes = ("http://", "https://", "ftp://", "mailto:",
         "urn:", "tag:", "doi:", "data:")
@@ -1297,8 +1297,8 @@ def is_valid_iri(iri):
     if re.search(r"[ \t\n\r<>\"{}|\\^`]", iri):
         return False
 
-    # must end with a recognized delimiter
-    if not iri[-1] in ("/", "#", ":"):
+    # must end with a recognized delimiter (can be switched off)
+    if delimiter_ending and not iri[-1] in ("/", "#", ":"):
         return False
 
     return True
