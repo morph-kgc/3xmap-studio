@@ -528,6 +528,7 @@ with tab2:
                     and the <b>🛢️ Tabular data</b> pages.</small>
                 </div>""", unsafe_allow_html=True)
             mkgc_ds_type = ""
+
         else:
             if not st.session_state["ds_files_dict"]:
                 list_to_choose = ["📊 SQL Database"]
@@ -542,199 +543,199 @@ with tab2:
                 mkgc_ds_type = st.radio("🖱️ Select an option:*", list_to_choose,
                     label_visibility="collapsed", key="key_mkgc_ds_type")
 
-        if mkgc_ds_type != "🗑️ Remove":
+            if mkgc_ds_type != "🗑️ Remove":
 
-            with col1a:
-                mkgc_ds_label = st.text_input("⌨️ Enter data source label:*", key="key_mkgc_ds_label")
+                with col1a:
+                    mkgc_ds_label = st.text_input("⌨️ Enter data source label:*", key="key_mkgc_ds_label")
 
-            if mkgc_ds_label:
-                excluded_characters = r"[ \t\n\r<>\"{}|\\^`\[\]%']"
-                if mkgc_ds_label in st.session_state["mkgc_config"]:
-                    with col1a:
-                        st.markdown(f"""<div class="error-message">
-                            ❌ Label is <b>already in use</b>.
-                            <small> You must either delete the already existing data source or pick a different label.</small>
-                        </div>""", unsafe_allow_html=True)
-                elif re.search(excluded_characters, mkgc_ds_label):
-                    with col1a:
-                        st.markdown(f"""<div class="error-message">
-                            ❌ <b>Forbidden character</b> in data source label.
-                            <small> Please, pick a valid label.</small>
-                        </div>""", unsafe_allow_html=True)
-                elif mkgc_ds_label.lower() == "CONFIGURATION":
-                    with col1a:
-                        st.markdown(f"""<div class="error-message">
-                            ❌ <b>"CONFIGURATION" label</b> is not allowed.
-                            <small> You must pick a different label.</small>
-                        </div>""", unsafe_allow_html=True)
-
-                else:
-
-                    if mkgc_ds_type == "📊 SQL Database":
-
-                        with col1:
-                            col1a, col1b = st.columns(2)
+                if mkgc_ds_label:
+                    excluded_characters = r"[ \t\n\r<>\"{}|\\^`\[\]%']"
+                    if mkgc_ds_label in st.session_state["mkgc_config"]:
                         with col1a:
-                            list_to_choose = list(reversed(st.session_state["db_connections_dict"]))
-                            list_to_choose.insert(0, "Select data source")
-                            mkgc_sql_ds = st.selectbox("🖱️ Select data source:*", list_to_choose,
-                                key="key_mkgc_sql_ds")
-
-                            if mkgc_sql_ds != "Select data source":
-                                db_url = utils.get_db_url_str(mkgc_sql_ds)
-                                db_user = st.session_state["db_connections_dict"][mkgc_sql_ds][4]
-                                db_password = st.session_state["db_connections_dict"][mkgc_sql_ds][5]
-                                db_type = st.session_state["db_connections_dict"][mkgc_sql_ds][0]
-
-                        with col1b:
-                            mkgc_g_mapping_dict_complete = st.session_state["mkgc_g_mappings_dict"].copy()
-                            if st.session_state["g_label"]:
-                                mkgc_g_mapping_dict_complete[st.session_state["g_label"]] = st.session_state["g_mapping"]
-
-                            list_to_choose = list(reversed(list(mkgc_g_mapping_dict_complete)))
-                            if len(list_to_choose) > 1:
-                                list_to_choose.insert(0, "Select all")
-
-                            if st.session_state["g_label"]:
-                                mkgc_mappings_list_for_sql = st.multiselect("🖱️ Select mappings:*", list_to_choose,
-                                    default=[st.session_state["g_label"]], key="key_mkgc_mappings")
-                            else:
-                                mkgc_mappings_list_for_sql = st.multiselect("🖱️ Select mappings:*", list_to_choose,
-                                    key="key_mkgc_mappings")
-
-                            if not mkgc_g_mapping_dict_complete:
-                                with col1:
-                                    st.markdown(f"""<div class="error-message">
-                                        ❌ <b> No mappings available. </b>
-                                        <small>You can <b>build a mapping</b> using this application
-                                        and/or load additional mappings in the <b>Additional Mappings</b> section
-                                        of this pannel.</small>
-                                    </div>""", unsafe_allow_html=True)
-
-                        if "Select all" in mkgc_mappings_list_for_sql:
-                            mkgc_mappings_list_for_sql = list(reversed(list(mkgc_g_mapping_dict_complete)))
-
-                        mkgc_mappings_paths_list_for_sql = []
-                        for mapping_label in mkgc_mappings_list_for_sql:
-                            if mapping_label == st.session_state["g_label"]:
-                                mkgc_mappings_paths_list_for_sql.append(os.path.join(temp_folder_path, mapping_label + ".ttl"))
-                            elif isinstance(st.session_state["mkgc_g_mappings_dict"][mapping_label], UploadedFile):
-                                mkgc_mappings_paths_list_for_sql.append(os.path.join(temp_folder_path, mapping_label + ".ttl"))
-                            else:
-                                mkgc_mappings_paths_list_for_sql.append(st.session_state["mkgc_g_mappings_dict"][mapping_label])
-                        mkgc_mappings_str_for_sql = ",".join(mkgc_mappings_paths_list_for_sql)   # join into a comma-separated string for the config
-
-                        # with col1:
-                        #     col1a, col1b = st.columns(2)
-                        # with col1a:
-                        #     schema = st.text_input("⌨️ Enter schema (optional):")
-                        # with col1b:
-                        #     driver_class = st.text_input("⌨️ Enter driver class (optional):")
-
-                        if mkgc_sql_ds != "Select data source" and mkgc_mappings_list_for_sql:
-                            with col1a:
-                                st.button("Save", key="save_sql_ds_for_mkgcgc_button", on_click=save_sql_ds_for_mkgc)
-
-                    if mkgc_ds_type == "🛢️ Tabular data":
-
-                        with col1:
-                            col1a, col1b = st.columns(2)
+                            st.markdown(f"""<div class="error-message">
+                                ❌ Label is <b>already in use</b>.
+                                <small> You must either delete the already existing data source or pick a different label.</small>
+                            </div>""", unsafe_allow_html=True)
+                    elif re.search(excluded_characters, mkgc_ds_label):
                         with col1a:
-                            list_to_choose = list(reversed(st.session_state["ds_files_dict"]))
-                            list_to_choose.insert(0, "Select data source")
-                            mkgc_tab_ds_file = st.selectbox("🖱️ Select data source:*", list_to_choose,
-                                key="key_mkgc_tab_ds_file")
+                            st.markdown(f"""<div class="error-message">
+                                ❌ <b>Forbidden character</b> in data source label.
+                                <small> Please, pick a valid label.</small>
+                            </div>""", unsafe_allow_html=True)
+                    elif mkgc_ds_label.lower() == "CONFIGURATION":
+                        with col1a:
+                            st.markdown(f"""<div class="error-message">
+                                ❌ <b>"CONFIGURATION" label</b> is not allowed.
+                                <small> You must pick a different label.</small>
+                            </div>""", unsafe_allow_html=True)
 
-                            if mkgc_tab_ds_file != "Select data source":
-                                mkgc_tab_ds_file_path = os.path.join(temp_folder_path, mkgc_tab_ds_file)
+                    else:
 
-                        with col1b:
-                            mkgc_g_mapping_dict_complete = st.session_state["mkgc_g_mappings_dict"].copy()
-                            if st.session_state["g_label"]:
-                                mkgc_g_mapping_dict_complete[st.session_state["g_label"]] = st.session_state["g_mapping"]
+                        if mkgc_ds_type == "📊 SQL Database":
 
-                            list_to_choose = list(reversed(list(mkgc_g_mapping_dict_complete)))
-                            if len(list_to_choose) > 1:
-                                list_to_choose.insert(0, "Select all")
-
-                            if st.session_state["g_label"]:
-                                mkgc_mappings_list_for_tab = st.multiselect("🖱️ Select mappings:*", list_to_choose,
-                                    default=[st.session_state["g_label"]], key="key_mkgc_mappings")
-                            else:
-                                mkgc_mappings_list_for_tab = st.multiselect("🖱️ Select mappings:*", list_to_choose,
-                                    key="key_mkgc_mappings")
-
-                            if not mkgc_g_mapping_dict_complete:
-                                with col1:
-                                    st.markdown(f"""<div class="error-message">
-                                        ❌ <b> No mappings available. </b>
-                                        <small>You can <b>build a mapping</b> using this application
-                                        and/or load additional mappings in the <b>Additional Mappings</b> section
-                                        of this pannel.</small>
-                                    </div>""", unsafe_allow_html=True)
-
-                        mkgc_mappings_paths_list_for_tab = []
-                        for mapping_label in mkgc_mappings_list_for_tab:
-                            if mapping_label == st.session_state["g_label"]:
-                                mkgc_mappings_paths_list_for_tab.append(os.path.join(temp_folder_path, mapping_label + ".ttl"))
-                            elif isinstance(st.session_state["mkgc_g_mappings_dict"][mapping_label], UploadedFile):
-                                mkgc_mappings_paths_list_for_tab.append(os.path.join(temp_folder_path, mapping_label + ".ttl"))
-                            else:
-                                mkgc_mappings_paths_list_for_tab.append(st.session_state["mkgc_g_mappings_dict"][mapping_label])
-                        mkgc_mappings_str_for_tab = ",".join(mkgc_mappings_paths_list_for_tab)   # join into a comma-separated string for the config
-
-                        if mkgc_tab_ds_file != "Select data source" and mkgc_mappings_list_for_tab:
+                            with col1:
+                                col1a, col1b = st.columns(2)
                             with col1a:
-                                st.button("Save", key="save_tab_ds_for_mkgcgc_button", on_click=save_tab_ds_for_mkgc)
+                                list_to_choose = list(reversed(st.session_state["db_connections_dict"]))
+                                list_to_choose.insert(0, "Select data source")
+                                mkgc_sql_ds = st.selectbox("🖱️ Select data source:*", list_to_choose,
+                                    key="key_mkgc_sql_ds")
 
-            if list(st.session_state["mkgc_config"].keys()) == ["DEFAULT"] or list(st.session_state["mkgc_config"].keys()) == ["DEFAULT", "CONFIGURATION"]:
-                if st.session_state["ds_for_mkgcgc_removed_ok_flag"]:
-                    with col1a:
-                        st.write("")
-                        st.markdown(f"""<div class="success-message-flag">
-                            ✅ The <b>data source/s</b> have been removed!
-                        </div>""", unsafe_allow_html=True)
-                    st.session_state["ds_for_mkgcgc_removed_ok_flag"] = False
-                    time.sleep(utils.get_success_message_time())
-                    st.rerun()
+                                if mkgc_sql_ds != "Select data source":
+                                    db_url = utils.get_db_url_str(mkgc_sql_ds)
+                                    db_user = st.session_state["db_connections_dict"][mkgc_sql_ds][4]
+                                    db_password = st.session_state["db_connections_dict"][mkgc_sql_ds][5]
+                                    db_type = st.session_state["db_connections_dict"][mkgc_sql_ds][0]
 
-        if mkgc_ds_type == "🗑️ Remove":
+                            with col1b:
+                                mkgc_g_mapping_dict_complete = st.session_state["mkgc_g_mappings_dict"].copy()
+                                if st.session_state["g_label"]:
+                                    mkgc_g_mapping_dict_complete[st.session_state["g_label"]] = st.session_state["g_mapping"]
 
-            with col1a:
-                list_to_choose = list(reversed(list(st.session_state["mkgc_config"])))
-                list_to_choose.remove("DEFAULT")
-                if "CONFIGURATION" in list_to_choose:
-                    list_to_choose.remove("CONFIGURATION")
-                if len(list_to_choose) > 1:
-                    list_to_choose.insert(0, "Select all")
+                                list_to_choose = list(reversed(list(mkgc_g_mapping_dict_complete)))
+                                if len(list_to_choose) > 1:
+                                    list_to_choose.insert(0, "Select all")
 
-                ds_for_mkgcgc_to_remove_list = st.multiselect("🖱️ Select data sources:*", list_to_choose,
-                    key="key_ds_for_mkgcgc_to_remove_list")
+                                if st.session_state["g_label"]:
+                                    mkgc_mappings_list_for_sql = st.multiselect("🖱️ Select mappings:*", list_to_choose,
+                                        default=[st.session_state["g_label"]], key="key_mkgc_mappings")
+                                else:
+                                    mkgc_mappings_list_for_sql = st.multiselect("🖱️ Select mappings:*", list_to_choose,
+                                        key="key_mkgc_mappings")
 
-                if "Select all" in ds_for_mkgcgc_to_remove_list:
-                    ds_for_mkgcgc_to_remove_list = list(reversed(list(st.session_state["mkgc_config"])))
-                    ds_for_mkgcgc_to_remove_list.remove("DEFAULT")
-                    if "CONFIGURATION" in ds_for_mkgcgc_to_remove_list:
-                        ds_for_mkgcgc_to_remove_list.remove("CONFIGURATION")
-                    with col1b:
-                        st.markdown(f"""<div class="warning-message">
-                            ⚠️ You are deleting <b>all Data Sources</b>.
-                            <small>Make sure you want to go ahead.</small>
-                        </div>""", unsafe_allow_html=True)
-                    with col1a:
-                        remove_all_ds_checkbox = st.checkbox(
-                        "🔒 I am sure I want to remove all Data Sources",
-                        key="key_remove_all_ds_checkbox")
-                        if remove_all_ds_checkbox:
-                            st.button("Remove", key="remove_ds_for_mkgcgc_button", on_click=remove_ds_for_mkgc)
+                                if not mkgc_g_mapping_dict_complete:
+                                    with col1:
+                                        st.markdown(f"""<div class="error-message">
+                                            ❌ <b> No mappings available. </b>
+                                            <small>You can <b>build a mapping</b> using this application
+                                            and/or load additional mappings in the <b>Additional Mappings</b> section
+                                            of this pannel.</small>
+                                        </div>""", unsafe_allow_html=True)
 
-                elif ds_for_mkgcgc_to_remove_list:
-                    with col1a:
-                        remove_ds_checkbox = st.checkbox(
-                        "🔒 I am sure I want to remove the selected Data Source/s",
-                        key="key_remove_ds_checkbox")
-                        if remove_ds_checkbox:
-                            st.button("Remove", key="remove_ds_for_mkgcgc_button", on_click=remove_ds_for_mkgc)
+                            if "Select all" in mkgc_mappings_list_for_sql:
+                                mkgc_mappings_list_for_sql = list(reversed(list(mkgc_g_mapping_dict_complete)))
+
+                            mkgc_mappings_paths_list_for_sql = []
+                            for mapping_label in mkgc_mappings_list_for_sql:
+                                if mapping_label == st.session_state["g_label"]:
+                                    mkgc_mappings_paths_list_for_sql.append(os.path.join(temp_folder_path, mapping_label + ".ttl"))
+                                elif isinstance(st.session_state["mkgc_g_mappings_dict"][mapping_label], UploadedFile):
+                                    mkgc_mappings_paths_list_for_sql.append(os.path.join(temp_folder_path, mapping_label + ".ttl"))
+                                else:
+                                    mkgc_mappings_paths_list_for_sql.append(st.session_state["mkgc_g_mappings_dict"][mapping_label])
+                            mkgc_mappings_str_for_sql = ",".join(mkgc_mappings_paths_list_for_sql)   # join into a comma-separated string for the config
+
+                            # with col1:
+                            #     col1a, col1b = st.columns(2)
+                            # with col1a:
+                            #     schema = st.text_input("⌨️ Enter schema (optional):")
+                            # with col1b:
+                            #     driver_class = st.text_input("⌨️ Enter driver class (optional):")
+
+                            if mkgc_sql_ds != "Select data source" and mkgc_mappings_list_for_sql:
+                                with col1a:
+                                    st.button("Save", key="save_sql_ds_for_mkgcgc_button", on_click=save_sql_ds_for_mkgc)
+
+                        if mkgc_ds_type == "🛢️ Tabular data":
+
+                            with col1:
+                                col1a, col1b = st.columns(2)
+                            with col1a:
+                                list_to_choose = list(reversed(st.session_state["ds_files_dict"]))
+                                list_to_choose.insert(0, "Select data source")
+                                mkgc_tab_ds_file = st.selectbox("🖱️ Select data source:*", list_to_choose,
+                                    key="key_mkgc_tab_ds_file")
+
+                                if mkgc_tab_ds_file != "Select data source":
+                                    mkgc_tab_ds_file_path = os.path.join(temp_folder_path, mkgc_tab_ds_file)
+
+                            with col1b:
+                                mkgc_g_mapping_dict_complete = st.session_state["mkgc_g_mappings_dict"].copy()
+                                if st.session_state["g_label"]:
+                                    mkgc_g_mapping_dict_complete[st.session_state["g_label"]] = st.session_state["g_mapping"]
+
+                                list_to_choose = list(reversed(list(mkgc_g_mapping_dict_complete)))
+                                if len(list_to_choose) > 1:
+                                    list_to_choose.insert(0, "Select all")
+
+                                if st.session_state["g_label"]:
+                                    mkgc_mappings_list_for_tab = st.multiselect("🖱️ Select mappings:*", list_to_choose,
+                                        default=[st.session_state["g_label"]], key="key_mkgc_mappings")
+                                else:
+                                    mkgc_mappings_list_for_tab = st.multiselect("🖱️ Select mappings:*", list_to_choose,
+                                        key="key_mkgc_mappings")
+
+                                if not mkgc_g_mapping_dict_complete:
+                                    with col1:
+                                        st.markdown(f"""<div class="error-message">
+                                            ❌ <b> No mappings available. </b>
+                                            <small>You can <b>build a mapping</b> using this application
+                                            and/or load additional mappings in the <b>Additional Mappings</b> section
+                                            of this pannel.</small>
+                                        </div>""", unsafe_allow_html=True)
+
+                            mkgc_mappings_paths_list_for_tab = []
+                            for mapping_label in mkgc_mappings_list_for_tab:
+                                if mapping_label == st.session_state["g_label"]:
+                                    mkgc_mappings_paths_list_for_tab.append(os.path.join(temp_folder_path, mapping_label + ".ttl"))
+                                elif isinstance(st.session_state["mkgc_g_mappings_dict"][mapping_label], UploadedFile):
+                                    mkgc_mappings_paths_list_for_tab.append(os.path.join(temp_folder_path, mapping_label + ".ttl"))
+                                else:
+                                    mkgc_mappings_paths_list_for_tab.append(st.session_state["mkgc_g_mappings_dict"][mapping_label])
+                            mkgc_mappings_str_for_tab = ",".join(mkgc_mappings_paths_list_for_tab)   # join into a comma-separated string for the config
+
+                            if mkgc_tab_ds_file != "Select data source" and mkgc_mappings_list_for_tab:
+                                with col1a:
+                                    st.button("Save", key="save_tab_ds_for_mkgcgc_button", on_click=save_tab_ds_for_mkgc)
+
+                if list(st.session_state["mkgc_config"].keys()) == ["DEFAULT"] or list(st.session_state["mkgc_config"].keys()) == ["DEFAULT", "CONFIGURATION"]:
+                    if st.session_state["ds_for_mkgcgc_removed_ok_flag"]:
+                        with col1a:
+                            st.write("")
+                            st.markdown(f"""<div class="success-message-flag">
+                                ✅ The <b>data source/s</b> have been removed!
+                            </div>""", unsafe_allow_html=True)
+                        st.session_state["ds_for_mkgcgc_removed_ok_flag"] = False
+                        time.sleep(utils.get_success_message_time())
+                        st.rerun()
+
+            if mkgc_ds_type == "🗑️ Remove":
+
+                with col1a:
+                    list_to_choose = list(reversed(list(st.session_state["mkgc_config"])))
+                    list_to_choose.remove("DEFAULT")
+                    if "CONFIGURATION" in list_to_choose:
+                        list_to_choose.remove("CONFIGURATION")
+                    if len(list_to_choose) > 1:
+                        list_to_choose.insert(0, "Select all")
+
+                    ds_for_mkgcgc_to_remove_list = st.multiselect("🖱️ Select data sources:*", list_to_choose,
+                        key="key_ds_for_mkgcgc_to_remove_list")
+
+                    if "Select all" in ds_for_mkgcgc_to_remove_list:
+                        ds_for_mkgcgc_to_remove_list = list(reversed(list(st.session_state["mkgc_config"])))
+                        ds_for_mkgcgc_to_remove_list.remove("DEFAULT")
+                        if "CONFIGURATION" in ds_for_mkgcgc_to_remove_list:
+                            ds_for_mkgcgc_to_remove_list.remove("CONFIGURATION")
+                        with col1b:
+                            st.markdown(f"""<div class="warning-message">
+                                ⚠️ You are deleting <b>all Data Sources</b>.
+                                <small>Make sure you want to go ahead.</small>
+                            </div>""", unsafe_allow_html=True)
+                        with col1a:
+                            remove_all_ds_checkbox = st.checkbox(
+                            "🔒 I am sure I want to remove all Data Sources",
+                            key="key_remove_all_ds_checkbox")
+                            if remove_all_ds_checkbox:
+                                st.button("Remove", key="remove_ds_for_mkgcgc_button", on_click=remove_ds_for_mkgc)
+
+                    elif ds_for_mkgcgc_to_remove_list:
+                        with col1a:
+                            remove_ds_checkbox = st.checkbox(
+                            "🔒 I am sure I want to remove the selected Data Source/s",
+                            key="key_remove_ds_checkbox")
+                            if remove_ds_checkbox:
+                                st.button("Remove", key="remove_ds_for_mkgcgc_button", on_click=remove_ds_for_mkgc)
 
 
 

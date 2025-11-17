@@ -432,7 +432,7 @@ def get_missing_g_mapping_error_message_different_page():
 
     st.markdown(f"""<div class="error-message">
         ❌ You need to create or import a mapping from the
-        <b>Global Configuration</b> page <small>(Select Mapping pannel).</small>
+        <b>🌍 Global Configuration</b> page <small>(<b>Select Mapping</b> pannel).</small>
     </div>""", unsafe_allow_html=True)
 #______________________________________________________
 
@@ -1273,7 +1273,7 @@ def bind_namespace_wo_overwriting(prefix, namespace):
 
 #_________________________________________________________
 #Function to check whether an IRI is valid
-def is_valid_iri(iri):
+def is_valid_iri(iri, delimiter_ending=True):
 
     valid_iri_schemes = ("http://", "https://", "ftp://", "mailto:",
         "urn:", "tag:", "doi:", "data:")
@@ -1297,8 +1297,8 @@ def is_valid_iri(iri):
     if re.search(r"[ \t\n\r<>\"{}|\\^`]", iri):
         return False
 
-    # must end with a recognized delimiter
-    if not iri[-1] in ("/", "#", ":"):
+    # must end with a recognized delimiter (can be switched off)
+    if delimiter_ending and not iri[-1] in ("/", "#", ":"):
         return False
 
     return True
@@ -2200,7 +2200,7 @@ def get_column_list_and_give_info(tm_iri):
 
         if column_list:
             inner_html = f"""⚠️ <b>{ds}</b> is unavailable. Columns were inferred from the logical source query.
-                <small>Connecting to the database is still recommended.</small>"""
+                <small><b>Connecting to the database</b> is still recommended.</small>"""
         else:
             inner_html = f"""⚠️ <b>{ds}</b> is unavailable.
                 <small>Load it via <b>📊 SQL Databases</b> page to enable column detection.
