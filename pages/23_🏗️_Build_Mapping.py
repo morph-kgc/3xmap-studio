@@ -425,7 +425,7 @@ def save_pom_reference():
     st.session_state["key_manual_p_ns_prefix"] = "Select a namespace"
     st.session_state["key_manual_p_label"] = ""
     st.session_state["key_pom_label"] = ""
-    st.session_state["key_om_column_name"] = "Select a reference"
+    st.session_state["key_om_column_name"] = "Select reference"
     st.session_state["om_term_type"] = "📘 Literal"
     st.session_state["key_om_label"] = ""
     st.session_state["key_om_datatype"] = "Select datatype"
@@ -1787,60 +1787,61 @@ with tab3:
 
             # PREDICATE
             with col1:
-                col1a, col1b, col1c = st.columns(3)
+                col1a, col1b = st.columns(2)
+
+            with col1a:
+                st.markdown("""
+                <div style="font-size:13px; font-weight:500; margin-top:10px; margin-bottom:6px; border-top:0.5px solid #ccc; padding-bottom:4px;">
+                    <b>🅿️ Predicate</b><br>
+                </div>""", unsafe_allow_html=True)
+
             if st.session_state["g_ontology_components_dict"]:
                 ontology_p_dict = utils.get_ontology_properties_dict(st.session_state["g_ontology"])
 
                 if ontology_p_dict:   # if the ontology includes at least one predicate
-                    p_type_option_list = ["🧩 Ontology predicate", "🚫 Predicate outside ontology"]
-                    with col1a:
-                        p_type = st.selectbox("🖱️ Select an option:*", p_type_option_list,
-                            key="key_p_type")
-                else:
-                    p_type = "🚫 Predicate outside ontology"
 
-            else:   # no ontology
-                p_type = "🚫 Predicate outside ontology"
+                    # Filter by ontology
+                    if len(st.session_state["g_ontology_components_dict"]) > 1:
+                        with col1a:
+                            list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
+                            list_to_choose.insert(0, "Select ontology")
+                            ontology_filter_for_predicate = st.selectbox("⚙️ Filter by ontology (optional):",
+                                list_to_choose, key="key_ontology_filter_for_predicate")
 
-            if p_type == "🧩 Ontology predicate":
+                        if ontology_filter_for_predicate == "Select ontology":
+                            ontology_filter_for_predicate = st.session_state["g_ontology"]
+                        else:
+                            for ont_label, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
+                                if ont_tag == ontology_filter_for_predicate:
+                                    ontology_filter_for_predicate = st.session_state["g_ontology_components_dict"][ont_label]
+                                    break
 
-                # Filter by ontology
-                if len(st.session_state["g_ontology_components_dict"]) > 1:
-                    with col1b:
-                        list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
-                        list_to_choose.insert(0, "Select ontology")
-                        ontology_filter_for_predicate = st.selectbox("⚙️ Filter by ontology (optional):",
-                            list_to_choose, key="key_ontology_filter_for_predicate")
-
-                    if ontology_filter_for_predicate == "Select ontology":
-                        ontology_filter_for_predicate = st.session_state["g_ontology"]
                     else:
-                        for ont_label, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
-                            if ont_tag == ontology_filter_for_predicate:
-                                ontology_filter_for_predicate = st.session_state["g_ontology_components_dict"][ont_label]
-                                break
+                        ontology_filter_for_predicate = st.session_state["g_ontology"]
 
-                else:
-                    ontology_filter_for_predicate = st.session_state["g_ontology"]
+                    ontology_p_dict = utils.get_ontology_properties_dict(ontology_filter_for_predicate)
 
-                ontology_p_dict = utils.get_ontology_properties_dict(ontology_filter_for_predicate)
+            else:     # no ontology predicates
+                ontology_p_dict = {}
 
-                with col1b:
-                    list_to_choose = sorted(ontology_p_dict.keys())
-                    list_to_choose.insert(0, "Select a predicate")
-                    selected_p_label = st.selectbox("🖱️ Select a predicate:*", list_to_choose, key="key_selected_p_label")
+            with col1a:
+                list_to_choose = sorted(ontology_p_dict.keys())
+                if ontology_filter_for_predicate == st.session_state["g_ontology"]:
+                    list_to_choose.insert(0, "🚫 Predicate outside ontology")
+                list_to_choose.insert(0, "Select a predicate")
+                selected_p_label = st.selectbox("🖱️ Select a predicate:*", list_to_choose, key="key_selected_p_label")
 
-                if selected_p_label != "Select a predicate":
-                    selected_p_iri = ontology_p_dict[selected_p_label]
+            if selected_p_label != "Select a predicate" and selected_p_label != "🚫 Predicate outside ontology":
+                selected_p_iri = ontology_p_dict[selected_p_label]
 
-            if p_type == "🚫 Predicate outside ontology":
+            if selected_p_label == "🚫 Predicate outside ontology":
 
                 mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
 
                 if not mapping_ns_dict:
                     ns_needed_for_pom_flag = True
 
-                with col1b:
+                with col1a:
                     list_to_choose = sorted(mapping_ns_dict.keys())
                     list_to_choose.insert(0, "Select a namespace")
                     manual_p_ns_prefix = st.selectbox("🖱️ Select a namespace (for the predicate):*", list_to_choose, key="key_manual_p_ns_prefix")
@@ -1983,8 +1984,11 @@ with tab3:
                 #         <b>🔒 Constant</b><br>
                 #     </div>""", unsafe_allow_html=True)
 
-
-                with col1c:
+                with col1b:
+                    st.markdown("""
+                    <div style="font-size:13px; font-weight:500; margin-top:10px; margin-bottom:6px; border-top:0.5px solid #ccc; padding-bottom:4px;">
+                        <b>🔒 Constant</b><br>
+                    </div>""", unsafe_allow_html=True)
                     om_constant = st.text_input("⌨️ Enter Object Map constant:*", key="key_om_constant")
 
 
@@ -2009,14 +2013,20 @@ with tab3:
                             {inner_column_list_html}
                         </div>""", unsafe_allow_html=True)
 
+                with col1b:
+                    st.markdown("""
+                    <div style="font-size:13px; font-weight:500; margin-top:10px; margin-bottom:6px; border-top:0.5px solid #ccc; padding-bottom:4px;">
+                        <b>📊 Reference</b><br>
+                    </div>""", unsafe_allow_html=True)
+
                 if not column_list:   #data source is not available (load)
-                    with col1c:
+                    with col1b:
                         om_column_name = st.text_input("⌨️ Enter reference manually:*", key="key_om_column_name")
                         st.markdown("""<div style='text-align: right; font-size: 10.5px; color: #cc9a06; font-weight: bold; margin-top: -10px;'>
                             ⚠️ discouraged
                         </div>""", unsafe_allow_html=True)
                 else:
-                    with col1c:
+                    with col1b:
                         list_to_choose = column_list.copy()
                         list_to_choose.insert(0, "Select reference")
                         om_column_name = st.selectbox(f"""🖱️ Select reference:*""", list_to_choose,
@@ -2099,12 +2109,11 @@ with tab3:
                 inner_html_warning += f"""<small>· TriplesMap <b>{tm_label_for_pom}</b> has no Subject Map.
                             It will be invalid without one.</small><br>"""
 
-            if p_type == "🧩 Ontology predicate":
-                if selected_p_label == "Select a predicate":
-                    pom_complete_flag = False
-                    inner_html_error += "<small>· You must select a <b>predicate</b>.</small><br>"
+            if selected_p_label == "Select a predicate":
+                pom_complete_flag = False
+                inner_html_error += "<small>· You must select a <b>predicate</b>.</small><br>"
 
-            elif p_type == "🚫 Predicate outside ontology":
+            elif selected_p_label == "🚫 Predicate outside ontology":
                 if (not manual_p_label or manual_p_ns_prefix == "Select a namespace"):
                     pom_complete_flag = False
                     inner_html_error += "<small>· The <b>predicate</b> (and/or its namespace) has not been given.</small><br>"
@@ -2153,7 +2162,7 @@ with tab3:
             if om_generation_rule == "Reference 📊":
 
                 if column_list:
-                    if om_column_name == "Select a reference":
+                    if om_column_name == "Select reference":
                         pom_complete_flag = False
                         inner_html_error += "<small>· You must select a <b>reference</b>.</small><br>"
                 else:

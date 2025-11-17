@@ -2200,7 +2200,7 @@ def get_column_list_and_give_info(tm_iri):
 
         if column_list:
             inner_html = f"""⚠️ <b>{ds}</b> is unavailable. Columns were inferred from the logical source query.
-                <small>Connecting to the database is still recommended.</small>"""
+                <small><b>Connecting to the database</b> is still recommended.</small>"""
         else:
             inner_html = f"""⚠️ <b>{ds}</b> is unavailable.
                 <small>Load it via <b>📊 SQL Databases</b> page to enable column detection.
