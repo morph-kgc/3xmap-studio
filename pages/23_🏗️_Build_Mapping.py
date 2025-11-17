@@ -474,7 +474,6 @@ def unassign_sm():
     st.session_state["last_added_sm_list"] = [pair for pair in st.session_state["last_added_sm_list"]
         if pair[1] not in tm_to_unassign_sm_list]
     # reset fields__________________
-    st.session_state["key_tm_to_unassign_sm"] = []
     st.session_state["key_map_type_to_remove"] = "🗺️ TriplesMap"
 
 def delete_pom():           #function to delete a Predicate-Object Map
@@ -489,23 +488,6 @@ def delete_pom():           #function to delete a Predicate-Object Map
     st.session_state["last_added_pom_list"] = [pair for pair in st.session_state["last_added_pom_list"]
         if pair[0] not in pom_to_delete_iri_list]
     # reset fields
-    st.session_state["key_tm_to_delete_pom"] = "Select a TriplesMap"
-    st.session_state["key_map_type_to_remove"] = "🗺️ TriplesMap"
-
-
-def delete_all_pom():           #function to delete a Predicate-Object Map
-    for pom_iri in pom_to_delete_all_iri_list:
-        om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RML.objectMap)
-        # remove triples______________________
-        st.session_state["g_mapping"].remove((pom_iri, None, None))
-        st.session_state["g_mapping"].remove((None, None, pom_iri))
-        st.session_state["g_mapping"].remove((om_to_delete, None, None))
-    # store information__________________
-    st.session_state["pom_deleted_ok_flag"] = True
-    st.session_state["last_added_pom_list"] = [pair for pair in st.session_state["last_added_pom_list"]
-        if pair[0] not in pom_to_delete_all_iri_list]
-    # reset fields
-    st.session_state["key_tm_to_delete_pom"] = "Select a TriplesMap"
     st.session_state["key_map_type_to_remove"] = "🗺️ TriplesMap"
 
 def clean_g_mapping():
@@ -2377,7 +2359,7 @@ with tab4:
             with col1a:
                 st.write("")
                 st.markdown(f"""<div class="success-message-flag">
-                    ✅ The Predicate-Object Map/s have been deleted!
+                    ✅ The <b>Predicate-Object Map/s</b> have been deleted!
                 </div>""", unsafe_allow_html=True)
                 st.write("")
             st.session_state["pom_deleted_ok_flag"] = False
@@ -2635,28 +2617,26 @@ with tab4:
                     if pom_dict[pom_iri][0] == tm_to_delete_pom_iri:
                         pom_of_selected_tm_list.append(pom_iri)
 
-
-
                 if pom_of_selected_tm_list:
 
                     with col1a:
                         list_to_choose = []
                         for pom_iri in pom_dict:
                             if pom_dict[pom_iri][0] == tm_to_delete_pom_iri:
-                                list_to_choose.append(pom_dict[pom_iri][2])
-                        list_to_choose = list(reversed(list_to_choose))
+                                list_to_choose.append(pom_iri)
+                        list_to_choose = sorted(list_to_choose)
                         if len(list_to_choose) > 1:
                             list_to_choose.insert(0, "Select all")
-                        pom_to_delete_label_list = st.multiselect("🖱️ Select a Predicate-Object Map:*", list_to_choose, key="key_pom_to_delete")
-                        pom_to_delete_iri_list = []
-                        pom_to_delete_all_iri_list = []
-                        for pom_iri in pom_dict:
-                            if "Select all" not in pom_to_delete_label_list and pom_dict[pom_iri][2] in pom_to_delete_label_list:
-                                pom_to_delete_iri_list.append(pom_iri)
-                            if "Select all" in pom_to_delete_label_list and pom_dict[pom_iri][0] == tm_to_delete_pom_iri:
-                                pom_to_delete_all_iri_list.append(pom_iri)
+                        pom_to_delete_iri_list = st.multiselect("🖱️ Select a Predicate-Object Map:*", list_to_choose, key="key_pom_to_delete")
 
-                    if pom_to_delete_label_list and "Select all" not in pom_to_delete_label_list:
+
+                        if "Select all" in pom_to_delete_iri_list:
+                            pom_to_delete_iri_list = []
+                            for pom_iri in pom_dict:
+                                if pom_dict[pom_iri][0] == tm_to_delete_pom_iri:
+                                    pom_to_delete_iri_list.append(pom_iri)
+
+                    if pom_to_delete_iri_list and "Select all" not in pom_to_delete_iri_list:
                         with col1:
                             delete_pom_checkbox = st.checkbox(
                             f"""🔒 I am  sure I want to remove the selected Predicate-Object Map/s""",
@@ -2664,7 +2644,7 @@ with tab4:
                             if delete_pom_checkbox:
                                 st.button("Delete", on_click=delete_pom, key="key_delete_pom_button")
 
-                    elif pom_to_delete_label_list and "Select all" in pom_to_delete_label_list:
+                    elif pom_to_delete_iri_list and "Select all" in pom_to_delete_iri_list:
                         with col1:
                             col1a, col1b = st.columns([1,1])
                         with col1b:
@@ -2679,7 +2659,7 @@ with tab4:
                             f"""🔒 I am  sure I want to remove all Predicate-Object Maps""",
                             key="key_overwrite_g_mapping_checkbox_new")
                             if delete_all_pom_checkbox:
-                                st.button("Delete", on_click=delete_all_pom, key="key_delete_all_pom_button")
+                                st.button("Delete", on_click=delete_pom, key="key_delete_all_pom_button")
 
 
             if tm_to_delete_pom_label != "Select a TriplesMap":
