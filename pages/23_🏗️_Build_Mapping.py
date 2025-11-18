@@ -348,15 +348,17 @@ def save_pom_template():
     st.session_state["last_added_pom_list"].insert(0, [st.session_state["pom_iri_to_create"], st.session_state["tm_iri_for_pom"]])
     # reset fields_____________________________
     st.session_state["template_om_is_iri_flag"] = False
+    st.session_state["om_template_list"] = []    # reset template
+    st.session_state["key_tm_label_for_pom"] = tm_label_for_pom   # keep same tm to add more pom
     st.session_state["key_selected_p_label"] = "Select a predicate"
     st.session_state["key_manual_p_ns_prefix"] = "Select a namespace"
     st.session_state["key_manual_p_label"] = ""
     st.session_state["key_pom_label"] = ""
-    st.session_state["key_build_template_action_om"] = "🏷️ Add Namespace"
+    st.session_state["key_build_template_action_om"] = "🔒 Fixed part"
     st.session_state["key_om_template_ns_prefix"] = "Select a namespace"
-    st.session_state["om_template_list"] = []    # reset template
     st.session_state["om_term_type"] = "🌐 IRI"
     st.session_state["key_om_label"] = ""
+    st.session_state["key_add_om_graph_map_option"] = "Default graph"
 
 def save_pom_constant():
     # add triples pom________________________
@@ -386,6 +388,10 @@ def save_pom_constant():
     st.session_state["pom_saved_ok_flag"] = True
     st.session_state["last_added_pom_list"].insert(0, [st.session_state["pom_iri_to_create"], st.session_state["tm_iri_for_pom"]])
     # reset fields_____________________________
+    st.session_state["template_om_is_iri_flag"] = False
+    st.session_state["om_template_list"] = []    # reset template in case it was modified
+    st.session_state["key_tm_label_for_pom"] = tm_label_for_pom   # keep same tm to add more pom
+    st.session_state["key_om_generation_rule_radio"] = "Constant 🔒"
     st.session_state["key_selected_p_label"] = "Select a predicate"
     st.session_state["key_manual_p_ns_prefix"] = "Select a namespace"
     st.session_state["key_manual_p_label"] = ""
@@ -394,6 +400,8 @@ def save_pom_constant():
     st.session_state["om_term_type"] = "📘 Literal"
     st.session_state["key_om_label"] = ""
     st.session_state["key_om_datatype"] = "Select datatype"
+    st.session_state["key_add_om_graph_map_option"] = "Default graph"
+
 
 def save_pom_reference():
     # add triples pom________________________
@@ -421,14 +429,19 @@ def save_pom_reference():
     st.session_state["pom_saved_ok_flag"] = True
     st.session_state["last_added_pom_list"].insert(0, [st.session_state["pom_iri_to_create"], st.session_state["tm_iri_for_pom"]])
     # reset fields_____________________________
+    st.session_state["template_om_is_iri_flag"] = False
+    st.session_state["om_template_list"] = []    # reset template in case it was modified
+    st.session_state["key_tm_label_for_pom"] = tm_label_for_pom   # keep same tm to add more pom
+    st.session_state["key_om_generation_rule_radio"] = "Reference 📊"
     st.session_state["key_selected_p_label"] = "Select a predicate"
     st.session_state["key_manual_p_ns_prefix"] = "Select a namespace"
     st.session_state["key_manual_p_label"] = ""
     st.session_state["key_pom_label"] = ""
     st.session_state["key_om_column_name"] = "Select reference"
-    st.session_state["om_term_type"] = "📘 Literal"
+    st.session_state["om_term_type"] = "🌐 IRI"
     st.session_state["key_om_label"] = ""
     st.session_state["key_om_datatype"] = "Select datatype"
+    st.session_state["key_add_om_graph_map_option"] = "Default graph"
 
 
 # TAB4
@@ -625,7 +638,6 @@ with tab1:
     for s, p, o in st.session_state["g_mapping"].triples((None, RML.logicalSource, None)):
         if isinstance(o, URIRef) and split_uri(o)[1] not in labelled_ls_list:
             labelled_ls_list.append(split_uri(o)[1])
-
 
     if valid_tm_label:   #after a valid label has been given
         if tm_label in tm_dict:   #if label is already in use
@@ -1850,6 +1862,8 @@ with tab3:
                 if manual_p_ns_prefix != "Select a namespace" and manual_p_label:
                     NS = Namespace(mapping_ns_dict[manual_p_ns_prefix])
                     selected_p_iri = NS[manual_p_label]
+                elif manual_p_label and utils.is_valid_iri(manual_p_label, delimiter_ending=False):
+                    selected_p_iri = URIRef(manual_p_label)
 
             #_______________________________________________
             # OBJECT MAP - TEMPLATE-VALUED
@@ -2114,9 +2128,16 @@ with tab3:
                 inner_html_error += "<small>· You must select a <b>predicate</b>.</small><br>"
 
             elif selected_p_label == "🚫 Predicate outside ontology":
-                if (not manual_p_label or manual_p_ns_prefix == "Select a namespace"):
+                if not manual_p_label:
                     pom_complete_flag = False
-                    inner_html_error += "<small>· The <b>predicate</b> (and/or its namespace) has not been given.</small><br>"
+                    inner_html_error += "<small>· The <b>predicate</b> has not been given.</small><br>"
+
+                elif manual_p_ns_prefix == "Select a namespace" and not utils.is_valid_iri(manual_p_label, delimiter_ending=False):
+                    pom_complete_flag = False
+                    inner_html_error += """<small>· If <b>no namespace</b> is selected,
+                        the predicate must be a <b>valid IRI</b>.</small><br>"""
+
+
 
                 inner_html_warning += f"""<small>· Manual predicate input is <b>discouraged</b>.
                     Use an ontology for safer results.</small><br>"""
@@ -2143,6 +2164,7 @@ with tab3:
 
             # OBJECT MAP - CONSTANT____________________________________________
             if om_generation_rule == "Constant 🔒":
+
                 if not om_constant:
                     pom_complete_flag = False
                     inner_html_error += "<small>· You must enter a <b>constant</b>.</small><br>"
