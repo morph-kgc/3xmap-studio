@@ -1771,7 +1771,7 @@ with tab3:
 
         with col1a:
             if st.session_state["last_added_tm_list"]:
-                list_to_choose = list(reversed(tm_dict))
+                list_to_choose = sorted(tm_dict)
                 list_to_choose.insert(0, "Select a TriplesMap")
                 tm_label_for_pom = st.selectbox("🖱️ Select a TriplesMap:*", list_to_choose, key="key_tm_label_for_pom",
                     index=list_to_choose.index(st.session_state["last_added_tm_list"][0]))
@@ -2315,7 +2315,10 @@ with tab3:
                     <div style="font-size:13px; font-weight:500; margin-top:10px; margin-bottom:6px; border-top:0.5px solid #ccc; padding-bottom:4px;">
                         <b>🔍 Preview</b><br>
                     </div>""", unsafe_allow_html=True)
-                    utils.preview_rule(sm_rule, selected_p_for_display, om_iri_for_display)  # display rule
+                    if om_generation_rule == "Reference 📊":
+                        utils.preview_rule(sm_rule, selected_p_for_display, om_iri_for_display, is_reference=True)  # display rule
+                    else:
+                        utils.preview_rule(sm_rule, selected_p_for_display, om_iri_for_display)  # display rule
 
     with col2b:
         st.markdown("""<div class='info-message-gray'>

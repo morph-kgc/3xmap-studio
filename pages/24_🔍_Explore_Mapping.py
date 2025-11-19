@@ -281,6 +281,11 @@ with tab2:
                 predicate = row.predicate if hasattr(row, "predicate") and row.predicate else ""
                 object_ = row.object_value if hasattr(row, "object_value") and row.object_value else ""
 
+                if (None, RML.reference, Literal(subject)) in st.session_state["g_mapping"]:  # reference
+                    subject = "{" + f"""{subject}"""  + "}"
+                if (None, RML.reference, Literal(object_)) in st.session_state["g_mapping"]:  # reference
+                    object_ = "{" + f"""{object_}"""  + "}"
+
                 # Optional: apply label formatting
                 tm_label = utils.get_node_label(tm)
 

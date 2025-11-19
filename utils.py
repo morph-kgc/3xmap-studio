@@ -1084,7 +1084,7 @@ def change_g_mapping_base_ns(prefix, namespace):
 # Function to get the default base iri for the base components
 def get_default_base_ns():
 
-    return ["map3x", URIRef("http://3xmap.org/mapping/")]
+    return ["map3x", Namespace("http://3xmap.org/mapping/")]
 #_____________________________________________________
 
 #_____________________________________________________
@@ -2749,7 +2749,7 @@ def is_valid_url_mapping(mapping_url, show_info):
 
 #________________________________________________
 # Function to display a rule
-def preview_rule(s_for_display, p_for_display, o_for_display):
+def preview_rule(s_for_display, p_for_display, o_for_display, is_reference=False):
 
     inner_html = ""
     max_length = 40
@@ -2758,9 +2758,15 @@ def preview_rule(s_for_display, p_for_display, o_for_display):
     p_for_display = "" if not p_for_display else p_for_display
     o_for_display = "" if not o_for_display else o_for_display
 
-    formatted_s = f"""{s_for_display}""" if len(s_for_display) < max_length else "<small>" + f"""{s_for_display}""" + "</small>"
+    if (None, RML.reference, Literal(s_for_display)) in st.session_state["g_mapping"]:  # reference
+        formatted_s = "{" + f"""{s_for_display}"""  + "}" if len(s_for_display) < max_length else "<small>{" + f"""{s_for_display}""" + "}</small>"
+    else:
+        formatted_s = f"""{s_for_display}""" if len(s_for_display) < max_length else "<small>" + f"""{s_for_display}""" + "</small>"
     formatted_p = f"""{p_for_display}""" if len(p_for_display) < max_length else "<small>" + f"""{p_for_display}""" + "</small>"
-    formatted_o = f"""{o_for_display}""" if len(o_for_display) < max_length else "<small>" + f"""{o_for_display}""" + "</small>"
+    if is_reference:
+        formatted_o = "{" + f"""{o_for_display}""" + "}" if len(o_for_display) < max_length else "<small>{" + f"""{o_for_display}""" + "}</small>"
+    else:
+        formatted_o = f"""{o_for_display}""" if len(o_for_display) < max_length else "<small>" + f"""{o_for_display}""" + "</small>"
 
     st.markdown(f"""<div class="blue-preview-message" style="margin-top:0px; padding-top:4px;">
         <small><b style="color:#F63366; font-size:10px; margin-top:0px;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>
@@ -2793,9 +2799,15 @@ def preview_rule_list(s_for_display, p_for_display, o_for_display):
     p_for_display = "" if not p_for_display else p_for_display
     o_for_display = "" if not o_for_display else o_for_display
 
-    formatted_s = f"""{s_for_display}""" if len(s_for_display) < max_length else "<small>" + f"""{s_for_display}""" + "</small>"
+    if (None, RML.reference, Literal(s_for_display)) in st.session_state["g_mapping"]:  # reference
+        formatted_s = "{" + f"""{s_for_display}"""  + "}" if len(s_for_display) < max_length else "<small>{" + f"""{s_for_display}""" + "}</small>"
+    else:
+        formatted_s = f"""{s_for_display}""" if len(s_for_display) < max_length else "<small>" + f"""{s_for_display}""" + "</small>"
     formatted_p = f"""{p_for_display}""" if len(p_for_display) < max_length else "<small>" + f"""{p_for_display}""" + "</small>"
-    formatted_o = f"""{o_for_display}""" if len(o_for_display) < max_length else "<small>" + f"""{o_for_display}""" + "</small>"
+    if (None, RML.reference, Literal(o_for_display)) in st.session_state["g_mapping"]:  # reference
+        formatted_o = "{" + f"""{o_for_display}""" + "}" if len(o_for_display) < max_length else "<small>{" + f"""{o_for_display}""" + "}</small>"
+    else:
+        formatted_o = f"""{o_for_display}""" if len(o_for_display) < max_length else "<small>" + f"""{o_for_display}""" + "</small>"
 
     inner_html += f"""<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:0px;">
             <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
