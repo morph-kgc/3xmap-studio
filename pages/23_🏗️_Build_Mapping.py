@@ -368,14 +368,16 @@ def save_pom_constant():
     st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RDF.type, RML.PredicateObjectMap))
     # add triples om________________________
     st.session_state["g_mapping"].add((om_iri, RDF.type, RML.ObjectMap))
-    if om_term_type == "🌐 IRI":
+    if om_constant_ns_prefix != "Select a namespace":
         om_constant_ns = mapping_ns_dict[om_constant_ns_prefix]
         NS = Namespace(om_constant_ns)
         om_constant_iri = NS[om_constant]
-        st.session_state["g_mapping"].add((om_iri, RML.constant, om_constant_iri))
+        st.session_state["g_mapping"].add((om_iri, RML.constant, URIRef(om_constant_iri)))
+    else:
+        st.session_state["g_mapping"].add((om_iri, RML.constant, Literal(om_constant)))
+    if om_term_type == "🌐 IRI":
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.IRI))
     elif om_term_type == "📘 Literal":
-        st.session_state["g_mapping"].add((om_iri, RML.constant, Literal(om_constant)))
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.Literal))
         if om_datatype != "Select datatype" and om_datatype != "Natural language tag":
             datatype_dict = utils.get_datatypes_dict()
@@ -661,7 +663,7 @@ with tab1:
                 with col1a:
                     st.markdown(f"""<div class="error-message">
                         ❌ No data sources are available. <small>You can add them in the
-                        <b>Manage Logical Sources</b> page.</small>
+                        <b>📊 SQL Databases</b> and/or <b>🛢️ Tabular Data</b> pages.</small>
                     </div>""", unsafe_allow_html=True)
                     st.write("")
 
@@ -725,7 +727,7 @@ with tab1:
                             conn = ""
                             st.markdown(f"""<div class="error-message">
                                 ❌ The connection <b>{db_connection_for_ls}</b> is not working. <small>Please go to the <b>
-                                Manage Logical Sources</b> page to manage the connections to Databases.</small>
+                                📊 SQL Databases</b> page to manage the connections to Databases.</small>
                             </div>""", unsafe_allow_html=True)
                             connection_ok_flag = False
 
@@ -1541,12 +1543,11 @@ with tab2:
                         sm_complete_flag = False
                         inner_html_error += "<small>· No <b>constant</b> entered.</small><br>"
 
-                    if not (sm_constant_ns_prefix != "Select a namespace" and sm_constant):
+                    if sm_constant and sm_constant_ns_prefix == "Select a namespace":
                         if not utils.is_valid_iri(sm_constant, delimiter_ending=False):
                             sm_complete_flag = False
                             inner_html_error += """<small>· If <b>no namespace</b> is selected,
                                 the constant must be a <b>valid IRI</b>.</small><br>"""
-
 
                 if sm_generation_rule == "Reference 📊":
                     if column_list:
@@ -2003,6 +2004,11 @@ with tab3:
                     <div style="font-size:13px; font-weight:500; margin-top:10px; margin-bottom:6px; border-top:0.5px solid #ccc; padding-bottom:4px;">
                         <b>🔒 Constant</b><br>
                     </div>""", unsafe_allow_html=True)
+                    mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
+                    list_to_choose = sorted(mapping_ns_dict.keys())
+                    list_to_choose.insert(0, "Select a namespace")
+                    om_constant_ns_prefix = st.selectbox("🖱️ Namespace for the constant:", list_to_choose,
+                        key="key_om_constant_ns")
                     om_constant = st.text_input("⌨️ Enter Object Map constant:*", key="key_om_constant")
 
 
@@ -2137,8 +2143,6 @@ with tab3:
                     inner_html_error += """<small>· If <b>no namespace</b> is selected,
                         the predicate must be a <b>valid IRI</b>.</small><br>"""
 
-
-
                 inner_html_warning += f"""<small>· Manual predicate input is <b>discouraged</b>.
                     Use an ontology for safer results.</small><br>"""
 
@@ -2173,11 +2177,16 @@ with tab3:
                     if om_datatype == "Natural language tag" and om_language_tag == "Select language tag":
                         pom_complete_flag = False
                         inner_html_error += "<small>· You must select a <b>🌐 language tag</b>.</small><br>"
+                    if om_constant_ns_prefix != "Select a namespace":
+                        inner_html_warning += """<small>· Term type is <b>Literal</b>, but you selected a <b>namespace</b>
+                            for the constant.</small><br>"""
 
                 elif om_term_type == "🌐 IRI":
                     if om_constant and om_constant_ns_prefix == "Select a namespace":
-                        inner_html_warning += """<small>· Term type is <b>🌐 IRI</b>.
-                            We recommend <b>adding a namespace</b> to the constant.</small><br>"""
+                        if not utils.is_valid_iri(om_constant, delimiter_ending=False):
+                            pom_complete_flag = False
+                            inner_html_error += """<small>· Term type is <b>🌐 IRI</b>.
+                                If <n>no namespace</b> is selected, the constant must be a <b>valid IRI</b>.</small><br>"""
 
 
             # OBJECT MAP - REFERENCE___________________________
@@ -2271,11 +2280,11 @@ with tab3:
                     om_iri_for_display = Literal(om_template)
 
                 elif om_generation_rule == "Constant 🔒":
-                    if om_term_type == "🌐 IRI":
+                    if om_constant_ns_prefix != "Select a namespace":
                         om_constant_ns = mapping_ns_dict[om_constant_ns_prefix]
                         NS = Namespace(om_constant_ns)
                         om_iri_for_display = NS[om_constant]
-                    elif om_term_type == "📘 Literal":
+                    else:
                         om_iri_for_display = Literal(om_constant)
 
                 elif om_generation_rule == "Reference 📊":
