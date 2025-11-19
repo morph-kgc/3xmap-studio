@@ -281,10 +281,28 @@ with tab2:
                 predicate = row.predicate if hasattr(row, "predicate") and row.predicate else ""
                 object_ = row.object_value if hasattr(row, "object_value") and row.object_value else ""
 
-                if (None, RML.reference, Literal(subject)) in st.session_state["g_mapping"]:  # reference
+                # Add {} to references
+                if (None, RML.reference, Literal(subject)) in st.session_state["g_mapping"]:
                     subject = "{" + f"""{subject}"""  + "}"
-                if (None, RML.reference, Literal(object_)) in st.session_state["g_mapping"]:  # reference
+                if (None, RML.reference, Literal(object_)) in st.session_state["g_mapping"]:
                     object_ = "{" + f"""{object_}"""  + "}"
+
+                # Add datatype/language tag to object
+                datatype = ""
+                language_tag = ""
+                for s, p, o in st.session_state["g_mapping"].triples((om, RML.datatype, None)):
+                    datatype = o
+                    break
+                for s, p, o in st.session_state["g_mapping"].triples((om, RML.language, None)):
+                    language_tag = o
+                    break
+                # if datatype:
+                #     object_w_datatype = object_ + "^^" + datatype
+                #     for k, v in utils.get_datatypes_dict().items():
+                #         if str(datatype) == str(v):
+                #             object_w_datatype = object_  + "^^" + k
+                #             break
+                #     object_ = object_w_datatype
 
                 # Optional: apply label formatting
                 tm_label = utils.get_node_label(tm)
@@ -295,6 +313,8 @@ with tab2:
                         "Subject": utils.format_iri_to_prefix_label(subject),
                         "Predicate": utils.format_iri_to_prefix_label(predicate),
                         "Object": utils.format_iri_to_prefix_label(object_),
+                        "Datatype": utils.format_iri_to_prefix_label(datatype),
+                        "Language tag": language_tag,
                         "TriplesMap": utils.format_iri_to_prefix_label(tm),
                         "Subject Map": utils.format_iri_to_prefix_label(sm),
                         "Predicate-Object Map": utils.format_iri_to_prefix_label(pom),

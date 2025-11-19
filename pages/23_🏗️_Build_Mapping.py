@@ -2315,10 +2315,21 @@ with tab3:
                     <div style="font-size:13px; font-weight:500; margin-top:10px; margin-bottom:6px; border-top:0.5px solid #ccc; padding-bottom:4px;">
                         <b>🔍 Preview</b><br>
                     </div>""", unsafe_allow_html=True)
-                    if om_generation_rule == "Reference 📊":
-                        utils.preview_rule(sm_rule, selected_p_for_display, om_iri_for_display, is_reference=True)  # display rule
-                    else:
-                        utils.preview_rule(sm_rule, selected_p_for_display, om_iri_for_display)  # display rule
+
+                datatype_iri = False
+                language_tag = False
+                if om_datatype != "Select datatype" and om_datatype != "Natural language tag":
+                    datatype_dict = utils.get_datatypes_dict()
+                    datatype_iri = datatype_dict[om_datatype]
+                elif om_datatype == "Natural language tag":
+                    language_tag = Literal(om_language_tag)
+
+                existing_datatype = om_datatype if om_generation_rule == "Reference 📊" else False
+                is_reference = True if om_generation_rule == "Reference 📊" else False
+                with col1a:
+                    utils.preview_rule(sm_rule, selected_p_for_display, om_iri_for_display, is_reference=is_reference,
+                        datatype=datatype_iri, language_tag=language_tag)  # display rule
+
 
     with col2b:
         st.markdown("""<div class='info-message-gray'>

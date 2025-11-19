@@ -2749,7 +2749,7 @@ def is_valid_url_mapping(mapping_url, show_info):
 
 #________________________________________________
 # Function to display a rule
-def preview_rule(s_for_display, p_for_display, o_for_display, is_reference=False):
+def preview_rule(s_for_display, p_for_display, o_for_display, is_reference=False, datatype=None, language_tag=None):
 
     inner_html = ""
     max_length = 40
@@ -2758,15 +2758,19 @@ def preview_rule(s_for_display, p_for_display, o_for_display, is_reference=False
     p_for_display = "" if not p_for_display else p_for_display
     o_for_display = "" if not o_for_display else o_for_display
 
-    if (None, RML.reference, Literal(s_for_display)) in st.session_state["g_mapping"]:  # reference
-        formatted_s = "{" + f"""{s_for_display}"""  + "}" if len(s_for_display) < max_length else "<small>{" + f"""{s_for_display}""" + "}</small>"
+    if (None, RML.reference, Literal(s_for_display)) in st.session_state["g_mapping"]:  # if reference
+        formatted_s = f"{{{s_for_display}}}"
     else:
-        formatted_s = f"""{s_for_display}""" if len(s_for_display) < max_length else "<small>" + f"""{s_for_display}""" + "</small>"
-    formatted_p = f"""{p_for_display}""" if len(p_for_display) < max_length else "<small>" + f"""{p_for_display}""" + "</small>"
-    if is_reference:
-        formatted_o = "{" + f"""{o_for_display}""" + "}" if len(o_for_display) < max_length else "<small>{" + f"""{o_for_display}""" + "}</small>"
-    else:
-        formatted_o = f"""{o_for_display}""" if len(o_for_display) < max_length else "<small>" + f"""{o_for_display}""" + "</small>"
+        formatted_s = s_for_display
+    formatted_p = p_for_display
+    formatted_o = f"{{{o_for_display}}}" if is_reference else o_for_display
+
+    formatted_o = f"""{formatted_o}^^{format_iri_to_prefix_label(datatype)}""" if datatype else formatted_o
+    formatted_o = f"""{formatted_o}@{language_tag}""" if language_tag else formatted_o
+
+    formatted_s = f"""<small>{formatted_s}</small>""" if len(formatted_s) > max_length else formatted_s
+    formatted_p = f"""<small>{formatted_p}</small>""" if len(formatted_p) > max_length else formatted_p
+    formatted_o = f"""<small>{formatted_o}</small>""" if len(formatted_o) > max_length else formatted_o
 
     st.markdown(f"""<div class="blue-preview-message" style="margin-top:0px; padding-top:4px;">
         <small><b style="color:#F63366; font-size:10px; margin-top:0px;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>
@@ -2780,7 +2784,7 @@ def preview_rule(s_for_display, p_for_display, o_for_display, is_reference=False
             </div>
             <div style="flex:0; font-size:18px;">🡆</div>
             <div style="flex:1; min-width:140px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b><small>{formatted_o}</small></b></div>
+                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{formatted_o}</b></div>
             </div>
         </div>
     </div>""", unsafe_allow_html=True)
@@ -2799,27 +2803,62 @@ def preview_rule_list(s_for_display, p_for_display, o_for_display):
     p_for_display = "" if not p_for_display else p_for_display
     o_for_display = "" if not o_for_display else o_for_display
 
+    # Remove {} if reference
+    if o_for_display.startswith("{") and o_for_display.endswith("}"):
+        o_for_display = o_for_display[1:-1]
+
+    datatype = ""
+    for object_type in [RML.template, RML.constant, RML.reference]:
+        for s, p, o in st.session_state["g_mapping"].triples((None, object_type, None)):
+            if isinstance(o, Literal) and str(o) == o_for_display:
+                for _, _, o2 in st.session_state["g_mapping"].triples((s, RML.datatype, None)):
+                    datatype = o2
+                    break
+                if datatype:
+                    break
+        if datatype:
+            break
+
+    language_tag = ""
+    for object_type in [RML.template, RML.constant, RML.reference]:
+        for s, p, o in st.session_state["g_mapping"].triples((None, object_type, None)):
+            if isinstance(o, Literal) and str(o) == o_for_display:
+                for _, _, o2 in st.session_state["g_mapping"].triples((s, RML.language, None)):
+                    language_tag = o2
+                    break
+                if language_tag:
+                    break
+        if language_tag:
+            break
+
     if (None, RML.reference, Literal(s_for_display)) in st.session_state["g_mapping"]:  # reference
-        formatted_s = "{" + f"""{s_for_display}"""  + "}" if len(s_for_display) < max_length else "<small>{" + f"""{s_for_display}""" + "}</small>"
+        formatted_s = f"""{{{s_for_display}}}"""
     else:
-        formatted_s = f"""{s_for_display}""" if len(s_for_display) < max_length else "<small>" + f"""{s_for_display}""" + "</small>"
-    formatted_p = f"""{p_for_display}""" if len(p_for_display) < max_length else "<small>" + f"""{p_for_display}""" + "</small>"
+        formatted_s = s_for_display
+    formatted_p = p_for_display
     if (None, RML.reference, Literal(o_for_display)) in st.session_state["g_mapping"]:  # reference
-        formatted_o = "{" + f"""{o_for_display}""" + "}" if len(o_for_display) < max_length else "<small>{" + f"""{o_for_display}""" + "}</small>"
+        formatted_o = f"""{{{o_for_display}}}"""
     else:
-        formatted_o = f"""{o_for_display}""" if len(o_for_display) < max_length else "<small>" + f"""{o_for_display}""" + "</small>"
+        formatted_o = o_for_display
+
+    formatted_o = formatted_o + f"^^{utils.format_iri_to_prefix_label(datatype)}" if datatype else formatted_o
+    formatted_o = formatted_o + f"@{language_tag}" if language_tag else formatted_o
+
+    formatted_s = f"""<small>{formatted_s}</small>""" if len(formatted_s) > max_length else formatted_s
+    formatted_p = f"""<small>{formatted_p}</small>""" if len(formatted_p) > max_length else formatted_p
+    formatted_o = f"""<small>{formatted_o}</small>""" if len(formatted_o) > max_length else formatted_o
 
     inner_html += f"""<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:0px;">
             <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{formatted_s}</b></div>
+                <div style="margin-top:1px; font-size:13px; line-height:1.2;"><b>{formatted_s}</b></div>
             </div>
             <div style="flex:0; font-size:18px;">🡆</div>
             <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{formatted_p}</b></div>
+                <div style="margin-top:1px; font-size:13px; line-height:1.2;"><b>{formatted_p}</b></div>
             </div>
             <div style="flex:0; font-size:18px;">🡆</div>
             <div style="flex:1; min-width:140px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b><small>{formatted_o}</small></b></div>
+                <div style="margin-top:1px; font-size:13px; line-height:1.2;"><b><small>{formatted_o}</small></b></div>
             </div>
         </div><br>"""
 
