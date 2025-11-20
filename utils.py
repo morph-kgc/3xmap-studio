@@ -2842,7 +2842,7 @@ def preview_rule_list(s_for_display, p_for_display, o_for_display):
         formatted_o = o_for_display
 
     formatted_o = formatted_o + f"^^{utils.format_iri_to_prefix_label(datatype)}" if datatype else formatted_o
-    formatted_o = formatted_o + f"@{language_tag}" if language_tag else formatted_o
+    formatted_o = f"{formatted_o}@{language_tag}" if language_tag else formatted_o
 
     formatted_s = f"""<small>{formatted_s}</small>""" if len(formatted_s) > max_length else formatted_s
     formatted_p = f"""<small>{formatted_p}</small>""" if len(formatted_p) > max_length else formatted_p
@@ -3338,7 +3338,7 @@ def get_ontology_properties_dict(g_ont):
                 if s not in p_exclusion_list:
                     p_set.add(s)
 
-    ontology_p_dict = {split_uri(p)[1]: p for p in p_set}
+    ontology_p_dict = {format_iri_to_prefix_label(p):p for p in p_set}
 
     return ontology_p_dict
 #______________________________________________

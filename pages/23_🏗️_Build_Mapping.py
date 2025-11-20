@@ -609,10 +609,10 @@ with tab1:
                 st.dataframe(tm_df_short, hide_index=True)
 
 
-    #PURPLE HEADING - ADD NEW TRIPLESMAP
+    #PURPLE HEADING - ADD TRIPLESMAP
     with col1:
         st.markdown("""<div class="purple-heading">
-                🧱 Add New TriplesMap
+                🧱 Add TriplesMap
             </div>""", unsafe_allow_html=True)
         st.write("")
 
@@ -914,10 +914,10 @@ with tab2:
 
 #____________________________________
 
-    #PURPLE HEADING - ADD NEW SUBJECT MAP
+    #PURPLE HEADING - ADD SUBJECT MAP
     with col1:
         st.markdown("""<div class="purple-heading">
-                🧱 Add New Subject Map
+                🧱 Add Subject Map
             </div>""", unsafe_allow_html=True)
 
     if st.session_state["sm_saved_ok_flag"]:
@@ -1261,7 +1261,7 @@ with tab2:
                     class_triples |= set(st.session_state["g_ontology"].triples((None, RDF.type, RDFS.Class)))    # collect rdfs:Class definitions
                     for s, p, o in class_triples:   #we add to dictionary removing the BNodes
                         if not isinstance(s, BNode):
-                            ontology_classes_dict[split_uri(s)[1]] = s
+                            ontology_classes_dict[utils.format_iri_to_prefix_label(s)] = s
 
 
                     # ONLY SHOW OPTIONS IF THE ONTOLOGY HAS THEM
@@ -1301,13 +1301,13 @@ with tab2:
                         class_triples |= set(ontology_filter_for_subject_class.triples((None, RDF.type, RDFS.Class)))    # collect rdfs:Class definitions
                         for s, p, o in class_triples:   #we add to dictionary removing the BNodes
                             if not isinstance(s, BNode):
-                                ontology_classes_dict[split_uri(s)[1]] = s
+                                ontology_classes_dict[utils.format_iri_to_prefix_label(s)] = s
 
                         # dictionary for superclasses
                         superclass_dict = {}
                         for s, p, o in list(set(ontology_filter_for_subject_class.triples((None, RDFS.subClassOf, None)))):
                             if not isinstance(o, BNode) and o not in superclass_dict.values():
-                                superclass_dict[o.split("/")[-1].split("#")[-1]] = o
+                                superclass_dict[utils.format_iri_to_prefix_label(o)] = o
 
                         # Class selection
                         if superclass_dict:   # there exists at least one superclass (show superclass filter)
@@ -1320,7 +1320,7 @@ with tab2:
                                 classes_in_superclass_dict[superclass] = superclass_dict[superclass]
                                 superclass = superclass_dict[superclass] #we get the superclass iri
                                 for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, superclass)))):
-                                    classes_in_superclass_dict[split_uri(s)[1]] = s
+                                    classes_in_superclass_dict[utils.format_iri_to_prefix_label(s)] = s
                                 class_list = sorted(classes_in_superclass_dict.keys())
                                 class_list.insert(0, "Select class")
                                 subject_class = st.selectbox("🖱️ Select class:", class_list,
@@ -1339,7 +1339,7 @@ with tab2:
                                 key="key_subject_class")   #class label
 
                         if subject_class != "Select class":
-                            subject_class_iri = ontology_classes_dict[subject_class] #we get the superclass iri
+                            subject_class_iri = ontology_classes_dict[subject_class] #we get the class iri
                             st.session_state["multiple_subject_class_list"] = [subject_class_iri]
                         else:
                             subject_class_iri = ""
@@ -1407,13 +1407,13 @@ with tab2:
                             class_triples |= set(ontology_filter_for_subject_class.triples((None, RDF.type, RDFS.Class)))    # collect rdfs:Class definitions
                             for s, p, o in class_triples:   #we add to dictionary removing the BNodes
                                 if not isinstance(s, BNode):
-                                    ontology_classes_dict[split_uri(s)[1]] = s
+                                    ontology_classes_dict[utils.format_iri_to_prefix_label(s)] = s
 
                             # dictionary for superclasses
                             superclass_dict = {}
                             for s, p, o in list(set(ontology_filter_for_subject_class.triples((None, RDFS.subClassOf, None)))):
                                 if not isinstance(o, BNode) and o not in superclass_dict.values():
-                                    superclass_dict[o.split("/")[-1].split("#")[-1]] = o
+                                    superclass_dict[utils.format_iri_to_prefix_label(o)] = o
 
                             # Class selection
                             if superclass_dict:   # there exists at least one superclass (show superclass filter)
@@ -1426,7 +1426,7 @@ with tab2:
                                     classes_in_superclass_dict[superclass] = superclass_dict[superclass]
                                     superclass = superclass_dict[superclass] #we get the superclass iri
                                     for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, superclass)))):
-                                        classes_in_superclass_dict[split_uri(s)[1]] = s
+                                        classes_in_superclass_dict[utils.format_iri_to_prefix_label(s)] = s
                                     list_to_choose = sorted(classes_in_superclass_dict.keys())
                                     list_to_choose.insert(0, "Select class")
                                     subject_class = st.selectbox("🖱️ Select class:", list_to_choose,
@@ -1726,10 +1726,10 @@ with tab3:
         col2a, col2b = st.columns([0.5, 2])   #HEREHERE
 
 
-    #PURPLE HEADING - ADD NEW TRIPLESMAP
+    #PURPLE HEADING - ADD TRIPLESMAP
     with col1:
         st.markdown("""<div class="purple-heading">
-                🧱 Add New Predicate-Object Map
+                🧱 Add Predicate-Object Map
             </div>""", unsafe_allow_html=True)
         st.write("")
 
