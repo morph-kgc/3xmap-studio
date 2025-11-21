@@ -250,12 +250,15 @@ def delete_sessions():
     # reset fields_______________________________
     st.session_state["key_save_session_options"] = "💾 Save session"
 
-# TAB5
+# TAB4
 def activate_dark_mode():
     st.session_state["dark_mode_flag"] = True
 
 def deactivate_dark_mode():
     st.session_state["dark_mode_flag"] = False
+
+def add_datatype():
+    pass
 
 #_______________________________________________________________________________
 # PANELS OF THE PAGE (tabs)

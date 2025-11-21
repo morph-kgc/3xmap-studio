@@ -2372,15 +2372,9 @@ def get_sm_dict():
 
 #______________________________________________
 # Funtion to get list of datatypes
-def get_datatypes_dict():
+def get_default_datatypes_dict():
 
-    # datatype_list = ["Select datatype", "Natural language tag", "xsd:string",
-    #     "xsd:integer", "xsd:decimal", "xsd:float", "xsd:double",
-    #     "xsd:boolean", "xsd:date", "xsd:dateTime", "xsd:time",
-    #     "xsd:anyURI", "rdf:XMLLiteral", "rdf:HTML", "rdf:JSON"]
-
-    datatype_dict = {"Select datatype" : "", "Natural language tag": "",
-        "xsd:string": XSD.string, "xsd:integer": XSD.integer,
+    datatype_dict = {"xsd:string": XSD.string, "xsd:integer": XSD.integer,
         "xsd:decimal": XSD.decimal, "xsd:float": XSD.float,
         "xsd:double": XSD. double, "xsd:boolean": XSD.boolean,
         "xsd:date": XSD.date, "xsd:dateTime": XSD.dateTime,
@@ -2388,6 +2382,19 @@ def get_datatypes_dict():
         "rdf:XMLLiteral": XSD.XMLLiteral, "rdf:HTML": RDF.HTML,
         "rdf:JSON": RDF.JSON}
 
+    return datatype_dict
+#______________________________________________
+
+#______________________________________________
+# Funtion to get list of datatypes
+def get_datatype_dict():
+
+    datatype_dict = get_default_datatypes_dict()
+    mapping_defined_datatype_list = list(st.session_state["g_mapping"].objects(None, RML.datatype))
+
+    for dt in mapping_defined_datatype_list:
+        if not format_iri_to_prefix_label(dt) in datatype_dict:
+            datatype_dict[utils.format_iri_to_prefix_label(dt)] = dt
 
     return datatype_dict
 #______________________________________________

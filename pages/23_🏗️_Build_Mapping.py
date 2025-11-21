@@ -32,7 +32,6 @@ def save_tm_w_existing_ls():
     # add triples___________________
     NS = st.session_state["base_ns"][1]
     tm_iri = NS[f"{st.session_state['tm_label']}"]  # change so that is can be defined by user
-    NS = st.session_state["base_ns"][1]
     ls_iri =  NS[f"{existing_ls}"]   # idem ns
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    #bind to logical source
     st.session_state["g_mapping"].add((tm_iri, RDF.type, RML.TriplesMap))
@@ -86,7 +85,6 @@ def save_tm_w_query():
     NS = st.session_state["base_ns"][1]
     tm_iri = NS[f"{st.session_state['tm_label']}"]
     if label_ls_option == "Yes (add label)":
-        NS = st.session_state["base_ns"][1]
         ls_iri = NS[f"{ls_label}"]
     else:
         ls_iri = BNode()
@@ -117,7 +115,6 @@ def save_tm_w_table_name():
     NS = st.session_state["base_ns"][1]
     tm_iri = NS[f"{st.session_state['tm_label']}"]
     if label_ls_option == "Yes (add label)":
-        NS = st.session_state["base_ns"][1]
         ls_iri = NS[f"{ls_label}"]
     else:
         ls_iri = BNode()
@@ -332,10 +329,12 @@ def save_pom_template():
     st.session_state["g_mapping"].add((om_iri, RML.template, Literal(om_template)))
     if om_term_type == "📘 Literal":
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.Literal))
-        if om_datatype != "Select datatype" and om_datatype != "Natural language tag":
-            datatype_dict = utils.get_datatypes_dict()
+        if om_datatype != "No datatype" and om_datatype != "🈳 Natural language tag" and om_datatype != "✚ New datatype":
+            datatype_dict = utils.get_datatype_dict()
             st.session_state["g_mapping"].add((om_iri, RML.datatype, datatype_dict[om_datatype]))
-        elif om_datatype == "Natural language tag":
+        elif om_datatype == "✚ New datatype":
+            st.session_state["g_mapping"].add((om_iri, RML.datatype, om_datatype_iri))
+        elif om_datatype == "🈳 Natural language tag":
             st.session_state["g_mapping"].add((om_iri, RML.language, Literal(om_language_tag)))
     elif om_term_type == "🌐 IRI":
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.IRI))
@@ -379,10 +378,12 @@ def save_pom_constant():
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.IRI))
     elif om_term_type == "📘 Literal":
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.Literal))
-        if om_datatype != "Select datatype" and om_datatype != "Natural language tag":
-            datatype_dict = utils.get_datatypes_dict()
+        if om_datatype != "No datatype" and om_datatype != "🈳 Natural language tag" and om_datatype != "✚ New datatype":
+            datatype_dict = utils.get_datatype_dict()
             st.session_state["g_mapping"].add((om_iri, RML.datatype, datatype_dict[om_datatype]))
-        elif om_datatype == "Natural language tag":
+        elif om_datatype == "✚ New datatype":
+            st.session_state["g_mapping"].add((om_iri, RML.datatype, om_datatype_iri))
+        elif om_datatype == "🈳 Natural language tag":
             st.session_state["g_mapping"].add((om_iri, RML.language, Literal(om_language_tag)))
     if add_om_graph_map_option == "✚ New graph map" or add_om_graph_map_option == "🔄 Existing graph map":
         st.session_state["g_mapping"].add((om_iri, RML.graphMap, om_graph))
@@ -401,7 +402,7 @@ def save_pom_constant():
     st.session_state["key_om_constant"] = ""
     st.session_state["om_term_type"] = "📘 Literal"
     st.session_state["key_om_label"] = ""
-    st.session_state["key_om_datatype"] = "Select datatype"
+    st.session_state["key_om_datatype"] = "No datatype"
     st.session_state["key_add_om_graph_map_option"] = "Default graph"
 
 
@@ -416,10 +417,12 @@ def save_pom_reference():
     st.session_state["g_mapping"].add((om_iri, RML.reference, Literal(om_column_name)))    #HERE change to RML.column in R2RML
     if om_term_type == "📘 Literal":
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.Literal))
-        if om_datatype != "Select datatype" and om_datatype != "Natural language tag":
-            datatype_dict = utils.get_datatypes_dict()
+        if om_datatype != "No datatype" and om_datatype != "🈳 Natural language tag" and om_datatype != "✚ New datatype":
+            datatype_dict = utils.get_datatype_dict()
             st.session_state["g_mapping"].add((om_iri, RML.datatype, datatype_dict[om_datatype]))
-        elif om_datatype == "Natural language tag":
+        elif om_datatype == "✚ New datatype":
+            st.session_state["g_mapping"].add((om_iri, RML.datatype, om_datatype_iri))
+        elif om_datatype == "🈳 Natural language tag":
             st.session_state["g_mapping"].add((om_iri, RML.language, Literal(om_language_tag)))
     elif om_term_type == "🌐 IRI":
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.IRI))
@@ -442,7 +445,7 @@ def save_pom_reference():
     st.session_state["key_om_column_name"] = "Select reference"
     st.session_state["om_term_type"] = "🌐 IRI"
     st.session_state["key_om_label"] = ""
-    st.session_state["key_om_datatype"] = "Select datatype"
+    st.session_state["key_om_datatype"] = "No datatype"
     st.session_state["key_add_om_graph_map_option"] = "Default graph"
 
 
@@ -2098,14 +2101,35 @@ with tab3:
                 om_term_type = st.selectbox("🆔 Select term type:*", list_to_choose,
                     key="om_term_type")
 
+
+            # DATATYPE
             if om_term_type == "📘 Literal":
-                rdf_datatypes = list(utils.get_datatypes_dict().keys())
 
                 with col1b:
-                    om_datatype = st.selectbox("🖱️ Select datatype (optional):", rdf_datatypes,
+                    datatypes_dict = utils.get_datatype_dict()
+                    list_to_choose = sorted(datatypes_dict.keys())
+                    list_to_choose.insert(0, "✚ New datatype")
+                    list_to_choose.insert(0, "🈳 Natural language tag")
+                    list_to_choose.insert(0, "No datatype")
+                    om_datatype = st.selectbox("🖱️ Select datatype (optional):", list_to_choose,
                         key="key_om_datatype")
 
-                if om_datatype == "Natural language tag":
+                if om_datatype == "✚ New datatype": #HEREIGO
+                    with col1b:
+                        mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
+                        list_to_choose = sorted(mapping_ns_dict.keys())
+                        list_to_choose.insert(0,"Select namespace")
+                        datatype_prefix = st.selectbox("🖱️ Namespace (opt):", list_to_choose,  #HEREIGO
+                            key="key_datatype_prefix")
+                        datatype_label = st.text_input("⌨️ Enter datatype:*", key="key_datatype_label")
+
+                    if datatype_prefix == "Select namespace":
+                        om_datatype_iri = URIRef(datatype_label)
+                    else:
+                        NS = Namespace(mapping_ns_dict[datatype_prefix])
+                        om_datatype_iri = NS[datatype_label]
+
+                elif om_datatype == "🈳 Natural language tag":
                     language_tags = utils.get_language_tags_list()
 
                     with col1b:
@@ -2137,12 +2161,9 @@ with tab3:
                 if add_om_graph_map_option == "✚ New graph map":
 
                     mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
-                    if not mapping_ns_dict:
-                        ns_needed_for_pom_flag = True
-                    mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                     list_to_choose = sorted(mapping_ns_dict.keys())
                     list_to_choose.insert(0,"Select namespace")
-                    om_graph_prefix = st.selectbox("🖱️ Namespace(opt):", list_to_choose,
+                    om_graph_prefix = st.selectbox("🖱️ Namespace (opt):", list_to_choose,
                         key="key_om_graph_prefix")
                     om_graph_input = st.text_input("⌨️ Enter graph map:*", key="key_om_graph_input")
 
@@ -2203,9 +2224,9 @@ with tab3:
                             We recommend <b>adding a namespace to the template</b>.<br>"""
 
                 if om_template and om_term_type == "📘 Literal":
-                    if om_datatype == "Natural language tag" and om_language_tag == "Select language tag":
-                        om_complete_flag = False
-                        inner_html_error += "<small>· You must select a <b>🌐 language tag</b>.</small><br>"
+                    if st.session_state["template_om_is_iri_flag"]:
+                        inner_html_warning += """<small>· Term type is <b>Literal</b>, but you added a <b>namespace</b>
+                            to the template.</small><br>"""
 
             # OBJECT MAP - CONSTANT____________________________________________
             if om_generation_rule == "Constant 🔒":
@@ -2215,9 +2236,6 @@ with tab3:
                     inner_html_error += "<small>· You must enter a <b>constant</b>.</small><br>"
 
                 if om_term_type == "📘 Literal":
-                    if om_datatype == "Natural language tag" and om_language_tag == "Select language tag":
-                        pom_complete_flag = False
-                        inner_html_error += "<small>· You must select a <b>🌐 language tag</b>.</small><br>"
                     if om_constant_ns_prefix != "Select a namespace":
                         inner_html_warning += """<small>· Term type is <b>Literal</b>, but you selected a <b>namespace</b>
                             for the constant.</small><br>"""
@@ -2242,15 +2260,29 @@ with tab3:
                         pom_complete_flag = False
                         inner_html_error += "<small>· You must enter a <b>reference</b>.</small><br>"
 
-                if om_term_type == "📘 Literal":
-                    if om_datatype == "Natural language tag" and om_language_tag == "Select language tag":
-                        pom_complete_flag = False
-                        inner_html_error += "<small>· You must select a <b>🌐 language tag</b>.</small><br>"
-
-                elif om_term_type == "🌐 IRI":
+                if om_term_type == "🌐 IRI":
                     inner_html_warning += """<small>· Term type is <b>🌐 IRI</b>.
                                 Make sure that the values in the referenced column
                                 are valid IRIs.</small><br>"""
+
+            # DATATYPE
+            if om_term_type == "📘 Literal":
+
+                if om_datatype == "✚ New datatype":
+                    if not datatype_label:
+                        pom_complete_flag = False
+                        inner_html_error += "<small>· You must enter a <b>datatype</b>.</small><br>"
+                    else:
+                        if datatype_prefix == "Select namespace" and not utils.is_valid_iri(datatype_label, delimiter_ending=False):
+                            pom_complete_flag = False
+                            inner_html_error += """<small>· If no namespace is selected,
+                                the <b>datatype</b> must be a <b>valid IRI</b>.</small><br>"""
+
+                elif om_datatype == "🈳 Natural language tag":
+
+                    if om_language_tag == "Select language tag":
+                        pom_complete_flag = False
+                        inner_html_error += "<small>· You must select a <b>🌐 language tag</b>.</small><br>"
 
 
             # GRAPH MAP
@@ -2374,11 +2406,12 @@ with tab3:
 
                 datatype_iri = False
                 language_tag = False
-                if om_datatype != "Select datatype" and om_datatype != "Natural language tag":
-                    datatype_dict = utils.get_datatypes_dict()
+                if om_datatype != "No datatype" and om_datatype != "🈳 Natural language tag" and om_datatype != "✚ New datatype": #HEREIGO
+                    datatype_dict = utils.get_datatype_dict()
                     datatype_iri = datatype_dict[om_datatype]
-                elif om_datatype == "Natural language tag":
+                elif om_datatype == "🈳 Natural language tag":
                     language_tag = Literal(om_language_tag)
+
 
                 existing_datatype = om_datatype if om_generation_rule == "Reference 📊" else False
                 is_reference = True if om_generation_rule == "Reference 📊" else False

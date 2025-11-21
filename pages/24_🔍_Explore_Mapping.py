@@ -296,13 +296,6 @@ with tab2:
                 for s, p, o in st.session_state["g_mapping"].triples((om, RML.language, None)):
                     language_tag = o
                     break
-                # if datatype:
-                #     object_w_datatype = object_ + "^^" + datatype
-                #     for k, v in utils.get_datatypes_dict().items():
-                #         if str(datatype) == str(v):
-                #             object_w_datatype = object_  + "^^" + k
-                #             break
-                #     object_ = object_w_datatype
 
                 # Optional: apply label formatting
                 tm_label = utils.get_node_label(tm)
@@ -529,7 +522,7 @@ with tab2:
                     "Class": class_list_to_string,
                     "Term Type": utils.format_iri_to_prefix_label(term_type),
                     "TriplesMap": utils.format_iri_to_prefix_label(tm),
-                    "Graph": utils.format_iri_to_prefix_label(graph),
+                    "Graph Map": utils.format_iri_to_prefix_label(graph),
                     "Subject Map": utils.format_iri_to_prefix_label(subject_map)}
                 df_data.append(row_dict)
 
