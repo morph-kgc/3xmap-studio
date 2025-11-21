@@ -210,7 +210,7 @@ def save_sm_template():   #function to save subject map (template option)
     if add_subject_class_option != "No Class":
         for subject_class_iri in st.session_state["multiple_subject_class_list"]:
             st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
-    if add_sm_graph_map_option == "Add Graph Map" and subject_graph:
+    if add_sm_graph_map_option == "Add graph map" or add_sm_graph_map_option == "Existing graph map":
         st.session_state["g_mapping"].add((sm_iri, RML["graph"], subject_graph))
     if sm_term_type == "🌐 IRI":
         st.session_state["g_mapping"].add((sm_iri, RML.termType, RML.IRI))
@@ -245,7 +245,7 @@ def save_sm_constant():   #function to save subject map (constant option)
     if add_subject_class_option != "No Class":
         for subject_class_iri in st.session_state["multiple_subject_class_list"]:
             st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
-    if add_sm_graph_map_option == "Add Graph Map" and subject_graph:
+    if add_sm_graph_map_option == "Add graph map" or add_sm_graph_map_option == "Existing graph map":
         st.session_state["g_mapping"].add((sm_iri, RML["graph"], subject_graph))
     st.session_state["g_mapping"].add((sm_iri, RML.termType, RML.IRI))
     # store information____________________
@@ -270,7 +270,7 @@ def save_sm_reference():   #function to save subject map (reference option)
     if add_subject_class_option != "No Class":
         for subject_class_iri in st.session_state["multiple_subject_class_list"]:
             st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
-    if add_sm_graph_map_option == "Add Graph Map" and subject_graph:
+    if add_sm_graph_map_option == "Add graph map" or add_sm_graph_map_option == "Existing graph map":
         st.session_state["g_mapping"].add((sm_iri, RML["graph"], subject_graph))
     if sm_term_type == "🌐 IRI":
         st.session_state["g_mapping"].add((sm_iri, RML.termType, RML.IRI))
@@ -341,7 +341,7 @@ def save_pom_template():
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.IRI))
     elif om_term_type == "👻 BNode":
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.BlankNode))
-    if add_om_graph_map_option == "Add Graph Map":
+    if add_om_graph_map_option == "Add graph map" or add_om_graph_map_option == "Existing graph map":
         st.session_state["g_mapping"].add((om_iri, RML.graphMap, om_graph))
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
@@ -384,7 +384,7 @@ def save_pom_constant():
             st.session_state["g_mapping"].add((om_iri, RML.datatype, datatype_dict[om_datatype]))
         elif om_datatype == "Natural language tag":
             st.session_state["g_mapping"].add((om_iri, RML.language, Literal(om_language_tag)))
-    if add_om_graph_map_option == "Add Graph Map":
+    if add_om_graph_map_option == "Add graph map" or add_om_graph_map_option == "Existing graph map":
         st.session_state["g_mapping"].add((om_iri, RML.graphMap, om_graph))
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
@@ -425,7 +425,7 @@ def save_pom_reference():
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.IRI))
     elif om_term_type == "👻 BNode":
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.BlankNode))
-    if add_om_graph_map_option == "Add Graph Map":
+    if add_om_graph_map_option == "Add graph map" or add_om_graph_map_option == "Existing graph map":
         st.session_state["g_mapping"].add((om_iri, RML.graphMap, om_graph))
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
@@ -1494,7 +1494,11 @@ with tab2:
 
                 # GRAPH MAP
                 with col1c:
+
+                    graph_map_dict = utils.get_graph_map_dict()
                     list_to_choose = ["Default graph", "Add graph map"]
+                    if graph_map_dict:
+                        list_to_choose.insert(1, "Existing graph map")
                     add_sm_graph_map_option = st.selectbox("️🗺️️ Graph map (optional):",
                         list_to_choose, key="key_add_sm_graph_map_option")
 
@@ -1546,8 +1550,8 @@ with tab2:
                     if sm_constant and sm_constant_ns_prefix == "Select a namespace":
                         if not utils.is_valid_iri(sm_constant, delimiter_ending=False):
                             sm_complete_flag = False
-                            inner_html_error += """<small>· If <b>no namespace</b> is selected,
-                                the constant must be a <b>valid IRI</b>.</small><br>"""
+                            inner_html_error += """<small>· If no namespace is selected,
+                                the <b>constant</b> must be a <b>valid IRI</b>.</small><br>"""
 
                 if sm_generation_rule == "Reference 📊":
                     if column_list:
@@ -1593,8 +1597,11 @@ with tab2:
                         sm_complete_flag = False
                         inner_html_error += """<small>· The <b>graph map</b>
                             has not been given.</small><br>"""
-                    if subject_graph_prefix == "Select namespace":
-                        inner_html_warning += """<small>· The <b>graph map</b> has no namespace.</small><br>"""
+                    else:
+                        if subject_graph_prefix == "Select namespace" and not utils.is_valid_iri(subject_graph_input, delimiter_ending=False):
+                            sm_complete_flag = False
+                            inner_html_error += """<small>· If no namespace is selected,
+                                the <b>graph map</b> must be a <b>valid IRI</b>.</small><br>"""
 
                 if add_subject_class_option == "🚫 Class outside ontology":
                     if st.session_state["g_ontology"] and not ontology_classes_dict: #there is an ontology but it has no classes
@@ -2089,9 +2096,24 @@ with tab3:
 
             # GRAPH MAP
             with col1c:
+
+                graph_map_dict = utils.get_graph_map_dict()
                 list_to_choose = ["Default graph", "Add graph map"]
+                if graph_map_dict:
+                    list_to_choose.insert(1, "Existing graph map")
                 add_om_graph_map_option = st.selectbox("️🗺️️ Graph map (optional):",
                     list_to_choose, key="key_add_om_graph_map_option")
+
+                if add_om_graph_map_option == "Existing graph map":
+
+                    list_to_choose = sorted(graph_map_dict.keys())
+                    list_to_choose.insert(0,"Select graph map")
+                    om_existing_graph_label = st.selectbox("🖱️ Select graph map:*", list_to_choose, key="key_om_existing_graph_label")
+
+                    if om_existing_graph_label != "Select graph map":
+                        om_graph = graph_map_dict[om_existing_graph_label]
+                    else:
+                        om_graph = ""
 
                 if add_om_graph_map_option == "Add graph map":
 
@@ -2140,8 +2162,8 @@ with tab3:
 
                 elif manual_p_ns_prefix == "Select a namespace" and not utils.is_valid_iri(manual_p_label, delimiter_ending=False):
                     pom_complete_flag = False
-                    inner_html_error += """<small>· If <b>no namespace</b> is selected,
-                        the predicate must be a <b>valid IRI</b>.</small><br>"""
+                    inner_html_error += """<small>· If no namespace is selected,
+                        the <b>predicate</b> must be a <b>valid IRI</b>.</small><br>"""
 
                 inner_html_warning += f"""<small>· Manual predicate input is <b>discouraged</b>.
                     Use an ontology for safer results.</small><br>"""
@@ -2186,7 +2208,7 @@ with tab3:
                         if not utils.is_valid_iri(om_constant, delimiter_ending=False):
                             pom_complete_flag = False
                             inner_html_error += """<small>· Term type is <b>🌐 IRI</b>.
-                                If <n>no namespace</b> is selected, the constant must be a <b>valid IRI</b>.</small><br>"""
+                                If no namespace is selected, the <b>constant</b> must be a <b>valid IRI</b>.</small><br>"""
 
 
             # OBJECT MAP - REFERENCE___________________________
@@ -2213,11 +2235,26 @@ with tab3:
 
 
             # GRAPH MAP
-            if add_om_graph_map_option == "Add Graph Map":
-                if om_graph_prefix == "Select a namespace" or not om_graph_input:
+            if add_om_graph_map_option == "Add graph map":
+
+                if not om_graph_input:
                     pom_complete_flag = False
-                    inner_html_error += """<small>· The <b>Graph Map</b> (and/or its namespace)
+                    inner_html_error += """<small>· The <b>graph map</b>
                         has not been given.</small><br>"""
+
+                else:
+                    if om_graph_prefix == "Select namespace" and not utils.is_valid_iri(om_graph_input, delimiter_ending=False):
+                        pom_complete_flag = False
+                        inner_html_error += """<small>· If no namespace is selected,
+                            the <b>graph map</b> must be a <b>valid IRI</b>.</small><br>"""
+
+            if add_om_graph_map_option == "Existing graph map":
+
+                if om_existing_graph_label == "Select graph map":
+                    pom_complete_flag = False
+                    inner_html_error += """<small>· The <b>graph map</b>
+                        has not been selected.</small><br>"""
+
 
             # INFO AND SAVE BUTTON____________________________________
             with col2b:
@@ -2339,14 +2376,14 @@ with tab3:
         pom_dict = utils.get_pom_dict()
         # st.write("HERE", st.session_state["last_added_pom_list"], pom_dict)
 
+
         last_added_pom_df = pd.DataFrame([
             {"Predicate-Object Map": pom_dict[pom_iri][2], "Assigned to": utils.get_node_label(tm_iri),
             "Type": pom_dict[pom_iri][6], "Rule": pom_dict[pom_iri][7]}
             for pom_iri, tm_iri in st.session_state["last_added_pom_list"]
             if pom_iri in pom_dict])
 
-
-        last_last_added_pom_df = last_added_sm_df.head(utils.get_max_length_for_display()[1])
+        last_last_added_pom_df = last_added_pom_df.head(utils.get_max_length_for_display()[1])
 
         max_length = utils.get_max_length_for_display()[0]   # max number of tm shown in dataframe
         if st.session_state["last_added_pom_list"]:
@@ -2361,11 +2398,11 @@ with tab3:
                 st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
                         (longer list below)
                     </div>""", unsafe_allow_html=True)
-            st.dataframe(last_last_added_sm_df, hide_index=True)
+            st.dataframe(last_last_added_pom_df, hide_index=True)
             st.write("")
 
 
-        #Option to show all Subject Maps
+        #Option to show all Predicate-Object Maps
         pom_df = pd.DataFrame([
             {"Predicate-Object Map": v[2], "Assigned to": utils.get_node_label(v[0]),
             "Type": v[6], "Rule": v[7]}

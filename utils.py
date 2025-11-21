@@ -1033,6 +1033,9 @@ def get_number_of_tm(g):
 # Function to get the base namespace of an imported mapping
 def get_g_mapping_base_ns():
 
+    prefix = ""
+    base_ns = ""
+
     for s, p, o in st.session_state["g_mapping"]:
         if isinstance(s, URIRef):
             if p in [RML.logicalSource, RML.subjectMap, RML.predicateObjectMap, RML.objectMap]:
@@ -1045,7 +1048,7 @@ def get_g_mapping_base_ns():
             prefix = pr
             break
 
-    return [prefix, base_ns]
+    return [prefix, Namespace(base_ns)]
 #_________________________________________________________
 
 #_________________________________________________________
@@ -1718,7 +1721,7 @@ def check_ontology_overlap(g1, g2):
 #______________________________________________________
 
 #______________________________________________________
-def get_candidate_ontology_info_messages(g, g_label):
+def get_candidate_ontology_info_messages(g, g_label, g_format):
 
     valid_ontology_flag = True
     error_html = ""
@@ -1755,11 +1758,12 @@ def get_candidate_ontology_info_messages(g, g_label):
 
         if already_used_prefix_list or already_bound_ns_list:
             warning_html += f"""⚠️ <b>Duplicated namespaces</b> <small>handled automatically.</small>"""
+
         # success message
         success_html += f"""✔️ <b>Valid ontology:</b> <b style="color:#F63366;">
-                {st.session_state["g_ontology_from_link_candidate_label"]}</b>
+                {g_label}</b>
                 <small>(parsed successfully with format
-                <b>{st.session_state["g_ontology_from_link_candidate_fmt"]}</b>).</small>"""
+                <b>{g_format}</b>).</small>"""
 
     return [valid_ontology_flag, success_html, warning_html, error_html]
 
@@ -3803,8 +3807,19 @@ def display_db_table(table, conn_label):
     return connection_ok_flag
 #_________________________________________________
 
+#________________________________________________________
+# Funtion to get the dictionary of the Graph Maps
+def get_graph_map_dict():
 
-#HEREIGO
+    graph_map_dict = {}
+
+    graph_map_list = list(st.session_state["g_mapping"].objects(None, RML.graphMap))
+
+    for gm in graph_map_list:
+        graph_map_dict[format_iri_to_prefix_label(gm)] = gm
+
+    return graph_map_dict
+#___________________________________________
 
 
 

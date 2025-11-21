@@ -65,7 +65,8 @@ def import_existing_g_mapping():
     st.session_state["original_g_mapping_ns_dict"] = utils.get_g_ns_dict(st.session_state["candidate_g_mapping"])
     st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]   # consolidate the loaded mapping
     # set base namespace___________________________________
-    st.session_state["base_ns"] = utils.get_g_mapping_base_ns()
+    base_pr, base_ns = utils.get_g_mapping_base_ns()
+    st.session_state["base_ns"] = utils.get_g_mapping_base_ns() if base_ns else utils.get_default_base_ns()
     utils.change_g_mapping_base_ns(st.session_state["base_ns"][0], st.session_state["base_ns"][1])  # ensure all nodes have same base ns
     # bind default namespaces____________________________
     for prefix, namespace in utils.get_default_ns_dict().items():
