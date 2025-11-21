@@ -1694,7 +1694,7 @@ with tab2:
 
         last_added_sm_df = pd.DataFrame([
             {"Subject Map": sm_dict[subject_map][0], "Assigned to": triples_map,  # Use directly or format if needed
-            "Rule": sm_dict[subject_map][1], "Term": sm_dict[subject_map][2]}
+            "Type": sm_dict[subject_map][1], "Rule": sm_dict[subject_map][2]}
             for subject_map, triples_map in st.session_state["last_added_sm_list"]
             if subject_map in sm_dict])
 
@@ -1720,7 +1720,7 @@ with tab2:
         #Option to show all Subject Maps
         sm_df = pd.DataFrame([
             {"Subject Map": v[0], "Assigned to": utils.format_list_for_markdown(v[4]),
-                "Rule": v[1], "ID/Constant": v[3]} for k, v in reversed(sm_dict.items())])
+                "Type": v[1], "Rule": v[3]} for k, v in reversed(sm_dict.items())])
         sm_df_short = sm_df.head(max_length)
 
         if sm_dict and len(sm_dict) < max_length:
