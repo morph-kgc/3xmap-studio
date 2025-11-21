@@ -210,8 +210,8 @@ def save_sm_template():   #function to save subject map (template option)
     if add_subject_class_option != "No Class":
         for subject_class_iri in st.session_state["multiple_subject_class_list"]:
             st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
-    if add_sm_graph_map_option == "Add graph map" or add_sm_graph_map_option == "Existing graph map":
-        st.session_state["g_mapping"].add((sm_iri, RML["graph"], subject_graph))
+    if add_sm_graph_map_option == "✚ New graph map" or add_sm_graph_map_option == "🔄 Existing graph map":
+        st.session_state["g_mapping"].add((sm_iri, RML.graphMap, subject_graph))
     if sm_term_type == "🌐 IRI":
         st.session_state["g_mapping"].add((sm_iri, RML.termType, RML.IRI))
     elif sm_term_type == "👻 BNode":
@@ -245,8 +245,8 @@ def save_sm_constant():   #function to save subject map (constant option)
     if add_subject_class_option != "No Class":
         for subject_class_iri in st.session_state["multiple_subject_class_list"]:
             st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
-    if add_sm_graph_map_option == "Add graph map" or add_sm_graph_map_option == "Existing graph map":
-        st.session_state["g_mapping"].add((sm_iri, RML["graph"], subject_graph))
+    if add_sm_graph_map_option == "✚ New graph map" or add_sm_graph_map_option == "🔄 Existing graph map":
+        st.session_state["g_mapping"].add((sm_iri, RML.graphMap, subject_graph))
     st.session_state["g_mapping"].add((sm_iri, RML.termType, RML.IRI))
     # store information____________________
     st.session_state["last_added_sm_list"].insert(0, [sm_iri, tm_label_for_sm])
@@ -270,8 +270,8 @@ def save_sm_reference():   #function to save subject map (reference option)
     if add_subject_class_option != "No Class":
         for subject_class_iri in st.session_state["multiple_subject_class_list"]:
             st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
-    if add_sm_graph_map_option == "Add graph map" or add_sm_graph_map_option == "Existing graph map":
-        st.session_state["g_mapping"].add((sm_iri, RML["graph"], subject_graph))
+    if add_sm_graph_map_option == "✚ New graph map" or add_sm_graph_map_option == "🔄 Existing graph map":
+        st.session_state["g_mapping"].add((sm_iri, RML.graphMap, subject_graph))
     if sm_term_type == "🌐 IRI":
         st.session_state["g_mapping"].add((sm_iri, RML.termType, RML.IRI))
     elif sm_term_type == "👻 BNode":
@@ -341,7 +341,7 @@ def save_pom_template():
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.IRI))
     elif om_term_type == "👻 BNode":
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.BlankNode))
-    if add_om_graph_map_option == "Add graph map" or add_om_graph_map_option == "Existing graph map":
+    if add_om_graph_map_option == "✚ New graph map" or add_om_graph_map_option == "🔄 Existing graph map":
         st.session_state["g_mapping"].add((om_iri, RML.graphMap, om_graph))
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
@@ -384,7 +384,7 @@ def save_pom_constant():
             st.session_state["g_mapping"].add((om_iri, RML.datatype, datatype_dict[om_datatype]))
         elif om_datatype == "Natural language tag":
             st.session_state["g_mapping"].add((om_iri, RML.language, Literal(om_language_tag)))
-    if add_om_graph_map_option == "Add graph map" or add_om_graph_map_option == "Existing graph map":
+    if add_om_graph_map_option == "✚ New graph map" or add_om_graph_map_option == "🔄 Existing graph map":
         st.session_state["g_mapping"].add((om_iri, RML.graphMap, om_graph))
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
@@ -425,7 +425,7 @@ def save_pom_reference():
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.IRI))
     elif om_term_type == "👻 BNode":
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.BlankNode))
-    if add_om_graph_map_option == "Add graph map" or add_om_graph_map_option == "Existing graph map":
+    if add_om_graph_map_option == "✚ New graph map" or add_om_graph_map_option == "🔄 Existing graph map":
         st.session_state["g_mapping"].add((om_iri, RML.graphMap, om_graph))
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
@@ -1496,14 +1496,26 @@ with tab2:
                 with col1c:
 
                     graph_map_dict = utils.get_graph_map_dict()
-                    list_to_choose = ["Default graph", "Add graph map"]
+                    list_to_choose = ["Default graph", "✚ New graph map"]
                     if graph_map_dict:
-                        list_to_choose.insert(1, "Existing graph map")
+                        list_to_choose.insert(1, "🔄 Existing graph map")
                     add_sm_graph_map_option = st.selectbox("️🗺️️ Graph map (optional):",
                         list_to_choose, key="key_add_sm_graph_map_option")
 
-                    #GRAPH - If not given, default graph    HERE condider if rr:graphMap option (dynamic) is worth it
-                    if add_sm_graph_map_option == "Add graph map":
+
+                    if add_sm_graph_map_option == "🔄 Existing graph map":
+
+                        list_to_choose = sorted(graph_map_dict.keys())
+                        list_to_choose.insert(0,"Select graph map")
+                        s_existing_graph_label = st.selectbox("🖱️ Select graph map:*", list_to_choose, key="key_s_existing_graph_label")
+
+                        if s_existing_graph_label != "Select graph map":
+                            subject_graph = graph_map_dict[s_existing_graph_label]
+                        else:
+                            subject_graph = ""
+
+
+                    if add_sm_graph_map_option == "✚ New graph map":
 
                         mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                         list_to_choose = sorted(mapping_ns_dict.keys())
@@ -1592,7 +1604,7 @@ with tab2:
                         sm_complete_flag = False
                         inner_html_error += """<small>· You must add at least one <b>subject class</b>.</small><br>"""
 
-                if add_sm_graph_map_option == "Add graph map":
+                if add_sm_graph_map_option == "✚ New graph map":
                     if not subject_graph_input:
                         sm_complete_flag = False
                         inner_html_error += """<small>· The <b>graph map</b>
@@ -1602,6 +1614,13 @@ with tab2:
                             sm_complete_flag = False
                             inner_html_error += """<small>· If no namespace is selected,
                                 the <b>graph map</b> must be a <b>valid IRI</b>.</small><br>"""
+
+                elif add_sm_graph_map_option == "🔄 Existing graph map":
+                    if s_existing_graph_label == "Select graph map":
+                        sm_complete_flag = False
+                        inner_html_error += """<small>· The <b>graph map</b>
+                            has not been selected.</small><br>"""
+
 
                 if add_subject_class_option == "🚫 Class outside ontology":
                     if st.session_state["g_ontology"] and not ontology_classes_dict: #there is an ontology but it has no classes
@@ -2098,13 +2117,13 @@ with tab3:
             with col1c:
 
                 graph_map_dict = utils.get_graph_map_dict()
-                list_to_choose = ["Default graph", "Add graph map"]
+                list_to_choose = ["Default graph", "✚ New graph map"]
                 if graph_map_dict:
-                    list_to_choose.insert(1, "Existing graph map")
+                    list_to_choose.insert(1, "🔄 Existing graph map")
                 add_om_graph_map_option = st.selectbox("️🗺️️ Graph map (optional):",
                     list_to_choose, key="key_add_om_graph_map_option")
 
-                if add_om_graph_map_option == "Existing graph map":
+                if add_om_graph_map_option == "🔄 Existing graph map":
 
                     list_to_choose = sorted(graph_map_dict.keys())
                     list_to_choose.insert(0,"Select graph map")
@@ -2115,7 +2134,7 @@ with tab3:
                     else:
                         om_graph = ""
 
-                if add_om_graph_map_option == "Add graph map":
+                if add_om_graph_map_option == "✚ New graph map":
 
                     mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                     if not mapping_ns_dict:
@@ -2235,7 +2254,7 @@ with tab3:
 
 
             # GRAPH MAP
-            if add_om_graph_map_option == "Add graph map":
+            if add_om_graph_map_option == "✚ New graph map":
 
                 if not om_graph_input:
                     pom_complete_flag = False
@@ -2248,7 +2267,7 @@ with tab3:
                         inner_html_error += """<small>· If no namespace is selected,
                             the <b>graph map</b> must be a <b>valid IRI</b>.</small><br>"""
 
-            if add_om_graph_map_option == "Existing graph map":
+            if add_om_graph_map_option == "🔄 Existing graph map":
 
                 if om_existing_graph_label == "Select graph map":
                     pom_complete_flag = False
