@@ -1691,7 +1691,7 @@ with tab2:
             st.write("")
 
 
-        #Option to show all TriplesMaps
+        #Option to show all Subject Maps
         sm_df = pd.DataFrame([
             {"Subject Map": v[0], "Assigned to": utils.format_list_for_markdown(v[4]),
                 "Rule": v[1], "ID/Constant": v[3]} for k, v in reversed(sm_dict.items())])
@@ -2332,10 +2332,57 @@ with tab3:
 
 
     with col2b:
-        st.markdown("""<div class='info-message-gray'>
-                To consult the added Predicate-Object Maps go to the <b>🔎 Explore Mapping</b> page.
-            </div>""", unsafe_allow_html=True)
 
+        st.write("")
+        st.write("")
+
+        pom_dict = utils.get_pom_dict()
+        # st.write("HERE", st.session_state["last_added_pom_list"], pom_dict)
+
+        last_added_pom_df = pd.DataFrame([
+            {"Predicate-Object Map": pom_dict[pom_iri][2], "Assigned to": utils.get_node_label(tm_iri),
+            "Type": pom_dict[pom_iri][6], "Rule": pom_dict[pom_iri][7]}
+            for pom_iri, tm_iri in st.session_state["last_added_pom_list"]
+            if pom_iri in pom_dict])
+
+
+        last_last_added_pom_df = last_added_sm_df.head(utils.get_max_length_for_display()[1])
+
+        max_length = utils.get_max_length_for_display()[0]   # max number of tm shown in dataframe
+        if st.session_state["last_added_pom_list"]:
+            st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
+                    🔎 last added Predicate-Object Maps
+                </div>""", unsafe_allow_html=True)
+            if len(sm_dict) < max_length:
+                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                        (complete list below)
+                    </div>""", unsafe_allow_html=True)
+            else:
+                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                        (longer list below)
+                    </div>""", unsafe_allow_html=True)
+            st.dataframe(last_last_added_sm_df, hide_index=True)
+            st.write("")
+
+
+        #Option to show all Subject Maps
+        pom_df = pd.DataFrame([
+            {"Predicate-Object Map": v[2], "Assigned to": utils.get_node_label(v[0]),
+            "Type": v[6], "Rule": v[7]}
+            for k, v in reversed(pom_dict.items())])
+        pom_df_short = pom_df.head(max_length)
+
+        if pom_dict and len(pom_dict) < max_length:
+            with st.expander("🔎 Show all Predicate-Object Maps"):
+                st.write("")
+                st.dataframe(pom_df, hide_index=True)
+        elif pom_dict:
+            with st.expander("🔎 Show more Subject Maps"):
+                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                        Go to the <b>Display Mapping</b> page for more information.
+                    </div>""", unsafe_allow_html=True)
+                st.write("")
+                st.dataframe(pom_df_short, hide_index=True)
 
 
 #________________________________________________
