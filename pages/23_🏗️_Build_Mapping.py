@@ -1102,7 +1102,7 @@ with tab2:
                             with col1:
                                 if st.session_state["sm_template_list"] and st.session_state["sm_template_list"][-1].endswith("}"):
                                     st.markdown(f"""<div class="warning-message">
-                                            ⚠️ <b>Best practice:</b> add a fixed part between two variable parts to improve clarity.
+                                            ⚠️ <b>Best practice:</b> Add a fixed part between two variable parts to improve clarity.
                                         </div>""", unsafe_allow_html=True)
                             with col1c:
                                 if sm_template_variable_part != "Select reference":
@@ -1962,7 +1962,7 @@ with tab3:
                         if st.session_state["om_template_list"] and st.session_state["om_template_list"][-1].endswith("}"):
                             with col1:
                                 st.markdown(f"""<div class="warning-message">
-                                        ⚠️ <b>Best practice:</b> add a fixed part between two variable parts to improve clarity.
+                                        ⚠️ <b>Best practice:</b> Add a fixed part between two variable parts to improve clarity.
                                     </div>""", unsafe_allow_html=True)
                         if om_template_variable_part != "Select reference":
                             with col1c:
@@ -2406,11 +2406,12 @@ with tab3:
 
                 datatype_iri = False
                 language_tag = False
-                if om_datatype != "No datatype" and om_datatype != "🈳 Natural language tag" and om_datatype != "✚ New datatype": #HEREIGO
-                    datatype_dict = utils.get_datatype_dict()
-                    datatype_iri = datatype_dict[om_datatype]
-                elif om_datatype == "🈳 Natural language tag":
-                    language_tag = Literal(om_language_tag)
+                if om_term_type == "📘 Literal":
+                    if om_datatype != "No datatype" and om_datatype != "🈳 Natural language tag" and om_datatype != "✚ New datatype": #HEREIGO
+                        datatype_dict = utils.get_datatype_dict()
+                        datatype_iri = datatype_dict[om_datatype]
+                    elif om_datatype == "🈳 Natural language tag":
+                        language_tag = Literal(om_language_tag)
 
 
                 existing_datatype = om_datatype if om_generation_rule == "Reference 📊" else False

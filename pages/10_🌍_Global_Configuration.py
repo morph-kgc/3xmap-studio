@@ -1067,6 +1067,8 @@ with tab2:
                         (go to <b>✏️ Custom</b> option to add more).</small>
                     </div>""", unsafe_allow_html=True)
                 st.write("")
+                
+
             with col1:
                 col1a, col1b = st.columns([1,2])
 
