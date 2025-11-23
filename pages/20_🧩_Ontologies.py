@@ -146,12 +146,12 @@ with tab1:
         <small> Some <b>patience</b> may be required.</small>
             </div>""", unsafe_allow_html=True)
 
-    #PURPLE HEADING: ADD NEW ONTOLOGY-------------------------------------------
+    #PURPLE HEADING: ADD ONTOLOGY-------------------------------------------
     with col1:
         st.write("")
         st.write("")
         st.markdown("""<div class="purple-heading">
-                ➕ Add New Ontology
+                ➕ Add Ontology
             </div>""", unsafe_allow_html=True)
         st.write("")
 
@@ -187,14 +187,14 @@ with tab1:
             st.session_state["g_ontology_from_link_candidate_fmt"] = fmt_candidate
             st.session_state["g_ontology_from_link_candidate_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_from_link_candidate"], source_link=st.session_state["ontology_link"])
 
-            valid_ontology_flag, success_html, warning_html, error_html = utils.get_candidate_ontology_info_messages(st.session_state["g_ontology_from_link_candidate"], st.session_state["g_ontology_from_link_candidate_label"])
+            valid_ontology_flag, success_html, warning_html, error_html = utils.get_candidate_ontology_info_messages(st.session_state["g_ontology_from_link_candidate"], st.session_state["g_ontology_from_link_candidate_label"], st.session_state["g_ontology_from_link_candidate_fmt"])
 
             if valid_ontology_flag:
 
                 with col1:
                     col1a, col1b, col1c = st.columns([1,3,3])
 
-                if st.session_state["g_ontology"]:   #no ontology imported yet
+                if not st.session_state["g_ontology"]:   #no ontology imported yet
                     with col1a:
                         st.button("Add", key="key_load_ontology_from_link_button", on_click=load_ontology_from_link)
 
@@ -234,7 +234,7 @@ with tab1:
             st.session_state["g_ontology_from_file_candidate"] = g_candidate
             st.session_state["g_ontology_from_file_candidate_fmt"] = fmt_candidate
             st.session_state["g_ontology_from_file_candidate_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_from_file_candidate"], source_file=st.session_state["ontology_file"])
-            valid_ontology_flag, success_html, warning_html, error_html = utils.get_candidate_ontology_info_messages(st.session_state["g_ontology_from_file_candidate"], st.session_state["g_ontology_from_file_candidate_label"])
+            valid_ontology_flag, success_html, warning_html, error_html = utils.get_candidate_ontology_info_messages(st.session_state["g_ontology_from_file_candidate"], st.session_state["g_ontology_from_file_candidate_label"], st.session_state["g_ontology_from_file_candidate_fmt"])
 
             if valid_ontology_flag:
                 with col1b:

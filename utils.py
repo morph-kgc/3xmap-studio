@@ -1033,6 +1033,9 @@ def get_number_of_tm(g):
 # Function to get the base namespace of an imported mapping
 def get_g_mapping_base_ns():
 
+    prefix = ""
+    base_ns = ""
+
     for s, p, o in st.session_state["g_mapping"]:
         if isinstance(s, URIRef):
             if p in [RML.logicalSource, RML.subjectMap, RML.predicateObjectMap, RML.objectMap]:
@@ -1045,7 +1048,7 @@ def get_g_mapping_base_ns():
             prefix = pr
             break
 
-    return [prefix, base_ns]
+    return [prefix, Namespace(base_ns)]
 #_________________________________________________________
 
 #_________________________________________________________
@@ -1718,7 +1721,7 @@ def check_ontology_overlap(g1, g2):
 #______________________________________________________
 
 #______________________________________________________
-def get_candidate_ontology_info_messages(g, g_label):
+def get_candidate_ontology_info_messages(g, g_label, g_format):
 
     valid_ontology_flag = True
     error_html = ""
@@ -1755,11 +1758,12 @@ def get_candidate_ontology_info_messages(g, g_label):
 
         if already_used_prefix_list or already_bound_ns_list:
             warning_html += f"""⚠️ <b>Duplicated namespaces</b> <small>handled automatically.</small>"""
+
         # success message
         success_html += f"""✔️ <b>Valid ontology:</b> <b style="color:#F63366;">
-                {st.session_state["g_ontology_from_link_candidate_label"]}</b>
+                {g_label}</b>
                 <small>(parsed successfully with format
-                <b>{st.session_state["g_ontology_from_link_candidate_fmt"]}</b>).</small>"""
+                <b>{g_format}</b>).</small>"""
 
     return [valid_ontology_flag, success_html, warning_html, error_html]
 
@@ -2368,15 +2372,9 @@ def get_sm_dict():
 
 #______________________________________________
 # Funtion to get list of datatypes
-def get_datatypes_dict():
+def get_default_datatypes_dict():
 
-    # datatype_list = ["Select datatype", "Natural language tag", "xsd:string",
-    #     "xsd:integer", "xsd:decimal", "xsd:float", "xsd:double",
-    #     "xsd:boolean", "xsd:date", "xsd:dateTime", "xsd:time",
-    #     "xsd:anyURI", "rdf:XMLLiteral", "rdf:HTML", "rdf:JSON"]
-
-    datatype_dict = {"Select datatype" : "", "Natural language tag": "",
-        "xsd:string": XSD.string, "xsd:integer": XSD.integer,
+    datatype_dict = {"xsd:string": XSD.string, "xsd:integer": XSD.integer,
         "xsd:decimal": XSD.decimal, "xsd:float": XSD.float,
         "xsd:double": XSD. double, "xsd:boolean": XSD.boolean,
         "xsd:date": XSD.date, "xsd:dateTime": XSD.dateTime,
@@ -2384,6 +2382,19 @@ def get_datatypes_dict():
         "rdf:XMLLiteral": XSD.XMLLiteral, "rdf:HTML": RDF.HTML,
         "rdf:JSON": RDF.JSON}
 
+    return datatype_dict
+#______________________________________________
+
+#______________________________________________
+# Funtion to get list of datatypes
+def get_datatype_dict():
+
+    datatype_dict = get_default_datatypes_dict()
+    mapping_defined_datatype_list = list(st.session_state["g_mapping"].objects(None, RML.datatype))
+
+    for dt in mapping_defined_datatype_list:
+        if not format_iri_to_prefix_label(dt) in datatype_dict:
+            datatype_dict[utils.format_iri_to_prefix_label(dt)] = dt
 
     return datatype_dict
 #______________________________________________
@@ -2842,7 +2853,7 @@ def preview_rule_list(s_for_display, p_for_display, o_for_display):
         formatted_o = o_for_display
 
     formatted_o = formatted_o + f"^^{utils.format_iri_to_prefix_label(datatype)}" if datatype else formatted_o
-    formatted_o = formatted_o + f"@{language_tag}" if language_tag else formatted_o
+    formatted_o = f"{formatted_o}@{language_tag}" if language_tag else formatted_o
 
     formatted_s = f"""<small>{formatted_s}</small>""" if len(formatted_s) > max_length else formatted_s
     formatted_p = f"""<small>{formatted_p}</small>""" if len(formatted_p) > max_length else formatted_p
@@ -3338,7 +3349,7 @@ def get_ontology_properties_dict(g_ont):
                 if s not in p_exclusion_list:
                     p_set.add(s)
 
-    ontology_p_dict = {split_uri(p)[1]: p for p in p_set}
+    ontology_p_dict = {format_iri_to_prefix_label(p):p for p in p_set}
 
     return ontology_p_dict
 #______________________________________________
@@ -3803,8 +3814,19 @@ def display_db_table(table, conn_label):
     return connection_ok_flag
 #_________________________________________________
 
+#________________________________________________________
+# Funtion to get the dictionary of the Graph Maps
+def get_graph_map_dict():
 
-#HEREIGO
+    graph_map_dict = {}
+
+    graph_map_list = list(st.session_state["g_mapping"].objects(None, RML.graphMap))
+
+    for gm in graph_map_list:
+        graph_map_dict[format_iri_to_prefix_label(gm)] = gm
+
+    return graph_map_dict
+#___________________________________________
 
 
 

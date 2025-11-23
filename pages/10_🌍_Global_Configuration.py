@@ -65,7 +65,8 @@ def import_existing_g_mapping():
     st.session_state["original_g_mapping_ns_dict"] = utils.get_g_ns_dict(st.session_state["candidate_g_mapping"])
     st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]   # consolidate the loaded mapping
     # set base namespace___________________________________
-    st.session_state["base_ns"] = utils.get_g_mapping_base_ns()
+    base_pr, base_ns = utils.get_g_mapping_base_ns()
+    st.session_state["base_ns"] = utils.get_g_mapping_base_ns() if base_ns else utils.get_default_base_ns()
     utils.change_g_mapping_base_ns(st.session_state["base_ns"][0], st.session_state["base_ns"][1])  # ensure all nodes have same base ns
     # bind default namespaces____________________________
     for prefix, namespace in utils.get_default_ns_dict().items():
@@ -249,12 +250,15 @@ def delete_sessions():
     # reset fields_______________________________
     st.session_state["key_save_session_options"] = "💾 Save session"
 
-# TAB5
+# TAB4
 def activate_dark_mode():
     st.session_state["dark_mode_flag"] = True
 
 def deactivate_dark_mode():
     st.session_state["dark_mode_flag"] = False
+
+def add_datatype():
+    pass
 
 #_______________________________________________________________________________
 # PANELS OF THE PAGE (tabs)
@@ -1063,6 +1067,8 @@ with tab2:
                         (go to <b>✏️ Custom</b> option to add more).</small>
                     </div>""", unsafe_allow_html=True)
                 st.write("")
+                
+
             with col1:
                 col1a, col1b = st.columns([1,2])
 
