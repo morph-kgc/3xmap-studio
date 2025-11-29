@@ -96,7 +96,7 @@ def retrieve_session():
     # retrieve session______________________________________
     with open(full_path, "rb") as f:     # load mapping
         project_state_list = pickle.load(f)
-    utils.retrieve_project_state(project_state_list)
+    utils.retrieve_session_state(project_state_list)
     #store information_____________________________________
     utils.empty_last_added_lists()
     st.session_state["selected_pkl_file_wo_extension"] = selected_pkl_file_wo_extension
@@ -109,7 +109,7 @@ def retrieve_cached_mapping():
     st.session_state["g_label"] = cached_mapping_name    # g label
     with open(pkl_cache_file_path, "rb") as f:     # load mapping
         project_state_list = pickle.load(f)
-    utils.retrieve_project_state(project_state_list)
+    utils.retrieve_session_state(project_state_list)
     #store information_____________________________________
     utils.empty_last_added_lists()
     st.session_state["cached_mapping_retrieved_ok_flag"] = True
@@ -192,13 +192,6 @@ def unbind_namespaces():
     # reset fields_______________________________________
     st.session_state["key_unbind_multiselect"] = []
 
-def unbind_all_namespaces():
-    # unbind and store information______________________
-    utils.unbind_namespaces(mapping_ns_dict_available_to_unbind)
-    st.session_state["ns_unbound_ok_flag"] = True
-    # reset fields______________________________________
-    st.session_state["key_unbind_multiselect"] = []
-
 #TAB3
 def save_progress():
     # name of temporary file____________________________
@@ -210,7 +203,7 @@ def save_progress():
         if os.path.isfile(file):
             os.remove(file)
     #save progress______________________________________
-    project_state_list = utils.save_project_state()
+    project_state_list = utils.save_session_state()
     with open(pkl_cache_filename, "wb") as f:
         pickle.dump(project_state_list, f)
     #store information__________________________________
@@ -223,7 +216,7 @@ def save_session():
     os.makedirs(folder_name, exist_ok=True)
     full_path = os.path.join(folder_name, pkl_filename_w_extension)
     # save session_______________________________________
-    project_state_list = utils.save_project_state()
+    project_state_list = utils.save_session_state()
     with open(full_path, "wb") as f:
         pickle.dump(project_state_list, f)
     # store information__________________________________
@@ -264,11 +257,11 @@ with tab1:
     st.write("")
     st.write("")
 
-    # PURPLE HEADING: CREATE NEW MAPPING----------------------------------------
     col1, col2 = st.columns([2,1.5])
     with col2:
         col2a,col2b = st.columns([1,2])
 
+    # PURPLE HEADING: CREATE NEW MAPPING----------------------------------------
     with col1:
         st.markdown("""<div class="purple-heading">
             📄 Create New Mapping
@@ -660,22 +653,19 @@ with tab1:
                 if second_full_reset_checkbox:
                     st.button("Reset", key="key_full_reset_button", on_click=full_reset)
 
-#REFACTORINGBOOKMARK
 #_______________________________________________________________________________
 # PANEL: CONFIGURE NAMESPACES
 # Available only if mapping is loaded
 with tab2:
     st.write("")
     st.write("")
+    col1, col2 = st.columns([2,1.5])
 
     if not st.session_state["g_label"]:
-        col1, col2 = st.columns([2,1.5])
         with col1:
             utils.get_missing_g_mapping_error_message()
 
     else:   # only allow to continue if mapping is loaded
-
-        col1,col2 = st.columns([2,1.5])
 
         # RIGHT COLUMN: ADDED NS INFO-------------------------------------------
         mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
@@ -1183,39 +1173,17 @@ with tab2:
 with tab3:
     st.write("")
     st.write("")
+    col1, col2 = st.columns([2,1.5])
 
     if not st.session_state["g_label"]:
-        col1, col2 = st.columns([2,1.5])
         with col1:
             utils.get_missing_g_mapping_error_message()
 
     else:
-        col1,col2 = st.columns([2,1.5])
-
         with col2:
             col2a,col2b = st.columns([1,2])
 
         # RIGHT COLUMN OPTION: SAVE PROGRESS------------------------------------
-        with col2b:
-            st.write("")
-            save_progress_checkbox = st.checkbox(
-                "💾 Save progress",
-                key="key_save_progress_checkbox")
-            if save_progress_checkbox:
-                st.button("Save", key="key_save_progress_button", on_click=save_progress)
-                st.markdown(f"""<div class="info-message-blue">
-                        ℹ️ Current project state will be temporarily saved (mapping <b style="color:#F63366;">
-                        {st.session_state["g_label"]}</b>,
-                        loaded ontologies and data sources).
-                        <small>To retrieve cached work go to the <b>Select Mapping</b> panel.</small>
-                    </span></div>""", unsafe_allow_html=True)
-                existing_pkl_file_list = [f for f in os.listdir() if f.endswith("_cache__.pkl")]
-                if existing_pkl_file_list:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ Any <b>previously cached information</b> will be deleted.
-                        </div>""", unsafe_allow_html=True)
-
-
         if st.session_state["progress_saved_ok_flag"]:
             with col2b:
                 st.write("")
@@ -1225,6 +1193,23 @@ with tab3:
             st.session_state["progress_saved_ok_flag"] = False
             time.sleep(utils.get_success_message_time())
             st.rerun()
+
+        with col2b:
+            st.write("")
+            save_progress_checkbox = st.checkbox(
+                "💾 Save progress",
+                key="key_save_progress_checkbox")
+            if save_progress_checkbox:
+                st.button("Save", key="key_save_progress_button", on_click=save_progress)
+                st.markdown(f"""<div class="info-message-blue">
+                        ℹ️ Current <b>session state</b> will be temporarily saved.
+                        <small>To retrieve cached work go to the <b>Select Mapping</b> panel.</small>
+                    </span></div>""", unsafe_allow_html=True)
+                existing_pkl_file_list = [f for f in os.listdir() if f.endswith("_cache__.pkl")]
+                if existing_pkl_file_list:
+                    st.markdown(f"""<div class="warning-message">
+                            ⚠️ Any <b>previously cached information</b> will be deleted.
+                        </div>""", unsafe_allow_html=True)
 
 
         # PURPLE HEADING: EXPORT MAPPING----------------------------------------
@@ -1251,10 +1236,10 @@ with tab3:
             col1a, col1b, col1c = st.columns([0.8,1.7,1])
 
         export_extension_dict = utils.get_g_mapping_file_formats_dict()
-        export_format_list = list(export_extension_dict)
+        list_to_choose = list(export_extension_dict)
 
         with col1a:
-            export_format = st.selectbox("🖱️ Select format:*", export_format_list, key="key_export_format_selectbox")
+            export_format = st.selectbox("🖱️ Select format:*", list_to_choose, key="key_export_format_selectbox")
         export_extension = export_extension_dict[export_format]
 
         with col1b:
@@ -1269,9 +1254,9 @@ with tab3:
         if export_filename_complete and export_filename_valid_flag:
             with col1c:
                 st.markdown(f"""<div class="info-message-blue">
-                        ℹ️ Current state of mapping <b>
-                        {st.session_state["g_label"]}</b> will exported
-                        to file <b style="color:#F63366;">{export_filename_complete}</b>.
+                        ℹ️ Mapping <b style="color:#F63366;">
+                        {st.session_state["g_label"]}</b> will be exported
+                        to file <b>{export_filename_complete}</b>.
                     </span></div>""", unsafe_allow_html=True)
 
             with col1:
@@ -1313,7 +1298,7 @@ with tab3:
                 col1a, col1b = st.columns([2,1])
             with col1a:
                 st.markdown(f"""<div class="success-message-flag">
-                    ✅ The session has been saved to file <b style="color:#F63366;">{st.session_state["pkl_filename"]}</b>!
+                    ✅ The session <b style="color:#F63366;">{st.session_state["pkl_filename"][:-4]}</b> has been saved!
                 </div>""", unsafe_allow_html=True)
             st.session_state["session_saved_ok_flag"] = False
             time.sleep(utils.get_success_message_time())
@@ -1333,7 +1318,7 @@ with tab3:
         with col1:
             col1a, col1b = st.columns([2,1])
 
-        folder_name = "saved_sessions"
+        folder_name = utils.get_saved_sessions_folder_name()
         folder_path = os.path.join(os.getcwd(), folder_name)
         if os.path.isdir(folder_path):
             file_list = [os.path.splitext(f)[0] for f in os.listdir(folder_path)
@@ -1343,15 +1328,16 @@ with tab3:
 
         if file_list:
             with col1b:
+                st.write("")
                 save_session_selected_option = st.radio("🖱️ Select an option:*", ["💾 Save session", "🗑️ Delete sessions"],
-                    label_visibility="hidden", key="key_save_session_options")
+                    label_visibility="collapsed", key="key_save_session_options")
         else:
             save_session_selected_option = "💾 Save session"
 
         if save_session_selected_option == "💾 Save session":
 
             with col1a:
-                pkl_filename = st.text_input("⌨️ Enter filename (without extension):*", key="key_pkl_filename")
+                pkl_filename = st.text_input("🏷️ Enter session label:*", key="key_pkl_filename")
             if pkl_filename:
                 with col1b:
                     valid_pkl_filename_flag = utils.is_valid_filename(pkl_filename)
@@ -1360,11 +1346,6 @@ with tab3:
             file_path = os.path.join(folder_path, pkl_filename_w_extension)
 
             if pkl_filename and os.path.isfile(file_path):
-                with col1b:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ A session was already saved with <b>this filename</b>. <small>Pick
-                            a different filename unless you want to overwrite it.</small>
-                        </div>""", unsafe_allow_html=True)
                 with col1a:
                     overwrite_pkl_checkbox = st.checkbox(
                         f"""🔒 I am sure I want to overwrite""",
@@ -1372,12 +1353,24 @@ with tab3:
                 if overwrite_pkl_checkbox:
                     with col1a:
                         st.button("Save", key="key_save_session_button", on_click=save_session)
+                    with col1b:
+                        st.markdown(f"""<div class="info-message-blue">
+                                ℹ️ Current <b>session state</b> will be saved
+                                with label <b style="color:#F63366;">{pkl_filename}</b>.
+                                <small>To retrieve saved sessions go to the <b>Select Mapping</b> panel.</small>
+                            </span></div>""", unsafe_allow_html=True)
+                else:
+                    with col1b:
+                        st.markdown(f"""<div class="warning-message">
+                                ⚠️ A session labelled <b>{pkl_filename}</b> already exists. <small>Pick
+                                a different label unless you want to overwrite it.</small>
+                            </div>""", unsafe_allow_html=True)
             elif pkl_filename and valid_pkl_filename_flag:
                 with col1b:
                     st.markdown(f"""<div class="info-message-blue">
-                            ℹ️ Current <b>session state</b> will be exported
-                            to file <b style="color:#F63366;">{pkl_filename + ".pkl"}</b>.
-                            <small> This includes the mapping, ontologies, namespaces and data sources.</small>
+                            ℹ️ Current <b>session state</b> will be saved
+                            with label <b style="color:#F63366;">{pkl_filename}</b>.
+                            <small>To retrieve saved sessions go to the <b>Select Mapping</b> panel.</small>
                         </span></div>""", unsafe_allow_html=True)
                 with col1a:
                     st.button("Save", key="key_save_session_button", on_click=save_session)
@@ -1398,13 +1391,13 @@ with tab3:
                         delete_sessions_checkbox = st.checkbox("🔒 I am sure I want to delete all saved sessions",
                             key="key_delete_sessions_checkbox")
                     else:
-                        delete_sessions_checkbox = st.checkbox("🔒 I am sure I want to delete the selected session/s",
+                        delete_sessions_checkbox = st.checkbox("🔒 I am sure I want to delete the selected sessions",
                             key="key_delete_sessions_checkbox")
 
                     if delete_sessions_checkbox:
                         st.button("Delete", key="delete_sessions_button", on_click=delete_sessions)
 
-
+#RFBOOKMARK
 #_______________________________________________________________________________
 # PANEL: SET STYLE
 with tab4:

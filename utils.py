@@ -1283,7 +1283,7 @@ def get_ns_warning_message(ns_to_bind_list):
 # 0. [g_label, g_mapping]     1. g_ontology_components_dict      2. base_ns_dict
 # 3. db_connections_dict       4. db_connection_status_dict
 # 5. ds_files_dict                6. sql_queries_dict
-def save_project_state():
+def save_session_state():
 
     # list to save session
     project_state_list = []
@@ -1305,8 +1305,8 @@ def save_project_state():
 #______________________________________________________
 
 #_________________________________________________
-#Funtion to retrieve the project state
-def retrieve_project_state(project_state_list):
+# Funtion to retrieve the session state
+def retrieve_session_state(project_state_list):
 
     st.session_state["g_label"] = project_state_list[0]
     st.session_state["g_mapping"] = project_state_list[1]
@@ -1328,7 +1328,7 @@ def retrieve_project_state(project_state_list):
 
 #_________________________________________________
 #Funtion to check whether a filename is valid
-def is_valid_filename(filename):  #HEREIGO
+def is_valid_filename(filename):
 
     excluded_characters = r"[\\/:*?\"<>| ]"
     windows_reserved_names = ["CON", "PRN", "AUX", "NUL",
@@ -2509,64 +2509,75 @@ def check_g_mapping(g):
 
         max_length = utils.get_max_length_for_display()[5]
 
-        inner_html = f"""The <b>mapping</b> is incomplete!
-            <br>"""
+        inner_html = f"""The <b>mapping</b> is incomplete."""
 
         if tm_wo_sm_list:
             if len(tm_wo_sm_list) == 1:
-                inner_html += f"""<div style="margin-left: 20px"><small>The TriplesMap <b>
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· The TriplesMap <b>
                 {tm_wo_sm_list_display}</b> has not been assigned
                 a Subject Map.</small><br></div>"""
             elif len(tm_wo_sm_list) < max_length:
-                inner_html += f"""<div style="margin-left: 20px"><small>The TriplesMaps
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· The TriplesMaps
                 <b>{tm_wo_sm_list_display}</b> have not been assigned
                 a Subject Map.</small><br></div>"""
             else:
-                inner_html += f"""<div style="margin-left: 20px"><small><b>{len(tm_wo_sm_list)}
+                inner_html += f"""<div style="margin-left: 20px">
+                <small><b>· {len(tm_wo_sm_list)}
                 TriplesMaps</b> have not been assigned
                 a Subject Map.</small><br></div>"""
 
         if tm_wo_pom_list:
             if len(tm_wo_pom_list) == 1:
                 tm_wo_pom_list_display = utils.format_list_for_markdown(tm_wo_pom_list)
-                inner_html += f"""<div style="margin-left: 20px"><small>The TriplesMap
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· The TriplesMap
                 <b>{tm_wo_pom_list_display}</b> has not been assigned
                 a Predicate-Object Map.</small><br></div>"""
             elif len(tm_wo_pom_list) < max_length:
                 tm_wo_pom_list_display = utils.format_list_for_markdown(tm_wo_pom_list)
-                inner_html += f"""<div style="margin-left: 20px"><small>The TriplesMaps
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· The TriplesMaps
                 <b>{tm_wo_pom_list_display}</b> have not been assigned
                 a Predicate-Object Map.</small><br></div>"""
             else:
-                inner_html += f"""<div style="margin-left: 20px"><small><b>{len(tm_wo_pom_list)}
+                inner_html += f"""<div style="margin-left: 20px">
+                <small><b>· {len(tm_wo_pom_list)}
                 TriplesMaps</b> have not been assigned
                 a Predicate-Object Map.</small><br></div>"""
 
         if pom_wo_om_list:
             if len(pom_wo_om_list) == 1:
-                inner_html += f"""<div style="margin-left: 20px"><small>The Predicate-Object Map
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· The Predicate-Object Map
                 <b>{pom_wo_om_list_display}</b> has not been assigned
                 an Object Map.</small><br></div>"""
             elif len(pom_wo_om_list) < max_length:
-                inner_html += f"""<div style="margin-left: 20px"><small>The Predicate-Object Maps
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· The Predicate-Object Maps
                 <b>{pom_wo_om_list_display}</b> have not been assigned
                 an Object Map.</small><br></div>"""
             else:
-                inner_html += f"""<div style="margin-left: 20px"><small><b>{len(pom_wo_om_list_display)}
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· <b>{len(pom_wo_om_list_display)}
                 Predicate-Object Maps</b> have not been assigned
                 an Object Map.</small><br></div>"""
 
         if pom_wo_predicate_list:
             if len(pom_wo_om_list) == 1:
-                inner_html += f"""<div style="margin-left: 20px"><small>The Predicate-Object Map
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· The Predicate-Object Map
                 <b>{pom_wo_predicate_list_display}</b> has not been assigned
                 a predicate.</small><br></div>"""
             elif len(pom_wo_om_list) < max_length:
-                inner_html += f"""<div style="margin-left: 20px"><small>The Predicate-Object Maps
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· The Predicate-Object Maps
                 <b>{pom_wo_predicate_list_display}</b> have not been assigned
                 a predicate.</small><br></div>"""
             else:
-                inner_html += f"""<div style="margin-left: 20px"><small><b>{len(pom_wo_predicate_list_display)}
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· <b>{len(pom_wo_predicate_list_display)}
                 Predicate-Object Maps</b> have not been assigned
                 a predicate.</small><br></div>"""
 
