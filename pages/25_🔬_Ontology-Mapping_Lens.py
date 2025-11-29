@@ -31,7 +31,7 @@ tab1, tab2, tab3 = st.tabs(["Mapping", "Properties", "Classes"])
 col1, col2 = st.columns([2,1])
 if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
     with col1:
-        utils.get_missing_g_mapping_error_message_different_page()
+        utils.get_missing_g_mapping_error_message(different_page=True)
         st.stop()
 
 #________________________________________________
@@ -45,7 +45,7 @@ with tab1:
     with col2:
         col2a,col2b = st.columns([1,2])
     with col2b:
-        utils.get_corner_status_message()
+        utils.get_corner_status_message(mapping_info=True, ontology_info=True)
 
     if not st.session_state["g_ontology"]:
         with col1:
@@ -89,7 +89,7 @@ with tab2:
     with col2:
         col2a,col2b = st.columns([1,2])
     with col2b:
-        utils.get_corner_status_message()
+        utils.get_corner_status_message(mapping_info=True, ontology_info=True)
 
     if not st.session_state["g_ontology"]:
         with col1:
@@ -264,7 +264,7 @@ with tab3:
     with col2:
         col2a,col2b = st.columns([1,2])
     with col2b:
-        utils.get_corner_status_message()
+        utils.get_corner_status_message(mapping_info=True, ontology_info=True)
 
     if not st.session_state["g_ontology"]:
         with col1:

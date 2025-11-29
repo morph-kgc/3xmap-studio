@@ -1,39 +1,78 @@
-import streamlit as st
 import os
+import streamlit as st
+import rdflib
+from rdflib import BNode, Graph, Literal, Namespace, URIRef
+from rdflib.namespace import split_uri
+from rdflib.namespace import DC, DCTERMS, OWL, RDF, RDFS, XSD
 import utils
 import pandas as pd
-import pickle
-from rdflib import Graph, URIRef, Literal, Namespace, BNode
-from rdflib.namespace import split_uri
-from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL, XSD
-import time   # for success messages
-import re
-import uuid   # to handle uploader keys
-import io
-from io import IOBase
-import psycopg
-import pymysql    # another option mysql-connector-python
-import oracledb
-import pyodbc
-import sqlglot
-import requests
+
 import base64
 from collections import defaultdict
-import plotly.express as px
-from PIL import Image   # for logo rendering
 import configparser
-
-from concurrent.futures import ThreadPoolExecutor, TimeoutError
-
-import json
-import csv
-import rdflib
-from collections import Counter
-from urllib.parse import urlparse
-
+import io
+import pickle
+import oracledb
+from PIL import Image   # for logo rendering
+import plotly.express as px
+import psycopg
+from pymongo import MongoClient
+import pymysql
+import pyodbc
+import re
+import requests
+import sqlglot
 from streamlit_js_eval import streamlit_js_eval
+from urllib.parse import urlparse
+import uuid   # to handle uploader keys
+
+# RFTAG
+# from concurrent.futures import ThreadPoolExecutor, TimeoutError
+# import json
+# import csv
+# from collections import Counter
+
 
 # REQUIRED NS===================================================================
+#_____________________________________________________
+# Funtion to get dictionary with default namespaces (DO NOT MODIFY LIST)
+# Default namespaces are automatically added to the g namespace manager by rdflib
+# For clarity, we bind them and don't allow to remove
+def get_default_ns_dict():
+
+    default_ns_dict = {"brick": URIRef("https://brickschema.org/schema/Brick#"),
+        "csvw": URIRef("http://www.w3.org/ns/csvw#"),
+        "dc": URIRef("http://purl.org/dc/elements/1.1/"),
+        "dcam": URIRef("http://purl.org/dc/dcam/"),
+        "dcat": URIRef("http://www.w3.org/ns/dcat#"),
+        "dcmitype": URIRef("http://purl.org/dc/dcmitype/"),
+        "dcterms": URIRef("http://purl.org/dc/terms/"),
+        "doap": URIRef("http://usefulinc.com/ns/doap#"),
+        "foaf": URIRef("http://xmlns.com/foaf/0.1/"),
+        "geo": URIRef("http://www.opengis.net/ont/geosparql#"),
+        "odrl": URIRef("http://www.w3.org/ns/odrl/2/"),
+        "org": URIRef("http://www.w3.org/ns/org#"),
+        "owl": URIRef("http://www.w3.org/2002/07/owl#"),
+        "prof": URIRef("http://www.w3.org/ns/dx/prof/"),
+        "prov": URIRef("http://www.w3.org/ns/prov#"),
+        "qb": URIRef("http://purl.org/linked-data/cube#"),
+        "rdf": URIRef("http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
+        "rdfs": URIRef("http://www.w3.org/2000/01/rdf-schema#"),
+        "schema": URIRef("https://schema.org/"),
+        "sh": URIRef("http://www.w3.org/ns/shacl#"),
+        "skos": URIRef("http://www.w3.org/2004/02/skos/core#"),
+        "sosa": URIRef("http://www.w3.org/ns/sosa/"),
+        "ssn": URIRef("http://www.w3.org/ns/ssn/"),
+        "time": URIRef("http://www.w3.org/2006/time#"),
+        "vann": URIRef("http://purl.org/vocab/vann/"),
+        "void": URIRef("http://rdfs.org/ns/void#"),
+        "wgs": URIRef("https://www.w3.org/2003/01/geo/wgs84_pos#"),
+        "xml": URIRef("http://www.w3.org/XML/1998/namespace"),
+        "xsd": URIRef("http://www.w3.org/2001/XMLSchema#")}
+
+    return default_ns_dict
+#_______________________________________________________
+
 #________________________________________________________
 # Function to retrieve namespaces which are needed for our code
 def get_required_ns_dict():
@@ -42,47 +81,62 @@ def get_required_ns_dict():
         "ql": Namespace("http://semweb.mmlab.be/ns/ql#")}
 
     return required_ns_dict
-
-#_______________________________________________________
+#________________________________________________________
 
 #________________________________________________________
-# Retrieving necessary namespaces for UTILS page here
+# Retrieving necessary namespaces for UTILS page
 RML, QL = get_required_ns_dict().values()
 #________________________________________________________
 
 
+# DEFAULT VARIABLES (CAN BE CUSTOMISED)=========================================
+#________________________________________________________
+# Name of the folder where sessions are saved
+# Used in 🌍 Global Configuration page
+def get_saved_sessions_folder_name():
+
+    return "saved_sessions"
+#________________________________________________________
+
+#_____________________________________________________
+# Function to get the default base iri for the base components
+# Used in 🌍 Global Configuration page
+def get_default_base_ns():
+
+    return ["map3x", Namespace("http://3xmap.org/mapping/")]
+#________________________________________________________
+
+#_____________________________________________________
+# Function to get dictionary with predefined namespaces so that they can be easily bound
+# Used in 🌍 Global Configuration page
+def get_predefined_ns_dict():
+
+    predefined_ns_dict = {
+        "rdf": URIRef("http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
+        "rdfs": URIRef("http://www.w3.org/2000/01/rdf-schema#"),
+        "owl": URIRef("http://www.w3.org/2002/07/owl#"),
+        "xsd": URIRef("http://www.w3.org/2001/XMLSchema#"),
+        "foaf": URIRef("http://xmlns.com/foaf/0.1/"),
+        "dc": URIRef("http://purl.org/dc/elements/1.1/"),
+        "dcterms": URIRef("http://purl.org/dc/terms/"),
+        "skos": URIRef("http://www.w3.org/2004/02/skos/core#"),
+        "time": URIRef("http://www.w3.org/2006/time#"),
+        "prov": URIRef("http://www.w3.org/ns/prov#")}
+
+    default_dict = get_default_ns_dict()
+    filtered_ns_dict = {}  # filter out the default namespaces
+    for k, v in predefined_ns_dict.items():
+        if v not in default_dict.values():
+            filtered_ns_dict[k] = v
+
+    return filtered_ns_dict
+#_____________________________________________________
+
+
 # AESTHETICS====================================================================
 #______________________________________________________
-# Function to render headers (UNUSED)
-def render_header(title, description, dark_mode: bool = False):
-
-    # get logo
-    image_path = "logo/logo_inverse.png" if dark_mode else "logo/logo.png"
-    with open(image_path, "rb") as img_file:
-        image_base64 = base64.b64encode(img_file.read()).decode()
-
-    # set colors
-    bg_color = "#1e1e1e" if dark_mode else "#f0f0f0"
-    title_color = "#d8c3f0" if dark_mode else "#511D66"
-    desc_color = "#999999" if dark_mode else "#555"
-
-    # return header
-    return f"""<div style="display:flex; align-items:center; background-color:{bg_color}; padding:16px 20px;
-                border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
-        <img src="data:image/png;base64,{image_base64}" alt="Logo"
-             style="height:74px; margin-right:70px; border-radius:8px;" />
-        <div style="display:flex; flex-direction:column;">
-        <div style="font-size:1.4rem; font-weight:600; color:{title_color}; margin-bottom:4px;">
-            {title}
-        </div>
-        <div style="font-size:0.95rem; color:{desc_color};">
-            {description}
-        </div></div></div>"""
-#______________________________________________________
-
-#______________________________________________________
 # Function to render logo in sidebar
-def render_sidebar_logo(dark_mode: bool = False):
+def render_sidebar_logo(dark_mode=False):
 
     resize_factor = 0.35
     image_path = "logo/logo_inverse.png" if dark_mode else "logo/logo.png"
@@ -249,7 +303,7 @@ def import_st_aesthetics():
     </style>"""
 #_______________________________________________________
 
-#________________________________________________
+#_______________________________________________________
 # Function to import style - dark mode
 def import_st_aesthetics_dark_mode():
 
@@ -418,115 +472,62 @@ def get_success_message_time():
 
 #______________________________________________________
 # Function to get error message to indicate a g_mapping must be created/imported
-def get_missing_g_mapping_error_message():
+def get_missing_g_mapping_error_message(different_page=False):
 
-    st.markdown(f"""<div class="error-message">
-        ❌ You need to create or import a mapping from the
-        <b>Select Mapping</b> pannel.
-    </div>""", unsafe_allow_html=True)
-#______________________________________________________
+    if not different_page:
+        st.markdown(f"""<div class="error-message">
+            ❌ You need to create or import a mapping from the
+            <b>Select Mapping</b> pannel.
+        </div>""", unsafe_allow_html=True)
 
-#______________________________________________________
-# Function to get error message to indicate a g_mapping must be created/imported
-def get_missing_g_mapping_error_message_different_page():
-
-    st.markdown(f"""<div class="error-message">
-        ❌ You need to create or import a mapping from the
-        <b>🌍 Global Configuration</b> page <small>(<b>Select Mapping</b> pannel).</small>
-    </div>""", unsafe_allow_html=True)
-#______________________________________________________
-
-#______________________________________________________
-# Function to get the mapping+ontology corner status message in the different panels
-def get_corner_status_message():
-
-    inner_html = ""
-
-    # mapping message
-    if st.session_state["g_label"]:
-        inner_html += f"""<img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-                style="vertical-align:middle; margin-right:8px; height:18px;">
-                 Mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b><br>"""
     else:
-        inner_html += f"""🚫 <b>No mapping</b> is loaded.<br>"""
-
-    inner_html += "<br>"
-
-    # ontology message
-    if st.session_state["g_ontology"]:
-        if len(st.session_state["g_ontology_components_dict"]) > 1:
-            ontology_items = '\n'.join([f"""<li><b>{ont}
-            <b style="color:#F63366;">[{st.session_state["g_ontology_components_tag_dict"][ont]}]</b>
-            </b></li>""" for ont in st.session_state["g_ontology_components_dict"]])
-            inner_html += f"""🧩 <b>Ontologies</b>:
-                <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
-                    {ontology_items}
-                </ul>"""
-        else:
-            ont = next(iter(st.session_state["g_ontology_components_dict"]))
-            inner_html += f"""🧩 Ontology: <b><br>
-                    {ont}</b>
-                    <b style="color:#F63366;">[{st.session_state["g_ontology_components_tag_dict"][ont]}]</b>."""
-    else:
-        inner_html += f"""🚫 <b>No ontology</b> has been imported."""
-
-    # render
-    st.markdown(f"""<div class="gray-preview-message">
-            {inner_html}
+        st.markdown(f"""<div class="error-message">
+            ❌ You need to create or import a mapping from the
+            <b>🌍 Global Configuration</b> page <small>(<b>Select Mapping</b> pannel).</small>
         </div>""", unsafe_allow_html=True)
 #______________________________________________________
 
 #______________________________________________________
-# Function to get the mapping corner status message
-def get_corner_status_message_mapping():
+# Function to get the mapping+ontology corner status message in the different panels
+def get_corner_status_message(mapping_info=False, ontology_info=False):
 
-    if st.session_state["g_label"]:
-        st.markdown(f"""<div class="gray-preview-message">
-                <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-                style="vertical-align:middle; margin-right:8px; height:18px;">
-                 Mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b><br>
-                <small style="margin-left:26px;">{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps </small>
-            </div>""", unsafe_allow_html=True)
+    inner_html = ""
 
-    else:
-        st.markdown(f"""<div class="gray-preview-message">
-                <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-                style="vertical-align:middle; margin-right:8px; height:20px;">
-                🚫 <b>No mapping</b> is loaded.
-            </div>
-        """, unsafe_allow_html=True)
-#______________________________________________________
-
-#_______________________________________________________
-# Function to get the ontology status message in the different panels
-def get_corner_status_message_ontology():
-
-    if st.session_state["g_ontology"]:
-
-        if len(st.session_state["g_ontology_components_dict"]) > 1:
-            ontology_items = '\n'.join([f"""<li><b>{ont}
-            <b style="color:#F63366;">[{st.session_state["g_ontology_components_tag_dict"][ont]}]</b>
-            </b></li>""" for ont in st.session_state["g_ontology_components_dict"]])
-            st.markdown(f"""<div class="gray-preview-message">
-                    🧩 <b>Ontologies</b>:
-                <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
-                    {ontology_items}
-                </ul></div>""", unsafe_allow_html=True)
-
+    # Mapping message
+    if mapping_info:
+        if st.session_state["g_label"]:
+            inner_html += f"""🗺️ Mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b><br>"""
         else:
-            ont = next(iter(st.session_state["g_ontology_components_dict"]))
-            st.markdown(f"""<div class="gray-preview-message">
-                    🧩 Ontology: <b><br>
-                    {ont}</b>
-                    <b style="color:#F63366;">[{st.session_state["g_ontology_components_tag_dict"][ont]}]</b>.
-                </div>""", unsafe_allow_html=True)
+            inner_html += f"""🚫 <b>No mapping</b> is loaded.<br>"""
 
-    else:
+    # Add spacing if needed
+    if ontology_info and inner_html:
+        inner_html += "<br>"
+
+    # Ontology message
+    if ontology_info:
+        if st.session_state["g_ontology"]:
+            if len(st.session_state["g_ontology_components_dict"]) > 1:
+                ontology_items = '\n'.join([f"""<li><b>{ont}
+                <b style="color:#F63366;">[{st.session_state["g_ontology_components_tag_dict"][ont]}]</b>
+                </b></li>""" for ont in st.session_state["g_ontology_components_dict"]])
+                inner_html += f"""🧩 <b>Ontologies</b>:
+                    <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
+                        {ontology_items}
+                    </ul>"""
+            else:
+                ont = next(iter(st.session_state["g_ontology_components_dict"]))
+                inner_html += f"""🧩 Ontology: <b><br>
+                        {ont}</b>
+                        <b style="color:#F63366;">[{st.session_state["g_ontology_components_tag_dict"][ont]}]</b>."""
+        else:
+            inner_html += f"""🚫 <b>No ontology</b> has been imported."""
+
+    # Render
+    if inner_html:
         st.markdown(f"""<div class="gray-preview-message">
-                🚫 <b>No ontology</b> has been imported.
-            </div>
-        """, unsafe_allow_html=True)
-
+                {inner_html}
+            </div>""", unsafe_allow_html=True)
 #______________________________________________________
 
 #______________________________________________________
@@ -543,8 +544,8 @@ def format_list_for_markdown(xlist):
     return formatted_list
 #______________________________________________________
 
-#_________________________________________________
-# Funtion to get label of a node
+#______________________________________________________
+# Funtion to get label of a node   #RFTAG
 def get_node_label(node):
 
     if isinstance(node, URIRef):
@@ -557,10 +558,10 @@ def get_node_label(node):
         label = ""
 
     return label
-#_________________________________________________
+#______________________________________________________
 
-#_________________________________________________
-# Funtion to get label of a node
+#______________________________________________________
+# Funtion to format iri to prefix:label
 def format_iri_to_prefix_label(node):
 
     if isinstance(node, BNode):
@@ -571,56 +572,43 @@ def format_iri_to_prefix_label(node):
         return prefix + ": " + local
     except Exception:
         return get_node_label(node)
-
-    return get_node_label(node)   # return label without prefix
-#_________________________________________________
+#______________________________________________________
 
 #______________________________________________________
-# Funtion to get the used classes metric
+# Funtion to format number
 def format_number_for_display(number):
 
-    # >10 M  eg. 21M
-    if number >= 10*10**6:
+    if number >= 10*10**6:    # >10 M  (ex 21M)
         number_for_display = f"{int(number/ 10**6)}M"
 
-    # 1-10 M  eg. 3.4M
-    elif number >= 10**6:
+    elif number >= 10**6:    # 1-10 M  (ex 3.4M)
         number_for_display = f"{round(number / 10**6, 1)}M"
 
-    # 10k-1M  eg. 23k
-    elif number >= 10*10**3:
+    elif number >= 10*10**3:    # 10k-1M  (ex 23k)
         number_for_display = f"{int(number / 1000)}k"
 
-    # 1k-10k  eg. 2.9k
-    elif number >= 10**3:
+    elif number >= 10**3:    # 1k-10k  (ex 2.9k)
         number_for_display = f"{round(number / 1000, 1)}k"
 
-    # 10-1k  eg. 545
-    elif number >= 10:
+    elif number >= 10:    # 10-1k  (ex 545)
         number_for_display = f"{int(number)}"
 
-    # 1-10  eg. 7.4
-    elif number >= 1:
+    elif number >= 1:    # 1-10  (ex 7.4)
         number_for_display = f"{round(number, 1)}"
 
-    # 0.1-1  eg. 0.32
-    elif number >= 0.1:
+    elif number >= 0.1:    # 0.1-1  (ex 0.32)
         number_for_display = f"{round(number, 2)}"
 
-    # 0
-    elif number == 0:
+    elif number == 0:    # 0
         number_for_display = 0
 
-    # <0.001
-    elif number < 0.001:
+    elif number < 0.001:    # <0.001
         number_for_display = "< 0.001"
 
-    # <0.01
-    elif number < 0.01:
+    elif number < 0.01:    # 0.001-0.01
         number_for_display = "< 0.01"
 
-    # <0.1
-    else:
+    else:    # 0.01-0.1
         number_for_display = "< 0.1"
 
     return number_for_display
@@ -628,7 +616,7 @@ def format_number_for_display(number):
 
 #______________________________________________________
 # Function to get the max_length for the display options
-# 0. complete dataframes      1. last added dataframes
+# 0. Complete dataframes      1. Last added dataframes
 # 2. Query display (rows)    3. Query display (columns)
 # 4. List of multiselect items for hard display     # 5 Long lists for soft display
 # 6. Label in network visualisation (characters)
@@ -643,7 +631,7 @@ def get_max_length_for_display():
 
 # INITIALISE PAGES =============================================================
 #________________________________________________________
-# Function to retrieve namespaces which are needed for our code
+# Function to initialise all session state variables
 def init_session_state_variables():
 
     if "session_initialised_ok_flag" not in st.session_state:
@@ -655,24 +643,24 @@ def init_session_state_variables():
         st.session_state["g_mapping"] = Graph()
         st.session_state["g_label"] = ""
         st.session_state["g_label_temp_new"] = ""
-        st.session_state["new_g_mapping_created_ok_flag"] = False
         st.session_state["key_mapping_uploader"] = None
         st.session_state["g_label_temp_existing"] = ""
-        st.session_state["existing_g_mapping_loaded_ok_flag"] = False
-        st.session_state["session_retrieved_ok_flag"] = False
         st.session_state["g_mapping_source_cache"] = ["",""]
         st.session_state["original_g_size_cache"] = 0
         st.session_state["original_g_mapping_ns_dict"] = {}
-        st.session_state["cached_mapping_retrieved_ok_flag"] = False
-        st.session_state["everything_reseted_ok_flag"] = False
-        st.session_state["g_label_changed_ok_flag"] = False
         st.session_state["candidate_g_mapping"] = Graph()
+        st.session_state["new_g_mapping_created_ok_flag"] = False
+        st.session_state["existing_g_mapping_loaded_ok_flag"] = False
+        st.session_state["session_retrieved_ok_flag"] = False
+        st.session_state["cached_mapping_retrieved_ok_flag"] = False
+        st.session_state["g_label_changed_ok_flag"] = False
+        st.session_state["everything_reseted_ok_flag"] = False
         # TAB2
-        st.session_state["ns_bound_ok_flag"] = False
-        st.session_state["base_ns"] = get_default_base_ns()
-        st.session_state["base_ns_changed_ok_flag"] = False
-        st.session_state["ns_unbound_ok_flag"] = False
         st.session_state["last_added_ns_list"] = []
+        st.session_state["base_ns"] = get_default_base_ns()
+        st.session_state["ns_bound_ok_flag"] = False
+        st.session_state["ns_unbound_ok_flag"] = False
+        st.session_state["base_ns_changed_ok_flag"] = False
         st.session_state["ontology_downloaded_ok_flag"] = False
         # TAB3
         st.session_state["progress_saved_ok_flag"] = False
@@ -684,7 +672,6 @@ def init_session_state_variables():
         # TAB1
         st.session_state["g_ontology"] = Graph()
         st.session_state["g_ontology_label"] = ""
-        st.session_state["g_ontology_loaded_ok_flag"] = False
         st.session_state["ontology_link"] = ""
         st.session_state["key_ontology_uploader"] = None
         st.session_state["ontology_file"] = None
@@ -692,6 +679,7 @@ def init_session_state_variables():
         st.session_state["g_ontology_from_link_candidate"] = Graph()
         st.session_state["g_ontology_components_dict"] = {}
         st.session_state["g_ontology_components_tag_dict"] = {}
+        st.session_state["g_ontology_loaded_ok_flag"] = False
         st.session_state["g_ontology_reduced_ok_flag"] = False
 
         # 📊 SQL DATABASES____________________________________
@@ -726,18 +714,18 @@ def init_session_state_variables():
         st.session_state["sm_label"] = ""
         st.session_state["tm_label_for_sm"] = False
         st.session_state["sm_template_list"] = []
-        st.session_state["sm_saved_ok_flag"] = False
         st.session_state["sm_iri"] = None
         st.session_state["sm_template_prefix"] = ""
-        st.session_state["sm_template_variable_part_flag"] = False
         st.session_state["multiple_subject_class_list"] = []
+        st.session_state["sm_template_variable_part_flag"] = False
+        st.session_state["sm_saved_ok_flag"] = False
         # TAB3
         st.session_state["key_ds_uploader_for_pom"] = str(uuid.uuid4())
         st.session_state["om_template_ns_prefix"] = ""
-        st.session_state["template_om_is_iri_flag"] = False
-        st.session_state["pom_saved_ok_flag"] = False
         st.session_state["om_template_list"] = []
         st.session_state["last_added_pom_list"] = []
+        st.session_state["template_om_is_iri_flag"] = False
+        st.session_state["pom_saved_ok_flag"] = False
         st.session_state["om_template_variable_part_flag"] = False
         # TAB4
         st.session_state["tm_deleted_ok_flag"] = False
@@ -753,13 +741,13 @@ def init_session_state_variables():
         st.session_state["config_file_reset_ok_flag_tab1"] = False
         # TAB2
         st.session_state["mkgc_g_mappings_dict"] = {}
+        st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
         st.session_state["manual_config_enabled_ok_flag"] = False
         st.session_state["ds_for_mkgcgc_saved_ok_flag"] = False
         st.session_state["ds_for_mkgcgc_removed_ok_flag"] = False
         st.session_state["configuration_for_mkgcgc_saved_ok_flag"] = False
         st.session_state["configuration_for_mkgcgc_removed_ok_flag"] = False
         st.session_state["additional_mapping_added_ok_flag"] = False
-        st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
         st.session_state["additional_mapping_for_mkgcgc_saved_ok_flag"] = False
         st.session_state["additional_mapping_removed_ok_flag"] = False
         st.session_state["config_file_reset_ok_flag_tab2"] = False
@@ -771,38 +759,34 @@ def init_session_state_variables():
 #______________________________________________________
 
 #______________________________________________________
-#Function to initialise page
+# Function to initialise page
 def init_page():
 
-    # Automatic detection of dark mode
+    # automatic detection of dark mode
     if "dark_mode_flag" not in st.session_state or st.session_state["dark_mode_flag"] is None:
         st.session_state["dark_mode_flag"] = streamlit_js_eval(js_expressions="window.matchMedia('(prefers-color-scheme: dark)').matches",
             key="dark_mode")
 
-    # Sidebar logo
+    # sidebar logo
     dark_mode = False if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else True
     utils.render_sidebar_logo(dark_mode=dark_mode)
 
-    # Import style
+    # import style
     style_container = st.empty()
     if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
         style_container.markdown(import_st_aesthetics(), unsafe_allow_html=True)
     else:
         style_container.markdown(import_st_aesthetics_dark_mode(), unsafe_allow_html=True)
 
-    # Initialise session state variables
+    # initialise session state variables
     init_session_state_variables()
 #______________________________________________________
 
 
-# PAGE: GLOBAL CONFIGURATION ===================================================
-# PANNEL: SELECT MAPPING--------------------------------------------------------
+# GLOBAL FUNCTIONS==============================================================
 #______________________________________________________
-#Function to check whether a label is valid
-def is_valid_label(label):
-
-    if not label:
-        return False
+# Function to check whether a label is valid
+def is_valid_label(label, hard=False, display_option=True):
 
     valid_letters = ["a","b","c","d","e","f","g","h","i","j","k","l","m",
         "n","o","p","q","r","s","t","u","v","w","x","y","z",
@@ -810,49 +794,13 @@ def is_valid_label(label):
         "N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
 
     valid_digits = ["0","1","2","3","4","5","6","7","8","9","_","-"]
+
+    # disallow empty label
+    if not label:
+        return False
 
     # disallow spaces
     if re.search(r"[ \t\n\r]", label):    # disallow spaces
-        st.markdown(f"""<div class="error-message">
-            ❌ <b> Invalid label. </b>
-            <small>Please make sure it does not contain any spaces.</small>
-        </div>""", unsafe_allow_html=True)
-        return False
-
-    # disallow unescaped characters
-    if re.search(r"[<>\"{}|\\^`]", label):
-        st.markdown(f"""<div class="error-message">
-            ❌ <b> Invalid label. </b>
-            <small>Please make sure it does not contain any invalid characters (&lt;&gt;"{{}}|\\^`).</small>
-        </div>""", unsafe_allow_html=True)
-        return False
-
-    # warning if long
-    inner_html = ""
-    if len(label) > 20:
-        st.markdown(f"""<div class="warning-message">
-            ⚠️ A <b>shorter label</b> is recommended.
-        </div>""", unsafe_allow_html=True)
-
-    return True
-#_______________________________________________________
-
-#_______________________________________________________
-# Function to check whether a label is valid with harder conditions
-def is_valid_label_hard(label, display_option=True):
-
-    if not label:
-        return False
-
-    valid_letters = ["a","b","c","d","e","f","g","h","i","j","k","l","m",
-        "n","o","p","q","r","s","t","u","v","w","x","y","z",
-        "A","B","C","D","E","F","G","H","I","J","K","L","M",
-        "N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
-
-    valid_digits = ["0","1","2","3","4","5","6","7","8","9","_","-"]
-
-    # disallow spaces
-    if re.search(r"[ \t\n\r]", label):
         if display_option:
             st.markdown(f"""<div class="error-message">
                 ❌ <b> Invalid label. </b>
@@ -860,18 +808,28 @@ def is_valid_label_hard(label, display_option=True):
             </div>""", unsafe_allow_html=True)
         return False
 
-    # allow only safe characters
-    for letter in label:
-        if letter not in valid_letters and letter not in valid_digits:
-            if display_option:
-                st.markdown(f"""<div class="error-message">
-                    ❌ <b> Invalid label. </b>
-                    <small>Please make sure it contains only safe characters (a-z, A-Z, 0-9, -, _).</small>
-                </div>""", unsafe_allow_html=True)
-            return False
+    # disallow unescaped characters
+    if not hard and re.search(r"[<>\"{}|\\^`]", label):
+        if display_option:
+            st.markdown(f"""<div class="error-message">
+                ❌ <b> Invalid label. </b>
+                <small>Please make sure it does not contain any invalid characters (&lt;&gt;"{{}}|\\^`).</small>
+            </div>""", unsafe_allow_html=True)
+        return False
 
-    # disallow trailing puntuation
-    if label.endswith("_") or label.endswith("-"):
+    # allow only safe characters if hard
+    if hard:
+        for letter in label:
+            if letter not in valid_letters and letter not in valid_digits:
+                if display_option:
+                    st.markdown(f"""<div class="error-message">
+                        ❌ <b> Invalid label. </b>
+                        <small>Please make sure it contains only safe characters (a-z, A-Z, 0-9, -, _).</small>
+                    </div>""", unsafe_allow_html=True)
+                return False
+
+    # disallow trailing puntuation if hard
+    if hard and label.endswith("_") or label.endswith("-"):
         if display_option:
             st.markdown(f"""<div class="error-message">
                 ❌ <b> Invalid label. </b>
@@ -880,20 +838,126 @@ def is_valid_label_hard(label, display_option=True):
         return False
 
     # warning if long
-    inner_html = ""
-    if len(label) > 20:
-        if display_option:
-            st.markdown(f"""<div class="warning-message">
-                ⚠️ A <b>shorter label</b> is recommended.
-            </div>""", unsafe_allow_html=True)
-            inner_html += f"""A shorter label is recommended. """
+    if len(label) > 20 and display_option:
+        st.markdown(f"""<div class="warning-message">
+            ⚠️ A <b>shorter label</b> is recommended.
+        </div>""", unsafe_allow_html=True)
 
     return True
 #_______________________________________________________
 
+#_____________________________________________________
+# Funtion to get dictionary {prefix: namespace} bound in a graph g
+def get_g_ns_dict(g):
+
+    ns_dict = dict(g.namespace_manager.namespaces())
+
+    return ns_dict
+#_____________________________________________________
+
+#__________________________________________________________
+# Function to unbind namespaces from g mapping
+# Namespaces cannot be removed by rdflib, so the mapping is rebuilt completely
+# Duplicated prefixes will be renamed, duplicated namespaces will be ignored
+def unbind_namespaces(ns_to_unbind_list):
+
+    # build new graph as copy of old graph
+    if ns_to_unbind_list:
+        old_graph = st.session_state["g_mapping"]
+        ns_to_remove = set(ns_to_unbind_list)
+        new_graph = Graph()   # create a new graph and copy triples
+        for triple in old_graph:
+            new_graph.add(triple)
+
+        # rebind the namespaces without the deleted ones
+        for prefix, ns in old_graph.namespace_manager.namespaces():
+            if prefix not in ns_to_remove:
+                new_graph.namespace_manager.bind(prefix, ns, replace=True)
+
+        # replace the old graph with the new one
+        st.session_state["g_mapping"] = new_graph
+
+        # update last added list
+        for prefix in ns_to_unbind_list:
+            if prefix in st.session_state["last_added_ns_list"]:
+                st.session_state["last_added_ns_list"].remove(prefix)
+#_________________________________________________________
+
+#_________________________________________________________
+# Function to bind namespaces to g mapping
+# Duplicated prefixes will be renamed
+# Duplicated namespaces will be overwritten (overwrite=True) or ignored (overwrite=False)
+def bind_namespace(prefix, namespace, overwrite=True):
+
+    mapping_ns_dict = get_g_ns_dict(st.session_state["g_mapping"])
+
+    # for overwrite option, if namespace already bound to a different prefix, unbind it
+    if overwrite and URIRef(namespace) in mapping_ns_dict.values():
+        old_prefix_list = [k for k, v in mapping_ns_dict.items() if v == URIRef(namespace)]
+        for old_prefix in old_prefix_list:
+            if old_prefix in st.session_state["last_added_ns_list"]:
+                st.session_state["last_added_ns_list"].remove(old_prefix)
+        unbind_namespaces(old_prefix_list)
+
+    # for overwrite option, or if namespace not in mapping
+    if overwrite or not namespace in mapping_ns_dict.values():
+
+        # bind the new namespace
+        st.session_state["g_mapping"].bind(prefix, namespace)
+
+        # find actual prefix (it may have been auto-renamed)
+        actual_prefix = None
+        for pr, ns in st.session_state["g_mapping"].namespace_manager.namespaces():
+            if str(ns) == str(namespace):
+                actual_prefix = pr
+                break
+        if actual_prefix:
+            st.session_state["last_added_ns_list"].insert(0, actual_prefix)
+#_________________________________________________________
+
+#_________________________________________________________
+#Function to check whether an IRI is valid
+def is_valid_iri(iri, delimiter_ending=True):
+
+    valid_iri_schemes = ("http://", "https://", "ftp://", "mailto:",
+        "urn:", "tag:", "doi:", "data:")
+
+    iri = str(iri) if isinstance(iri, URIRef) else iri
+
+    # must start with valid scheme
+    if not iri.startswith(valid_iri_schemes):
+        return False
+
+    try:
+        parsed = urlparse(iri)
+    except:
+        return False
+    schemes_with_netloc = {"http", "https", "ftp"}
+    if parsed.scheme in schemes_with_netloc and not parsed.netloc:
+        return False
+
+    # disallow spaces or unescaped characters
+    if re.search(r"[ \t\n\r<>\"{}|\\^`]", iri):
+        return False
+
+    # enforce ASCII only
+    if not all(ord(c) < 128 for c in iri):
+        return False
+
+    # must end with a recognized delimiter (can be switched off)
+    if delimiter_ending and not iri[-1] in ("/", "#", ":"):
+        return False
+
+    return True
+#_________________________________________________________
+
+
+
+# PAGE: 🌍 GLOBAL CONFIGURATION ===================================================
+# PANEL: SELECT MAPPING---------------------------------------------------------
+
 #_______________________________________________________
 # List of allowed mapping file formats
-# HERE - Expand options, now reduced version
 def get_g_mapping_file_formats_dict():
 
     allowed_format_dict = {"turtle": ".ttl",
@@ -903,40 +967,7 @@ def get_g_mapping_file_formats_dict():
 #_______________________________________________________
 
 #_______________________________________________________
-# Function to empty all lists that store last added stuff
-def empty_last_added_lists():
-    st.session_state["last_added_ns_list"] = []
-    st.session_state["last_added_tm_list"] = []
-    st.session_state["last_added_sm_list"] = []
-    st.session_state["last_added_pom_list"] = []
-#_____________________________________________________
-
-#_____________________________________________________
-# Function to completely reset cache (last added dictionaries and ontology dictionaries)
-# Mapping, data sources, ontologies and last added lists
-def full_reset():
-
-    # reset mapping
-    st.session_state["g_mapping"] = Graph()
-    st.session_state["g_label"] = ""
-
-    # reset data sources
-    st.session_state["db_connections_dict"] = {}
-    st.session_state["db_connection_status_dict"] = {}
-    st.session_state["sql_queries_dict"] = {}
-    st.session_state["ds_files_dict"] = {}
-
-    # reset ontology
-    st.session_state["g_ontology_components_dict"] = {}
-    st.session_state["g_ontology_components_tag_dict"] = {}
-    st.session_state["g_ontology"] = Graph()
-
-    # reset last added lists
-    empty_last_added_lists()
-#_____________________________________________________
-
-#_______________________________________________________
-# Function to format the suggested mapping label
+# Function to format the suggested label for an imported mapping
 def format_suggested_mapping_label(label):
 
     max_length = get_max_length_for_display()[7]
@@ -948,11 +979,10 @@ def format_suggested_mapping_label(label):
     label = label[:max_length] if len(label) > max_length else label
 
     return label
-
 #_____________________________________________________
 
 #_______________________________________________________
-# Function to load mapping from link
+# Function to import mapping from link
 def load_mapping_from_link(url):
 
     g = Graph()
@@ -961,7 +991,7 @@ def load_mapping_from_link(url):
         g.parse(url, format="turtle")
         return g
 
-    except Exception as e:
+    except:
         st.markdown(f"""<div class="error-message">
             ❌ Failed to parse <b>mapping</b>.
             <small>Please check your URL and your mapping.</small>
@@ -970,30 +1000,13 @@ def load_mapping_from_link(url):
 #_____________________________________________________
 
 #_______________________________________________________
-# Function to load mapping from file (f is a file object)
+# Function to import mapping from file (f is a file object)
 # This should work for all formats in get_g_mapping_file_formats_dict
-# HERE - Check all formats work
 def load_mapping_from_file(f):
 
     ext = os.path.splitext(f.name)[1].lower()  #file extension
 
-    # pkl
-    if ext == ".pkl":
-        return pickle.load(f)
-
-    # json
-    elif ext in [".json", ".jsonld"]:
-        text = f.read().decode("utf-8")
-        return json.loads(text)
-
-    # csv
-    elif ext == ".csv":
-        text = f.read().decode("utf-8")
-        reader = csv.DictReader(io.StringIO(text))
-        return [row for row in reader]
-
-    # ttl, xml, nt, etc
-    elif ext in [".ttl", ".rdf", ".xml", ".nt", ".n3", ".trig", ".trix"]:
+    if ext in [".ttl", ".rdf", ".xml", ".nt", ".n3", ".trig", ".trix"]:
         rdf_format_dict = {".ttl": "turtle", ".rdf": "xml", ".xml": "xml",
             ".nt": "nt", ".n3": "n3", ".trig": "trig", ".trix": "trix"}
         g = Graph()
@@ -1012,10 +1025,9 @@ def load_mapping_from_file(f):
             </div>""", unsafe_allow_html=True)
             return False
 
-    # error message
-    else:
+    else:   # error message (should not happen)
         st.markdown(f"""<div class="error-message">
-            ❌ Unsupported file extension <b>{ext}</b>. # should not happen
+            ❌ Unsupported file extension <b>{ext}</b>.
         </div>""", unsafe_allow_html=True)
         return False
 #_____________________________________________________
@@ -1036,19 +1048,25 @@ def get_g_mapping_base_ns():
     prefix = ""
     base_ns = ""
 
+    # Look for base ns of the mapping
     for s, p, o in st.session_state["g_mapping"]:
         if isinstance(s, URIRef):
             if p in [RML.logicalSource, RML.subjectMap, RML.predicateObjectMap, RML.objectMap]:
                 base_ns = split_uri(s)[0]
-                break
+                if is_valid_iri(base_ns):
+                    break
 
+    # Look for prefix of the base namespace (else assign "base")
     prefix = "base"
     for pr, ns in st.session_state["g_mapping"].namespaces():
         if str(base_ns) == str(ns):
             prefix = pr
             break
 
-    return [prefix, Namespace(base_ns)]
+    if is_valid_iri(base_ns):
+        return [prefix, Namespace(base_ns)]
+    else:
+        return get_default_base_ns()
 #_________________________________________________________
 
 #_________________________________________________________
@@ -1081,95 +1099,43 @@ def change_g_mapping_base_ns(prefix, namespace):
     st.session_state["g_mapping"] = updated_g
 #_________________________________________________________
 
-
-# PANNEL: CONFIGURE NAMESPACES -------------------------------------------------
-#_____________________________________________________
-# Function to get the default base iri for the base components
-def get_default_base_ns():
-
-    return ["map3x", Namespace("http://3xmap.org/mapping/")]
-#_____________________________________________________
-
-#_____________________________________________________
-# Funtion to get dictionary with default namespaces
-# Default namespaces are automatically added to the g namespace manager by rdflib
-# For clarity, we bind them and don't allow to remove
-# DO NOT MODIFY LIST
-def get_default_ns_dict():
-
-    default_ns_dict = {
-        "brick": URIRef("https://brickschema.org/schema/Brick#"),
-        "csvw": URIRef("http://www.w3.org/ns/csvw#"),
-        "dc": URIRef("http://purl.org/dc/elements/1.1/"),
-        "dcam": URIRef("http://purl.org/dc/dcam/"),
-        "dcat": URIRef("http://www.w3.org/ns/dcat#"),
-        "dcmitype": URIRef("http://purl.org/dc/dcmitype/"),
-        "dcterms": URIRef("http://purl.org/dc/terms/"),
-        "doap": URIRef("http://usefulinc.com/ns/doap#"),
-        "foaf": URIRef("http://xmlns.com/foaf/0.1/"),
-        "geo": URIRef("http://www.opengis.net/ont/geosparql#"),
-        "odrl": URIRef("http://www.w3.org/ns/odrl/2/"),
-        "org": URIRef("http://www.w3.org/ns/org#"),
-        "owl": URIRef("http://www.w3.org/2002/07/owl#"),
-        "prof": URIRef("http://www.w3.org/ns/dx/prof/"),
-        "prov": URIRef("http://www.w3.org/ns/prov#"),
-        "qb": URIRef("http://purl.org/linked-data/cube#"),
-        "rdf": URIRef("http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
-        "rdfs": URIRef("http://www.w3.org/2000/01/rdf-schema#"),
-        "schema": URIRef("https://schema.org/"),
-        "sh": URIRef("http://www.w3.org/ns/shacl#"),
-        "skos": URIRef("http://www.w3.org/2004/02/skos/core#"),
-        "sosa": URIRef("http://www.w3.org/ns/sosa/"),
-        "ssn": URIRef("http://www.w3.org/ns/ssn/"),
-        "time": URIRef("http://www.w3.org/2006/time#"),
-        "vann": URIRef("http://purl.org/vocab/vann/"),
-        "void": URIRef("http://rdfs.org/ns/void#"),
-        "wgs": URIRef("https://www.w3.org/2003/01/geo/wgs84_pos#"),
-        "xml": URIRef("http://www.w3.org/XML/1998/namespace"),
-        "xsd": URIRef("http://www.w3.org/2001/XMLSchema#")}
-
-    return default_ns_dict
+#_______________________________________________________
+# Function to empty all lists that store last added stuff
+def empty_last_added_lists():
+    st.session_state["last_added_ns_list"] = []
+    st.session_state["last_added_tm_list"] = []
+    st.session_state["last_added_sm_list"] = []
+    st.session_state["last_added_pom_list"] = []
 #_____________________________________________________
 
 #_____________________________________________________
-# Function to get dictionary with predefined namespaces so that they can be easily bound
-# LIST CAN BE CHANGED
-def get_predefined_ns_dict():
+# Function to completely reset cache
+# Mapping, data sources, ontologies and last added lists
+def full_reset():
 
-    predefined_ns_dict = {
-        "rdf": URIRef("http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
-        "rdfs": URIRef("http://www.w3.org/2000/01/rdf-schema#"),
-        "owl": URIRef("http://www.w3.org/2002/07/owl#"),
-        "xsd": URIRef("http://www.w3.org/2001/XMLSchema#"),
-        "foaf": URIRef("http://xmlns.com/foaf/0.1/"),
-        "dc": URIRef("http://purl.org/dc/elements/1.1/"),
-        "dcterms": URIRef("http://purl.org/dc/terms/"),
-        "skos": URIRef("http://www.w3.org/2004/02/skos/core#"),
-        "time": URIRef("http://www.w3.org/2006/time#"),
-        "prov": URIRef("http://www.w3.org/ns/prov#")}
+    # reset mapping
+    st.session_state["g_mapping"] = Graph()
+    st.session_state["g_label"] = ""
 
-    default_dict = get_default_ns_dict()
-    filtered_ns_dict = {}
-    for k, v in predefined_ns_dict.items():
-        if v not in default_dict.values():
-            filtered_ns_dict[k] = v
+    # reset data sources
+    st.session_state["db_connections_dict"] = {}
+    st.session_state["db_connection_status_dict"] = {}
+    st.session_state["sql_queries_dict"] = {}
+    st.session_state["ds_files_dict"] = {}
 
-    predefined_ns_dict = filtered_ns_dict
+    # reset ontology
+    st.session_state["g_ontology_components_dict"] = {}
+    st.session_state["g_ontology_components_tag_dict"] = {}
+    st.session_state["g_ontology"] = Graph()
 
-    return predefined_ns_dict
+    # reset last added lists
+    empty_last_added_lists()
 #_____________________________________________________
 
-#_____________________________________________________
-# Funtion to get dictionary {prefix: namespace} bound in a graph g
-def get_g_ns_dict(g):
 
-    ns_dict = dict(g.namespace_manager.namespaces())
-
-    return ns_dict
+# PANEL: CONFIGURE NAMESPACES --------------------------------------------------
 #_____________________________________________________
-
-#_____________________________________________________
-# Funtion to get dictionary {prefix: namespace} used in a mapping g
+# Funtion to get dictionary {prefix: namespace} of namespaces used in a mapping g
 def get_used_g_ns_dict(g):
 
     used_namespaces_set = set()
@@ -1195,124 +1161,9 @@ def get_used_g_ns_dict(g):
     return used_namespaces_dict
 #_________________________________________________________
 
-#__________________________________________________________
-# Function to unbind namespaces from g mapping
-# Namespaces cannot be removed by rdflib, so the mapping is rebuilt completely
-# Duplicated prefixes will be renamed, duplicated namespaces will be ignored
-def unbind_namespaces(ns_to_unbind_list):
-
-    # build new graph as copy of old graph
-    if ns_to_unbind_list:
-        old_graph = st.session_state["g_mapping"]
-        ns_to_remove = set(ns_to_unbind_list)
-        new_graph = Graph()   # create a new graph and copy triples
-        for triple in old_graph:
-            new_graph.add(triple)
-
-        # rebind the namespaces without the deleted ones
-        for prefix, ns in old_graph.namespace_manager.namespaces():
-            if prefix not in ns_to_remove:
-                new_graph.namespace_manager.bind(prefix, ns, replace=True)
-
-        # replace the old graph with the new one
-        st.session_state["g_mapping"] = new_graph
-
-        # update last added list
-        for prefix in ns_to_unbind_list:
-            if prefix in st.session_state["last_added_ns_list"]:
-                st.session_state["last_added_ns_list"].remove(prefix)
-#_________________________________________________________
-
-#_________________________________________________________
-# Function to bind namespaces to g mapping
-# Duplicated prefixes will be renamed, duplicated namespaces will be overwritten
-def bind_namespace(prefix, namespace):
-
-    mapping_ns_dict = get_g_ns_dict(st.session_state["g_mapping"])
-
-    # if namespace already bound to a different prefix, unbind it
-    if URIRef(namespace) in mapping_ns_dict.values():
-        old_prefix_list = [k for k, v in mapping_ns_dict.items() if v == URIRef(namespace)]
-        for old_prefix in old_prefix_list:
-            if old_prefix in st.session_state["last_added_ns_list"]:
-                st.session_state["last_added_ns_list"].remove(old_prefix)
-        unbind_namespaces(old_prefix_list)
-
-    # bind the new namespace
-    st.session_state["g_mapping"].bind(prefix, namespace)
-
-    # find actual prefix (it may have been auto-renamed)
-    actual_prefix = None
-    for pr, ns in st.session_state["g_mapping"].namespace_manager.namespaces():
-        if str(ns) == str(namespace):
-            actual_prefix = pr
-            break
-    if actual_prefix:
-        st.session_state["last_added_ns_list"].insert(0, actual_prefix)
-#_________________________________________________________
-
-#__________________________________________________________
-# Function to bind namespaces to g mapping without overwriting
-# Duplicated prefixes will be renamed, duplicated namespaces will be ignored
-def bind_namespace_wo_overwriting(prefix, namespace):
-
-    mapping_ns_dict = get_g_ns_dict(st.session_state["g_mapping"])
-
-    if not namespace in mapping_ns_dict.values():
-
-        # bind the new namespace
-        st.session_state["g_mapping"].bind(prefix, namespace)
-
-        # find actual prefix (it might have been auto-renamed)
-        actual_prefix = None
-        for pr, ns in st.session_state["g_mapping"].namespace_manager.namespaces():
-            if str(ns) == namespace:
-                actual_prefix = pr
-                break
-        if actual_prefix:
-            st.session_state["last_added_ns_list"].insert(0, actual_prefix)
-
-#_________________________________________________________
-
-#_________________________________________________________
-#Function to check whether an IRI is valid
-def is_valid_iri(iri, delimiter_ending=True):
-
-    valid_iri_schemes = ("http://", "https://", "ftp://", "mailto:",
-        "urn:", "tag:", "doi:", "data:")
-
-    if isinstance(iri, URIRef):
-        iri = str(iri)
-
-    # must start with valid scheme
-    if not iri.startswith(valid_iri_schemes):
-        return False
-
-    try:
-        parsed = urlparse(iri)
-    except:
-        return False
-    schemes_with_netloc = {"http", "https", "ftp"}
-    if parsed.scheme in schemes_with_netloc and not parsed.netloc:
-        return False
-
-    # disallow spaces or unescaped characters
-    if re.search(r"[ \t\n\r<>\"{}|\\^`]", iri):
-        return False
-
-    # must end with a recognized delimiter (can be switched off)
-    if delimiter_ending and not iri[-1] in ("/", "#", ":"):
-        return False
-
-    return True
-#_________________________________________________________
-
 #_________________________________________________________
 #Function to check whether a prefix is valid
 def is_valid_prefix(prefix):
-
-    if not prefix:
-        return False
 
     valid_letters = ["a","b","c","d","e","f","g","h","i","j","k","l","m",
         "n","o","p","q","r","s","t","u","v","w","x","y","z",
@@ -1320,6 +1171,10 @@ def is_valid_prefix(prefix):
         "N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
 
     valid_digits = ["0","1","2","3","4","5","6","7","8","9","_"]
+
+    # disallow empty prefix
+    if not prefix:
+        return False
 
     # disallow spaces
     if re.search(r"[ \t\n\r]", prefix):
@@ -1349,9 +1204,9 @@ def is_valid_prefix(prefix):
     # warning if long or uppercase used
     inner_html = ""
     if len(prefix) > 10:
-        inner_html += f"""A shorter prefix is recommended. """
+        inner_html += f"""A <b>shorter prefix</b> is recommended. """
     if prefix.lower() != prefix:
-        inner_html += f"""The use of uppercase letters is discouraged."""
+        inner_html += f"""The use of <b>uppercase</b> letters is discouraged."""
     if inner_html:
         st.markdown(f"""<div class="warning-message">
             ⚠️ {inner_html}
@@ -1359,9 +1214,9 @@ def is_valid_prefix(prefix):
 
     return True
 #_________________________________________________________
-
+#RFBOOKMARK
 #_________________________________________________________
-# Function to check whether any prefixes of a ns dictionary are not bound in mapping
+# Function to check whether any prefixes of a ns dictionary are not bound in g mapping
 def are_there_unbound_ns(ns_dict):
 
     mapping_ns_dict = get_g_ns_dict(st.session_state["g_mapping"])
@@ -1376,8 +1231,7 @@ def are_there_unbound_ns(ns_dict):
 #_________________________________________________
 
 #_________________________________________________
-#Function to get previsualisation message of mapping/ontology/predefined namespaces
-# and when unbinding namespaces
+# Function to get previsualisation of Prefix -> Namespace
 def get_ns_previsualisation_message(ns_to_bind_list, ns_dict):
 
     inner_html = ""
@@ -1399,8 +1253,7 @@ def get_ns_previsualisation_message(ns_to_bind_list, ns_dict):
 #_________________________________________________
 
 #_________________________________________________
-# Function to get warning messages when binding mapping/ontology/predefined namespaces
-# and when unbinding namespaces
+# Function to get warning messages when binding namespaces
 def get_ns_warning_message(ns_to_bind_list):
 
     mapping_ns_dict = get_g_ns_dict(st.session_state["g_mapping"])
@@ -1430,7 +1283,7 @@ def get_ns_warning_message(ns_to_bind_list):
 # 0. [g_label, g_mapping]     1. g_ontology_components_dict      2. base_ns_dict
 # 3. db_connections_dict       4. db_connection_status_dict
 # 5. ds_files_dict                6. sql_queries_dict
-def save_project_state():
+def save_session_state():
 
     # list to save session
     project_state_list = []
@@ -1452,8 +1305,8 @@ def save_project_state():
 #______________________________________________________
 
 #_________________________________________________
-#Funtion to retrieve the project state
-def retrieve_project_state(project_state_list):
+# Funtion to retrieve the session state
+def retrieve_session_state(project_state_list):
 
     st.session_state["g_label"] = project_state_list[0]
     st.session_state["g_mapping"] = project_state_list[1]
@@ -1475,7 +1328,7 @@ def retrieve_project_state(project_state_list):
 
 #_________________________________________________
 #Funtion to check whether a filename is valid
-def is_valid_filename(filename):  #HEREIGO
+def is_valid_filename(filename):
 
     excluded_characters = r"[\\/:*?\"<>| ]"
     windows_reserved_names = ["CON", "PRN", "AUX", "NUL",
@@ -1547,7 +1400,7 @@ def get_ontology_base_iri(g_ont):
 def parse_ontology(source):
 
     # If source is a file-like object
-    if isinstance(source, IOBase):
+    if isinstance(source, io.IOBase):
         content = source.read()
         source.seek(0)  # reset index so that file can be reused
         for fmt in ["xml", "turtle", "jsonld", "ntriples", "trig", "trix"]:
@@ -1773,6 +1626,26 @@ def get_candidate_ontology_info_messages(g, g_label, g_format):
 # PAGE: SQL DATABASES===========================================================
 #______________________________________________________
 # Funtion to get jdbc str from connection
+def get_jdbc_str_from_input(engine, host, port, database):
+
+    if engine == "Oracle":
+        jdbc_str = f"jdbc:oracle:thin:@{host}:{port}:{database}"
+    elif engine == "SQL Server":
+        jdbc_str = f"jdbc:sqlserver://{host}:{port};databaseName={database}"
+    elif engine == "PostgreSQL":
+        jdbc_str = f"jdbc:postgresql://{host}:{port}/{database}"
+    elif engine == "MySQL":
+        jdbc_str = f"jdbc:mysql://{host}:{port}/{database}"
+    elif engine =="MariaDB":
+        jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
+    else:
+        return None
+
+    return jdbc_str
+#______________________________________________________
+
+#______________________________________________________
+# Funtion to get jdbc str from connection
 def get_jdbc_str(conn):
 
     if conn in st.session_state["db_connections_dict"]:
@@ -1813,6 +1686,11 @@ def get_db_url_str(conn):
         db_url_str = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}"
     elif engine =="MariaDB":
         db_url_str = f"mariadb+pymysql://{user}:{password}@{host}:{port}/{database}"
+    elif engine == "MongoDB":
+        if user and password:
+            db_url_str = f"mongodb://{user}:{password}@{host}:{port}/{database}"
+        else:
+            db_url_str = f"mongodb://{host}:{port}/{database}"
     else:
         return None
 
@@ -1845,6 +1723,11 @@ def make_connection_to_db(connection_label):
             f"DATABASE={database};"
             f"UID={user};"
             f"PWD={password}", timeout=timeout)
+
+    elif engine == "MongoDB":
+        uri = f"mongodb://{user}:{password}@{host}:{port}/{database}"
+        client = MongoClient(uri, serverSelectionTimeoutMS=timeout * 1000)
+        conn = client[database]
 
     else:
         conn = None
@@ -2626,64 +2509,75 @@ def check_g_mapping(g):
 
         max_length = utils.get_max_length_for_display()[5]
 
-        inner_html = f"""The <b>mapping</b> is incomplete!
-            <br>"""
+        inner_html = f"""The <b>mapping</b> is incomplete."""
 
         if tm_wo_sm_list:
             if len(tm_wo_sm_list) == 1:
-                inner_html += f"""<div style="margin-left: 20px"><small>The TriplesMap <b>
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· The TriplesMap <b>
                 {tm_wo_sm_list_display}</b> has not been assigned
                 a Subject Map.</small><br></div>"""
             elif len(tm_wo_sm_list) < max_length:
-                inner_html += f"""<div style="margin-left: 20px"><small>The TriplesMaps
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· The TriplesMaps
                 <b>{tm_wo_sm_list_display}</b> have not been assigned
                 a Subject Map.</small><br></div>"""
             else:
-                inner_html += f"""<div style="margin-left: 20px"><small><b>{len(tm_wo_sm_list)}
+                inner_html += f"""<div style="margin-left: 20px">
+                <small><b>· {len(tm_wo_sm_list)}
                 TriplesMaps</b> have not been assigned
                 a Subject Map.</small><br></div>"""
 
         if tm_wo_pom_list:
             if len(tm_wo_pom_list) == 1:
                 tm_wo_pom_list_display = utils.format_list_for_markdown(tm_wo_pom_list)
-                inner_html += f"""<div style="margin-left: 20px"><small>The TriplesMap
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· The TriplesMap
                 <b>{tm_wo_pom_list_display}</b> has not been assigned
                 a Predicate-Object Map.</small><br></div>"""
             elif len(tm_wo_pom_list) < max_length:
                 tm_wo_pom_list_display = utils.format_list_for_markdown(tm_wo_pom_list)
-                inner_html += f"""<div style="margin-left: 20px"><small>The TriplesMaps
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· The TriplesMaps
                 <b>{tm_wo_pom_list_display}</b> have not been assigned
                 a Predicate-Object Map.</small><br></div>"""
             else:
-                inner_html += f"""<div style="margin-left: 20px"><small><b>{len(tm_wo_pom_list)}
+                inner_html += f"""<div style="margin-left: 20px">
+                <small><b>· {len(tm_wo_pom_list)}
                 TriplesMaps</b> have not been assigned
                 a Predicate-Object Map.</small><br></div>"""
 
         if pom_wo_om_list:
             if len(pom_wo_om_list) == 1:
-                inner_html += f"""<div style="margin-left: 20px"><small>The Predicate-Object Map
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· The Predicate-Object Map
                 <b>{pom_wo_om_list_display}</b> has not been assigned
                 an Object Map.</small><br></div>"""
             elif len(pom_wo_om_list) < max_length:
-                inner_html += f"""<div style="margin-left: 20px"><small>The Predicate-Object Maps
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· The Predicate-Object Maps
                 <b>{pom_wo_om_list_display}</b> have not been assigned
                 an Object Map.</small><br></div>"""
             else:
-                inner_html += f"""<div style="margin-left: 20px"><small><b>{len(pom_wo_om_list_display)}
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· <b>{len(pom_wo_om_list_display)}
                 Predicate-Object Maps</b> have not been assigned
                 an Object Map.</small><br></div>"""
 
         if pom_wo_predicate_list:
             if len(pom_wo_om_list) == 1:
-                inner_html += f"""<div style="margin-left: 20px"><small>The Predicate-Object Map
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· The Predicate-Object Map
                 <b>{pom_wo_predicate_list_display}</b> has not been assigned
                 a predicate.</small><br></div>"""
             elif len(pom_wo_om_list) < max_length:
-                inner_html += f"""<div style="margin-left: 20px"><small>The Predicate-Object Maps
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· The Predicate-Object Maps
                 <b>{pom_wo_predicate_list_display}</b> have not been assigned
                 a predicate.</small><br></div>"""
             else:
-                inner_html += f"""<div style="margin-left: 20px"><small><b>{len(pom_wo_predicate_list_display)}
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· <b>{len(pom_wo_predicate_list_display)}
                 Predicate-Object Maps</b> have not been assigned
                 a predicate.</small><br></div>"""
 
@@ -3830,7 +3724,16 @@ def get_graph_map_dict():
 
 
 
-
+# st.markdown(f"""<div class="gray-preview-message">
+#         <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
+#         style="vertical-align:middle; margin-right:8px; height:20px;">
+#         You are working with mapping
+#         <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
+#         <ul style="font-size:0.75rem; margin:6px 0 0 15px; padding-left:10px;">
+#             <li>Mapping was loaded from file <b>{st.session_state["g_mapping_source_cache"][1]}</b></li>
+#             <li>When loaded, mapping had <b>{st.session_state["original_g_size_cache"]} TriplesMaps</b></li>
+#             <li>Now mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps<b/></li>
+#         </ul></div>""", unsafe_allow_html=True)
 
 
 #F63366 Streamlit salmon

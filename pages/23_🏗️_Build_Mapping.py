@@ -548,7 +548,7 @@ tab1, tab2, tab3, tab4 = st.tabs(["Add TriplesMap", "Add Subject Map", "Add Pred
 col1, col2 = st.columns([2,1])
 if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
     with col1:
-        utils.get_missing_g_mapping_error_message_different_page()
+        utils.get_missing_g_mapping_error_message(different_page=True)
         st.stop()
 
 #________________________________________________
@@ -636,7 +636,7 @@ with tab1:
     with col1a:
         tm_label = st.text_input("⌨️ Enter label for the new TriplesMap:*", key="key_tm_label_input")    #user-friendly name for the TriplesMap
         st.session_state["tm_label"] = tm_label
-        valid_tm_label = utils.is_valid_label_hard(st.session_state["tm_label"])
+        valid_tm_label = utils.is_valid_label(st.session_state["tm_label"], hard=True)
 
     tm_dict = utils.get_tm_dict()
     labelled_ls_list = []      #existing labelled logical sources
@@ -712,7 +712,7 @@ with tab1:
                             ls_label = st.text_input("⌨️ Enter label for the Logical Source:*")
                         with col1b:
                             st.write("")
-                            valid_ls_label = utils.is_valid_label_hard(ls_label)
+                            valid_ls_label = utils.is_valid_label(ls_label, hard=True)
                             if valid_ls_label and ls_label in labelled_ls_list:
                                 st.markdown(f"""<div class="error-message">
                                         ❌ The logical source label <b>{ls_label}</b>
@@ -1250,7 +1250,7 @@ with tab2:
                     label_sm_option = st.selectbox("♻️ Reuse Subject Map (opt):", ["No", "Yes (add label)"])
                     if label_sm_option == "Yes (add label)":
                         sm_label = st.text_input("🔖 Enter Subject Map label:*", key="key_sm_label_new")
-                        valid_sm_label = utils.is_valid_label_hard(sm_label, display_option=False)
+                        valid_sm_label = utils.is_valid_label(sm_label, hard=True, display_option=False)
                     else:
                         sm_label = ""
                         sm_iri = BNode()

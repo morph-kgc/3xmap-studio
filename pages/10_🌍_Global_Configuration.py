@@ -1,17 +1,14 @@
-import streamlit as st
 import os
-import utils
-import pandas as pd
-import pickle
+import streamlit as st
 from rdflib import Graph, URIRef, Literal, Namespace, BNode
 from rdflib.namespace import split_uri
 from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL, XSD
+import utils
+import pandas as pd
+
+import pickle    # to save and retrieve session
 import time   # for success messages
-import re
 import uuid   # to handle uploader keys
-import io
-from io import IOBase
-from streamlit_js_eval import streamlit_js_eval
 
 # Config------------------------------------------------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
@@ -28,26 +25,26 @@ RML, QL = utils.get_required_ns_dict().values()
 # Define on_click functions-----------------------------------------------------
 #TAB1
 def create_new_g_mapping():
-    # optional reset (clear everything)_____________________
+    # optional reset (clear everything)____________________
     if overwrite_g_mapping_and_session_checkbox:
         utils.full_reset()
-    # create mapping__________________________________
+    # create mapping_______________________________________
     st.session_state["g_label"] = st.session_state["g_label_temp_new"]   # consolidate g_label
     st.session_state["g_mapping"] = Graph()   # create a new empty mapping
-    # bind default namespaces__________________________
+    # bind default namespaces______________________________
     for prefix, namespace in utils.get_default_ns_dict().items():
         utils.bind_namespace(prefix, namespace)
-    # bind required namespaces___________________________
+    # bind required namespaces_____________________________
     for prefix, namespace in utils.get_required_ns_dict().items():
         utils.bind_namespace(prefix, namespace)
-    # bind base namespaces_______________________________
+    # bind base namespace_________________________________
     prefix, ns = utils.get_default_base_ns()
     st.session_state["g_mapping"].bind(prefix, ns)
     # bind ontology namespaces______________________________
     ontology_ns_dict = utils.get_g_ns_dict(st.session_state["g_ontology"])
     for prefix, namespace in ontology_ns_dict.items():
         utils.bind_namespace(prefix, namespace)
-    # store information________________________________
+    # store information__________________________________
     st.session_state["g_mapping_source_cache"] = ["scratch", ""]   #cache info on the mapping source
     st.session_state["original_g_mapping_ns_dict"] = {}
     st.session_state["new_g_mapping_created_ok_flag"] = True   #flag for success mesagge
@@ -59,81 +56,80 @@ def import_existing_g_mapping():
     # optional reset (clear everything)_____________________
     if overwrite_g_mapping_and_session_checkbox:
         utils.full_reset()
-    # import mapping_____________________________________
+    # import mapping_______________________________________
     st.session_state["g_label"] = st.session_state["g_label_temp_existing"]   # consolidate g_label
     st.session_state["original_g_size_cache"] = utils.get_number_of_tm(st.session_state["candidate_g_mapping"])
     st.session_state["original_g_mapping_ns_dict"] = utils.get_g_ns_dict(st.session_state["candidate_g_mapping"])
     st.session_state["g_mapping"] = st.session_state["candidate_g_mapping"]   # consolidate the loaded mapping
     # set base namespace___________________________________
-    base_pr, base_ns = utils.get_g_mapping_base_ns()
-    st.session_state["base_ns"] = utils.get_g_mapping_base_ns() if base_ns else utils.get_default_base_ns()
+    st.session_state["base_ns"] = utils.get_g_mapping_base_ns()
     utils.change_g_mapping_base_ns(st.session_state["base_ns"][0], st.session_state["base_ns"][1])  # ensure all nodes have same base ns
-    # bind default namespaces____________________________
+    # bind default namespaces______________________________
     for prefix, namespace in utils.get_default_ns_dict().items():
         utils.bind_namespace(prefix, namespace)
     # bind required namespaces______________________________
     for prefix, namespace in utils.get_required_ns_dict().items():
         utils.bind_namespace(prefix, namespace)
-    # bind mapping namespaces_________________________________
+    # bind mapping namespaces______________________________
     for prefix, namespace in st.session_state["g_mapping"].namespaces():
         utils.bind_namespace(prefix, namespace)
     # bind ontology namespaces_____________________________
     ontology_ns_dict = utils.get_g_ns_dict(st.session_state["g_ontology"])
     for prefix, namespace in ontology_ns_dict.items():
         utils.bind_namespace(prefix, namespace)
-    # store information________________________
+    # store information___________________________________
     if import_mapping_selected_option == "🌐 URL":
         st.session_state["g_mapping_source_cache"] = ["URL", selected_mapping_input]
     elif import_mapping_selected_option == "📁 File":
         st.session_state["g_mapping_source_cache"] = ["file", selected_mapping_input.name]
     st.session_state["existing_g_mapping_loaded_ok_flag"] = True
     utils.empty_last_added_lists()
-    # reset fields___________________________
+    # reset fields________________________________________
     st.session_state["key_mapping_link"] = ""
     st.session_state["key_import_mapping_selected_option"] = "🌐 URL"
     st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
     st.session_state["key_g_label_temp_existing"] = ""
 
 def retrieve_session():
-    # get information from pkl file___________________________
+    # get information from pkl file_________________________
     full_path = os.path.join(folder_name, selected_pkl_file_w_extension)
-    # retrieve session___________________________
+    # retrieve session______________________________________
     with open(full_path, "rb") as f:     # load mapping
         project_state_list = pickle.load(f)
-    utils.retrieve_project_state(project_state_list)
-    #store information___________________________
+    utils.retrieve_session_state(project_state_list)
+    #store information_____________________________________
     utils.empty_last_added_lists()
     st.session_state["selected_pkl_file_wo_extension"] = selected_pkl_file_wo_extension
-    # reset fields___________________________
+    # reset fields_________________________________________
     st.session_state["session_retrieved_ok_flag"] = True
     st.session_state["key_selected_pkl_file_wo_extension"] = "Select a session"
 
 def retrieve_cached_mapping():
-    # get information from pkl file_______________________
+    # get information from pkl file_________________________
     st.session_state["g_label"] = cached_mapping_name    # g label
     with open(pkl_cache_file_path, "rb") as f:     # load mapping
         project_state_list = pickle.load(f)
-    utils.retrieve_project_state(project_state_list)
-    #store information___________________________
+    utils.retrieve_session_state(project_state_list)
+    #store information_____________________________________
     utils.empty_last_added_lists()
     st.session_state["cached_mapping_retrieved_ok_flag"] = True
-    # reset fields___________________________
+    # reset fields_________________________________________
     st.session_state["key_retrieve_cached_mapping_checkbox"] = False
 
 def change_g_label():
     # change g label_____________________________________
     st.session_state["g_label"] = g_label_candidate
-    #store information___________________________
+    #store information___________________________________
     st.session_state["g_label_changed_ok_flag"] = True
-    # reset fields___________________________
+    # reset fields_______________________________________
     st.session_state["key_change_mapping_label_checkbox"] = False
 
 def full_reset():
-    # full reset___________________________
+    # full reset_________________________________________
     utils.full_reset()
-    #store information___________________________
+    #store information___________________________________
     st.session_state["everything_reseted_ok_flag"] = True
-    # reset fields___________________________
+    # reset fields_______________________________________
     st.session_state["key_full_reset_checkbox"] = False
 
 # TAB2
@@ -141,7 +137,7 @@ def bind_custom_namespace():
     # bind and store information___________________________
     utils.bind_namespace(prefix_input, iri_input)
     st.session_state["ns_bound_ok_flag"] = True   #for success message
-    # reset fields_____________________________
+    # reset fields__________________________________________
     st.session_state["key_iri_input"] = ""
     st.session_state["key_prefix_input"] = ""
     st.session_state["key_add_ns_radio"] = "✏️ Custom"
@@ -152,7 +148,7 @@ def bind_predefined_namespaces():
         namespace = predefined_ns_dict[prefix]
         utils.bind_namespace(prefix, namespace)
     st.session_state["ns_bound_ok_flag"] = True    #for success message
-    # reset fields_____________________________
+    # reset fields_________________________________________
     st.session_state["key_predefined_ns_to_bind_multiselect"] = []
     st.session_state["key_add_ns_radio"] = "📋 Predefined"
 
@@ -162,7 +158,7 @@ def bind_original_mapping_namespaces():
         namespace = original_mapping_ns_dict[prefix]
         utils.bind_namespace(prefix, namespace)
     st.session_state["ns_bound_ok_flag"] = True   # for success message
-    # reset fields_____________________________
+    # reset fields_________________________________________
     st.session_state["key_original_mapping_ns_to_bind_multiselect"] = []
     st.session_state["key_add_ns_radio"] = "🗺️ Mapping"
 
@@ -172,10 +168,10 @@ def bind_ontology_namespaces():
         namespace = ontology_ns_dict[prefix]
         utils.bind_namespace(prefix, namespace)
     st.session_state["ns_bound_ok_flag"] = True   # for success message
-    # reset fields_____________________________
+    # reset fields_________________________________________
     st.session_state["key_ontology_ns_to_bind_multiselect"] = []
     st.session_state["key_add_ns_radio"] = "🧩 Ontology"
-    st.session_state["key_ontology_filter_for_ns"] = "Select ontology"
+    st.session_state["key_ontology_filter_for_ns"] = "No filter"
 
 def change_base_ns():
     # bind new namespace and store________________________
@@ -183,71 +179,64 @@ def change_base_ns():
     utils.bind_namespace(base_ns_prefix_candidate, base_ns_iri_candidate)
     # change base namespace in g mapping___________________
     utils.change_g_mapping_base_ns(st.session_state["base_ns"][0], st.session_state["base_ns"][1])
-    #store information________________________
+    #store information____________________________________
     st.session_state["base_ns_changed_ok_flag"] = True
-    # reset fields_____________________________
+    # reset fields________________________________________
     st.session_state["key_base_ns_prefix_candidate"] = "Select prefix"
     st.session_state["key_add_ns_radio"] = "🏛️ Base"
 
 def unbind_namespaces():
-    # unbind the namespaces and store information_________________
+    # unbind the namespaces and store information________
     utils.unbind_namespaces(ns_to_unbind_list)
     st.session_state["ns_unbound_ok_flag"] = True
-    # reset fields_____________________________
-    st.session_state["key_unbind_multiselect"] = []
-
-def unbind_all_namespaces():
-    # unbind and store information___________________________
-    utils.unbind_namespaces(mapping_ns_dict_available_to_unbind)
-    st.session_state["ns_unbound_ok_flag"] = True
-    # reset fields_____________________________
+    # reset fields_______________________________________
     st.session_state["key_unbind_multiselect"] = []
 
 #TAB3
 def save_progress():
-    # name of temporary file_____________
+    # name of temporary file____________________________
     pkl_cache_filename = "__" + st.session_state["g_label"] + "_cache__.pkl"
-    # remove all cache pkl files in cwd_____________
+    # remove all cache pkl files in cwd_________________
     existing_pkl_file_list = [f for f in os.listdir() if f.endswith("_cache__.pkl")]
     for file in existing_pkl_file_list:
         filepath = os.path.join(os.getcwd(), file)
         if os.path.isfile(file):
             os.remove(file)
-    #save progress___________________________
-    project_state_list = utils.save_project_state()
+    #save progress______________________________________
+    project_state_list = utils.save_session_state()
     with open(pkl_cache_filename, "wb") as f:
         pickle.dump(project_state_list, f)
-    #store information___________________________
+    #store information__________________________________
     st.session_state["progress_saved_ok_flag"] = True
-    #reset fields__________________________________
+    #reset fields_______________________________________
     st.session_state["key_save_progress_checkbox"] = False
 
 def save_session():
-    # create folder if needed_________________________
+    # create folder if needed____________________________
     os.makedirs(folder_name, exist_ok=True)
     full_path = os.path.join(folder_name, pkl_filename_w_extension)
-    # save session___________________________
-    project_state_list = utils.save_project_state()
+    # save session_______________________________________
+    project_state_list = utils.save_session_state()
     with open(full_path, "wb") as f:
         pickle.dump(project_state_list, f)
-    # store information___________________________
+    # store information__________________________________
     st.session_state["session_saved_ok_flag"] = True
     st.session_state["pkl_filename"] = pkl_filename + '.pkl'
-    # reset fields_____________________
+    # reset fields_______________________________________
     st.session_state["key_pkl_filename"] = ""
 
 def delete_sessions():
-    # remove files___________________________________
+    # remove files_______________________________________
     for file in sessions_to_remove_list:
         file_path = os.path.join(folder_path, file + ".pkl")
         if os.path.isfile(file_path):
             os.remove(file_path)
-    # remove folder if empty___________________
+    # remove folder if empty_____________________________
     if not os.listdir(folder_path):
         os.rmdir(folder_path)
-    # store information_________________________________
+    # store information__________________________________
     st.session_state["session_removed_ok_flag"] = True
-    # reset fields_______________________________
+    # reset fields_______________________________________
     st.session_state["key_save_session_options"] = "💾 Save session"
 
 # TAB4
@@ -256,9 +245,6 @@ def activate_dark_mode():
 
 def deactivate_dark_mode():
     st.session_state["dark_mode_flag"] = False
-
-def add_datatype():
-    pass
 
 #_______________________________________________________________________________
 # PANELS OF THE PAGE (tabs)
@@ -271,18 +257,20 @@ with tab1:
     st.write("")
     st.write("")
 
+    col1, col2 = st.columns([2,1.5])
+    with col2:
+        col2a,col2b = st.columns([1,2])
+
     # PURPLE HEADING: CREATE NEW MAPPING----------------------------------------
-    col1,col2,col3 = st.columns([2,0.5, 1])
     with col1:
         st.markdown("""<div class="purple-heading">
             📄 Create New Mapping
         </div>""", unsafe_allow_html=True)
         st.write("")
 
-    with col1:
-        col1a, col1b = st.columns([2,1])
-
     if st.session_state["new_g_mapping_created_ok_flag"]:
+        with col1:
+            col1a, col1b = st.columns([2,1])
         with col1a:
             st.markdown(f"""<div class="success-message-flag">
                 ✅ The mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> has been created!
@@ -291,31 +279,30 @@ with tab1:
         time.sleep(utils.get_success_message_time())
         st.rerun()
 
+    with col1:
+        col1a, col1b = st.columns([2,1])
+
     with col1a:
         st.session_state["g_label_temp_new"] = st.text_input("🏷️ Enter mapping label:*", # just a candidate until confirmed
         key="key_g_label_temp_new")
-        valid_mapping_label = utils.is_valid_label_hard(st.session_state["g_label_temp_new"])
+        valid_mapping_label = utils.is_valid_label(st.session_state["g_label_temp_new"], hard=True)
 
     # A mapping has not been loaded yet
-    if not st.session_state["g_label"]:
+    if not st.session_state["g_label"] and valid_mapping_label:
 
-        if valid_mapping_label:
-
-            if st.session_state["db_connections_dict"] or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]:
-                with col1:
-                    overwrite_g_mapping_and_session_checkbox = st.checkbox(
-                        f"""🔄 Start fresh: remove previously loaded ontologies and data sources""",
-                        value=True, key="key_overwrite_g_mapping_and_session_checkbox_new")
-            else:
-                overwrite_g_mapping_and_session_checkbox = False
-
+        if st.session_state["db_connections_dict"] or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]:
             with col1:
-                st.button("Create", on_click=create_new_g_mapping, key="key_create_new_g_mapping_button_1")
+                overwrite_g_mapping_and_session_checkbox = st.checkbox(
+                    f"""🔄 Start fresh: remove previously loaded ontologies and data sources""",
+                    value=True, key="key_overwrite_g_mapping_and_session_checkbox_new")
+        else:
+            overwrite_g_mapping_and_session_checkbox = False
 
+        with col1:
+            st.button("Create", on_click=create_new_g_mapping, key="key_create_new_g_mapping_button_1")
 
     # A mapping is currently loaded
-    else:
-        if valid_mapping_label:
+    elif valid_mapping_label:
 
             with col1b:
                 st.markdown(f"""<div class="warning-message">
@@ -341,24 +328,19 @@ with tab1:
                 with col1a:
                     st.button(f"""Create""", on_click=create_new_g_mapping, key="key_create_new_g_mapping_button_2")
 
-    with col1:
-        st.write("______")
-
 
     # PURPLE HEADING- IMPORT EXISTING MAPPING-----------------------------------
     with col1:
+        st.write("______")
         st.markdown("""<div class="purple-heading">
                 📁 Import Existing Mapping
             </div>""", unsafe_allow_html=True)
         st.write("")
 
 
-    mapping_format_list = list(utils.get_g_mapping_file_formats_dict().values())
-
-    with col1:
-        col1a, col1b = st.columns([2,1])
-
     if st.session_state["existing_g_mapping_loaded_ok_flag"]:
+        with col1:
+            col1a, col1b = st.columns([2,1])
         with col1a:
             st.write("")
             st.markdown(f"""<div class="success-message-flag">
@@ -367,6 +349,9 @@ with tab1:
         st.session_state["existing_g_mapping_loaded_ok_flag"] = False
         time.sleep(utils.get_success_message_time())
         st.rerun()
+
+    with col1:
+        col1a, col1b = st.columns([2,1])
 
     with col1b:
         import_mapping_selected_option = st.radio("🖱️ Select an option:*", ["🌐 URL", "📁 File"],
@@ -391,7 +376,7 @@ with tab1:
                     key="key_g_label_temp_existing", value=suggested_mapping_label)
 
             with col1a:
-                valid_mapping_label = utils.is_valid_label_hard(st.session_state["g_label_temp_existing"])
+                valid_mapping_label = utils.is_valid_label(st.session_state["g_label_temp_existing"], hard=True)
 
             with col1b:
                 st.write("")
@@ -401,6 +386,7 @@ with tab1:
     elif import_mapping_selected_option == "📁 File":
 
         with col1a:
+            mapping_format_list = list(utils.get_g_mapping_file_formats_dict().values())
             selected_mapping_input = st.file_uploader(f"""🖱️
             Upload mapping file:*""", type=mapping_format_list, key=st.session_state["key_mapping_uploader"])
 
@@ -412,10 +398,10 @@ with tab1:
 
                 st.session_state["g_label_temp_existing"] = st.text_input("🏷️ Enter mapping label:*",   # just candidate until confirmed
                     key="key_g_label_temp_existing", value=suggested_mapping_label)
-                valid_mapping_label = utils.is_valid_label_hard(st.session_state["g_label_temp_existing"])
+                valid_mapping_label = utils.is_valid_label(st.session_state["g_label_temp_existing"], hard=True)
 
                 st.session_state["candidate_g_mapping"] = utils.load_mapping_from_file(
-                    selected_mapping_input)   # we load the mapping as a candidate (until confirmed)
+                    selected_mapping_input)   # just candidate until confirmed
 
     # A mapping has not been loaded yet
     if st.session_state["candidate_g_mapping"] and not st.session_state["g_label"]:
@@ -434,6 +420,7 @@ with tab1:
 
     # A mapping is currently loaded
     elif st.session_state["candidate_g_mapping"] and st.session_state["g_label"]:
+
         if valid_mapping_label and selected_mapping_input:
             with col1b:
                 st.markdown(f"""<div class="warning-message">
@@ -461,7 +448,7 @@ with tab1:
 
     # PURPLE HEADING - RETRIEVE SAVED SESSION-----------------------------------
     # Only shows if there exist saved sessions
-    folder_name = "saved_sessions"
+    folder_name = utils.get_saved_sessions_folder_name()
     if os.path.isdir(folder_name):   # create if it does not exist
         folder_path = os.path.join(os.getcwd(), folder_name)
         pkl_files_list = [f for f in os.listdir(folder_path) if f.endswith(".pkl")]
@@ -490,6 +477,7 @@ with tab1:
 
         with col1:
             col1a, col1b =st.columns([2,1])
+
         with col1a:
             pkl_files_dict = {f.removesuffix(".pkl"): f for f in pkl_files_list}
             list_to_choose = list(pkl_files_dict.keys())
@@ -520,11 +508,11 @@ with tab1:
             else:
                 st.button("Retrieve", key="key_retrieve_session_button_2", on_click=retrieve_session)
 
-    # SUCCESS MESSAGES----------------------------------------------------------
-    # for retrieve cached mapping, change label and full reset
 
+    # RIGHT COLUMN  SUCCESS MESSAGES--------------------------------------------
+    # for retrieve cached mapping, change label and full reset
     if st.session_state["cached_mapping_retrieved_ok_flag"]:
-        with col3:
+        with col2b:
             st.write("")
             st.markdown(f"""<div class="success-message-flag">
                 ✅ Mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> has been retrieved from cache!
@@ -534,7 +522,7 @@ with tab1:
         st.rerun()
 
     if st.session_state["g_label_changed_ok_flag"]:
-        with col3:
+        with col2b:
             st.write("")
             st.markdown(f"""<div class="success-message-flag">
                 ✅ Mapping was renamed to <b style="color:#F63366;">{st.session_state["g_label"]}</b>!
@@ -544,7 +532,7 @@ with tab1:
         st.rerun()
 
     if st.session_state["everything_reseted_ok_flag"]:
-        with col3:
+        with col2b:
             st.write("")
             st.markdown(f"""<div class="success-message-flag">
                 ✅ <b>Clean slate:</b> Everything has been <b style="color:#F63366;">reset</b>!
@@ -554,7 +542,7 @@ with tab1:
         st.rerun()
 
     # RIGHT COLUMN: MAPPING INFORMATION BOX-------------------------------------
-    with col3:
+    with col2b:
         if st.session_state["g_label"]:
 
             if st.session_state["g_mapping_source_cache"][0] == "URL":
@@ -563,11 +551,9 @@ with tab1:
                 if len(URL_for_display) > max_length:
                     URL_for_display = "..." + URL_for_display[-max_length:]
                 st.markdown(f"""<div class="gray-preview-message">
-                        <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-                        style="vertical-align:middle; margin-right:8px; height:20px;">
-                        You are working with mapping
+                        🗺️ You are working with mapping
                         <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
-                        <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
+                        <ul style="font-size:0.75rem; margin:6px 0 0 15px; padding-left:10px;">
                             <li>Mapping was loaded from URL <b>{URL_for_display}</b></li>
                             <li>When loaded, mapping had <b>{st.session_state["original_g_size_cache"]} TriplesMaps</b></li>
                             <li>Now mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps<b/></li>
@@ -575,11 +561,9 @@ with tab1:
 
             elif st.session_state["g_mapping_source_cache"][0] == "file":
                 st.markdown(f"""<div class="gray-preview-message">
-                        <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-                        style="vertical-align:middle; margin-right:8px; height:20px;">
-                        You are working with mapping
+                        🗺️ You are working with mapping
                         <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
-                        <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
+                        <ul style="font-size:0.75rem; margin:6px 0 0 15px; padding-left:10px;">
                             <li>Mapping was loaded from file <b>{st.session_state["g_mapping_source_cache"][1]}</b></li>
                             <li>When loaded, mapping had <b>{st.session_state["original_g_size_cache"]} TriplesMaps</b></li>
                             <li>Now mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps<b/></li>
@@ -603,7 +587,7 @@ with tab1:
             </div>
             """, unsafe_allow_html=True)
 
-    # RIGHT COLUMN OPTION: Retrieve cached mapping------------------------------
+    # RIGHT COLUMN OPTION: RETRIEVE CAH¡CHED MAPPING----------------------------
     # Only shows if not working with a mapping
     if not st.session_state["g_label"]:
         pkl_cache_filename = next((f for f in os.listdir() if f.endswith("_cache__.pkl")), None)  # fallback if no match is found
@@ -612,7 +596,7 @@ with tab1:
             pkl_cache_file_path = os.path.join(os.getcwd(), pkl_cache_filename)
             cached_mapping_name = pkl_cache_filename.split("_cache__.pkl")[0]
             cached_mapping_name = cached_mapping_name.split("__")[1]
-            with col3:
+            with col2b:
                 st.write("")
                 retrieve_cached_mapping_checkbox = st.checkbox(
                     "🗃️ Retrieve cached mapping",
@@ -626,32 +610,34 @@ with tab1:
                         </span></div>""", unsafe_allow_html=True)
 
 
-    # RIGHT COLUMN OPTION: Change the mapping label-----------------------------
+    # RIGHT COLUMN OPTION: CHANGE MAPPING LABEL---------------------------------
     # Only shows if working with a mapping
     if st.session_state["g_label"]:
 
-        with col3:
+        with col2b:
             st.write("")
             change_g_label_checkbox = st.checkbox(
                 "🏷️ Rename mapping",
                 key="key_change_mapping_label_checkbox")
             if change_g_label_checkbox:
                 g_label_candidate = st.text_input("⌨️ Enter new mapping label:*")
-                valid_candidate_valid_label = utils.is_valid_label_hard(g_label_candidate)
+                valid_candidate_valid_label = utils.is_valid_label(g_label_candidate, hard=True)
 
                 if valid_candidate_valid_label:
                     st.button("Change", key="key_change_g_label_button", on_click=change_g_label)
                     st.markdown(f"""<div class="info-message-blue">
                             ℹ️ Mapping label will be changed to <b style="color:#F63366;">
-                            {g_label_candidate}</b> (currently <b>{st.session_state["g_label"]}</b>).
+                            {g_label_candidate}</b> <small>(currently <b>{st.session_state["g_label"]}</b>).</small>
                         </span></div>""", unsafe_allow_html=True)
 
-    # RIGHT COLUMN OPTION: Full reset-------------------------------------------
+                st.write("_____")
+
+    # RIGHT COLUMN OPTION: FULL RESET-------------------------------------------
     # Only shows if there is a mapping, ontology or data source
     if (st.session_state["g_label"] or st.session_state["db_connections_dict"]
         or st.session_state["ds_files_dict"] or st.session_state["g_ontology_components_dict"]):
 
-        with col3:
+        with col2b:
             full_reset_checkbox = st.checkbox(
                 "🔄 Full reset", key="key_full_reset_checkbox")
             if full_reset_checkbox:
@@ -667,22 +653,19 @@ with tab1:
                 if second_full_reset_checkbox:
                     st.button("Reset", key="key_full_reset_button", on_click=full_reset)
 
-
 #_______________________________________________________________________________
 # PANEL: CONFIGURE NAMESPACES
 # Available only if mapping is loaded
 with tab2:
     st.write("")
     st.write("")
+    col1, col2 = st.columns([2,1.5])
 
     if not st.session_state["g_label"]:
-        col1, col2 = st.columns([2,1.5])
         with col1:
             utils.get_missing_g_mapping_error_message()
 
     else:   # only allow to continue if mapping is loaded
-
-        col1,col2 = st.columns([2,1.5])
 
         # RIGHT COLUMN: ADDED NS INFO-------------------------------------------
         mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
@@ -763,16 +746,16 @@ with tab2:
         ontology_ns_dict = utils.get_g_ns_dict(st.session_state["g_ontology"])
         mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
         ontology_ns_list = [key for key in ontology_ns_dict if key not in mapping_ns_dict]
-        add_ns_options = ["✏️ Custom", "🏛️ Base"]
-        if predefined_ns_dict:
-            add_ns_options.insert(1, "📋 Predefined")
-        if st.session_state["g_ontology_components_dict"]:
-            add_ns_options.insert(1, "🧩 Ontology")
-        if st.session_state["original_g_mapping_ns_dict"]:
-            add_ns_options.insert(1, "🗺️ Mapping")
 
         with col1:
-            add_ns_selected_option = st.radio("🖱️ Select an option:*", add_ns_options, key="key_add_ns_radio",
+            list_to_choose = ["✏️ Custom", "🏛️ Base"]
+            if predefined_ns_dict:
+                list_to_choose.insert(1, "📋 Predefined")
+            if st.session_state["g_ontology_components_dict"]:
+                list_to_choose.insert(1, "🧩 Ontology")
+            if st.session_state["original_g_mapping_ns_dict"]:
+                list_to_choose.insert(1, "🗺️ Mapping")
+            add_ns_selected_option = st.radio("🖱️ Select an option:*", list_to_choose, key="key_add_ns_radio",
                 label_visibility="collapsed", horizontal=True)
 
         # CUSTOM NAMESPACE
@@ -784,7 +767,7 @@ with tab2:
                 prefix_input = st.text_input("⌨️ Enter prefix:* ", key = "key_prefix_input")
 
             with col1b:
-                iri_input = st.text_input("⌨️ Enter an IRI for the new namespace:*", key="key_iri_input")
+                iri_input = st.text_input("⌨️ Enter IRI for the new namespace:*", key="key_iri_input")
             st.session_state["new_ns_prefix"] = prefix_input if prefix_input else ""
             st.session_state["new_ns_iri"] = iri_input if iri_input else ""
 
@@ -800,8 +783,8 @@ with tab2:
                                     break
                             if bound_prefix != prefix_input:
                                 st.markdown(f"""<div class="warning-message">
-                                    ⚠️ Prefix <b>{prefix_input}</b> is already in use.
-                                    <small>The chosen prefix will be auto-renamed with a numeric suffix.</small>
+                                    ⚠️ Prefix <b>{prefix_input}</b> is already in use
+                                    <small>and will be auto-renamed with a numeric suffix.</small>
                                 </div>""", unsafe_allow_html=True)
 
             with col1b:
@@ -848,6 +831,7 @@ with tab2:
 
             with col1:
                 col1a, col1b = st.columns([2,1])
+
             if not there_are_original_mapping_ns_unbound_flag:
                 with col1a:
                     st.markdown(f"""<div class="info-message-gray">
@@ -861,17 +845,13 @@ with tab2:
                     list_to_choose = sorted(original_mapping_ns_list_not_duplicated.copy())
                     if len(list_to_choose) > 1:
                         list_to_choose.insert(0, "Select all")
-                    original_mapping_ns_to_bind_list = st.multiselect("🖱️ Select ontology namespaces:*", list_to_choose,
+                    original_mapping_ns_to_bind_list = st.multiselect("🖱️ Select mapping namespaces:*", list_to_choose,
                         key="key_ontology_ns_to_bind_multiselect")
 
                 if original_mapping_ns_to_bind_list:
-                    already_used_prefix_list = []
-                    for pr in original_mapping_ns_to_bind_list:
-                        if pr in mapping_ns_dict:
-                            already_used_prefix_list.append(pr)
 
                     if "Select all" not in original_mapping_ns_to_bind_list:   # "Select all" not selected
-                        with col1:
+                        with col1a:
                             st.button("Bind", key="key_bind_original_mapping_ns_button", on_click=bind_original_mapping_namespaces)
                     else:
                         original_mapping_ns_to_bind_list = original_mapping_ns_list_not_duplicated
@@ -882,12 +862,10 @@ with tab2:
                             if bind_all_original_mapping_ns_checkbox:
                                 st.button("Bind", key="key_bind_original_mapping_ns_button", on_click=bind_original_mapping_namespaces)
 
-
                     with col1:
                         col1a, col1b = st.columns([2,1])
                     with col1a:
                         utils.get_ns_previsualisation_message(original_mapping_ns_to_bind_list, original_mapping_ns_dict)
-
                     with col1b:
                         utils.get_ns_warning_message(original_mapping_ns_to_bind_list)
 
@@ -912,11 +890,11 @@ with tab2:
                     if utils.are_there_unbound_ns(ontology_component_ns_dict):
                         g_ont_components_w_unbound_ns.append(st.session_state["g_ontology_components_tag_dict"][ont_label])
 
-                if len(st.session_state["g_ontology_components_dict"]) == 1:   # no ontolgoy filter
+                if len(st.session_state["g_ontology_components_dict"]) == 1:   # only one ontology component (no ontology filter)
+                    ontology_filter_for_ns = "No filter"
+
                     with col1:
                         col1a, col1b = st.columns([2,1])
-
-                    ontology_filter_for_ns = "Select ontology"
 
                     with col1a:
                         ontology_ns_list_not_duplicated = [k for k, v in ontology_ns_dict.items() if v not in mapping_ns_dict.values()]
@@ -931,11 +909,11 @@ with tab2:
                         col1a, col1b = st.columns([1,2])
                     with col1a:
                         list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
-                        list_to_choose.insert(0, "Select ontology")
-                        ontology_filter_for_ns = st.selectbox("⚙️ Filter by ontology (optional):", list_to_choose,
+                        list_to_choose.insert(0, "No filter")
+                        ontology_filter_for_ns = st.selectbox("📡 Filter by ontology (optional):", list_to_choose,
                             key="key_ontology_filter_for_ns")
 
-                    if ontology_filter_for_ns == "Select ontology":
+                    if ontology_filter_for_ns == "No filter":
                         with col1b:
                             ontology_ns_list_not_duplicated = [k for k, v in ontology_ns_dict.items() if v not in mapping_ns_dict.values()]
                             list_to_choose = ontology_ns_list_not_duplicated.copy()
@@ -969,7 +947,7 @@ with tab2:
 
                 if ontology_ns_to_bind_list:
 
-                    if "Select all" not in ontology_ns_to_bind_list:   # "Select all" not selected
+                    if "Select all" not in ontology_ns_to_bind_list:
                         with col1:
                             st.button("Bind", key="key_bind_ontology_ns_button", on_click=bind_ontology_namespaces)
                     else:
@@ -977,19 +955,19 @@ with tab2:
 
                         with col1:
                             bind_all_ontology_ns_checkbox = st.checkbox(
-                            "🔒 I am sure I want to bind all the namespaces in the ontology/ies",
+                            "🔒 I am sure I want to bind all the ontology namespaces",
                             key="key_bind_all_ontology_ns_checkbox")
                             if bind_all_ontology_ns_checkbox:
                                 st.button("Bind", key="key_bind_ontology_ns_button", on_click=bind_ontology_namespaces)
 
-                    if ontology_filter_for_ns != "Select ontology":
+                    if ontology_filter_for_ns != "No filter":
                         ontology_ns_dict = utils.get_g_ns_dict(ont)
 
                     with col1:
                         col1a, col1b = st.columns([2,1])
+
                     with col1a:
                         utils.get_ns_previsualisation_message(ontology_ns_to_bind_list, ontology_ns_dict)
-
                     with col1b:
                         utils.get_ns_warning_message(ontology_ns_to_bind_list)
 
@@ -1026,7 +1004,6 @@ with tab2:
                     if pr in mapping_ns_dict:
                         already_used_prefix_list.append(pr)
 
-                # Information messages
                 if "Select all" in predefined_ns_to_bind_list:
                     predefined_ns_to_bind_list = predefined_ns_list_not_duplicated
 
@@ -1048,7 +1025,6 @@ with tab2:
 
                     with col1a:
                             utils.get_ns_previsualisation_message(predefined_ns_to_bind_list, predefined_ns_dict)
-
                     with col1b:
                         utils. get_ns_warning_message(predefined_ns_to_bind_list)
 
@@ -1059,15 +1035,15 @@ with tab2:
             with col1:
                 st.markdown(f"""<div class="gray-preview-message">
                         🏛️ Base IRI:
-                        <span style="font-size:0.92em;"><b>
+                    <span style="font-size:0.92em;"><b>
                         🔗 {st.session_state["base_ns"][0]}</b> →
                         <b style="color:#F63366;">{st.session_state["base_ns"][1]}
-                        </span></b><br>
+                    </span></b><br>
                         <small>To change it, select another option below
-                        (go to <b>✏️ Custom</b> option to add more).</small>
+                        (go to <b>✏️ Custom</b> to add more).</small>
                     </div>""", unsafe_allow_html=True)
                 st.write("")
-                
+
 
             with col1:
                 col1a, col1b = st.columns([1,2])
@@ -1085,6 +1061,9 @@ with tab2:
                 if base_ns_prefix_candidate != "Select prefix":
                     base_ns_iri_candidate = mapping_ns_dict[base_ns_prefix_candidate]
                     st.button("Confirm", key="key_change_base_ns_button", on_click=change_base_ns)
+                    with col1b:
+                        st.write("")
+                        utils.get_ns_previsualisation_message([base_ns_prefix_candidate], mapping_ns_dict)
 
                 if base_ns_prefix_candidate == "Select prefix":
                     if st.session_state["base_ns"] != utils.get_default_base_ns():
@@ -1096,7 +1075,7 @@ with tab2:
 
 
         # UNBIND NS SUCCESS MESSAGE---------------------------------------------
-        # Only shows here if no "Unbind Namespace" purple heading
+        # Only shows here when no "Unbind Namespace" purple heading
         mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
         default_ns_dict = utils.get_default_ns_dict()
         required_ns_dict = utils.get_required_ns_dict()
@@ -1159,7 +1138,7 @@ with tab2:
 
                 with col1a:
                     unbind_ns_button_checkbox = st.checkbox(
-                    "🔒 I am sure want to unbind the selected namespace/s",
+                    "🔒 I am sure want to unbind the selected namespaces",
                     key="key_unbind_all_ns_button_checkbox")
                     if unbind_ns_button_checkbox:
                         st.button(f"Unbind", key="key_unbind_ns_button", on_click=unbind_namespaces)
@@ -1194,39 +1173,17 @@ with tab2:
 with tab3:
     st.write("")
     st.write("")
+    col1, col2 = st.columns([2,1.5])
 
     if not st.session_state["g_label"]:
-        col1, col2 = st.columns([2,1.5])
         with col1:
             utils.get_missing_g_mapping_error_message()
 
     else:
-        col1,col2 = st.columns([2,1.5])
-
         with col2:
             col2a,col2b = st.columns([1,2])
 
         # RIGHT COLUMN OPTION: SAVE PROGRESS------------------------------------
-        with col2b:
-            st.write("")
-            save_progress_checkbox = st.checkbox(
-                "💾 Save progress",
-                key="key_save_progress_checkbox")
-            if save_progress_checkbox:
-                st.button("Save", key="key_save_progress_button", on_click=save_progress)
-                st.markdown(f"""<div class="info-message-blue">
-                        ℹ️ Current project state will be temporarily saved (mapping <b style="color:#F63366;">
-                        {st.session_state["g_label"]}</b>,
-                        loaded ontologies and data sources).
-                        <small>To retrieve cached work go to the <b>Select Mapping</b> panel.</small>
-                    </span></div>""", unsafe_allow_html=True)
-                existing_pkl_file_list = [f for f in os.listdir() if f.endswith("_cache__.pkl")]
-                if existing_pkl_file_list:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ Any <b>previously cached information</b> will be deleted.
-                        </div>""", unsafe_allow_html=True)
-
-
         if st.session_state["progress_saved_ok_flag"]:
             with col2b:
                 st.write("")
@@ -1236,6 +1193,23 @@ with tab3:
             st.session_state["progress_saved_ok_flag"] = False
             time.sleep(utils.get_success_message_time())
             st.rerun()
+
+        with col2b:
+            st.write("")
+            save_progress_checkbox = st.checkbox(
+                "💾 Save progress",
+                key="key_save_progress_checkbox")
+            if save_progress_checkbox:
+                st.button("Save", key="key_save_progress_button", on_click=save_progress)
+                st.markdown(f"""<div class="info-message-blue">
+                        ℹ️ Current <b>session state</b> will be temporarily saved.
+                        <small>To retrieve cached work go to the <b>Select Mapping</b> panel.</small>
+                    </span></div>""", unsafe_allow_html=True)
+                existing_pkl_file_list = [f for f in os.listdir() if f.endswith("_cache__.pkl")]
+                if existing_pkl_file_list:
+                    st.markdown(f"""<div class="warning-message">
+                            ⚠️ Any <b>previously cached information</b> will be deleted.
+                        </div>""", unsafe_allow_html=True)
 
 
         # PURPLE HEADING: EXPORT MAPPING----------------------------------------
@@ -1262,10 +1236,10 @@ with tab3:
             col1a, col1b, col1c = st.columns([0.8,1.7,1])
 
         export_extension_dict = utils.get_g_mapping_file_formats_dict()
-        export_format_list = list(export_extension_dict)
+        list_to_choose = list(export_extension_dict)
 
         with col1a:
-            export_format = st.selectbox("🖱️ Select format:*", export_format_list, key="key_export_format_selectbox")
+            export_format = st.selectbox("🖱️ Select format:*", list_to_choose, key="key_export_format_selectbox")
         export_extension = export_extension_dict[export_format]
 
         with col1b:
@@ -1280,9 +1254,9 @@ with tab3:
         if export_filename_complete and export_filename_valid_flag:
             with col1c:
                 st.markdown(f"""<div class="info-message-blue">
-                        ℹ️ Current state of mapping <b>
-                        {st.session_state["g_label"]}</b> will exported
-                        to file <b style="color:#F63366;">{export_filename_complete}</b>.
+                        ℹ️ Mapping <b style="color:#F63366;">
+                        {st.session_state["g_label"]}</b> will be exported
+                        to file <b>{export_filename_complete}</b>.
                     </span></div>""", unsafe_allow_html=True)
 
             with col1:
@@ -1324,7 +1298,7 @@ with tab3:
                 col1a, col1b = st.columns([2,1])
             with col1a:
                 st.markdown(f"""<div class="success-message-flag">
-                    ✅ The session has been saved to file <b style="color:#F63366;">{st.session_state["pkl_filename"]}</b>!
+                    ✅ The session <b style="color:#F63366;">{st.session_state["pkl_filename"][:-4]}</b> has been saved!
                 </div>""", unsafe_allow_html=True)
             st.session_state["session_saved_ok_flag"] = False
             time.sleep(utils.get_success_message_time())
@@ -1344,7 +1318,7 @@ with tab3:
         with col1:
             col1a, col1b = st.columns([2,1])
 
-        folder_name = "saved_sessions"
+        folder_name = utils.get_saved_sessions_folder_name()
         folder_path = os.path.join(os.getcwd(), folder_name)
         if os.path.isdir(folder_path):
             file_list = [os.path.splitext(f)[0] for f in os.listdir(folder_path)
@@ -1354,15 +1328,16 @@ with tab3:
 
         if file_list:
             with col1b:
+                st.write("")
                 save_session_selected_option = st.radio("🖱️ Select an option:*", ["💾 Save session", "🗑️ Delete sessions"],
-                    label_visibility="hidden", key="key_save_session_options")
+                    label_visibility="collapsed", key="key_save_session_options")
         else:
             save_session_selected_option = "💾 Save session"
 
         if save_session_selected_option == "💾 Save session":
 
             with col1a:
-                pkl_filename = st.text_input("⌨️ Enter filename (without extension):*", key="key_pkl_filename")
+                pkl_filename = st.text_input("🏷️ Enter session label:*", key="key_pkl_filename")
             if pkl_filename:
                 with col1b:
                     valid_pkl_filename_flag = utils.is_valid_filename(pkl_filename)
@@ -1371,11 +1346,6 @@ with tab3:
             file_path = os.path.join(folder_path, pkl_filename_w_extension)
 
             if pkl_filename and os.path.isfile(file_path):
-                with col1b:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ A session was already saved with <b>this filename</b>. <small>Pick
-                            a different filename unless you want to overwrite it.</small>
-                        </div>""", unsafe_allow_html=True)
                 with col1a:
                     overwrite_pkl_checkbox = st.checkbox(
                         f"""🔒 I am sure I want to overwrite""",
@@ -1383,12 +1353,24 @@ with tab3:
                 if overwrite_pkl_checkbox:
                     with col1a:
                         st.button("Save", key="key_save_session_button", on_click=save_session)
+                    with col1b:
+                        st.markdown(f"""<div class="info-message-blue">
+                                ℹ️ Current <b>session state</b> will be saved
+                                with label <b style="color:#F63366;">{pkl_filename}</b>.
+                                <small>To retrieve saved sessions go to the <b>Select Mapping</b> panel.</small>
+                            </span></div>""", unsafe_allow_html=True)
+                else:
+                    with col1b:
+                        st.markdown(f"""<div class="warning-message">
+                                ⚠️ A session labelled <b>{pkl_filename}</b> already exists. <small>Pick
+                                a different label unless you want to overwrite it.</small>
+                            </div>""", unsafe_allow_html=True)
             elif pkl_filename and valid_pkl_filename_flag:
                 with col1b:
                     st.markdown(f"""<div class="info-message-blue">
-                            ℹ️ Current <b>session state</b> will be exported
-                            to file <b style="color:#F63366;">{pkl_filename + ".pkl"}</b>.
-                            <small> This includes the mapping, ontologies, namespaces and data sources.</small>
+                            ℹ️ Current <b>session state</b> will be saved
+                            with label <b style="color:#F63366;">{pkl_filename}</b>.
+                            <small>To retrieve saved sessions go to the <b>Select Mapping</b> panel.</small>
                         </span></div>""", unsafe_allow_html=True)
                 with col1a:
                     st.button("Save", key="key_save_session_button", on_click=save_session)
@@ -1409,13 +1391,13 @@ with tab3:
                         delete_sessions_checkbox = st.checkbox("🔒 I am sure I want to delete all saved sessions",
                             key="key_delete_sessions_checkbox")
                     else:
-                        delete_sessions_checkbox = st.checkbox("🔒 I am sure I want to delete the selected session/s",
+                        delete_sessions_checkbox = st.checkbox("🔒 I am sure I want to delete the selected sessions",
                             key="key_delete_sessions_checkbox")
 
                     if delete_sessions_checkbox:
                         st.button("Delete", key="delete_sessions_button", on_click=delete_sessions)
 
-
+#RFBOOKMARK
 #_______________________________________________________________________________
 # PANEL: SET STYLE
 with tab4:
