@@ -535,7 +535,7 @@ with tab1:
         with col2b:
             st.write("")
             st.markdown(f"""<div class="success-message-flag">
-                ✅ <b>Clean slate:</b> Everything has been <b style="color:#F63366;">reset</b>!
+                ✅ <b>Clean slate:</b> Everything has been reset!
             </div>""", unsafe_allow_html=True)
         st.session_state["everything_reseted_ok_flag"] = False
         time.sleep(utils.get_success_message_time())
@@ -550,42 +550,38 @@ with tab1:
                 URL_for_display = st.session_state["g_mapping_source_cache"][1]
                 if len(URL_for_display) > max_length:
                     URL_for_display = "..." + URL_for_display[-max_length:]
-                st.markdown(f"""<div class="gray-preview-message">
+                st.html(f"""<div class="gray-preview-message">
                         🗺️ You are working with mapping
                         <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
-                        <ul style="font-size:0.75rem; margin:6px 0 0 15px; padding-left:10px;">
-                            <li>Mapping was loaded from URL <b>{URL_for_display}</b></li>
-                            <li>When loaded, mapping had <b>{st.session_state["original_g_size_cache"]} TriplesMaps</b></li>
-                            <li>Now mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps<b/></li>
-                        </ul></div>""", unsafe_allow_html=True)
+                        <div style="margin-left:15px;"><small>
+                            · Mapping was loaded from URL <b>{URL_for_display}</b><br>
+                            · When loaded, mapping had <b>{st.session_state["original_g_size_cache"]} TriplesMaps</b><br>
+                            · Now mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps<b/>
+                        </small></div></div>""")
 
             elif st.session_state["g_mapping_source_cache"][0] == "file":
-                st.markdown(f"""<div class="gray-preview-message">
+                st.html(f"""<div class="gray-preview-message">
                         🗺️ You are working with mapping
                         <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
-                        <ul style="font-size:0.75rem; margin:6px 0 0 15px; padding-left:10px;">
-                            <li>Mapping was loaded from file <b>{st.session_state["g_mapping_source_cache"][1]}</b></li>
-                            <li>When loaded, mapping had <b>{st.session_state["original_g_size_cache"]} TriplesMaps</b></li>
-                            <li>Now mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps<b/></li>
-                        </ul></div>""", unsafe_allow_html=True)
+                        <div style="margin-left:15px;"><small>
+                            · Mapping was loaded from file <b>{st.session_state["g_mapping_source_cache"][1]}</b><br>
+                            · When loaded, mapping had <b>{st.session_state["original_g_size_cache"]} TriplesMaps</b><br>
+                            · Now mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps<b/>
+                        </small></div></div>""")
 
             else:
-                st.markdown(f"""<div class="gray-preview-message">
-                        <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-                        style="vertical-align:middle; margin-right:8px; height:20px;">
-                        You are working with mapping
+                st.html(f"""<div class="gray-preview-message">
+                        🗺️ You are working with mapping
                         <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
-                        <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
-                            <li>Mapping was created <b>from scratch</b></li>
-                            <li>Mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps<b/></li>
-                        </ul></div>""", unsafe_allow_html=True)
-
+                        <div style="margin-left:15px;"><small>
+                            · Mapping was created <b>from scratch</b><br>
+                            · Mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps<b/>
+                        </small></div></div>""")
 
         else:
-            st.markdown("""<div class="gray-preview-message">
-                🚫 <b>No mapping</b> has been loaded yet.
-            </div>
-            """, unsafe_allow_html=True)
+            st.html("""<div class="gray-preview-message">
+                🚫 <b>No mapping</b> has been created/imported yet.
+            </div>""")
 
     # RIGHT COLUMN OPTION: RETRIEVE CAH¡CHED MAPPING----------------------------
     # Only shows if not working with a mapping
@@ -661,6 +657,11 @@ with tab2:
     st.write("")
     col1, col2 = st.columns([2,1.5])
 
+    with col2:
+        col2a, col2b = st.columns([1,2])
+    with col2b:
+        utils.get_corner_status_message(mapping_info=True)
+
     if not st.session_state["g_label"]:
         with col1:
             utils.get_missing_g_mapping_error_message()
@@ -671,12 +672,7 @@ with tab2:
         mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
         used_mapping_ns_dict = utils.get_used_g_ns_dict(st.session_state["g_mapping"])
 
-        with col2:
-            col2a, col2b = st.columns([0.5, 2])
-
         with col2b:
-            st.write("")
-            st.write("")
             last_added_ns_df = pd.DataFrame({
                 "Prefix": st.session_state["last_added_ns_list"],
                 "Namespace": [mapping_ns_dict.get(prefix, "") for prefix in st.session_state["last_added_ns_list"]]})
@@ -1175,13 +1171,16 @@ with tab3:
     st.write("")
     col1, col2 = st.columns([2,1.5])
 
+    with col2:
+        col2a, col2b = st.columns([1, 2])
+    with col2b:
+        utils.get_corner_status_message(mapping_info=True)
+
     if not st.session_state["g_label"]:
         with col1:
             utils.get_missing_g_mapping_error_message()
 
     else:
-        with col2:
-            col2a,col2b = st.columns([1,2])
 
         # RIGHT COLUMN OPTION: SAVE PROGRESS------------------------------------
         if st.session_state["progress_saved_ok_flag"]:
@@ -1365,6 +1364,7 @@ with tab3:
                                 ⚠️ A session labelled <b>{pkl_filename}</b> already exists. <small>Pick
                                 a different label unless you want to overwrite it.</small>
                             </div>""", unsafe_allow_html=True)
+
             elif pkl_filename and valid_pkl_filename_flag:
                 with col1b:
                     st.markdown(f"""<div class="info-message-blue">

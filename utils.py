@@ -508,26 +508,23 @@ def get_corner_status_message(mapping_info=False, ontology_info=False):
     if ontology_info:
         if st.session_state["g_ontology"]:
             if len(st.session_state["g_ontology_components_dict"]) > 1:
-                ontology_items = '\n'.join([f"""<li><b>{ont}
-                <b style="color:#F63366;">[{st.session_state["g_ontology_components_tag_dict"][ont]}]</b>
-                </b></li>""" for ont in st.session_state["g_ontology_components_dict"]])
-                inner_html += f"""🧩 <b>Ontologies</b>:
-                    <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
-                        {ontology_items}
-                    </ul>"""
+                ontology_items = ''.join([f"""<div style="margin-left:15px;"><small>
+                            <b>· {ont}</b> <b style="color:#F63366;">[{st.session_state["g_ontology_components_tag_dict"][ont]}]</b>
+                        </small></div>""" for ont in st.session_state["g_ontology_components_dict"]])
+                inner_html += f"""🧩 Ontologies:<br>
+                    {ontology_items}"""
             else:
                 ont = next(iter(st.session_state["g_ontology_components_dict"]))
-                inner_html += f"""🧩 Ontology: <b><br>
-                        {ont}</b>
-                        <b style="color:#F63366;">[{st.session_state["g_ontology_components_tag_dict"][ont]}]</b>."""
+                inner_html += f"""🧩 Ontology: <small><b>{ont}</b>
+                        <b style="color:#F63366;">[{st.session_state["g_ontology_components_tag_dict"][ont]}]</b></small>"""
         else:
             inner_html += f"""🚫 <b>No ontology</b> has been imported."""
 
     # Render
     if inner_html:
-        st.markdown(f"""<div class="gray-preview-message">
+        st.html(f"""<div class="gray-preview-message">
                 {inner_html}
-            </div>""", unsafe_allow_html=True)
+            </div>""")
 #______________________________________________________
 
 #______________________________________________________
