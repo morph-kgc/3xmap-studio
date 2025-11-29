@@ -165,27 +165,24 @@ with tab1:
                     </div>""", unsafe_allow_html=True)
             st.dataframe(last_added_db_connections_df, hide_index=True)
 
-        with col2:
-            col2a, col2b, col2c = st.columns([0.5,0.8,1.2])
-        with col2c:
-            if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
-                highlight_color = "#fff7db"
-            else:
-                highlight_color = "#7a6228"
-            st.markdown(f"""<div style='text-align: right; font-size: 11px; margin-top: -15px;'>
-                <span style='background-color: {highlight_color}; padding: 2px 6px; border-radius: 4px;'>🕹️ must be manually updated</span>
-            </div>""", unsafe_allow_html=True)
-
-        with col2b:
-            st.button("Update", key="key_update_db_connections_button", on_click=update_db_connections)
-
-        with col2:
-            col2a, col2b = st.columns([0.5,2])
-        with col2b:
-            st.write("")
-            st.markdown("""<div class="info-message-gray">
-            🐢 This pannel can be <b>slow</b> <small>if there are failed connections</small>.
+            with col2:
+                col2a, col2b, col2c = st.columns([0.5,0.8,1.2])
+            with col2c:
+                highlight_color = "#fff7db" if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"] else "#7a6228"
+                st.markdown(f"""<div style='text-align: right; font-size: 11px; margin-top: -15px;'>
+                    <span style='background-color: {highlight_color}; padding: 2px 6px; border-radius: 4px;'>🕹️ must be manually updated</span>
                 </div>""", unsafe_allow_html=True)
+
+            with col2b:
+                st.button("Update", key="key_update_db_connections_button", on_click=update_db_connections)
+
+            with col2:
+                col2a, col2b = st.columns([0.5,2])
+            with col2b:
+                st.write("")
+                st.markdown("""<div class="info-message-gray">
+                🐢 This pannel can be <b>slow</b> <small>if there are failed connections</small>.
+                    </div>""", unsafe_allow_html=True)
 
         # Option to show all connections (if too many)
         with col2b:
@@ -216,17 +213,17 @@ with tab1:
 
     with col1:
         col1a, col1b = st.columns([2,1])
-    db_engine_list = ["Select engine", "PostgreSQL", "MySQL", "SQL Server", "MariaDB", "Oracle"]
     with col1a:
-        db_engine = st.selectbox("🖱️ Select a database engine:*", db_engine_list, key="key_db_engine")
+        list_to_choose = ["Select engine", "PostgreSQL", "MySQL", "SQL Server", "MariaDB", "Oracle", "MongoDB"]
+        db_engine = st.selectbox("🖱️ Select a database engine:*", list_to_choose, key="key_db_engine")
     with col1b:
         conn_label = st.text_input("🏷️ Enter label:*", key="key_conn_label")
         valid_conn_label = utils.is_valid_label(conn_label)
         if valid_conn_label and conn_label in st.session_state["db_connections_dict"]:
-            with col1a:
+            with col1:
                 st.markdown(f"""<div class="error-message">
-                    ❌ Label <b>{conn_label}</b> is already in use.<br>
-                    You must pick a different label for this connection.
+                    ❌ Label <b>{conn_label}</b> is already in use.
+                    <small>You must pick a <b>different label</b> for this connection.</small>
                         </div>""", unsafe_allow_html=True)
                 valid_conn_label = False
                 st.write("")
@@ -252,16 +249,7 @@ with tab1:
             with col1:
                 connection_ok_flag = utils.try_connection(db_engine, host, port, database, user, password)
                 if connection_ok_flag:
-                    if db_engine == "Oracle":
-                        jdbc_str = f"jdbc:oracle:thin:@{host}:{port}:{database}"
-                    elif db_engine == "SQL Server":
-                        jdbc_str = f"jdbc:sqlserver://{host}:{port};databaseName={database}"
-                    elif db_engine == "PostgreSQL":
-                        jdbc_str = f"jdbc:postgresql://{host}:{port}/{database}"
-                    elif db_engine == "MySQL":
-                        jdbc_str = f"jdbc:mysql://{host}:{port}/{database}"
-                    elif db_engine =="MariaDB":
-                        jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
+                    jdbc_str = utils.get_jdbc_str_from_input(db_engine, host, port, database)
 
                     with col1:
                         col1a, col1b = st.columns([2,1])
@@ -274,7 +262,7 @@ with tab1:
                     if duplicated_conn_flag:
                         with col1a:
                             st.markdown(f"""<div class="error-message">
-                                    ❌ The <b>connection</b> already exists with label {duplicated_conn_flag}.
+                                    ❌ The <b>connection</b> already exists with label <b>{duplicated_conn_flag}</b>.
                                 </div>""", unsafe_allow_html=True)
                     else:
                         with col1a:
@@ -285,7 +273,7 @@ with tab1:
                                 </div>""", unsafe_allow_html=True)
 
 
-    # SUCCESS MESSAGE: CONN TO DB REMOVED
+    # SUCCESS MESSAGE: CONNECTION TO DATABASE REMOVED
     # Shows here if there is no Remove Connections purple header
     if not st.session_state["db_connections_dict"] and st.session_state["db_connection_removed_ok_flag"]:
         with col1:

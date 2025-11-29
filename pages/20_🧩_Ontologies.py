@@ -34,7 +34,7 @@ def load_ontology_from_link():  #HEREIGONS
     # bind ontology namespaces
     ontology_ns_dict = utils.get_g_ns_dict(st.session_state["g_ontology"])
     for prefix, namespace in ontology_ns_dict.items():
-        utils.bind_namespace_wo_overwriting(prefix, namespace)
+        utils.bind_namespace(prefix, namespace, overwrite=False)
     # store information___________________________
     st.session_state["g_ontology_loaded_ok_flag"] = True
     st.session_state["g_ontology_components_dict"][st.session_state["g_ontology_label"]] = st.session_state["g_ontology"]
@@ -50,7 +50,7 @@ def load_ontology_from_file():
     # bind ontology namespaces
     ontology_ns_dict = utils.get_g_ns_dict(st.session_state["g_ontology"])
     for prefix, namespace in ontology_ns_dict.items():
-        utils.bind_namespace_wo_overwriting(prefix, namespace)
+        utils.bind_namespace(prefix, namespace, overwrite=False)
     # store information___________________________
     st.session_state["g_ontology_loaded_ok_flag"] = True
     st.session_state["g_ontology_components_dict"][st.session_state["g_ontology_label"]]=st.session_state["g_ontology"]
@@ -71,7 +71,7 @@ def extend_ontology_from_link():
     # bind ontology namespaces
     ontology_ns_dict = utils.get_g_ns_dict(g_ontology_new_part)
     for prefix, namespace in ontology_ns_dict.items():
-        utils.bind_namespace_wo_overwriting(prefix, namespace)
+        utils.bind_namespace(prefix, namespace, overwrite=False)
     # merge ontologies components___________________
     st.session_state["g_ontology"] = Graph()
     for ont_label, ont in st.session_state["g_ontology_components_dict"].items():
@@ -94,7 +94,7 @@ def extend_ontology_from_file():
     # bind ontology namespaces
     ontology_ns_dict = utils.get_g_ns_dict(g_ontology_new_part)
     for prefix, namespace in ontology_ns_dict.items():
-        utils.bind_namespace_wo_overwriting(prefix, namespace)
+        utils.bind_namespace(prefix, namespace, overwrite=False)
     # merge ontologies components___________________
     st.session_state["g_ontology"] = Graph()
     for ont_label, ont in st.session_state["g_ontology_components_dict"].items():
@@ -135,7 +135,7 @@ with tab1:
         with col2b:
             st.write("")
             st.write("")
-            utils.get_corner_status_message_ontology()
+            utils.get_corner_status_message(ontology_info=True)
 
     with col2:
         col2a,col2b = st.columns([2,1.5])
@@ -347,7 +347,7 @@ with tab2:
     with col2:
         col2a,col2b = st.columns([1,2])
     with col2b:
-        utils.get_corner_status_message_mapping()
+        utils.get_corner_status_message(ontology_info=True)
 
     #PURPLE HEADING - EXPLORE ONTOLOGY
     with col1:
@@ -910,7 +910,7 @@ with tab3:
     with col2:
         col2a,col2b = st.columns([1,2])
     with col2b:
-        utils.get_corner_status_message_ontology()
+        utils.get_corner_status_message(ontology_info=True)
 
     #PURPLE HEADING - PREVIEW
     with col1:
