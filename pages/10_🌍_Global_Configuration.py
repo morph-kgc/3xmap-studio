@@ -1,14 +1,14 @@
 import os
-import streamlit as st
+import pandas as pd
+import pickle    # to save and retrieve session
 from rdflib import Graph, URIRef, Literal, Namespace, BNode
 from rdflib.namespace import split_uri
-from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL, XSD
-import utils
-import pandas as pd
-
-import pickle    # to save and retrieve session
+import streamlit as st
 import time   # for success messages
 import uuid   # to handle uploader keys
+import utils
+
+# from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL, XSD   RFTAG
 
 # Config------------------------------------------------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
@@ -254,12 +254,7 @@ tab1, tab2, tab3, tab4 = st.tabs(["Select Mapping",
 #_______________________________________________________________________________
 # PANEL: SELECT MAPPING
 with tab1:
-    st.write("")
-    st.write("")
-
-    col1, col2 = st.columns([2,1.5])
-    with col2:
-        col2a,col2b = st.columns([1,2])
+    col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
 
     # PURPLE HEADING: CREATE NEW MAPPING----------------------------------------
     with col1:
@@ -386,7 +381,7 @@ with tab1:
     elif import_mapping_selected_option == "📁 File":
 
         with col1a:
-            mapping_format_list = list(utils.get_g_mapping_file_formats_dict().values())
+            mapping_format_list = list(utils.get_supported_formats(mapping=True).values())
             selected_mapping_input = st.file_uploader(f"""🖱️
             Upload mapping file:*""", type=mapping_format_list, key=st.session_state["key_mapping_uploader"])
 
@@ -509,7 +504,7 @@ with tab1:
                 st.button("Retrieve", key="key_retrieve_session_button_2", on_click=retrieve_session)
 
 
-    # RIGHT COLUMN  SUCCESS MESSAGES--------------------------------------------
+    # RIGHT COLUMN: SUCCESS MESSAGES--------------------------------------------
     # for retrieve cached mapping, change label and full reset
     if st.session_state["cached_mapping_retrieved_ok_flag"]:
         with col2b:
@@ -554,9 +549,9 @@ with tab1:
                         🗺️ You are working with mapping
                         <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
                         <div style="margin-left:15px;"><small>
-                            · Mapping was loaded from URL <b>{URL_for_display}</b><br>
-                            · When loaded, mapping had <b>{st.session_state["original_g_size_cache"]} TriplesMaps</b><br>
-                            · Now mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps<b/>
+                            · Mapping was loaded from URL <b>{URL_for_display}</b>.<br>
+                            · When loaded, mapping had <b>{st.session_state["original_g_size_cache"]} TriplesMaps</b>.<br>
+                            · Now mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps</b>.
                         </small></div></div>""")
 
             elif st.session_state["g_mapping_source_cache"][0] == "file":
@@ -564,9 +559,9 @@ with tab1:
                         🗺️ You are working with mapping
                         <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
                         <div style="margin-left:15px;"><small>
-                            · Mapping was loaded from file <b>{st.session_state["g_mapping_source_cache"][1]}</b><br>
-                            · When loaded, mapping had <b>{st.session_state["original_g_size_cache"]} TriplesMaps</b><br>
-                            · Now mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps<b/>
+                            · Mapping was loaded from file <b>{st.session_state["g_mapping_source_cache"][1]}</b>.<br>
+                            · When loaded, mapping had <b>{st.session_state["original_g_size_cache"]} TriplesMaps</b>.<br>
+                            · Now mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps</b>.
                         </small></div></div>""")
 
             else:
@@ -653,18 +648,16 @@ with tab1:
 # PANEL: CONFIGURE NAMESPACES
 # Available only if mapping is loaded
 with tab2:
-    st.write("")
-    st.write("")
-    col1, col2 = st.columns([2,1.5])
+    col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
 
-    with col2:
-        col2a, col2b = st.columns([1,2])
     with col2b:
         utils.get_corner_status_message(mapping_info=True)
 
     if not st.session_state["g_label"]:
         with col1:
-            utils.get_missing_g_mapping_error_message()
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            utils.get_missing_g_error_message(mapping=True)
 
     else:   # only allow to continue if mapping is loaded
 
@@ -1167,18 +1160,16 @@ with tab2:
 # PANEL: SAVE MAPPING
 # Available only if mapping is loaded
 with tab3:
-    st.write("")
-    st.write("")
-    col1, col2 = st.columns([2,1.5])
+    col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
 
-    with col2:
-        col2a, col2b = st.columns([1, 2])
     with col2b:
         utils.get_corner_status_message(mapping_info=True)
 
     if not st.session_state["g_label"]:
         with col1:
-            utils.get_missing_g_mapping_error_message()
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            utils.get_missing_g_error_message(mapping=True)
 
     else:
 
@@ -1234,7 +1225,7 @@ with tab3:
         with col1:
             col1a, col1b, col1c = st.columns([0.8,1.7,1])
 
-        export_extension_dict = utils.get_g_mapping_file_formats_dict()
+        export_extension_dict = utils.get_supported_formats(mapping=True)
         list_to_choose = list(export_extension_dict)
 
         with col1a:
@@ -1397,18 +1388,11 @@ with tab3:
                     if delete_sessions_checkbox:
                         st.button("Delete", key="delete_sessions_button", on_click=delete_sessions)
 
-#RFBOOKMARK
 #_______________________________________________________________________________
 # PANEL: SET STYLE
 with tab4:
 
-    st.write("")
-    st.write("")
-
-    col1,col2 = st.columns([2,1.5])
-
-    with col2:
-        col2a,col2b = st.columns([1,2])
+    col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
 
     # PURPLE HEADING: STYLE CONFIGURATION---------------------------------------
     with col1:

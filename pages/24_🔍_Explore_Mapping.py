@@ -6,7 +6,6 @@ import pandas as pd
 import pickle
 from rdflib.namespace import split_uri
 from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL, XSD
-from streamlit_js_eval import streamlit_js_eval
 import io
 import time   # for success messages
 
@@ -1345,7 +1344,7 @@ with tab4:
             st.rerun()
 
 
-    list_to_choose = list(utils.get_g_mapping_file_formats_dict())
+    list_to_choose = list(utils.get_supported_formats_dict(mapping=True))
     list_to_choose.remove("jsonld")
 
     with col1a:
@@ -1369,7 +1368,7 @@ with tab4:
         st.code(serialised_data[:max_length])
 
         with col1b:
-            allowed_format_dict = utils.get_g_mapping_file_formats_dict()
+            allowed_format_dict = utils.get_supported_formats_dict(mapping=True)
             extension = allowed_format_dict[preview_format]
             download_filename = st.session_state["g_label"] + extension
             st.session_state["mapping_downloaded_ok_flag"] = st.download_button(label="Download", data=serialised_data,

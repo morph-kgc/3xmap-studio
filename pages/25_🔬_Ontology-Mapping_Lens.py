@@ -6,7 +6,6 @@ import pandas as pd
 import pickle
 from rdflib.namespace import split_uri
 from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL, XSD
-from streamlit_js_eval import streamlit_js_eval
 import plotly.express as px
 
 # Config-----------------------------------

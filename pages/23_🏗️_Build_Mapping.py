@@ -12,7 +12,6 @@ import uuid   # to handle uploader keys
 import io
 from io import IOBase
 import sqlglot
-from streamlit_js_eval import streamlit_js_eval
 
 # Config-----------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
@@ -1490,7 +1489,7 @@ with tab2:
                                 <div class="gray-preview-message" style="word-wrap:break-word; overflow-wrap:anywhere;">
                                     🏷️ <b style="color:#F63366;">Subject classes:</b><br>
                                  <div style="margin-top:0.2em; margin-left:20px; font-size:15px;">
-                                        <small><b>{utils.format_list_for_markdown(list_for_display)}</b></small>
+                                        <small><b>{utils.format_list_for_display(list_for_display)}</b></small>
                                 </div></div>""", unsafe_allow_html=True)
                             st.write("")
 
@@ -1722,7 +1721,7 @@ with tab2:
 
         #Option to show all Subject Maps
         sm_df = pd.DataFrame([
-            {"Subject Map": v[0], "Assigned to": utils.format_list_for_markdown(v[4]),
+            {"Subject Map": v[0], "Assigned to": utils.format_list_for_display(v[4]),
                 "Type": v[1], "Rule": v[3]} for k, v in reversed(sm_dict.items())])
         sm_df_short = sm_df.head(max_length)
 

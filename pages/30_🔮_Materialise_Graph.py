@@ -15,7 +15,6 @@ import requests
 from morph_kgc import materialize
 from sqlalchemy import create_engine
 from streamlit.runtime.uploaded_file_manager import UploadedFile
-from streamlit_js_eval import streamlit_js_eval
 
 # Config-----------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
@@ -1313,11 +1312,11 @@ with tab3:
         if mkgc_used_additional_mapping_list and not mkgc_not_working_url_mappings_list:
             inner_html_success += f"""✔️ <b>Additional mappings</b> are valid:<br>
                 <div style="margin-left: 20px"><b><small>
-                {utils.format_list_for_markdown(mkgc_used_additional_mapping_list)}</small><br></div>"""
+                {utils.format_list_for_display(mkgc_used_additional_mapping_list)}</small><br></div>"""
         elif mkgc_used_additional_mapping_list:
             inner_html_error += f"""❌ URL to <b>additional mapping/s</b> not working:<br>
                 <div style="margin-left: 20px"><b><small>
-                {utils.format_list_for_markdown(mkgc_not_working_url_mappings_list)}</small><br></div>"""
+                {utils.format_list_for_display(mkgc_not_working_url_mappings_list)}</small><br></div>"""
 
         # Check connections to db if used
         not_working_db_conn_list = []
@@ -1336,12 +1335,12 @@ with tab3:
             everything_ok_flag = False
             if len(not_working_db_conn_list) == 1:
                 inner_html_error += f"""❌ A connection to database is not working:<br>
-                    <div style="margin-left: 20px"><small><b>{utils.format_list_for_markdown(not_working_db_conn_list)}
+                    <div style="margin-left: 20px"><small><b>{utils.format_list_for_display(not_working_db_conn_list)}
                     </b></small><br></div>"""
             else:
                 inner_html_error += f"""❌ Several connections to databases are not working:<br>
                     <div style="margin-left: 20px"><small><b>
-                    {utils.format_list_for_markdown(not_working_db_conn_list)}</b></small><br></div>"""
+                    {utils.format_list_for_display(not_working_db_conn_list)}</b></small><br></div>"""
 
         # Check all tabular sources are loaded
         not_loaded_ds_list = []
@@ -1352,18 +1351,18 @@ with tab3:
         if not not_loaded_ds_list and mkgc_used_tab_ds_list:
             inner_html_success += f"""✔️ All <b>tabular data sources</b> are loaded:<br>
                 <div style="margin-left: 20px"><small>
-                <b>{utils.format_list_for_markdown(mkgc_used_tab_ds_list)}</b></small><br></div>"""
+                <b>{utils.format_list_for_display(mkgc_used_tab_ds_list)}</b></small><br></div>"""
         elif mkgc_used_tab_ds_list:
             everything_ok_flag = False
             with col1a:
                 if len(not_loaded_ds_list) == 1:
                     inner_html_error += f"""❌ A <b>tabular data source</b> is not loaded:
                         <div style="margin-left: 20px"><b><small>
-                        {utils.format_list_for_markdown(not_loaded_ds_list)}</b></small><br></div>"""
+                        {utils.format_list_for_display(not_loaded_ds_list)}</b></small><br></div>"""
                 else:
                     inner_html_error += f"""❌ Several <b>tabular data sources</b> are not loaded:
                         <div style="margin-left: 20px"><small><b>
-                        {utils.format_list_for_markdown(not_loaded_ds_list)}</b></small>
+                        {utils.format_list_for_display(not_loaded_ds_list)}</b></small>
                         <br></div>"""
 
         # show check message
@@ -1418,7 +1417,7 @@ with tab3:
             with col1:
                 col1a, col1b = st.columns([1,2])
 
-            download_extension_dict = utils.get_g_mapping_file_formats_dict()
+            download_extension_dict = utils.get_supported_formats_dict(mapping=True)
             download_format_list = list(download_extension_dict)
 
             with col1a:
