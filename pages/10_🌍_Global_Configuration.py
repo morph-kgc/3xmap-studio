@@ -596,8 +596,8 @@ with tab1:
                     st.button("Retrieve", key="key_retrieve_cached_mapping_button", on_click=retrieve_cached_mapping)
                     st.markdown(f"""<div class="info-message-blue">
                             ℹ️ Mapping <b style="color:#F63366;">
-                            {cached_mapping_name}</b> will be loaded, together
-                            with any imported ontologies and data sources.
+                            {cached_mapping_name}</b> will be imported, <small>together
+                            with any imported ontologies and data sources.</small>
                         </span></div>""", unsafe_allow_html=True)
 
 

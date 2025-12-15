@@ -251,11 +251,13 @@ with tab1:
                                     <small>(with label <b>{duplicated_conn_flag}</b>).</small>
                                 </div>""", unsafe_allow_html=True)
                     else:
+                        with col1:
+                            col1a, col1b = st.columns([4,1])
                         with col1a:
                             st.button("Save", key="key_save_connection_button", on_click=save_connection)
                             st.markdown(f"""<div class="success-message">
                                     ✔️ Valid connection to database.<br>
-                                    <small style="margin-left: 1em;">🔌 <b>{conn_label}</b> → <b style="color:#F63366;">{url_str}</b>.</small>
+                                    <small style="margin-left: 1em;">🔌 <b>{conn_label}</b> → <b style="color:#F63366;">{url_str}</b></small>
                                 </div>""", unsafe_allow_html=True)
 
 
@@ -437,7 +439,7 @@ with tab1:
                             {inner_html}
                         </div>""", unsafe_allow_html=True)
 
-    # RFBOOKMARK
+
 #_______________________________________________________________________________
 # PANEL: INSPECT DATA
 with tab2:
@@ -552,24 +554,23 @@ with tab2:
             else:
                 conn = utils.make_connection_to_db(connection_for_table_display)
                 result = utils.get_tables_from_db(connection_for_table_display)
-                db_tables = [row[0] for row in result.fetchall()]
+                db_tables = [row[0] for row in result]
 
                 with col1b:
-                    list_to_choose = db_tables
+                    list_to_choose = db_tables.copy()
                     list_to_choose.insert(0, "Select table")
                     selected_db_table = st.selectbox("🖱️ Select table:*", list_to_choose,
                         key="key_selected_db_table")
+                    if len(db_tables) == 0:
+                        st.markdown(f"""<div class="error-message">
+                                ❌ <b>No tables</b> in database.
+                            </div>""", unsafe_allow_html=True)
 
-                # RFBOOKMARK
                 if selected_db_table != "Select table":
 
-                    result = conn.execute(text(f"SELECT * FROM {selected_db_table}"))
-                    rows = result.fetchall()
-                    columns = result.keys()
-                    df = pd.DataFrame(rows, columns=columns)
-
+                    df = utils.get_df_from_db(connection_for_table_display, selected_db_table)
                     table_len = f"{len(df)} rows" if len(df) != 1 else f"{len(df)} row"
-                    inner_html = f"""📅 <b style="color:#F63366;"> Table ({table_len}):</b>
+                    inner_html = f"""📅 <b style="color:#F63366;"> Table <small>({table_len}):</small></b>
                             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"""
 
                     with col1a:
@@ -614,6 +615,7 @@ with tab2:
                                 st.dataframe(df[sql_column_filter_list], hide_index=True)
 
 
+    # RFBOOKMARK
 #_______________________________________________________________________________
 # PANEL: MANAGE VIEWS
 with tab3:

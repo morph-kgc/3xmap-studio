@@ -1825,10 +1825,13 @@ def update_db_connection_status_dict(conn_label):
         return False
 #______________________________________________________
 
-#RFBOOKMARK
 # PANEL: INSPECT DATA-----------------------------------------------------------
 #________________________________________________________
 # Function to get all tables in a database
+from sqlalchemy import text
+
+#________________________________________________________
+# Function to get all tables/collections in a database
 def get_tables_from_db(connection_label):
 
     conn = utils.make_connection_to_db(connection_label)
@@ -1841,13 +1844,15 @@ def get_tables_from_db(connection_label):
             FROM information_schema.tables
             WHERE table_schema = 'public' AND table_type = 'BASE TABLE';
         """))
+        return result
 
     elif engine in ("MySQL", "MariaDB"):
-        result = conn.execute(text(f"""
+        result = conn.execute(text("""
             SELECT table_name
             FROM information_schema.tables
             WHERE table_schema = :db AND table_type = 'BASE TABLE';
         """), {"db": database})
+        return result.fetchall()
 
     elif engine == "Oracle":
         result = conn.execute(text("""
@@ -1859,6 +1864,7 @@ def get_tables_from_db(connection_label):
                 'DVSYS','GGSYS','OJVMSYS','LBACSYS','AUDSYS',
                 'REMOTE_SCHEDULER_AGENT')
         """))
+        return result.fetchall()
 
     elif engine == "SQL Server":
         result = conn.execute(text("""
@@ -1867,17 +1873,46 @@ def get_tables_from_db(connection_label):
             WHERE TABLE_TYPE = 'BASE TABLE'
               AND TABLE_CATALOG = :db
         """), {"db": database})
+        return result.fetchall()
+
+    elif engine == "MongoDB":
+        db = conn[database]    # conn is a MongoClient
+        collections = db.list_collection_names()
+        collections = [name for name in collections if not name.startswith("system.")]
+        return [(name,) for name in collections]
 
     else:
-        result = None
+        return None
+#______________________________________________________
 
-    return result
+#______________________________________________________
+# Function to build the dataframe of a database (for display)
+def get_df_from_db(connection_label, db_table):
+
+    conn = utils.make_connection_to_db(connection_label)
+    engine = st.session_state["db_connections_dict"][connection_label][0]
+    database = st.session_state["db_connections_dict"][connection_label][3]
+
+    # Query Mongo collection
+    if engine == "MongoDB":
+        db = conn[database]
+        rows = list(db[db_table].find())
+        df = pd.DataFrame(rows)
+
+    # Query SQL table
+    else:
+        result = conn.execute(text(f"SELECT * FROM {db_table}"))
+        rows = result.fetchall()
+        columns = result.keys()
+        df = pd.DataFrame(rows, columns=columns)
+
+    return df
 #______________________________________________________
 
 
 
-# HEREIGO - REFACTORING
 
+#RFBOOKMARK
 #________________________________________________________
 # Funtion to get the name of the folder to save large files
 def get_ds_folder_name():
