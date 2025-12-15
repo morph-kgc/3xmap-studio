@@ -1,33 +1,30 @@
+import base64
+import configparser
+import io
 import os
+import pandas as pd
+from PIL import Image   # for logo rendering
 from pymongo import MongoClient
-import streamlit as st
 import rdflib
 from rdflib import BNode, Graph, Literal, Namespace, URIRef
 from rdflib.namespace import split_uri
 from rdflib.namespace import DC, DCTERMS, OWL, RDF, RDFS, XSD
-from sqlalchemy import create_engine, text
-from sqlalchemy.exc import OperationalError, ArgumentError
-import utils
-import pandas as pd
-
-import base64
-from collections import defaultdict
-import configparser
-import io
-import pickle
-import oracledb
-from PIL import Image   # for logo rendering
-import plotly.express as px
-import psycopg
-from pymongo import MongoClient
-import pymysql
-import pyodbc
 import re
 import requests
-import sqlglot
+from sqlalchemy import create_engine, text
+from sqlalchemy.exc import OperationalError, ArgumentError
+import streamlit as st
 from streamlit_js_eval import streamlit_js_eval
 from urllib.parse import urlparse
+import utils
 import uuid   # to handle uploader keys
+
+
+
+from collections import defaultdict
+import plotly.express as px
+import sqlglot
+
 
 
 # REQUIRED NS===================================================================
@@ -661,11 +658,43 @@ def get_max_length_for_display():
     return [50, 10, 100, 20, 5, 5, 20, 15, 40, 100000, 30]
 #_______________________________________________________
 
+#______________________________________________________
+# Function to display limited dataframed in right column
+def display_right_column_df(df, session_state_dict, text, complete=True):
+
+    if session_state_dict:
+        max_length = get_max_length_for_display()[1]
+        limited_df = df.head(max_length)
+
+        if len(session_state_dict) < max_length:
+            st.markdown(f"""<div style='text-align: right; font-size: 14px; color: grey;'>
+                    🔎 {text}
+                </div>""", unsafe_allow_html=True)
+            st.markdown(
+                "<div style='margin-top:0px;'></div>",
+                unsafe_allow_html=True
+            )
+        else:
+            st.markdown(f"""<div style='text-align: right; font-size: 14px; color: grey;'>
+                    🔎 {text}
+                </div>""", unsafe_allow_html=True)
+            st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                    (complete list below)
+                </div>""", unsafe_allow_html=True)
+
+        st.dataframe(limited_df, hide_index=True)
+
+    if complete and session_state_dict and len(session_state_dict) > max_length:
+        st.write("")
+        with st.expander(f"🔎 Show all {text}"):
+            st.dataframe(df, hide_index=True)
+#______________________________________________________
+
 
 # SUPPORTED FORMATS ============================================================
 #_______________________________________________________
 # List of allowed mapping file formats
-def get_supported_formats(mapping=False, ontology=False, databases=False):
+def get_supported_formats(mapping=False, ontology=False, databases=False, tab_data=False):
 
     if mapping:
         allowed_formats = {"turtle": ".ttl",
@@ -678,6 +707,10 @@ def get_supported_formats(mapping=False, ontology=False, databases=False):
 
     elif databases:
         allowed_formats = ["PostgreSQL", "MySQL", "SQL Server", "MariaDB", "Oracle", "MongoDB"]
+
+    if tab_data:
+        allowed_formats = [".csv", ".tsv", ".xls", ".xlsx", ".parquet", ".feather",
+            ".orc", ".dta", ".sas7bdat", ".sav", ".ods"]
 
     return allowed_formats
 #_______________________________________________________
@@ -1721,8 +1754,8 @@ def try_connection_to_db(db_connection_type, host, port, database, user, passwor
         except Exception as e:
             if display_msg:
                 st.markdown(f"""<div class="error-message">
-                    ❌ <b>Connection failed.</b><br>
-                    <small><b>Full error</b>: {str(e)} </small>
+                    ❌ <b>Connection failed.</b>
+                    <small><i><b>Full error</b>: {str(e)}</i></small>
                 </div>""", unsafe_allow_html=True)
                 return False
             else:
@@ -1738,8 +1771,8 @@ def try_connection_to_db(db_connection_type, host, port, database, user, passwor
     except OperationalError as e:
         if display_msg:
             st.markdown(f"""<div class="error-message">
-                ❌ <b>Connection failed.</b><br>
-                <small><b>Full error</b>: {str(e)} </small>
+                ❌ <b>Connection failed.</b>
+                <small><i><b>Full error</b>: {str(e)}</i></small>
             </div>""", unsafe_allow_html=True)
             return False
         else:
@@ -1749,7 +1782,7 @@ def try_connection_to_db(db_connection_type, host, port, database, user, passwor
         if display_msg:
             st.markdown(f"""<div class="error-message">
                 ❌ <b>Invalid connection string.</b><br>
-                <small><b>Full error</b>: {str(e)} </small>
+                <small><i><b>Full error</b>: {str(e)}</i></small>
             </div>""", unsafe_allow_html=True)
             return False
         else:
@@ -1759,7 +1792,7 @@ def try_connection_to_db(db_connection_type, host, port, database, user, passwor
         if display_msg:
             st.markdown(f"""<div class="error-message">
                 ❌ <b>Unexpected error.</b><br>
-                <small><b>Full error</b>: {str(e)} </small>
+                <small><i><b>Full error</b>: {str(e)}</i></small>
             </div>""", unsafe_allow_html=True)
             return False
         else:
@@ -1979,8 +2012,8 @@ def display_db_view_results(view):
 
         if not view_ok_flag:
             st.markdown(f"""<div class="error-message">
-                ❌ <b>Invalid syntax</b>. <small>Please check your query or collection.<br>
-                <b> Full error:</b> {error}</small>
+                ❌ <b>Invalid syntax</b>. <small>Please check your query or collection.
+                <i><b>Full error:</b> {error}</i></small>
             </div>""", unsafe_allow_html=True)
         else:
             limited_df = display_limited_df(df, "Results")
@@ -2473,18 +2506,6 @@ def get_pom_dict():
     return pom_dict
 #___________________________________________
 
-
-#_________________________________________________
-# Funtion to get the allowed format for the data sources
-def get_ds_allowed_tab_formats():
-
-    allowed_tab_formats_list = [".csv", ".tsv", ".xls",
-    ".xlsx", ".parquet", ".feather", ".orc", ".dta",
-    ".sas7bdat", ".sav", ".ods"]
-
-    return allowed_tab_formats_list
-#_________________________________________________
-
 #_________________________________________________
 # Funtion to read tabular data
 def read_tab_file(filename):
@@ -2745,8 +2766,8 @@ def is_valid_url_mapping(mapping_url, show_info):
     except Exception as e:
         if show_info:
             st.markdown(f"""<div class="error-message">
-                ❌ <b>Validation failed.</b><br>
-                <small><b>Full error:</b> {e}</small>
+                ❌ <b>Validation failed.</b>
+                <small><i><b>Full error:</b> {e}</i></small>
             </div>""", unsafe_allow_html=True)
         mapping_url_ok_flag = False
 

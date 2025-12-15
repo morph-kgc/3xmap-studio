@@ -140,21 +140,7 @@ with tab1:
         last_added_db_connections_df = db_connections_df.head(utils.get_max_length_for_display()[1])
 
         with col2b:
-            max_length = utils.get_max_length_for_display()[1]
-            if len(st.session_state["db_connections_dict"]) < max_length:
-                st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
-                        🔎 database connections
-                    </div>""", unsafe_allow_html=True)
-                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                    </div>""", unsafe_allow_html=True)
-            else:
-                st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
-                        🔎 last added database connections
-                    </div>""", unsafe_allow_html=True)
-                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                        (complete list below)
-                    </div>""", unsafe_allow_html=True)
-            st.dataframe(last_added_db_connections_df, hide_index=True)
+            utils.display_right_column_df(db_connections_df, st.session_state["db_connections_dict"], "database connections", complete=False)
 
         with col2:
             col2a, col2b, col2c = st.columns([0.5,0.8,1.2])
@@ -175,7 +161,7 @@ with tab1:
                 </div>""", unsafe_allow_html=True)
 
         # Option to show all connections (if too many)
-        if st.session_state["db_connections_dict"] and len(st.session_state["db_connections_dict"]) > max_length:
+        if st.session_state["db_connections_dict"] and len(st.session_state["db_connections_dict"]) > utils.get_max_length_for_display()[1]:
             with col2:
                 col2a, col2b = st.columns([0.5,2])
             with col2b:
@@ -468,7 +454,7 @@ with tab2:
     else:
 
         # RIGHT COLUMN: CONNECTION INFORMATION----------------------------------
-        with col2b:
+        if st.session_state["db_connections_dict"]:
             rows = [{"Label": label, "Engine": st.session_state["db_connections_dict"][label][0],
                     "Database": st.session_state["db_connections_dict"][label][3],
                     "Status": st.session_state["db_connection_status_dict"][label][0]}
@@ -477,46 +463,33 @@ with tab2:
             last_added_db_connections_df = db_connections_df.head(utils.get_max_length_for_display()[1])
 
             max_length = utils.get_max_length_for_display()[1]   # max number of connections to show directly
-            if st.session_state["db_connections_dict"]:
-                if len(st.session_state["db_connections_dict"]) < max_length:
-                    st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
-                            🔎 database connections
-                        </div>""", unsafe_allow_html=True)
-                    st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                        </div>""", unsafe_allow_html=True)
+
+            with col2b:
+                utils.display_right_column_df(db_connections_df, st.session_state["db_connections_dict"], "database connections", complete=False)
+
+            with col2:
+                col2a, col2b, col2c = st.columns([0.5,0.8,1.2])
+            with col2c:
+                if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
+                    highlight_color = "#fff7db"
                 else:
-                    st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
-                            🔎 last added database connections
-                        </div>""", unsafe_allow_html=True)
-                    st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                            (complete list below)
-                        </div>""", unsafe_allow_html=True)
+                    highlight_color = "#7a6228"
+                st.markdown(f"""<div style='text-align: right; font-size: 11px; margin-top: -15px;'>
+                    <span style='background-color: {highlight_color}; padding: 2px 6px; border-radius: 4px;'>🕹️ must be manually updated</span>
+                </div>""", unsafe_allow_html=True)
 
-                st.dataframe(last_added_db_connections_df, hide_index=True)
+            with col2b:
+                st.button("Update", key="key_update_db_connections_button_2", on_click=update_db_connections)
 
-                with col2:
-                    col2a, col2b, col2c = st.columns([0.5,0.8,1.2])
-                with col2c:
-                    if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
-                        highlight_color = "#fff7db"
-                    else:
-                        highlight_color = "#7a6228"
-                    st.markdown(f"""<div style='text-align: right; font-size: 11px; margin-top: -15px;'>
-                        <span style='background-color: {highlight_color}; padding: 2px 6px; border-radius: 4px;'>🕹️ must be manually updated</span>
+            with col2:
+                col2a, col2b = st.columns([1,0.8])
+            with col2b:
+                st.markdown("""<div class="info-message-gray">
+                🐢 This pannel can be <b>slow</b> <small>if there are failed connections</small>.
                     </div>""", unsafe_allow_html=True)
 
-                with col2b:
-                    st.button("Update", key="key_update_db_connections_button_2", on_click=update_db_connections)
-
-                with col2:
-                    col2a, col2b = st.columns([1,0.8])
-                with col2b:
-                    st.markdown("""<div class="info-message-gray">
-                    🐢 This pannel can be <b>slow</b> <small>if there are failed connections</small>.
-                        </div>""", unsafe_allow_html=True)
-
             # Option to show all connections (if too many)
-            if st.session_state["db_connections_dict"] and len(st.session_state["db_connections_dict"]) > max_length:
+            if st.session_state["db_connections_dict"] and len(st.session_state["db_connections_dict"]) > utils.get_max_length_for_display()[1]:
                 with col2:
                     col2a, col2b = st.columns([0.5,2])
                 with col2b:
@@ -628,24 +601,9 @@ with tab3:
                         "Database": database, "Query/Collection": query_or_collection})
 
             views_df = pd.DataFrame(rows)
-            last_views_df = views_df.head(utils.get_max_length_for_display()[1])
 
+            utils.display_right_column_df(views_df, st.session_state["saved_views_dict"], "saved views", complete=False)
             max_length = utils.get_max_length_for_display()[1]   # max number of connections to show directly
-            if st.session_state["saved_views_dict"]:
-                if len(st.session_state["saved_views_dict"]) < max_length:
-                    st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
-                            🔎 saved views
-                        </div>""", unsafe_allow_html=True)
-                    st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                        </div>""", unsafe_allow_html=True)
-                else:
-                    st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
-                            🔎 last saved views
-                        </div>""", unsafe_allow_html=True)
-                    st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                            (complete list below)
-                        </div>""", unsafe_allow_html=True)
-                st.dataframe(last_views_df, hide_index=True)
 
             with col2:
                 col2a, col2b = st.columns([1,0.8])
@@ -655,13 +613,13 @@ with tab3:
                     </div>""", unsafe_allow_html=True)
 
             #Option to show all views (if too many)
-            if st.session_state["saved_views_dict"] and len(st.session_state["saved_views_dict"]) > max_length:
+            if st.session_state["saved_views_dict"] and len(st.session_state["saved_views_dict"]) > utils.get_max_length_for_display()[1]:
                 with col2:
                     col2a, col2b = st.columns([0.5,2])
                 with col2b:
-                    st.write("")
-                    with st.expander("🔎 Show all saved views"):
-                        st.dataframe(views_df, hide_index=True)
+                        st.write("")
+                        with st.expander("🔎 Show all saved views"):
+                            st.dataframe(views_df, hide_index=True)
 
         # PURPLE HEADER: CREATE VIEW--------------------------------------------
         with col1:
@@ -759,8 +717,8 @@ with tab3:
                         pipeline_ok_flag = False
                         with col1:
                             st.markdown(f"""<div class="error-message">
-                                ❌ <b>Invalid pipeline input.</b><small> Please enter a valid pipeline in JSON format.<br>
-                                <b>Full error:</b> {e}.</small>
+                                ❌ <b>Invalid pipeline input.</b><small> Please enter a valid pipeline in JSON format.
+                                <i><b>Full error:</b> {e}.</i></small>
                             </div>""", unsafe_allow_html=True)
 
                 if pipeline_str and pipeline_ok_flag and valid_mongo_view_label_flag and selected_db_table != "Select table":
@@ -799,10 +757,9 @@ with tab3:
                     if not sql_query_ok_flag:
                         with col1:
                             st.markdown(f"""<div class="error-message">
-                                ❌ <b>Invalid query</b>.<small> Please check your input.<br>
-                                <b> Full error:</b> {error}</small>
+                                ❌ <b>Invalid query</b>.<small> Please check your input.
+                                <i><b> Full error:</b> {error}</i></small>
                             </div>""", unsafe_allow_html=True)
-                            st.write("")
 
                 if sql_query and sql_query_ok_flag and valid_sql_view_label_flag:
                     with col1:
@@ -830,7 +787,7 @@ with tab3:
         time.sleep(utils.get_success_message_time())
         st.rerun()
 
-    #RFBOOKMARK
+
     # PURPLE HEADING: MANAGE SAVED----------------------------------------------
     # Shows only if there are connections to databases
     if st.session_state["saved_views_dict"]:

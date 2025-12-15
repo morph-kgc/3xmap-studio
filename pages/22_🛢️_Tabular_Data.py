@@ -50,32 +50,14 @@ def remove_file():
     # reset fields_____________________
     st.session_state["key_ds_files_to_remove_list"] = []
 
-
-
-# START PAGE_____________________________________________________________________
-
-#____________________________________________________________
+#_______________________________________________________________________________
 # PANELS OF THE PAGE (tabs)
+tab1, tab2 = st.tabs(["Manage Files", "Display Data"])
 
-tab1, tab2 = st.tabs(["Load File", "Display Data"])
-
-
-#________________________________________________
-# MANAGE TABULAR DATA SOURCES
+#_______________________________________________________________________________
+# PANEL: MANAGE FILES
 with tab1:
-
-    col1, col2 = st.columns([2,1.5])
-
-    with col1:
-        col1a, col1b = st.columns([2,1])
-
-    with col2:
-        col2a, col2b = st.columns([0.5, 2])
-
-    with col2b:
-        st.write("")
-        st.write("")
-
+    col1, col2, col2a, col2b = utils.get_panel_layout()
 
     rows = []
     ds_files = list(st.session_state["ds_files_dict"].items())
@@ -108,45 +90,21 @@ with tab1:
         rows.append(row)
 
         db_connections_df = pd.DataFrame(rows)
-        last_added_db_connections_df = db_connections_df.head(utils.get_max_length_for_display()[1])
 
     with col2b:
-        max_length = utils.get_max_length_for_display()[1]   # max number of connections to show directly
-        if st.session_state["ds_files_dict"]:
-            if len(st.session_state["ds_files_dict"]) < max_length:
-                st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
-                        🔎 uploaded files
-                    </div>""", unsafe_allow_html=True)
-                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                    </div>""", unsafe_allow_html=True)
-            else:
-                st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
-                        🔎 last uploaded files
-                    </div>""", unsafe_allow_html=True)
-                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                        (complete list below)
-                    </div>""", unsafe_allow_html=True)
-            st.dataframe(last_added_db_connections_df, hide_index=True)
+        utils.display_right_column_df(db_connections_df, st.session_state["ds_files_dict"], "uploaded files")
 
-        #Option to show all connections (if too many)
-        if st.session_state["ds_files_dict"] and len(st.session_state["ds_files_dict"]) > max_length:
-            with st.expander("🔎 Show all files"):
-                st.write("")
-                st.dataframe(db_connections_df, hide_index=True)
-
-
-    #PURPLE HEADING - UPLOAD FILE
+    #RFBOOKMARK
+    # PURPLE HEADING: UPLOAD FILE-----------------------------------------------
     with col1:
-        st.write("")
         st.markdown("""<div class="purple-heading">
                 📁 Upload File <small>(or Update)</small>
             </div>""", unsafe_allow_html=True)
         st.write("")
 
-    with col1:
-        col1a, col1b = st.columns([2,1])
-
     if st.session_state["ds_file_saved_ok_flag"]:
+        with col1:
+            col1a, col1b = st.columns([2,1])
         with col1a:
             st.write("")
             st.markdown(f"""<div class="success-message-flag">
@@ -156,40 +114,47 @@ with tab1:
         time.sleep(utils.get_success_message_time())
         st.rerun()
 
-    ds_allowed_formats = utils.get_ds_allowed_tab_formats()            #data source for the TriplesMap
+    with col1:
+        col1a, col1b = st.columns([2,1])
     with col1a:
+        ds_allowed_formats = utils.get_supported_formats(tab_data=True)            #data source for the TriplesMap
         ds_file = st.file_uploader(f"""🖱️ Upload data source file:*""",
             type=ds_allowed_formats, key=st.session_state["key_ds_uploader"])
 
-        if ds_file:
-            try:
-                columns_df = utils.read_tab_file_unsaved(ds_file)
+    if ds_file:
+        try:
+            columns_df = utils.read_tab_file_unsaved(ds_file)
 
-                if ds_file.name in st.session_state["ds_files_dict"]:
+            if ds_file.name in st.session_state["ds_files_dict"]:
+                with col1b:
+                    st.write("")
                     st.write("")
                     st.markdown(f"""<div class="warning-message">
-                        ⚠️ File <b>{ds_file.name}</b> is already loaded.<br>
+                        ⚠️ File <b>{ds_file.name}</b> is already loaded.
                         <small>If you continue its content will be updated.</small>
                     </div>""", unsafe_allow_html=True)
-                    st.write("")
+                with col1a:
                     update_file_checkbox = st.checkbox(
                     "🔒 I am sure I want to update the file",
                     key="key_update_file_checkbox")
                     if update_file_checkbox:
                         st.button("Save", key="key_save_ds_file_button", on_click=save_ds_file)
 
-                else:
-                    st.button("Save", key="key_save_ds_file_button", on_click=save_ds_file)
+            else:
+                st.button("Save", key="key_save_ds_file_button", on_click=save_ds_file)
 
-            except Exception as e:    # empty file
-                with col1a:
-                    st.markdown(f"""<div class="error-message">
-                        ❌ The file <b>{ds_file.name}</b> appears to be empty or corrupted. Please load a valid file. {e}
-                    </div>""", unsafe_allow_html=True)
-                    st.write("")
+        except Exception as e:    # empty file
+            with col1b:
+                st.write("")
+                st.write("")
+                st.markdown(f"""<div class="error-message">
+                    ❌ The file <b>{ds_file.name}</b> appears to be empty or corrupted.
+                    <small><i><b>Full error:</b> {e}.</i></small>
+                </div>""", unsafe_allow_html=True)
+                st.write("")
 
 
-    if not ds_file:
+    elif not ds_file:
         with col1b:
             st.write("")
             st.write("")
