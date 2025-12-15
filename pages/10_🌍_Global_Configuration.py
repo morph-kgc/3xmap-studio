@@ -657,7 +657,7 @@ with tab2:
         with col1:
             col1a, col1b = st.columns([2,1])
         with col1a:
-            utils.get_missing_g_error_message(mapping=True)
+            utils.get_missing_element_error_message(mapping=True)
 
     else:   # only allow to continue if mapping is loaded
 
@@ -1169,7 +1169,7 @@ with tab3:
         with col1:
             col1a, col1b = st.columns([2,1])
         with col1a:
-            utils.get_missing_g_error_message(mapping=True)
+            utils.get_missing_element_error_message(mapping=True)
 
     else:
 

@@ -332,7 +332,7 @@ with tab2:
         with col1:
             col1a, col1b = st.columns([2,1])
         with col1a:
-            utils.get_missing_g_error_message(ontology=True)
+            utils.get_missing_element_error_message(ontology=True)
 
     else:
 
@@ -906,7 +906,7 @@ with tab3:
         with col1:
             col1a, col1b = st.columns([2,1])
         with col1a:
-            utils.get_missing_g_error_message(ontology=True)
+            utils.get_missing_element_error_message(ontology=True)
 
     else:
 

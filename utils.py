@@ -30,15 +30,6 @@ from urllib.parse import urlparse
 import uuid   # to handle uploader keys
 
 
-
-
-# RFTAG
-# from concurrent.futures import ThreadPoolExecutor, TimeoutError
-# import json
-# import csv
-# from collections import Counter
-
-
 # REQUIRED NS===================================================================
 #_____________________________________________________
 # Funtion to get dictionary with default namespaces (DO NOT MODIFY LIST)
@@ -496,28 +487,11 @@ def get_panel_layout(narrow=False):
 #______________________________________________________
 
 #______________________________________________________
-# Function to get error message to indicate a g_mapping must be created/imported
-def get_missing_g_mapping_error_message(different_page=False):
-
-    if not different_page:
-        st.markdown(f"""<div class="error-message">
-            ❌ You need to create or import a mapping from the
-            <b>Select Mapping</b> panel.
-        </div>""", unsafe_allow_html=True)
-
-    else:
-        st.markdown(f"""<div class="error-message">
-            ❌ You need to create or import a mapping from the
-            <b>🌍 Global Configuration</b> page <small>(<b>Select Mapping</b> panel).</small>
-        </div>""", unsafe_allow_html=True)
-#______________________________________________________
-
-#______________________________________________________
 # Function to get error message to indicate a g_mapping or ontology must be imported
-def get_missing_g_error_message(ontology=False, mapping=False, different_page=False):
+# Only one option must be True
+def get_missing_element_error_message(ontology=False, mapping=False, databases=False, different_page=False):
 
-    if mapping and not ontology:
-
+    if mapping:
         if not different_page:
             st.markdown(f"""<div class="error-message">
                 ❌ You need to create or import a mapping from the
@@ -531,7 +505,6 @@ def get_missing_g_error_message(ontology=False, mapping=False, different_page=Fa
             </div>""", unsafe_allow_html=True)
 
     elif ontology:
-
         if not different_page:
             st.markdown(f"""<div class="error-message">
                 ❌ You need to import at least one ontology from the <b>Import Ontology</b> panel.
@@ -542,6 +515,12 @@ def get_missing_g_error_message(ontology=False, mapping=False, different_page=Fa
                 ❌ You need to import at least one ontology from the <b>🧩 Ontologies</b> page
                 <small>(<b>Import Ontology</b> panel).</small>
             </div>""", unsafe_allow_html=True)
+
+    elif databases:
+        st.markdown(f"""<div class="error-message">
+            ❌ <b>No connections to databases have been configured.</b> <small>You can add them in the
+            <b>Manage Connections</b> panel.</small>
+        </div>""", unsafe_allow_html=True)
 #______________________________________________________
 
 #______________________________________________________
@@ -671,12 +650,12 @@ def format_number_for_display(number):
 #______________________________________________________
 # Function to get the max_length for the display options
 # 0. Complete dataframes      1. Last added dataframes
-# 2. Query display (rows)    3. Query display (columns)
+# 2. Dataframe display (rows)    3. Dataframe display (columns)
 # 4. List of multiselect items for hard display     # 5 Long lists for soft display
 # 6. Label in network visualisation (characters)
 # 7. Suggested mapping label (characters)    8. URL for display (characters)
 # 9. Max characters when displaying ontology/mapping serialisation (ttl or nt)
-# 10. Query for display
+# 10. Query text for display
 def get_max_length_for_display():
 
     return [50, 10, 100, 20, 5, 5, 20, 15, 40, 100000, 30]
@@ -765,9 +744,9 @@ def init_session_state_variables():
         st.session_state["db_connection_removed_ok_flag"] = False
         st.session_state["db_connection_status_updated_ok_flag"] = False
         #TAB3
-        st.session_state["sql_queries_dict"] = {}
-        st.session_state["sql_query_saved_ok_flag"] = False
-        st.session_state["sql_query_removed_ok_flag"] = False
+        st.session_state["saved_views_dict"] = {}
+        st.session_state["view_saved_ok_flag"] = False
+        st.session_state["view_removed_ok_flag"] = False
 
         # 🛢️ TABULAR DATA
         # TAB1
@@ -1185,7 +1164,7 @@ def full_reset():
     # reset data sources
     st.session_state["db_connections_dict"] = {}
     st.session_state["db_connection_status_dict"] = {}
-    st.session_state["sql_queries_dict"] = {}
+    st.session_state["saved_views_dict"] = {}
     st.session_state["ds_files_dict"] = {}
 
     # reset ontology
@@ -1344,10 +1323,6 @@ def get_ns_warning_message(ns_to_bind_list):
 # PANEL: SAVE MAPPING-----------------------------------------------------------
 #_________________________________________________
 #Funtion to create the list that stores the state of the project
-# project_state_list
-# 0. [g_label, g_mapping]     1. g_ontology_components_dict      2. base_ns_dict
-# 3. db_connections_dict       4. db_connection_status_dict
-# 5. ds_files_dict                6. sql_queries_dict
 def save_session_state():
 
     # list to save session
@@ -1361,7 +1336,7 @@ def save_session_state():
     project_state_list.append(st.session_state["db_connections_dict"])
     project_state_list.append(st.session_state["db_connection_status_dict"])
     project_state_list.append(st.session_state["ds_files_dict"])
-    project_state_list.append(st.session_state["sql_queries_dict"])
+    project_state_list.append(st.session_state["saved_views_dict"])
     project_state_list.append(st.session_state["g_mapping_source_cache"])
     project_state_list.append(st.session_state["original_g_size_cache"])
     project_state_list.append(st.session_state["original_g_mapping_ns_dict"])
@@ -1382,7 +1357,7 @@ def retrieve_session_state(project_state_list):
     st.session_state["db_connections_dict"] = project_state_list[6]
     st.session_state["db_connection_status_dict"] = project_state_list[7]
     st.session_state["ds_files_dict"] = project_state_list[8]
-    st.session_state["sql_queries_dict"] = project_state_list[9]
+    st.session_state["saved_views_dict"] = project_state_list[9]
     st.session_state["g_mapping_source_cache"] = project_state_list[10]
     st.session_state["original_g_size_cache"] = project_state_list[11]
     st.session_state["original_g_mapping_ns_dict"] = project_state_list[12]
@@ -1678,9 +1653,9 @@ def get_default_ports():
 
 #______________________________________________________
 # Funtion to get db_url string of an already saved connection
-def get_db_url_str(conn):
+def get_db_url_str(conn_label):
 
-    engine, host, port, database, user, password = st.session_state["db_connections_dict"][conn]
+    engine, host, port, database, user, password = st.session_state["db_connections_dict"][conn_label]
 
     if engine == "Oracle":
         db_url_str = f"oracle+oracledb://{user}:{password}@{host}:{port}/{database}"
@@ -1802,12 +1777,31 @@ def make_connection_to_db(connection_label):
     # Special case for MongoDB
     if engine == "MongoDB":
         client = MongoClient(url_str, serverSelectionTimeoutMS=timeout * 1000)
+        client.admin.command("ping")   # to get error if connection is down
         return client
 
     else:
         engine = create_engine(url_str, connect_args={"connect_timeout": timeout})
         conn = engine.connect()   # returns a Connection object
         return conn
+#______________________________________________________
+
+#______________________________________________________
+# Funtion to make a connection to a database
+def check_connection_to_db(connection_label):
+
+    try:
+        conn = utils.make_connection_to_db(connection_label)
+        connection_ok_flag = True
+    except:
+        st.markdown(f"""<div class="error-message">
+            ❌ The connection <b>{connection_label}</b> is not working.
+            <small>Please check it in the <b>Manage Connections</b> pannel.</small>
+        </div>""", unsafe_allow_html=True)
+        connection_ok_flag = False
+        conn = None
+
+    return conn, connection_ok_flag
 #______________________________________________________
 
 #______________________________________________________
@@ -1826,10 +1820,6 @@ def update_db_connection_status_dict(conn_label):
 #______________________________________________________
 
 # PANEL: INSPECT DATA-----------------------------------------------------------
-#________________________________________________________
-# Function to get all tables in a database
-from sqlalchemy import text
-
 #________________________________________________________
 # Function to get all tables/collections in a database
 def get_tables_from_db(connection_label):
@@ -1878,7 +1868,7 @@ def get_tables_from_db(connection_label):
     elif engine == "MongoDB":
         db = conn[database]    # conn is a MongoClient
         collections = db.list_collection_names()
-        collections = [name for name in collections if not name.startswith("system.")]
+        # collections = [name for name in collections if not name.startswith("system.")]
         return [(name,) for name in collections]
 
     else:
@@ -1909,7 +1899,109 @@ def get_df_from_db(connection_label, db_table):
     return df
 #______________________________________________________
 
+#______________________________________________________
+# Funtion to display limited dataframe
+def display_limited_df(df, title):
 
+    table_len = f"{len(df)} rows" if len(df) != 1 else f"{len(df)} row"
+    inner_html = f"""📅 <b style="color:#F63366;"> {title} <small>({table_len}):</small></b>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"""
+
+    max_rows = utils.get_max_length_for_display()[2]
+    max_cols = utils.get_max_length_for_display()[3]
+
+    limited_df = df.iloc[:, :max_cols]   # limit number of columns
+
+    # Slice rows if needed
+    if len(df) == 0:
+        st.markdown(f"""<div class="warning-message">
+                ⚠️ <b>{title} <small>(no results).</small></b>
+            </div>""", unsafe_allow_html=True)
+
+    else:
+        if len(df) > max_rows and df.shape[1] > max_cols:
+            inner_html += f"""<small>Showing the <b>first {max_rows} rows</b> (out of {len(df)})
+                and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).</small>"""
+        elif len(df) > max_rows:
+            inner_html += f"""<small>Showing the <b>first {max_rows} rows</b> (out of {len(df)}).</small>"""
+        elif df.shape[1] > max_cols:
+            inner_html += f"""<small>Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).</small>"""
+
+        st.markdown(f"""<div class="info-message-blue">
+                {inner_html}
+            </div>""", unsafe_allow_html=True)
+
+    return limited_df.head(max_rows)
+#______________________________________________________
+
+# PANEL: MANAGE VIEWS-----------------------------------------------------------
+#______________________________________________________
+# Function to run a query on SQL or MongoDB
+def run_query(connection_label, query_or_collection):
+
+    conn = utils.make_connection_to_db(connection_label)
+    engine, host, port, database, user, password = st.session_state["db_connections_dict"][connection_label]
+
+    try:
+        if engine == "MongoDB":
+            db = conn[database]
+            rows = list(db[query_or_collection].find())  # list of dicts
+            df = pd.DataFrame(rows)
+
+        else:
+            result = conn.execute(text(query_or_collection))
+            rows = result.fetchall()
+            columns = result.keys()
+            df = pd.DataFrame(rows, columns=columns)
+
+        view_ok_flag = True
+        error = None
+
+    except Exception as e:
+        df = None
+        view_ok_flag = False
+        error =  str(e)
+
+    return df, view_ok_flag, error
+#_________________________________________________
+
+#______________________________________________________
+#Function to display view results
+def display_db_view_results(view):
+
+    connection_label = st.session_state["saved_views_dict"][view][0]
+    engine = st.session_state["db_connections_dict"][connection_label][0]
+    conn, connection_ok_flag = check_connection_to_db(connection_label)
+    query_or_collection = st.session_state["saved_views_dict"][view][1] if engine != "MongoDB" else view
+
+    if connection_ok_flag:
+        df, view_ok_flag, error = run_query(connection_label, query_or_collection)
+
+        if not view_ok_flag:
+            st.markdown(f"""<div class="error-message">
+                ❌ <b>Invalid syntax</b>. <small>Please check your query or collection.<br>
+                <b> Full error:</b> {error}</small>
+            </div>""", unsafe_allow_html=True)
+        else:
+            limited_df = display_limited_df(df, "Results")
+            st.dataframe(limited_df, hide_index=True)
+#_________________________________________________
+
+#______________________________________________________
+#Function to display view results
+def remove_view_from_db(view):
+
+    connection_label = st.session_state["saved_views_dict"][view][0]
+    engine = st.session_state["db_connections_dict"][connection_label][0]
+
+    # remove the view from the Mongo database (if connected ok)
+    if engine == "MongoDB":
+        conn, connection_ok_flag = check_connection_to_db(connection_label)
+        if connection_ok_flag:
+            database = st.session_state["db_connections_dict"][connection_label][3]
+            db = conn[database]    # conn is a MongoClient
+            db.drop_collection(view)
+#_________________________________________________
 
 
 #RFBOOKMARK
@@ -3595,76 +3687,6 @@ def get_colors_for_network_dict():
 
     return colors_for_network_dict
 
-#_________________________________________________
-
-#_________________________________________________
-#Function to display view results
-def display_db_view_results(view):
-
-    connection_for_query = st.session_state["sql_queries_dict"][view][0]
-    conn, connection_ok_flag = check_conn_status(connection_for_query)
-
-    if connection_ok_flag:
-
-        max_length = utils.get_max_length_for_display()[10]
-        query_for_display = st.session_state["sql_queries_dict"][view][1]
-        query_for_display = query_for_display[:max_length] + "..." if len(query_for_display) > max_length else query_for_display
-
-        cur = conn.cursor()   # create a cursor
-
-        try:
-            cur.execute(st.session_state["sql_queries_dict"][view][1])
-            sql_query_ok_flag = True
-
-        except Exception as e:
-            with col1:
-                st.markdown(f"""<div class="error-message">
-                    ❌ <b>Invalid SQL syntax</b>. Please check your query.<br>
-                    <small><b> Full error:</b> {e}</small>
-                </div>""", unsafe_allow_html=True)
-                st.write("")
-            sql_query_ok_flag = False
-
-        if sql_query_ok_flag:
-            rows = cur.fetchall()
-            engine = st.session_state["db_connections_dict"][connection_for_query][0]
-            if engine == "SQL Server":
-                rows = [tuple(row) for row in rows]   # for SQL Server rows are of type <class 'pyodbc.Row'> -> convert to tuple
-            columns = [desc[0] for desc in cur.description]
-            df = pd.DataFrame(rows, columns=columns)
-
-            max_rows = utils.get_max_length_for_display()[2]
-            max_cols = utils.get_max_length_for_display()[3]
-
-            limited_df = df.iloc[:, :max_cols]   # limit number of columns
-
-            # Slice rows if needed
-            if len(df) > max_rows and df.shape[1] > max_cols:
-                st.markdown(f"""<div class="warning-message">
-                    ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
-                    and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
-                </div>""", unsafe_allow_html=True)
-                st.write("")
-            elif len(df) > max_rows:
-                st.markdown(f"""<div class="warning-message">
-                    ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
-                </div>""", unsafe_allow_html=True)
-                st.write("")
-            elif df.shape[1] > max_cols:
-                st.markdown(f"""<div class="warning-message">
-                    ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
-                </div>""", unsafe_allow_html=True)
-                st.write("")
-
-            st.markdown(f"""<div class="info-message-blue">
-                    🖼️ <b style="color:#F63366;"> View results ({len(df)}):</b>
-                    <small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                    (<b>Query:</b> {query_for_display})</small>
-                </div></div>""", unsafe_allow_html=True)
-            st.dataframe(limited_df.head(max_rows), hide_index=True)
-
-    return connection_ok_flag
 #_________________________________________________
 
 #_________________________________________________

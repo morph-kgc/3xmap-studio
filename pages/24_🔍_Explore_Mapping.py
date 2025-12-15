@@ -36,7 +36,7 @@ tab1, tab2, tab3, tab4 = st.tabs(["Network", "Predefined Searches", "SPARQL", "P
 col1, col2 = st.columns([2,1])
 if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
     with col1:
-        utils.get_missing_g_mapping_error_message(different_page=True)
+        utils.get_missing_element_error_message(mapping=True, different_page=True)
         st.stop()
 
 #________________________________________________

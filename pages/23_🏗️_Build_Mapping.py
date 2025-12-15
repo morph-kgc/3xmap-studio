@@ -547,7 +547,7 @@ tab1, tab2, tab3, tab4 = st.tabs(["Add TriplesMap", "Add Subject Map", "Add Pred
 col1, col2 = st.columns([2,1])
 if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
     with col1:
-        utils.get_missing_g_mapping_error_message(different_page=True)
+        utils.get_missing_element_error_message(mapping=True, different_page=True)
         st.stop()
 
 #________________________________________________
@@ -736,7 +736,7 @@ with tab1:
                         if connection_ok_flag:
 
                             query_for_selected_db_list = []   # list of queries of the selected connection
-                            for query_label, [connection_label, query] in st.session_state["sql_queries_dict"].items():
+                            for query_label, [connection_label, query] in st.session_state["saved_views_dict"].items():
                                 if connection_label == db_connection_for_ls:
                                     query_for_selected_db_list.insert(0, query_label)   # only include queries of the selected connection
 
@@ -756,7 +756,7 @@ with tab1:
                                         key="key_selected_query_for_ls")
 
                                 if selected_query_for_ls != "Select view":
-                                    sql_query = st.session_state["sql_queries_dict"][selected_query_for_ls][1]
+                                    sql_query = st.session_state["saved_views_dict"][selected_query_for_ls][1]
                                     try:
                                         cur = conn.cursor()
                                         cur.execute(sql_query)

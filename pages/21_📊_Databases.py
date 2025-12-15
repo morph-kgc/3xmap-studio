@@ -1,4 +1,6 @@
+import json
 import pandas as pd
+from pymongo import MongoClient
 import streamlit as st
 from sqlalchemy import text
 import time
@@ -23,8 +25,11 @@ def update_db_connections():
     # update conenction status dict_________________________-
     for connection_label in st.session_state["db_connections_dict"]:
         utils.update_db_connection_status_dict(connection_label)
-    #store information____________________________
+    # store information____________________________
     st.session_state["db_connection_status_updated_ok_flag"] = True
+    # reset fields
+    st.session_state["key_db_engine"] = "Select engine"
+    st.session_state["key_connection_for_table_display"] = "Select data source"
 
 def save_connection():
     # store information________________
@@ -40,13 +45,13 @@ def remove_connection():
     # delete connections________________
     for connection_label in connection_labels_to_remove_list:
         del st.session_state["db_connections_dict"][connection_label]
-    # delete queries________________
-    queries_to_delete_list = []
-    for query in st.session_state["sql_queries_dict"]:
-        if st.session_state["sql_queries_dict"][query][0] in connection_labels_to_remove_list:
-            queries_to_delete_list.append(query)
-    for query in queries_to_delete_list:
-        del st.session_state["sql_queries_dict"][query]
+    # delete views________________
+    views_to_delete_list = []
+    for view_label in st.session_state["saved_views_dict"]:
+        if st.session_state["saved_views_dict"][view_label][0] in connection_labels_to_remove_list:
+            views_to_delete_list.append(view_label)
+    for view_label in views_to_delete_list:
+        del st.session_state["saved_views_dict"][view_label]
     # store information________________
     st.session_state["db_connection_removed_ok_flag"] = True  # for success message
     # reset fields_____________________
@@ -80,20 +85,29 @@ def remove_file():
     st.session_state["key_ds_files_to_remove_list"] = []
 
 # TAB3
-def save_view():
+def save_mongo_view():
+    # save view as collection
+    db.command({"create": mongo_view_label, "viewOn": selected_db_table, "pipeline": pipeline})
     # store information________________
-    st.session_state["sql_query_saved_ok_flag"] = True  # for success message
-    st.session_state["sql_queries_dict"][sql_query_label] = [connection_for_query, sql_query]
+    st.session_state["view_saved_ok_flag"] = True  # for success message
+    st.session_state["saved_views_dict"][mongo_view_label] = [connection_for_view, f"""{mongo_view_label} ({selected_db_table})"""]
     # reset fields_____________________
-    st.session_state["key_sql_query"] = ""
-    st.session_state["key_sql_query_label"] = ""
+    st.session_state["key_connection_for_view"] = "Select a connection"
+
+def save_sql_view():
+    # store information________________
+    st.session_state["view_saved_ok_flag"] = True  # for success message
+    st.session_state["saved_views_dict"][sql_view_label] = [connection_for_view, sql_query]
+    # reset fields_____________________
+    st.session_state["key_connection_for_view"] = "Select a connection"
 
 def remove_views():
-    # delete queries________________
-    for query in queries_to_drop_list:
-        del st.session_state["sql_queries_dict"][query]
+    # delete views________________
+    for view_label in views_to_drop_list:
+        utils.remove_view_from_db(view_label)    # from database (if Mongo)
+        del st.session_state["saved_views_dict"][view_label]    # from dict
     # store information____________________
-    st.session_state["sql_query_removed_ok_flag"] = True
+    st.session_state["view_removed_ok_flag"] = True
     st.session_state["key_manage_view_option"] = "🖼️ View results"
 
 
@@ -156,7 +170,6 @@ with tab1:
         with col2:
             col2a, col2b = st.columns([1,0.8])
         with col2b:
-            st.write("")
             st.markdown("""<div class="info-message-gray">
             🐢 This pannel can be <b>slow</b> <small>if there are failed connections</small>.
                 </div>""", unsafe_allow_html=True)
@@ -447,13 +460,10 @@ with tab2:
     col1, col2, col2a, col2b = utils.get_panel_layout()
 
     if not st.session_state["db_connections_dict"]:
-            with col1:
-                col1a, col1b = st.columns([2,1])
-            with col1a:
-                st.markdown(f"""<div class="error-message">
-                    ❌ <b>No connections to databases have been configured.</b> <small>You can add them in the
-                    <b>Manage Connections</b> panel.</small>
-                </div>""", unsafe_allow_html=True)
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            utils.get_missing_element_error_message(databases=True)
 
     else:
 
@@ -481,8 +491,6 @@ with tab2:
                     st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
                             (complete list below)
                         </div>""", unsafe_allow_html=True)
-                    st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                        </div>""", unsafe_allow_html=True)
 
                 st.dataframe(last_added_db_connections_df, hide_index=True)
 
@@ -503,17 +511,17 @@ with tab2:
                 with col2:
                     col2a, col2b = st.columns([1,0.8])
                 with col2b:
-                    st.write("")
                     st.markdown("""<div class="info-message-gray">
                     🐢 This pannel can be <b>slow</b> <small>if there are failed connections</small>.
                         </div>""", unsafe_allow_html=True)
 
             # Option to show all connections (if too many)
-            with col2b:
-                st.write("")
-                if st.session_state["db_connections_dict"] and len(st.session_state["db_connections_dict"]) > max_length:
+            if st.session_state["db_connections_dict"] and len(st.session_state["db_connections_dict"]) > max_length:
+                with col2:
+                    col2a, col2b = st.columns([0.5,2])
+                with col2b:
+                    st.write("")
                     with st.expander("🔎 Show all connections"):
-                        st.write("")
                         st.dataframe(db_connections_df, hide_index=True)
 
 
@@ -569,98 +577,62 @@ with tab2:
                 if selected_db_table != "Select table":
 
                     df = utils.get_df_from_db(connection_for_table_display, selected_db_table)
-                    table_len = f"{len(df)} rows" if len(df) != 1 else f"{len(df)} row"
-                    inner_html = f"""📅 <b style="color:#F63366;"> Table <small>({table_len}):</small></b>
-                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"""
 
                     with col1a:
                         column_list = df.columns.tolist()
                         sql_column_filter_list = st.multiselect(f"""🖱️ Select columns (optional, max {utils.get_max_length_for_display()[3]}):""",
                             column_list, key="key_sql_column_filter")
 
-                    if not sql_column_filter_list:
+                    with col1:
+                        if not sql_column_filter_list:
+                            limited_df = utils.display_limited_df(df, "Table")
+                            if not df.empty:
+                                st.dataframe(limited_df, hide_index=True)
 
-                        with col1:
-                            max_rows = utils.get_max_length_for_display()[2]
-                            max_cols = utils.get_max_length_for_display()[3]
-                            limited_df = df.iloc[:, :max_cols]   # limit number of columns
-
-                            # Slice rows if needed
-                            if len(df) > max_rows and df.shape[1] > max_cols:
-                                inner_html += f"""<small>Showing the <b>first {max_rows} rows</b> (out of {len(df)})
-                                    and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).</small>"""
-                            elif len(df) > max_rows:
-                                inner_html += f"""<small>Showing the <b>first {max_rows} rows</b> (out of {len(df)}).</small>"""
-                            elif df.shape[1] > max_cols:
-                                inner_html += f"""<small>Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).</small>"""
-
-                            st.markdown(f"""<div class="info-message-blue">
-                                    {inner_html}
-                                </div>""", unsafe_allow_html=True)
-                            st.dataframe(limited_df.head(max_rows), hide_index=True)
-
-                    else:
-                        if len(sql_column_filter_list) > utils.get_max_length_for_display()[3]:
-                            with col1:
-                                st.markdown(f"""<div class="error-message">
-                                    ❌ <b> Too many columns</b> selected. Please, respect the limit
-                                    of {utils.get_max_length_for_display()[3]}.
-                                </div>""", unsafe_allow_html=True)
                         else:
-                            with col1:
-                                table_len = f"{len(df)} rows" if len(df) != 1 else f"{len(df)} row"
-                                st.markdown(f"""<div class="info-message-blue">
-                                        {inner_html}
+                            if len(sql_column_filter_list) > utils.get_max_length_for_display()[3]:
+                                with col1a:
+                                    st.markdown(f"""<div class="error-message">
+                                        ❌ <b> Too many columns</b> selected. Please, respect the limit
+                                        of {utils.get_max_length_for_display()[3]}.
                                     </div>""", unsafe_allow_html=True)
-                                st.dataframe(df[sql_column_filter_list], hide_index=True)
+                            else:
+                                limited_df = utils.display_limited_df(df, "Table")
+                                if not df.empty:
+                                    st.dataframe(df[sql_column_filter_list], hide_index=True)
 
 
-    # RFBOOKMARK
 #_______________________________________________________________________________
 # PANEL: MANAGE VIEWS
 with tab3:
-
-    col1, col2 = st.columns([2,1.5])
-
-    with col1:
-        col1a, col1b = st.columns([2,1])
+    col1, col2, col2a, col2b = utils.get_panel_layout()
 
     if not st.session_state["db_connections_dict"]:
-            with col1:
-                st.markdown(f"""<div class="error-message">
-                    ❌ <b>No SQL data sources have been added.</b> <small>You can add them in the
-                    <b>Connect to Database</b> pannel.</small>
-                </div>""", unsafe_allow_html=True)
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            utils.get_missing_element_error_message(databases=True)
 
     else:
-
-        col1, col2 = st.columns([2,1.5])
-
-        with col2:
-            col2a, col2b = st.columns([0.5, 2])
-
         with col2b:
-            st.write("")
-            st.write("")
-
             rows = []
-            for label in reversed(list(st.session_state["sql_queries_dict"].keys())):
-                connection = st.session_state["sql_queries_dict"][label][0]
+            for label in reversed(list(st.session_state["saved_views_dict"].keys())):
+                connection = st.session_state["saved_views_dict"][label][0]
                 database =  st.session_state["db_connections_dict"][connection][3]
 
-                sql_query = st.session_state["sql_queries_dict"][label][1]
+                query_or_collection = st.session_state["saved_views_dict"][label][1]
                 max_length = utils.get_max_length_for_display()[10]
-                sql_query = sql_query[:max_length] + "..." if len(sql_query) > max_length else sql_query
+                query_or_collection = query_or_collection[:max_length] + "..." if len(query_or_collection) > max_length else query_or_collection
 
                 rows.append({"Label": label, "Source": connection,
-                        "Database": database, "Query": sql_query})
+                        "Database": database, "Query/Collection": query_or_collection})
 
-            sql_queries_df = pd.DataFrame(rows)
-            last_sql_queries_df = sql_queries_df.head(utils.get_max_length_for_display()[1])
+            views_df = pd.DataFrame(rows)
+            last_views_df = views_df.head(utils.get_max_length_for_display()[1])
 
             max_length = utils.get_max_length_for_display()[1]   # max number of connections to show directly
-            if st.session_state["sql_queries_dict"]:
-                if len(st.session_state["sql_queries_dict"]) < max_length:
+            if st.session_state["saved_views_dict"]:
+                if len(st.session_state["saved_views_dict"]) < max_length:
                     st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
                             🔎 saved views
                         </div>""", unsafe_allow_html=True)
@@ -673,30 +645,32 @@ with tab3:
                     st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
                             (complete list below)
                         </div>""", unsafe_allow_html=True)
-                st.dataframe(last_sql_queries_df, hide_index=True)
-                st.write("")
-
-            #Option to show all views (if too many)
-            if st.session_state["sql_queries_dict"] and len(st.session_state["sql_queries_dict"]) > max_length:
-                with st.expander("🔎 Show all saved views"):
-                    st.write("")
-                    st.dataframe(sql_queries_df, hide_index=True)
+                st.dataframe(last_views_df, hide_index=True)
 
             with col2:
-                col2a, col2b = st.columns([0.5,2])
+                col2a, col2b = st.columns([1,0.8])
             with col2b:
                 st.markdown("""<div class="info-message-gray">
                 🐢 This pannel can be <b>slow</b> <small>if there are failed connections</small>.
                     </div>""", unsafe_allow_html=True)
 
-        # PURPLE HEADER: QUERY DATA---------------------------------------------
+            #Option to show all views (if too many)
+            if st.session_state["saved_views_dict"] and len(st.session_state["saved_views_dict"]) > max_length:
+                with col2:
+                    col2a, col2b = st.columns([0.5,2])
+                with col2b:
+                    st.write("")
+                    with st.expander("🔎 Show all saved views"):
+                        st.dataframe(views_df, hide_index=True)
+
+        # PURPLE HEADER: CREATE VIEW--------------------------------------------
         with col1:
             st.markdown("""<div class="purple-heading">
                     🖼️ Create View
                 </div>""", unsafe_allow_html=True)
             st.write("")
 
-        if st.session_state["sql_query_saved_ok_flag"]:
+        if st.session_state["view_saved_ok_flag"]:
             with col1:
                 col1a, col1b = st.columns([2,1])
             with col1a:
@@ -704,120 +678,147 @@ with tab3:
                 st.markdown(f"""<div class="success-message-flag">
                     ✅ The <b>view</b> has been saved!
                 </div>""", unsafe_allow_html=True)
-            st.session_state["sql_query_saved_ok_flag"] = False
+            st.session_state["view_saved_ok_flag"] = False
             time.sleep(utils.get_success_message_time())
             st.rerun()
 
         with col1:
             col1a, col1b = st.columns(2)
 
-
         with col1a:
             list_to_choose = list(reversed(list(st.session_state["db_connections_dict"].keys())))
             list_to_choose.insert(0, "Select a connection")
-            connection_for_query = st.selectbox("🖱️ Select a connection:*", list_to_choose,
-                key="key_connection_for_query")
+            connection_for_view = st.selectbox("🖱️ Select a connection:*", list_to_choose,
+                key="key_connection_for_view")
 
-        if connection_for_query != "Select a connection":
+        if connection_for_view != "Select a connection":
 
-            with col1b:
-                sql_query_label = st.text_input("🏷️ Enter label for the view (to save it):*",
-                    key="key_sql_query_label")
-                valid_sql_query_label = utils.is_valid_label(sql_query_label)
-                if sql_query_label and sql_query_label not in st.session_state["sql_queries_dict"]:
-                    sql_query_label_ok_flag = True
-                elif sql_query_label:
-                    sql_query_label_ok_flag = False
+            with col1a:
+                conn, connection_ok_flag = utils.check_connection_to_db(connection_for_view)
+            engine = st.session_state["db_connections_dict"][connection_for_view][0]
+
+            # MONGODB DATABASE
+            if engine == "MongoDB" and connection_ok_flag:
+
+                with col2b:
+                    st.markdown(f"""<div class="info-message-blue">
+                        🖼️ <b>MongoDB views are created in the database</b>
+                        as read‑only collections <small>(but can be also managed from this page)</small>.
+                    </div>""", unsafe_allow_html=True)
+
+                database = st.session_state["db_connections_dict"][connection_for_view][3]
+                db = conn[database]
+
+                with col1b:
+                    mongo_view_label = st.text_input("🏷️ Enter label for the view:*",
+                        key="key_mongo_view_label")
+                    if mongo_view_label in db.list_collection_names():
+                        st.markdown(f"""<div class="error-message">
+                            ❌ The label <b>{mongo_view_label}</b> is already in use.
+                            <small>You must pick a different label.</small>
+                        </div>""", unsafe_allow_html=True)
+                        valid_mongo_view_label_flag = False
+                    elif len(database) + 1 + len(mongo_view_label) > 120:
+                        st.markdown(f"""<div class="error-message">
+                            ❌ <b>Label must be shorter.</b>
+                            <small>Database + label must be less than 120 characters.</small>
+                        </div>""", unsafe_allow_html=True)
+                        valid_mongo_view_label_flag = False
+                    else:
+                        valid_mongo_view_label_flag = utils.is_valid_label(mongo_view_label, hard=True) # hard mode enough to ensure all requriements but length
+
+
+                with col1:
+                    col1a, col1b = st.columns([2,1])
+                with col1a:
+                    result = utils.get_tables_from_db(connection_for_view)
+                    db_tables = [row[0] for row in result]
+                    list_to_choose = db_tables.copy()
+                    list_to_choose.insert(0, "Select table")
+                    selected_db_table = st.selectbox("🖱️ Select table:*", list_to_choose,
+                        key="key_selected_db_table_for_view")
+                with col1b:
+                    if len(db_tables) == 0:
+                        st.write("")
+                        st.markdown(f"""<div class="error-message">
+                                ❌ <b>No tables</b> in database.
+                            </div>""", unsafe_allow_html=True)
+
+                with col1:
+                    pipeline_str = st.text_area("⌨️ Enter pipeline:*",
+                        height=150, key="key_pipeline")
+
+                if pipeline_str:
+                    try:
+                        pipeline = json.loads(pipeline_str)      # Parse the text into a Python list/dict
+                        pipeline_ok_flag = True
+                        preview = list(db[selected_db_table].aggregate(pipeline))
+                        df = pd.DataFrame(preview)
+
+                    except json.JSONDecodeError as e:
+                        pipeline_ok_flag = False
+                        with col1:
+                            st.markdown(f"""<div class="error-message">
+                                ❌ <b>Invalid pipeline input.</b><small> Please enter a valid pipeline in JSON format.<br>
+                                <b>Full error:</b> {e}.</small>
+                            </div>""", unsafe_allow_html=True)
+
+                if pipeline_str and pipeline_ok_flag and valid_mongo_view_label_flag and selected_db_table != "Select table":
+                    with col1:
+                        st.button("Save", key="key_save_mongo_view_button",
+                            on_click=save_mongo_view)
+
+                if selected_db_table != "Select table" and pipeline_str and pipeline_ok_flag:
+                    with col1:
+                        limited_df = utils.display_limited_df(df, "View previsualisation")
+                        if not df.empty:
+                            st.dataframe(limited_df, hide_index=True)
+
+            # SQL DATABASE CONNECTIONS
+            elif engine != "MongoDB" and connection_ok_flag:
+                with col1b:
+                    sql_view_label = st.text_input("🏷️ Enter label for the view (to save it):*",
+                        key="key_sql_view_label")
+                with col1b:
+                    valid_sql_view_label_flag = utils.is_valid_label(sql_view_label)
+                if sql_view_label and sql_view_label in st.session_state["saved_views_dict"]:
                     with col1b:
                         st.markdown(f"""<div class="error-message">
-                            ❌ The label <b>{sql_query_label}</b> is already in use.
-                            You must pick a different label.
+                            ❌ The label <b>{sql_view_label}</b> is already in use.
+                            <small>You must pick a different label.</small>
                         </div>""", unsafe_allow_html=True)
-                    st.write("")
-                else:
-                    sql_query_label_ok_flag = False
-
-            try:
-                conn = utils.make_connection_to_db(connection_for_query)
-                connection_ok_flag = True
-
-            except:
-                with col1a:
-                    st.markdown(f"""<div class="error-message">
-                        ❌ The connection <b>{connection_for_query}</b> is not working.
-                        <small>Please check it in the <b>Manage Connections</b> pannel.</small>
-                    </div>""", unsafe_allow_html=True)
-                    st.write("")
-                connection_ok_flag = False
-
-            if connection_ok_flag:
-
-                cur = conn.cursor()   # create a cursor
+                        valid_sql_view_label_flag = False
 
                 with col1:
                     sql_query = st.text_area("⌨️ Enter SQL query:*",
                         height=150, key="key_sql_query")
 
                 if sql_query:
+                    df, sql_query_ok_flag, error = utils.run_query(connection_for_view, sql_query)
 
-                    try:
-                        cur.execute(sql_query)
-                        sql_query_ok_flag = True
-
-                    except Exception as e:
+                    if not sql_query_ok_flag:
                         with col1:
                             st.markdown(f"""<div class="error-message">
-                                ❌ <b>Invalid SQL syntax</b>. Please check your query.<br>
-                                <small><b> Full error:</b> {e}</small>
+                                ❌ <b>Invalid query</b>.<small> Please check your input.<br>
+                                <b> Full error:</b> {error}</small>
                             </div>""", unsafe_allow_html=True)
                             st.write("")
-                        sql_query_ok_flag = False
 
-                if sql_query and sql_query_ok_flag and valid_sql_query_label:
+                if sql_query and sql_query_ok_flag and valid_sql_view_label_flag:
                     with col1:
-                        st.button("Save", key="key_save_view_button",
-                            on_click=save_view)
+                        st.button("Save", key="key_save_sql_view_button",
+                            on_click=save_sql_view)
 
                 if sql_query and sql_query_ok_flag:
-                    rows = cur.fetchall()
-                    engine = st.session_state["db_connections_dict"][connection_for_query][0]
-                    if engine == "SQL Server":
-                        rows = [tuple(row) for row in rows]   # rows are of type <class 'pyodbc.Row'> -> convert to tuple
-                    columns = [desc[0] for desc in cur.description]
-                    df = pd.DataFrame(rows, columns=columns)
-
 
                     with col1:
-                        st.markdown(f"""<div class="info-message-blue">
-                                🖼️ <b style="color:#F63366;"> View previsualisation</b><br>
-                            </div></div>""", unsafe_allow_html=True)
-                        max_rows = utils.get_max_length_for_display()[2]
-                        max_cols = utils.get_max_length_for_display()[3]
-
-                        limited_df = df.iloc[:, :max_cols]   # limit number of columns
-
-                        # Slice rows if needed
-                        if len(df) > max_rows and df.shape[1] > max_cols:
-                            st.markdown(f"""<div class="warning-message">
-                                ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
-                                and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
-                            </div>""", unsafe_allow_html=True)
-                            st.write("")
-                        elif len(df) > max_rows:
-                            st.markdown(f"""<div class="warning-message">
-                                ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
-                            </div>""", unsafe_allow_html=True)
-                            st.write("")
-                        elif df.shape[1] > max_cols:
-                            st.markdown(f"""<div class="warning-message">
-                                ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
-                            </div>""", unsafe_allow_html=True)
-                            st.write("")
-                        st.dataframe(limited_df.head(max_rows), hide_index=True)
+                        limited_df = utils.display_limited_df(df, "View previsualisation")
+                        if not df.empty:
+                            st.dataframe(limited_df, hide_index=True)
 
     # SUCCESS MESSAGE: VIEW REMOVED---------------------------------------------
-    # Shows here if no Manage saved views purple header
-    if not st.session_state["sql_queries_dict"] and st.session_state["sql_query_removed_ok_flag"]:
+    # Shows here if no Manage Saved Views purple header
+    if not st.session_state["saved_views_dict"] and st.session_state["view_removed_ok_flag"]:
         with col1:
             col1a, col1b = st.columns([2,1])
         with col1a:
@@ -825,14 +826,14 @@ with tab3:
             st.markdown(f"""<div class="success-message-flag">
                 ✅ The <b>view/s</b> have been removed!
             </div>""", unsafe_allow_html=True)
-        st.session_state["sql_query_removed_ok_flag"] = False
+        st.session_state["view_removed_ok_flag"] = False
         time.sleep(utils.get_success_message_time())
         st.rerun()
 
-
-    # PURPLE HEADER: MANAGE SAVED VIEWS----------------------------------------
-    # Shows only if there are connections
-    if st.session_state["sql_queries_dict"]:
+    #RFBOOKMARK
+    # PURPLE HEADING: MANAGE SAVED----------------------------------------------
+    # Shows only if there are connections to databases
+    if st.session_state["saved_views_dict"]:
         with col1:
             st.write("________")
             st.markdown("""<div class="purple-heading">
@@ -840,7 +841,7 @@ with tab3:
                 </div>""", unsafe_allow_html=True)
             st.write("")
 
-        if st.session_state["sql_query_removed_ok_flag"]:
+        if st.session_state["view_removed_ok_flag"]:
             with col1:
                 col1a, col1b = st.columns([2,1])
             with col1a:
@@ -848,17 +849,17 @@ with tab3:
                 st.markdown(f"""<div class="success-message-flag">
                     ✅ The <b>view</b> has been removed!
                 </div>""", unsafe_allow_html=True)
-            st.session_state["sql_query_removed_ok_flag"] = False
+            st.session_state["view_removed_ok_flag"] = False
             time.sleep(utils.get_success_message_time())
             st.rerun()
 
         with col1:
             col1a, col1b, col1c = st.columns([0.8,1,1])
 
-        connections_w_queries_set = set()
-        for query in st.session_state["sql_queries_dict"]:
-            connections_w_queries_set.add(st.session_state["sql_queries_dict"][query][0])
-        connections_w_queries_list = list(connections_w_queries_set)
+        connections_w_views_set = set()
+        for view_label in st.session_state["saved_views_dict"]:
+            connections_w_views_set.add(st.session_state["saved_views_dict"][view_label][0])
+        connections_w_views_list = list(connections_w_views_set)
 
         with col1a:
             list_to_choose = ["🖼️ View results", "🔎 Inspect", "🗑️ Remove"]
@@ -866,107 +867,90 @@ with tab3:
                 label_visibility="collapsed", key="key_manage_view_option")
 
         with col1b:
-            list_to_choose = connections_w_queries_list
+            list_to_choose = connections_w_views_list
             list_to_choose.insert(0, "No filter")
-            connection_to_manage_query_filter = st.selectbox("⚙️ Filter by connection (opt):", list_to_choose,
-                key="key_connection_to_manage_query_filter")
+            connection_to_manage_view_filter = st.selectbox("📡 Filter by connection (opt):", list_to_choose,
+                key="key_connection_to_manage_view_filter")
 
-            if connection_to_manage_query_filter == "No filter":
-
-                sql_queries_to_manage_list = list(st.session_state["sql_queries_dict"])
-                for query in st.session_state["sql_queries_dict"]:
-                    if st.session_state["sql_queries_dict"][query][0] == connection_to_manage_query_filter:
-                        sql_queries_to_manage_list.append(query)
-
-                connection_ok_flag = True
+            if connection_to_manage_view_filter == "No filter":
+                views_to_manage_list = list(st.session_state["saved_views_dict"])
 
             else:
-
-                sql_queries_to_manage_list = []
-                for query in st.session_state["sql_queries_dict"]:
-                    if st.session_state["sql_queries_dict"][query][0] == connection_to_manage_query_filter:
-                        sql_queries_to_manage_list.append(query)
+                views_to_manage_list = []
+                for view_label in st.session_state["saved_views_dict"]:
+                    if st.session_state["saved_views_dict"][view_label][0] == connection_to_manage_view_filter:
+                        views_to_manage_list.append(view_label)
 
         if manage_view_option == "🖼️ View results":
 
             with col1c:
-                list_to_choose = sql_queries_to_manage_list
+                list_to_choose = views_to_manage_list
                 list_to_choose.insert(0, "Select view")
-                sql_query_to_inspect = st.selectbox("🖱️ Select view:*", sql_queries_to_manage_list,
-                    key="key_sql_query_to_inspect")
+                view_to_inspect = st.selectbox("🖱️ Select view:*", views_to_manage_list,
+                    key="key_view_to_inspect")
 
-            if sql_query_to_inspect != "Select view":
-
+            if view_to_inspect != "Select view":
                 with col1:
-                    connection_ok_flag = utils.display_db_view_results(sql_query_to_inspect)
-                    if not connection_ok_flag:
-                        st.markdown(f"""<div class="error-message">
-                            ❌ The connection <b>{st.session_state["sql_queries_dict"][query][0]}</b> is not working.
-                            <small>Please check it in the <b>Manage Connections</b> pannel.</small>
-                        </div>""", unsafe_allow_html=True)
-
+                    utils.display_db_view_results(view_to_inspect)
 
         if manage_view_option == "🔎 Inspect":
-
             with col1c:
-                list_to_choose = sql_queries_to_manage_list.copy()
+                list_to_choose = views_to_manage_list.copy()
                 if len(list_to_choose) > 1:
                     list_to_choose.insert(0, "Select all")
-                queries_to_inspect_list = st.multiselect("🖱️ Select views:*", list_to_choose,
-                    key="key_queries_to_inspect_list")
+                views_to_inspect_list = st.multiselect("🖱️ Select views:*", list_to_choose,
+                    key="key_views_to_inspect_list")
 
-            if "Select all" in queries_to_inspect_list:
-                queries_to_inspect_list = sql_queries_to_manage_list
+            if "Select all" in views_to_inspect_list:
+                views_to_inspect_list = views_to_manage_list
 
-
-            if queries_to_inspect_list:
+            if views_to_inspect_list:
 
                 rows = []
-                for label in queries_to_inspect_list:
-                    connection = st.session_state["sql_queries_dict"][label][0]
+                for label in views_to_inspect_list:
+                    connection = st.session_state["saved_views_dict"][label][0]
                     database =  st.session_state["db_connections_dict"][connection][3]
 
-                    sql_query = st.session_state["sql_queries_dict"][label][1]
+                    query_or_collection = st.session_state["saved_views_dict"][label][1]
                     max_length = utils.get_max_length_for_display()[10]
-                    sql_query = sql_query[:max_length] + "..." if len(sql_query) > max_length else sql_query
+                    query_or_collection = query_or_collection[:max_length] + "..." if len(query_or_collection) > max_length else query_or_collection
 
                     rows.append({"Label": label, "Source": connection,
-                            "Database": database, "Complete query": sql_query})
+                            "Database": database, "Query/collection": query_or_collection})
 
-                sql_queries_df = pd.DataFrame(rows)
+                views_df = pd.DataFrame(rows)
 
                 with col1:
                     st.markdown(f"""<div class="info-message-blue">
                             🔎 <b> Views ({len(rows)}):</b>
                         </div></div>""", unsafe_allow_html=True)
-                    st.dataframe(sql_queries_df , hide_index=True)
-
+                    st.dataframe(views_df , hide_index=True)
 
         if manage_view_option == "🗑️ Remove":
 
             with col1c:
-                list_to_choose = sql_queries_to_manage_list
+                list_to_choose = views_to_manage_list
                 if len(list_to_choose) > 1:
                     list_to_choose.insert(0, "Select all")
-                queries_to_drop_list = st.multiselect("🖱️ Select views:*", list_to_choose,
-                    key="key_queries_to_drop_list")
+                views_to_drop_list = st.multiselect("🖱️ Select views:*", list_to_choose,
+                    key="key_views_to_drop_list")
 
-            if queries_to_drop_list:
+            if views_to_drop_list:
 
                 with col1:
                     col1a, col1b = st.columns([2.5,1])
 
-                if "Select all" in queries_to_drop_list:
+                if "Select all" in views_to_drop_list:
                     with col1b:
                         st.markdown(f"""<div class="warning-message">
-                            ⚠️ You are deleting <b>all views ({len(st.session_state["sql_queries_dict"])})</b>.
+                            ⚠️ You are deleting <b>all views ({len(st.session_state["saved_views_dict"])})</b>.
                             <small>Make sure you want to go ahead.</small>
                         </div>""", unsafe_allow_html=True)
                     with col1a:
                         remove_views_checkbox = st.checkbox(
                         "🔒 I am sure I want to remove all views",
                         key="key_remove_views_checkbox")
-                        queries_to_drop_list = list(st.session_state["sql_queries_dict"].keys())
+                        views_to_drop_list = list(st.session_state["saved_views_dict"].keys())
                 else:
                     with col1a:
                         remove_views_checkbox = st.checkbox(
