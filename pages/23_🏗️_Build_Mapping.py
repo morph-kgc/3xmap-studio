@@ -12,7 +12,6 @@ import uuid   # to handle uploader keys
 import io
 from io import IOBase
 import sqlglot
-from streamlit_js_eval import streamlit_js_eval
 
 # Config-----------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
@@ -548,7 +547,7 @@ tab1, tab2, tab3, tab4 = st.tabs(["Add TriplesMap", "Add Subject Map", "Add Pred
 col1, col2 = st.columns([2,1])
 if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
     with col1:
-        utils.get_missing_g_mapping_error_message(different_page=True)
+        utils.get_missing_element_error_message(mapping=True, different_page=True)
         st.stop()
 
 #________________________________________________
@@ -737,7 +736,7 @@ with tab1:
                         if connection_ok_flag:
 
                             query_for_selected_db_list = []   # list of queries of the selected connection
-                            for query_label, [connection_label, query] in st.session_state["sql_queries_dict"].items():
+                            for query_label, [connection_label, query] in st.session_state["saved_views_dict"].items():
                                 if connection_label == db_connection_for_ls:
                                     query_for_selected_db_list.insert(0, query_label)   # only include queries of the selected connection
 
@@ -757,7 +756,7 @@ with tab1:
                                         key="key_selected_query_for_ls")
 
                                 if selected_query_for_ls != "Select view":
-                                    sql_query = st.session_state["sql_queries_dict"][selected_query_for_ls][1]
+                                    sql_query = st.session_state["saved_views_dict"][selected_query_for_ls][1]
                                     try:
                                         cur = conn.cursor()
                                         cur.execute(sql_query)
@@ -1490,7 +1489,7 @@ with tab2:
                                 <div class="gray-preview-message" style="word-wrap:break-word; overflow-wrap:anywhere;">
                                     🏷️ <b style="color:#F63366;">Subject classes:</b><br>
                                  <div style="margin-top:0.2em; margin-left:20px; font-size:15px;">
-                                        <small><b>{utils.format_list_for_markdown(list_for_display)}</b></small>
+                                        <small><b>{utils.format_list_for_display(list_for_display)}</b></small>
                                 </div></div>""", unsafe_allow_html=True)
                             st.write("")
 
@@ -1722,7 +1721,7 @@ with tab2:
 
         #Option to show all Subject Maps
         sm_df = pd.DataFrame([
-            {"Subject Map": v[0], "Assigned to": utils.format_list_for_markdown(v[4]),
+            {"Subject Map": v[0], "Assigned to": utils.format_list_for_display(v[4]),
                 "Type": v[1], "Rule": v[3]} for k, v in reversed(sm_dict.items())])
         sm_df_short = sm_df.head(max_length)
 

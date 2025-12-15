@@ -6,7 +6,6 @@ import pandas as pd
 import pickle
 from rdflib.namespace import split_uri
 from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL, XSD
-from streamlit_js_eval import streamlit_js_eval
 import plotly.express as px
 
 # Config-----------------------------------
@@ -31,7 +30,7 @@ tab1, tab2, tab3 = st.tabs(["Mapping", "Properties", "Classes"])
 col1, col2 = st.columns([2,1])
 if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
     with col1:
-        utils.get_missing_g_mapping_error_message(different_page=True)
+        utils.get_missing_element_error_message(mapping=True, different_page=True)
         st.stop()
 
 #________________________________________________

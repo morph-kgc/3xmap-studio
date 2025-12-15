@@ -1,14 +1,14 @@
 import os
-import streamlit as st
+import pandas as pd
+import pickle    # to save and retrieve session
 from rdflib import Graph, URIRef, Literal, Namespace, BNode
 from rdflib.namespace import split_uri
-from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL, XSD
-import utils
-import pandas as pd
-
-import pickle    # to save and retrieve session
+import streamlit as st
 import time   # for success messages
 import uuid   # to handle uploader keys
+import utils
+
+# from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL, XSD   RFTAG
 
 # Config------------------------------------------------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
@@ -254,12 +254,7 @@ tab1, tab2, tab3, tab4 = st.tabs(["Select Mapping",
 #_______________________________________________________________________________
 # PANEL: SELECT MAPPING
 with tab1:
-    st.write("")
-    st.write("")
-
-    col1, col2 = st.columns([2,1.5])
-    with col2:
-        col2a,col2b = st.columns([1,2])
+    col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
 
     # PURPLE HEADING: CREATE NEW MAPPING----------------------------------------
     with col1:
@@ -386,7 +381,7 @@ with tab1:
     elif import_mapping_selected_option == "📁 File":
 
         with col1a:
-            mapping_format_list = list(utils.get_g_mapping_file_formats_dict().values())
+            mapping_format_list = list(utils.get_supported_formats(mapping=True).values())
             selected_mapping_input = st.file_uploader(f"""🖱️
             Upload mapping file:*""", type=mapping_format_list, key=st.session_state["key_mapping_uploader"])
 
@@ -509,7 +504,7 @@ with tab1:
                 st.button("Retrieve", key="key_retrieve_session_button_2", on_click=retrieve_session)
 
 
-    # RIGHT COLUMN  SUCCESS MESSAGES--------------------------------------------
+    # RIGHT COLUMN: SUCCESS MESSAGES--------------------------------------------
     # for retrieve cached mapping, change label and full reset
     if st.session_state["cached_mapping_retrieved_ok_flag"]:
         with col2b:
@@ -535,7 +530,7 @@ with tab1:
         with col2b:
             st.write("")
             st.markdown(f"""<div class="success-message-flag">
-                ✅ <b>Clean slate:</b> Everything has been <b style="color:#F63366;">reset</b>!
+                ✅ <b>Clean slate:</b> Everything has been reset!
             </div>""", unsafe_allow_html=True)
         st.session_state["everything_reseted_ok_flag"] = False
         time.sleep(utils.get_success_message_time())
@@ -550,42 +545,38 @@ with tab1:
                 URL_for_display = st.session_state["g_mapping_source_cache"][1]
                 if len(URL_for_display) > max_length:
                     URL_for_display = "..." + URL_for_display[-max_length:]
-                st.markdown(f"""<div class="gray-preview-message">
+                st.html(f"""<div class="gray-preview-message">
                         🗺️ You are working with mapping
                         <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
-                        <ul style="font-size:0.75rem; margin:6px 0 0 15px; padding-left:10px;">
-                            <li>Mapping was loaded from URL <b>{URL_for_display}</b></li>
-                            <li>When loaded, mapping had <b>{st.session_state["original_g_size_cache"]} TriplesMaps</b></li>
-                            <li>Now mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps<b/></li>
-                        </ul></div>""", unsafe_allow_html=True)
+                        <div style="margin-left:15px;"><small>
+                            · Mapping was loaded from URL <b>{URL_for_display}</b>.<br>
+                            · When loaded, mapping had <b>{st.session_state["original_g_size_cache"]} TriplesMaps</b>.<br>
+                            · Now mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps</b>.
+                        </small></div></div>""")
 
             elif st.session_state["g_mapping_source_cache"][0] == "file":
-                st.markdown(f"""<div class="gray-preview-message">
+                st.html(f"""<div class="gray-preview-message">
                         🗺️ You are working with mapping
                         <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
-                        <ul style="font-size:0.75rem; margin:6px 0 0 15px; padding-left:10px;">
-                            <li>Mapping was loaded from file <b>{st.session_state["g_mapping_source_cache"][1]}</b></li>
-                            <li>When loaded, mapping had <b>{st.session_state["original_g_size_cache"]} TriplesMaps</b></li>
-                            <li>Now mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps<b/></li>
-                        </ul></div>""", unsafe_allow_html=True)
+                        <div style="margin-left:15px;"><small>
+                            · Mapping was loaded from file <b>{st.session_state["g_mapping_source_cache"][1]}</b>.<br>
+                            · When loaded, mapping had <b>{st.session_state["original_g_size_cache"]} TriplesMaps</b>.<br>
+                            · Now mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps</b>.
+                        </small></div></div>""")
 
             else:
-                st.markdown(f"""<div class="gray-preview-message">
-                        <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-                        style="vertical-align:middle; margin-right:8px; height:20px;">
-                        You are working with mapping
+                st.html(f"""<div class="gray-preview-message">
+                        🗺️ You are working with mapping
                         <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
-                        <ul style="font-size:0.85rem; margin:6px 0 0 15px; padding-left:10px;">
-                            <li>Mapping was created <b>from scratch</b></li>
-                            <li>Mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps<b/></li>
-                        </ul></div>""", unsafe_allow_html=True)
-
+                        <div style="margin-left:15px;"><small>
+                            · Mapping was created <b>from scratch</b><br>
+                            · Mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps<b/>
+                        </small></div></div>""")
 
         else:
-            st.markdown("""<div class="gray-preview-message">
-                🚫 <b>No mapping</b> has been loaded yet.
-            </div>
-            """, unsafe_allow_html=True)
+            st.html("""<div class="gray-preview-message">
+                🚫 <b>No mapping</b> has been created/imported yet.
+            </div>""")
 
     # RIGHT COLUMN OPTION: RETRIEVE CAH¡CHED MAPPING----------------------------
     # Only shows if not working with a mapping
@@ -605,8 +596,8 @@ with tab1:
                     st.button("Retrieve", key="key_retrieve_cached_mapping_button", on_click=retrieve_cached_mapping)
                     st.markdown(f"""<div class="info-message-blue">
                             ℹ️ Mapping <b style="color:#F63366;">
-                            {cached_mapping_name}</b> will be loaded, together
-                            with any imported ontologies and data sources.
+                            {cached_mapping_name}</b> will be imported, <small>together
+                            with any imported ontologies and data sources.</small>
                         </span></div>""", unsafe_allow_html=True)
 
 
@@ -657,13 +648,16 @@ with tab1:
 # PANEL: CONFIGURE NAMESPACES
 # Available only if mapping is loaded
 with tab2:
-    st.write("")
-    st.write("")
-    col1, col2 = st.columns([2,1.5])
+    col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
+
+    with col2b:
+        utils.get_corner_status_message(mapping_info=True)
 
     if not st.session_state["g_label"]:
         with col1:
-            utils.get_missing_g_mapping_error_message()
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            utils.get_missing_element_error_message(mapping=True)
 
     else:   # only allow to continue if mapping is loaded
 
@@ -671,12 +665,7 @@ with tab2:
         mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
         used_mapping_ns_dict = utils.get_used_g_ns_dict(st.session_state["g_mapping"])
 
-        with col2:
-            col2a, col2b = st.columns([0.5, 2])
-
         with col2b:
-            st.write("")
-            st.write("")
             last_added_ns_df = pd.DataFrame({
                 "Prefix": st.session_state["last_added_ns_list"],
                 "Namespace": [mapping_ns_dict.get(prefix, "") for prefix in st.session_state["last_added_ns_list"]]})
@@ -1171,17 +1160,18 @@ with tab2:
 # PANEL: SAVE MAPPING
 # Available only if mapping is loaded
 with tab3:
-    st.write("")
-    st.write("")
-    col1, col2 = st.columns([2,1.5])
+    col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
+
+    with col2b:
+        utils.get_corner_status_message(mapping_info=True)
 
     if not st.session_state["g_label"]:
         with col1:
-            utils.get_missing_g_mapping_error_message()
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            utils.get_missing_element_error_message(mapping=True)
 
     else:
-        with col2:
-            col2a,col2b = st.columns([1,2])
 
         # RIGHT COLUMN OPTION: SAVE PROGRESS------------------------------------
         if st.session_state["progress_saved_ok_flag"]:
@@ -1235,7 +1225,7 @@ with tab3:
         with col1:
             col1a, col1b, col1c = st.columns([0.8,1.7,1])
 
-        export_extension_dict = utils.get_g_mapping_file_formats_dict()
+        export_extension_dict = utils.get_supported_formats(mapping=True)
         list_to_choose = list(export_extension_dict)
 
         with col1a:
@@ -1365,6 +1355,7 @@ with tab3:
                                 ⚠️ A session labelled <b>{pkl_filename}</b> already exists. <small>Pick
                                 a different label unless you want to overwrite it.</small>
                             </div>""", unsafe_allow_html=True)
+
             elif pkl_filename and valid_pkl_filename_flag:
                 with col1b:
                     st.markdown(f"""<div class="info-message-blue">
@@ -1397,18 +1388,11 @@ with tab3:
                     if delete_sessions_checkbox:
                         st.button("Delete", key="delete_sessions_button", on_click=delete_sessions)
 
-#RFBOOKMARK
 #_______________________________________________________________________________
 # PANEL: SET STYLE
 with tab4:
 
-    st.write("")
-    st.write("")
-
-    col1,col2 = st.columns([2,1.5])
-
-    with col2:
-        col2a,col2b = st.columns([1,2])
+    col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
 
     # PURPLE HEADING: STYLE CONFIGURATION---------------------------------------
     with col1:
