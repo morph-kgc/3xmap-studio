@@ -132,15 +132,9 @@ with tab1:
         st.rerun()
 
     if st.session_state["db_connections_dict"]:
-        rows = [{"Label": label, "Engine": st.session_state["db_connections_dict"][label][0],
-                "Database": st.session_state["db_connections_dict"][label][3],
-                "Status": st.session_state["db_connection_status_dict"][label][0]}
-                for label in reversed(list(st.session_state["db_connections_dict"].keys()))]
-        db_connections_df = pd.DataFrame(rows)
-        last_added_db_connections_df = db_connections_df.head(utils.get_max_length_for_display()[1])
 
         with col2b:
-            utils.display_right_column_df(db_connections_df, st.session_state["db_connections_dict"], "database connections", complete=False)
+            utils.display_right_column_df("db_connections", st.session_state["db_connections_dict"], "database connections", complete=False)
 
         with col2:
             col2a, col2b, col2c = st.columns([0.5,0.8,1.2])
@@ -455,17 +449,9 @@ with tab2:
 
         # RIGHT COLUMN: CONNECTION INFORMATION----------------------------------
         if st.session_state["db_connections_dict"]:
-            rows = [{"Label": label, "Engine": st.session_state["db_connections_dict"][label][0],
-                    "Database": st.session_state["db_connections_dict"][label][3],
-                    "Status": st.session_state["db_connection_status_dict"][label][0]}
-                    for label in reversed(list(st.session_state["db_connections_dict"].keys()))]
-            db_connections_df = pd.DataFrame(rows)
-            last_added_db_connections_df = db_connections_df.head(utils.get_max_length_for_display()[1])
-
-            max_length = utils.get_max_length_for_display()[1]   # max number of connections to show directly
 
             with col2b:
-                utils.display_right_column_df(db_connections_df, st.session_state["db_connections_dict"], "database connections", complete=False)
+                utils.display_right_column_df("db_connections", st.session_state["db_connections_dict"], "database connections", complete=False)
 
             with col2:
                 col2a, col2b, col2c = st.columns([0.5,0.8,1.2])
@@ -588,22 +574,7 @@ with tab3:
 
     else:
         with col2b:
-            rows = []
-            for label in reversed(list(st.session_state["saved_views_dict"].keys())):
-                connection = st.session_state["saved_views_dict"][label][0]
-                database =  st.session_state["db_connections_dict"][connection][3]
-
-                query_or_collection = st.session_state["saved_views_dict"][label][1]
-                max_length = utils.get_max_length_for_display()[10]
-                query_or_collection = query_or_collection[:max_length] + "..." if len(query_or_collection) > max_length else query_or_collection
-
-                rows.append({"Label": label, "Source": connection,
-                        "Database": database, "Query/Collection": query_or_collection})
-
-            views_df = pd.DataFrame(rows)
-
-            utils.display_right_column_df(views_df, st.session_state["saved_views_dict"], "saved views", complete=False)
-            max_length = utils.get_max_length_for_display()[1]   # max number of connections to show directly
+            utils.display_right_column_df("saved_views", st.session_state["saved_views_dict"], "saved views", complete=False)
 
             with col2:
                 col2a, col2b = st.columns([1,0.8])
@@ -774,7 +745,7 @@ with tab3:
                             st.dataframe(limited_df, hide_index=True)
 
     # SUCCESS MESSAGE: VIEW REMOVED---------------------------------------------
-    # Shows here if no Manage Saved Views purple header
+    # Shows here if no Manage Saved Views purple heading
     if not st.session_state["saved_views_dict"] and st.session_state["view_removed_ok_flag"]:
         with col1:
             col1a, col1b = st.columns([2,1])

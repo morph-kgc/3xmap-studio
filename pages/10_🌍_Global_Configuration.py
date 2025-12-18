@@ -443,7 +443,7 @@ with tab1:
 
     # PURPLE HEADING - RETRIEVE SAVED SESSION-----------------------------------
     # Only shows if there exist saved sessions
-    folder_name = utils.get_saved_sessions_folder_name()
+    folder_name = utils.get_folder_name(saved_sessions=True)
     if os.path.isdir(folder_name):   # create if it does not exist
         folder_path = os.path.join(os.getcwd(), folder_name)
         pkl_files_list = [f for f in os.listdir(folder_path) if f.endswith(".pkl")]
@@ -1308,7 +1308,7 @@ with tab3:
         with col1:
             col1a, col1b = st.columns([2,1])
 
-        folder_name = utils.get_saved_sessions_folder_name()
+        folder_name = utils.get_folder_name(saved_sessions=True)
         folder_path = os.path.join(os.getcwd(), folder_name)
         if os.path.isdir(folder_path):
             file_list = [os.path.splitext(f)[0] for f in os.listdir(folder_path)

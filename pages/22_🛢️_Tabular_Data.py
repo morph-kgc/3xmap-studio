@@ -41,7 +41,7 @@ def save_large_ds_file():
     # reset fields_______________________
     st.session_state["key_large_file_checkbox"] = False
 
-def remove_file():
+def remove_files():
     # delete files________________
     for file in ds_files_to_remove_list:
         del st.session_state["ds_files_dict"][file]
@@ -59,42 +59,9 @@ tab1, tab2 = st.tabs(["Manage Files", "Display Data"])
 with tab1:
     col1, col2, col2a, col2b = utils.get_panel_layout()
 
-    rows = []
-    ds_files = list(st.session_state["ds_files_dict"].items())
-    ds_files.reverse()
-
-    for filename, file_obj in ds_files:
-        base_name = filename.split(".")[0]
-        file_format = filename.split(".")[-1]
-
-        if hasattr(file_obj, "size"):
-            # Streamlit UploadedFile
-            file_size_kb = file_obj.size / 1024
-        elif hasattr(file_obj, "fileno"):
-            # File object from open(path, "rb")
-            file_size_kb = os.fstat(file_obj.fileno()).st_size / 1024
-        else:
-            file_size_kb = None  # Unknown format
-
-        if not file_size_kb:
-            file_size = None
-        elif file_size_kb < 1:
-            file_size = f"""{int(file_size_kb*1024)} bytes"""
-        elif file_size_kb < 1024:
-            file_size = f"""{int(file_size_kb)} kB"""
-        else:
-            file_size = f"""{int(file_size_kb/1024)} MB"""
-
-        row = {"Filename": base_name, "Format": file_format,
-            "Size": file_size if file_size_kb is not None else "N/A"}
-        rows.append(row)
-
-        db_connections_df = pd.DataFrame(rows)
-
     with col2b:
-        utils.display_right_column_df(db_connections_df, st.session_state["ds_files_dict"], "uploaded files")
+        utils.display_right_column_df("tabular_ds", st.session_state["ds_files_dict"], "uploaded files")
 
-    #RFBOOKMARK
     # PURPLE HEADING: UPLOAD FILE-----------------------------------------------
     with col1:
         st.markdown("""<div class="purple-heading">
@@ -141,18 +108,18 @@ with tab1:
                         st.button("Save", key="key_save_ds_file_button", on_click=save_ds_file)
 
             else:
-                st.button("Save", key="key_save_ds_file_button", on_click=save_ds_file)
+                with col1a:
+                    st.button("Save", key="key_save_ds_file_button", on_click=save_ds_file)
 
         except Exception as e:    # empty file
             with col1b:
                 st.write("")
                 st.write("")
                 st.markdown(f"""<div class="error-message">
-                    ❌ The file <b>{ds_file.name}</b> appears to be empty or corrupted.
+                    ❌ The file <b>{ds_file.name}</b> appears to be <b>empty or corrupted</b>.
                     <small><i><b>Full error:</b> {e}.</i></small>
                 </div>""", unsafe_allow_html=True)
                 st.write("")
-
 
     elif not ds_file:
         with col1b:
@@ -164,19 +131,15 @@ with tab1:
 
         if large_file_checkbox:
 
-            folder_name = utils.get_ds_folder_name()
+            folder_name = utils.get_folder_name(data_sources=True)
             folder_path = os.path.join(os.getcwd(), folder_name)
-
-            with col1:
-                col1a, col1b = st.columns([2,1])
 
             if not os.path.isdir(folder_path):
                 with col1b:
-                    st.write("")
-                    st.markdown(f"""<div class="error-message">
-                            ❌ Folder <b>{folder_name}</b> does not exist. <small>Please,
-                            create it within the main folder and <b>add your file</b> to it</small>.
-                        </div>""", unsafe_allow_html=True)
+                    st.markdown(f"""<div class="info-message-blue">
+                            📁 Create folder <b style="color:#F63366;">
+                            {folder_name}</b> <small>and <b>add your file</b> to it</small>.
+                        </span></div>""", unsafe_allow_html=True)
 
             else:
                 tab_files = [f for f in os.listdir(folder_path)
@@ -186,19 +149,17 @@ with tab1:
 
                 if not tab_files:
                     with col1b:
-                        st.write("")
-                        st.markdown(f"""<div class="error-message">
-                                ❌ The folder <b>{folder_name}</b> is empty. <small>Please,
-                                <b>add your file</b> to it</small>.
-                            </div>""", unsafe_allow_html=True)
+                        st.markdown(f"""<div class="info-message-blue">
+                                📄 <b>Add your file</b> to the <b style="color:#F63366;">
+                                {folder_name}</b> folder <small>(folder is now empty)</small>.
+                            </span></div>""", unsafe_allow_html=True)
 
                 else:
                     with col1b:
-                        st.write("")
                         st.markdown(f"""<div class="info-message-blue">
-                                ℹ️ <b>Add your file</b> to the <b style="color:#F63366;">
-                                {folder_name}</b> folder to select it
-                                from the list below <small><b>(do not use uploader)</b></small>.
+                                📄 <b>Add your file</b> to the <b style="color:#F63366;">
+                                {folder_name}</b> folder <small>and select it
+                                from the list below <b>(do not use uploader)</b></small>.
                             </span></div>""", unsafe_allow_html=True)
                     list_to_choose = tab_files
                     list_to_choose.insert(0, "Select file")
@@ -213,11 +174,12 @@ with tab1:
                             columns_df = utils.read_tab_file_unsaved(ds_file)
 
                             if ds_large_filename in st.session_state["ds_files_dict"]:
-                                with col1a:
+                                with col1b:
                                     st.markdown(f"""<div class="warning-message">
                                         ⚠️ File <b>{ds_large_filename}</b> is already loaded.
                                         <small>If you continue, its content <b>will be updated</b>.</small>
                                     </div>""", unsafe_allow_html=True)
+                                with col1a:
                                     update_large_file_checkbox = st.checkbox(
                                     "🔒 I am sure I want to update the file",
                                     key="key_update_large_file_checkbox")
@@ -228,14 +190,16 @@ with tab1:
                                     st.button("Save", key="key_save_large_ds_file_button",
                                     on_click=save_large_ds_file)
 
-                        except:    # empty file
-                            with col1a:
+                        except Exception as e:    # empty file
+                            with col1b:
                                 st.markdown(f"""<div class="error-message">
-                                    ❌ The file <b>{ds_large_filename}</b> appears to be empty or corrupted. Please select a valid file.
+                                    ❌ The file <b>{ds_large_filename}</b> appears to be <b>empty or corrupted</b>.
+                                    <small><i><b>Full error:</b> {e}</i>.</small>
                                 </div>""", unsafe_allow_html=True)
-                                st.write("")
 
 
+    # SUCCESS MESSAGE: FILE REMOVED---------------------------------------------
+    # Shows here if no Remove Files purple heading
     if not st.session_state["ds_files_dict"] and st.session_state["ds_file_removed_ok_flag"]:
         with col1:
             col1a, col1b = st.columns([2,1])
@@ -248,7 +212,7 @@ with tab1:
         time.sleep(utils.get_success_message_time())
         st.rerun()
 
-    #PURPLE HEADING - REMOVE FILE
+    #PURPLE HEADING - REMOVE FILE-----------------------------------------------
     if st.session_state["ds_files_dict"]:
         with col1:
             st.write("_______")
@@ -292,7 +256,7 @@ with tab1:
                 "🔒 I am sure I want to remove all files",
                 key="key_delete_all_files_checkbox")
                 if delete_all_files_checkbox:
-                    st.button("Remove", key="key_remove_file_button", on_click=remove_file)
+                    st.button("Remove", key="key_remove_files_button", on_click=remove_files)
 
         elif ds_files_to_remove_list:
             with col1a:
@@ -300,157 +264,89 @@ with tab1:
                 "🔒 I am sure I want to remove the selected file/s",
                 key="key_delete_files_checkbox")
                 if delete_files_checkbox:
-                    st.button("Remove", key="key_remove_file_button", on_click=remove_file)
+                    st.button("Remove", key="key_remove_files_button", on_click=remove_files)
 
 
-
-#________________________________________________
-# DISPLAY DATA
+#_______________________________________________________________________________
+# PANEL: DISPLAY DATA
 with tab2:
+    col1, col2, col2a, col2b = utils.get_panel_layout()
 
-    col1, col2 = st.columns([2,1.5])
-
-    with col1:
-        col1a, col1b = st.columns([2,1])
-
-    if not st.session_state["db_connections_dict"] and not st.session_state["ds_files_dict"]:
-            with col1:
-                st.markdown(f"""<div class="error-message">
-                    ❌ <b>No Tabular Logical Sources have been added.</b> <small>You can add them in the
-                    <b>Load File</b> pannel.</small>
-                </div>""", unsafe_allow_html=True)
+    if not st.session_state["ds_files_dict"]:
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.markdown(f"""<div class="error-message">
+                ❌ <b>No Tabular Logical Sources have been added.</b> <small>You can add them in the
+                <b>Manage Files</b> panel.</small>
+            </div>""", unsafe_allow_html=True)
 
     else:
-
-        col1, col2 = st.columns([2,1.5])
-
-        with col2:
-            col2a, col2b = st.columns([0.5, 2])
-
         with col2b:
+            utils.display_right_column_df("tabular_ds", st.session_state["ds_files_dict"], "uploaded files")
+
+        #PURPLE HEADING: DISPLAY TABLE------------------------------------------
+        with col1:
+            st.markdown("""<div class="purple-heading">
+                    🔎 Display Table
+                </div>""", unsafe_allow_html=True)
             st.write("")
-            st.write("")
 
+        with col1:
+            col1a, col1b = st.columns(2)
 
-        rows = []
-        ds_files = list(st.session_state["ds_files_dict"].items())
-        ds_files.reverse()
+        with col1a:
+            list_to_choose = list(reversed(list(st.session_state["ds_files_dict"].keys())))
+            list_to_choose.insert(0, "Select file")
+            tab_filename_for_display = st.selectbox("🖱️ Select file:*", list_to_choose,
+                key="key_tab_filename_for_display")
 
-        for filename, file_obj in ds_files:
-            base_name = filename.split(".")[0]
-            file_format = filename.split(".")[-1]
+        if tab_filename_for_display != "Select file":
 
-            if hasattr(file_obj, "size"):
-                # Streamlit UploadedFile
-                file_size_kb = file_obj.size / 1024
-            elif hasattr(file_obj, "fileno"):
-                # File object from open(path, "rb")
-                file_size_kb = os.fstat(file_obj.fileno()).st_size / 1024
+            tab_file_for_display = st.session_state["ds_files_dict"][tab_filename_for_display]
+
+            df = utils.read_tab_file(tab_filename_for_display)
+            tab_file_for_display.seek(0)
+
+            with col1b:
+                column_list = df.columns.tolist()
+                tab_column_filter_list = st.multiselect(f"""📡 Filter by columns
+                    (optional, max {utils.get_max_length_for_display()[3]}):""",
+                    column_list, key="key_tab_column_filter")
+
+            if not tab_column_filter_list:
+                with col1:
+                    max_rows = utils.get_max_length_for_display()[2]
+                    max_cols = utils.get_max_length_for_display()[3]
+
+                    limited_df = df.iloc[:, :max_cols]   # limit number of columns
+
+                    # Slice rows if needed
+                    if len(df) > max_rows and df.shape[1] > max_cols:
+                        st.markdown(f"""<div class="warning-message">
+                            ⚠️ Showing the <b>first {max_rows} rows</b> <small>(out of {len(df)})</small>
+                            and the <b>first {max_cols} columns</b> <small>(out of {df.shape[1]})</small>.
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
+                    elif len(df) > max_rows:
+                        st.markdown(f"""<div class="warning-message">
+                            ⚠️ Showing the <b>first {max_rows} rows</b> <small>(out of {len(df)})</small>.
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
+                    elif df.shape[1] > max_cols:
+                        st.markdown(f"""<div class="warning-message">
+                            ⚠️ Showing the <b>first {max_cols} columns</b> <small>(out of {df.shape[1]})</small>.
+                        </div>""", unsafe_allow_html=True)
+                        st.write("")
+                    st.dataframe(limited_df.head(max_rows), hide_index=True)
+
             else:
-                file_size_kb = None  # Unknown format
-
-            if not file_size_kb:
-                file_size = None
-            elif file_size_kb < 1:
-                file_size = f"""{int(file_size_kb*1024)} bytes"""
-            elif file_size_kb < 1024:
-                file_size = f"""{int(file_size_kb)} kB"""
-            else:
-                file_size = f"""{int(file_size_kb/1024)} MB"""
-
-            row = {"Filename": base_name, "Format": file_format,
-                "Size": file_size if file_size_kb is not None else "N/A"}
-            rows.append(row)
-
-            db_connections_df = pd.DataFrame(rows)
-            last_added_db_connections_df = db_connections_df.head(utils.get_max_length_for_display()[1])
-
-        with col2b:
-            max_length = utils.get_max_length_for_display()[1]   # max number of connections to show directly
-            if st.session_state["ds_files_dict"]:
-                if len(st.session_state["ds_files_dict"]) < max_length:
-                    st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
-                            🔎 uploaded files
-                        </div>""", unsafe_allow_html=True)
-                    st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                        </div>""", unsafe_allow_html=True)
-                else:
-                    st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
-                            🔎 last uploaded files
-                        </div>""", unsafe_allow_html=True)
-                    st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                            (complete list below)
-                        </div>""", unsafe_allow_html=True)
-                st.dataframe(last_added_db_connections_df, hide_index=True)
-
-            #Option to show all connections (if too many)
-            if st.session_state["ds_files_dict"] and len(st.session_state["ds_files_dict"]) > max_length:
-                with st.expander("🔎 Show all files"):
-                    st.write("")
-                    st.dataframe(db_connections_df, hide_index=True)
-
-            #PURPLE HEADING - VIEW TABLE
-            with col1:
-                st.write("")
-                st.markdown("""<div class="purple-heading">
-                        🔎 Display Table
-                    </div>""", unsafe_allow_html=True)
-                st.write("")
-
-            with col1:
-                col1a, col1b = st.columns(2)
-
-            with col1a:
-                list_to_choose = list(reversed(list(st.session_state["ds_files_dict"].keys())))
-                list_to_choose.insert(0, "Select file")
-                tab_filename_for_display = st.selectbox("🖱️ Select file:*", list_to_choose,
-                    key="key_tab_filename_for_display")
-
-            if tab_filename_for_display != "Select file":
-
-                tab_file_for_display = st.session_state["ds_files_dict"][tab_filename_for_display]
-
-                df = utils.read_tab_file(tab_filename_for_display)
-                tab_file_for_display.seek(0)
-
-                with col1b:
-                    column_list = df.columns.tolist()
-                    tab_column_filter_list = st.multiselect(f"""🖱️ Select columns (optional, max {utils.get_max_length_for_display()[3]}):""",
-                        column_list, key="key_tab_column_filter")
-
-                if not tab_column_filter_list:
+                if len(tab_column_filter_list) > utils.get_max_length_for_display()[3]:
                     with col1:
-                        max_rows = utils.get_max_length_for_display()[2]
-                        max_cols = utils.get_max_length_for_display()[3]
-
-                        limited_df = df.iloc[:, :max_cols]   # limit number of columns
-
-                        # Slice rows if needed
-                        if len(df) > max_rows and df.shape[1] > max_cols:
-                            st.markdown(f"""<div class="warning-message">
-                                ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
-                                and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
-                            </div>""", unsafe_allow_html=True)
-                            st.write("")
-                        elif len(df) > max_rows:
-                            st.markdown(f"""<div class="warning-message">
-                                ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
-                            </div>""", unsafe_allow_html=True)
-                            st.write("")
-                        elif df.shape[1] > max_cols:
-                            st.markdown(f"""<div class="warning-message">
-                                ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
-                            </div>""", unsafe_allow_html=True)
-                            st.write("")
-                        st.dataframe(limited_df.head(max_rows), hide_index=True)
-
+                        st.markdown(f"""<div class="error-message">
+                            ❌ <b> Too many columns</b> selected. <small>Please, respect the <b>limit
+                            of {utils.get_max_length_for_display()[3]}</b>.</small>
+                        </div>""", unsafe_allow_html=True)
                 else:
-                    if len(tab_column_filter_list) > utils.get_max_length_for_display()[3]:
-                        with col1:
-                            st.markdown(f"""<div class="error-message">
-                                ❌ <b> Too many columns</b> selected. Please, respect the limit
-                                of {utils.get_max_length_for_display()[3]}.
-                            </div>""", unsafe_allow_html=True)
-                    else:
-                        with col1:
-                            st.dataframe(df[tab_column_filter_list], hide_index=True)
+                    with col1:
+                        st.dataframe(df[tab_column_filter_list], hide_index=True)

@@ -15,6 +15,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.exc import OperationalError, ArgumentError
 import streamlit as st
 from streamlit_js_eval import streamlit_js_eval
+import time
 from urllib.parse import urlparse
 import utils
 import uuid   # to handle uploader keys
@@ -85,11 +86,15 @@ RML, QL = get_required_ns_dict().values()
 
 # DEFAULT VARIABLES (CAN BE CUSTOMISED)=========================================
 #________________________________________________________
-# Name of the folder where sessions are saved
-# Used in 🌍 Global Configuration page
-def get_saved_sessions_folder_name():
+# Function to get the name of the used folders (only one argument should be True)
+# Used in 🌍 Global Configuration and 🛢️ Tabular Data pages
+def get_folder_name(saved_sessions=False, data_sources=False):
 
-    return "saved_sessions"
+    if saved_sessions:
+        return "saved_sessions"
+
+    elif data_sources:
+        return "data_sources"
 #________________________________________________________
 
 #_____________________________________________________
@@ -652,7 +657,7 @@ def format_number_for_display(number):
 # 6. Label in network visualisation (characters)
 # 7. Suggested mapping label (characters)    8. URL for display (characters)
 # 9. Max characters when displaying ontology/mapping serialisation (ttl or nt)
-# 10. Query text for display
+# 10. Query text for display    RFTAG check everything is used
 def get_max_length_for_display():
 
     return [50, 10, 100, 20, 5, 5, 20, 15, 40, 100000, 30]
@@ -660,8 +665,64 @@ def get_max_length_for_display():
 
 #______________________________________________________
 # Function to display limited dataframed in right column
-def display_right_column_df(df, session_state_dict, text, complete=True):
+# info db_connections / saved_views
+def display_right_column_df(info, session_state_dict, text, complete=True):
 
+    # Create the dataframe
+    if info == "db_connections":
+        rows = [{"Label": label, "Engine": st.session_state["db_connections_dict"][label][0],
+                "Database": st.session_state["db_connections_dict"][label][3],
+                "Status": st.session_state["db_connection_status_dict"][label][0]}
+                for label in reversed(list(st.session_state["db_connections_dict"].keys()))]
+
+    elif info == "saved_views":
+        rows = []
+        for label in reversed(list(st.session_state["saved_views_dict"].keys())):
+            connection = st.session_state["saved_views_dict"][label][0]
+            database =  st.session_state["db_connections_dict"][connection][3]
+
+            query_or_collection = st.session_state["saved_views_dict"][label][1]
+            max_length = utils.get_max_length_for_display()[10]
+            query_or_collection = query_or_collection[:max_length] + "..." if len(query_or_collection) > max_length else query_or_collection
+
+            rows.append({"Label": label, "Source": connection,
+                    "Database": database, "Query/Collection": query_or_collection})
+
+    elif info == "tabular_ds":
+        rows = []
+        ds_files = list(st.session_state["ds_files_dict"].items())
+        ds_files.reverse()
+
+        for filename, file_obj in ds_files:
+            base_name = filename.split(".")[0]
+            file_format = filename.split(".")[-1]
+
+            if hasattr(file_obj, "size"):               # Streamlit UploadedFile
+                file_size_kb = file_obj.size / 1024
+            elif hasattr(file_obj, "fileno"):                 # File object from open(path, "rb")
+                file_size_kb = os.fstat(file_obj.fileno()).st_size / 1024
+            else:
+                file_size_kb = None  # Unknown format
+
+            if not file_size_kb:
+                file_size = None
+            elif file_size_kb < 1:
+                file_size = f"""{int(file_size_kb*1024)} bytes"""
+            elif file_size_kb < 1024:
+                file_size = f"""{int(file_size_kb)} kB"""
+            else:
+                file_size = f"""{int(file_size_kb/1024)} MB"""
+
+            row = {"Filename": base_name, "Format": file_format,
+                "Size": file_size if file_size_kb is not None else "N/A"}
+            rows.append(row)
+
+    else:
+        rows = []
+
+    df = pd.DataFrame(rows)
+
+    # Display the dataframe
     if session_state_dict:
         max_length = get_max_length_for_display()[1]
         limited_df = df.head(max_length)
@@ -1672,7 +1733,7 @@ def get_unique_ontology_tag(g_label):
 
 
 
-# PAGE: SQL DATABASES===========================================================
+# PAGE: 📊 DATABASES============================================================
 # PANEL: MANAGE CONNECTIONS-----------------------------------------------------
 #________________________________________________________
 # Dictionary with default ports for the different engines
