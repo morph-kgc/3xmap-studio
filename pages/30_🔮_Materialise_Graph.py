@@ -559,7 +559,7 @@ with tab2:
                         with col1a:
                             st.markdown(f"""<div class="error-message">
                                 ❌ <b>Forbidden character</b> in data source label.
-                                <small> Please, pick a valid label.</small>
+                                <small> Please pick a valid label.</small>
                             </div>""", unsafe_allow_html=True)
                     elif mkgc_ds_label.lower() == "CONFIGURATION":
                         with col1a:
@@ -802,13 +802,13 @@ with tab2:
                     if re.search(excluded_characters, output_filename):
                         st.markdown(f"""<div class="error-message">
                             ❌ <b>Forbidden character</b> in filename.
-                            <small> Please, pick a valid filename.</small>
+                            <small> Please pick a valid filename.</small>
                         </div>""", unsafe_allow_html=True)
                         options_for_mkgcgc_ok_flag = False
                     elif output_filename.endswith("."):
                         st.markdown(f"""<div class="error-message">
                             ❌ <b>Trailing "."</b> in filename.
-                            <small> Please, remove it.</small>
+                            <small> Please remove it.</small>
                         </div>""", unsafe_allow_html=True)
                         options_for_mkgcgc_ok_flag = False
                     else:
@@ -816,7 +816,7 @@ with tab2:
                             if item == os.path.splitext(output_filename)[0].upper():
                                 st.markdown(f"""<div class="error-message">
                                     ❌ <b>Reserved filename.</b><br>
-                                    <small>Please, pick a different filename.</small>
+                                    <small>Please pick a different filename.</small>
                                 </div>""", unsafe_allow_html=True)
                                 options_for_mkgcgc_ok_flag = False
                                 break  # Stop checking after first match
@@ -934,7 +934,7 @@ with tab2:
                         if re.search(pattern, output_kafka_topic):
                             st.markdown(f"""<div class="error-message">
                                 ❌ <b>Forbidden character</b> in output Kafka topic.
-                                <small> Please, pick a valid topic.</small>
+                                <small> Please pick a valid topic.</small>
                             </div>""", unsafe_allow_html=True)
                             options_for_mkgcgc_ok_flag = False
 
@@ -1026,7 +1026,7 @@ with tab2:
                     with col1a:
                         st.markdown(f"""<div class="error-message">
                             ❌ Label <b>{additional_mapping_label}</b> is already in use.
-                            <small>Please, pick a different label.</small>
+                            <small>Please pick a different label.</small>
                         </div>""", unsafe_allow_html=True)
 
             elif additional_mapping_label:
@@ -1069,7 +1069,7 @@ with tab2:
                                         st.write("")
                                         st.markdown(f"""<div class="error-message">
                                                 ❌ File loaded, but <b>no RML structure found</b>.
-                                                <small>Please, check your mapping content.</small>
+                                                <small>Please check your mapping content.</small>
                                             </div>""", unsafe_allow_html=True)
                                         uploaded_mapping_ok_flag = False
 
@@ -1115,7 +1115,7 @@ with tab2:
                     with col1a:
                         st.markdown(f"""<div class="error-message">
                             ❌ Label <b>{additional_mapping_label}</b> is already in use.
-                            <small>Please, pick a different label.</small>
+                            <small>Please pick a different label.</small>
                         </div>""", unsafe_allow_html=True)
 
             elif additional_mapping_label:

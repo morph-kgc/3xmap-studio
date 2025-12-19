@@ -412,7 +412,7 @@ with tab2:
             superclass_dict = {}
             for s, p, o in list(set(ontology_for_search.triples((None, RDFS.subClassOf, None)))):
                 if not isinstance(o, BNode) and o not in superclass_dict.values():
-                    superclass_dict[utils.format_iri_to_prefix_label(o)] = o
+                    superclass_dict[utils.get_node_label(o)] = o
 
             list_to_choose = ["No filter", "Class type", "Annotation"]
             if superclass_dict:
@@ -534,7 +534,7 @@ with tab2:
 
                 if isinstance(class_iri, URIRef):  # filter out BNodes
                     df_data.append({
-                        "Class": utils.format_iri_to_prefix_label(class_iri),
+                        "Class": utils.get_node_label(class_iri),
                         "Label": label, "Comment": comment,
                         "Class Type": ("owl: Class" if str(class_type) == "http://www.w3.org/2002/07/owl#Class" else
                             "rdfs: Class" if str(class_type) == "http://www.w3.org/2000/01/rdf-schema#Class" else
@@ -595,17 +595,17 @@ with tab2:
             superproperty_dict = {}
             for s, p, o in ontology_for_search.triples((None, RDFS.subPropertyOf, None)):
                 if isinstance(o, URIRef) and o not in superproperty_dict.values():
-                    superproperty_dict[utils.format_iri_to_prefix_label(o)] = o
+                    superproperty_dict[utils.get_node_label(o)] = o
 
             domain_dict = {}
             for s, p, o in ontology_for_search.triples((None, RDFS.domain, None)):
                 if isinstance(o, URIRef) and o not in domain_dict.values():
-                    domain_dict[utils.format_iri_to_prefix_label(o)] = o
+                    domain_dict[utils.get_node_label(o)] = o
 
             range_dict = {}
             for s, p, o in ontology_for_search.triples((None, RDFS.range, None)):
                 if isinstance(o, URIRef) and o not in range_dict.values():
-                    range_dict[utils.format_iri_to_prefix_label(o)] = o
+                    range_dict[utils.get_node_label(o)] = o
 
             list_to_choose = ["No filter", "Property type", "Annotation"]
             if range_dict:
@@ -829,7 +829,7 @@ with tab2:
                     prop_types_list.append("owl: AnnotationProperty")
                 prop_types = utils.format_list_for_display(prop_types_list)
 
-                df_data.append({"Property": utils.format_iri_to_prefix_label(prop_iri),
+                df_data.append({"Property": utils.get_node_label(prop_iri),
                     "Label": label, "Comment": comment, "Property Type": prop_types,
                      "Property IRI": prop_iri  })
 

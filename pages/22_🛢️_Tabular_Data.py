@@ -1,15 +1,8 @@
+import os
 import streamlit as st
-import os #for file navigation
-from rdflib import Graph, URIRef, Literal, Namespace
-import utils
 import time
-import pandas as pd
-import psycopg
-import pymysql    # another option mysql-connector-python
-import oracledb
-import pyodbc
-import uuid   # to handle uploader keys
-import io
+import utils
+import uuid
 
 # Config-----------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
@@ -344,7 +337,7 @@ with tab2:
                 if len(tab_column_filter_list) > utils.get_max_length_for_display()[3]:
                     with col1:
                         st.markdown(f"""<div class="error-message">
-                            ❌ <b> Too many columns</b> selected. <small>Please, respect the <b>limit
+                            ❌ <b> Too many columns</b> selected. <small>Please respect the <b>limit
                             of {utils.get_max_length_for_display()[3]}</b>.</small>
                         </div>""", unsafe_allow_html=True)
                 else:

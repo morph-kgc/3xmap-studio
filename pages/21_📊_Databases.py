@@ -313,22 +313,22 @@ with tab1:
                 if connection_label_to_check_list:
                     rows = []
                     failed_conn_list = []
-                    for conn in connection_label_to_check_list:
+                    for conn_label in connection_label_to_check_list:
 
-                        utils.update_db_connection_status_dict(conn)
+                        utils.update_db_connection_status_dict(conn_label)
 
-                        engine = st.session_state["db_connections_dict"][conn][0]
-                        host = st.session_state["db_connections_dict"][conn][1]
-                        port= st.session_state["db_connections_dict"][conn][2]
-                        database = st.session_state["db_connections_dict"][conn][3]
-                        user = st.session_state["db_connections_dict"][conn][4]
-                        password = st.session_state["db_connections_dict"][conn][5]
-                        status = st.session_state["db_connection_status_dict"][conn][0]
+                        engine = st.session_state["db_connections_dict"][conn_label][0]
+                        host = st.session_state["db_connections_dict"][conn_label][1]
+                        port= st.session_state["db_connections_dict"][conn_label][2]
+                        database = st.session_state["db_connections_dict"][conn_label][3]
+                        user = st.session_state["db_connections_dict"][conn_label][4]
+                        password = st.session_state["db_connections_dict"][conn_label][5]
+                        status = st.session_state["db_connection_status_dict"][conn_label][0]
 
                         if status == "🚫":
-                            failed_conn_list.append(conn)
+                            failed_conn_list.append(conn_label)
 
-                        rows.append({"Label": conn, "Engine": engine,
+                        rows.append({"Label": conn_label, "Engine": engine,
                             "Host": host, "Port": port, "Database": database,
                             "User": user, "Status": status})
 
@@ -338,10 +338,10 @@ with tab1:
                         st.dataframe(df, use_container_width=True, hide_index=True)
 
                     inner_html = ""
-                    for conn in failed_conn_list:
+                    for conn_label in failed_conn_list:
                         inner_html += f"""<div>
-                        🚫 <b>{conn}:</b>
-                        <small>{str(st.session_state["db_connection_status_dict"][conn][1])}</small><br></div>"""
+                        🚫 <b>{conn_label}:</b>
+                        <small>{str(st.session_state["db_connection_status_dict"][conn_label][1])}</small><br></div>"""
 
                     if inner_html:
                         with col1:
@@ -544,9 +544,7 @@ with tab2:
 
                     with col1:
                         if not sql_column_filter_list:
-                            limited_df = utils.display_limited_df(df, "Table")
-                            if not df.empty:
-                                st.dataframe(limited_df, hide_index=True)
+                            utils.display_limited_df(df, "Table")
 
                         else:
                             if len(sql_column_filter_list) > utils.get_max_length_for_display()[3]:
@@ -556,7 +554,7 @@ with tab2:
                                         of {utils.get_max_length_for_display()[3]}.
                                     </div>""", unsafe_allow_html=True)
                             else:
-                                limited_df = utils.display_limited_df(df, "Table")
+                                utils.display_limited_df(df, "Table", display=False)
                                 if not df.empty:
                                     st.dataframe(df[sql_column_filter_list], hide_index=True)
 
@@ -699,9 +697,7 @@ with tab3:
 
                 if selected_db_table != "Select table" and pipeline_str and pipeline_ok_flag:
                     with col1:
-                        limited_df = utils.display_limited_df(df, "View previsualisation")
-                        if not df.empty:
-                            st.dataframe(limited_df, hide_index=True)
+                        utils.display_limited_df(df, "View previsualisation")
 
             # SQL DATABASE CONNECTIONS
             elif engine != "MongoDB" and connection_ok_flag:
@@ -740,9 +736,7 @@ with tab3:
                 if sql_query and sql_query_ok_flag:
 
                     with col1:
-                        limited_df = utils.display_limited_df(df, "View previsualisation")
-                        if not df.empty:
-                            st.dataframe(limited_df, hide_index=True)
+                        utils.display_limited_df(df, "View previsualisation")
 
     # SUCCESS MESSAGE: VIEW REMOVED---------------------------------------------
     # Shows here if no Manage Saved Views purple heading

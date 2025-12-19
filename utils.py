@@ -20,6 +20,8 @@ from urllib.parse import urlparse
 import utils
 import uuid   # to handle uploader keys
 
+from urllib.parse import urlparse, urlunparse
+
 
 
 from collections import defaultdict
@@ -299,6 +301,15 @@ def import_st_aesthetics():
     .info-message-blue b {
         color: #003366; font-weight:600;}
 
+    /* SMALL HEADING FOR SUBSECTIONS */
+    .small-subsection-heading {font-size: 13px; font-weight: 500;
+        margin-top: 10px; margin-bottom: 6px; border-top: 0.5px solid #ccc;
+        padding-bottom: 4px;}
+
+    /* VERY SMALL INFO */
+    .very-small-info {text-align: right; font-size: 10.5px; color: #003366;
+        margin-top: -10px;}
+
     </style>"""
 #_______________________________________________________
 
@@ -459,6 +470,15 @@ def import_st_aesthetics_dark_mode():
 
         .info-message-blue b {color: #dceeff; font-weight: 600;}
 
+    /* SMALL HEADING FOR SUBSECTIONS */
+    .small-subsection-heading {font-size: 13px; font-weight: 500;
+        margin-top: 10px; margin-bottom: 6px; border-top: 0.5px solid #ccc;
+        padding-bottom: 4px;}
+
+    /* VERY SMALL INFO */
+    .very-small-info {text-align: right; font-size: 10.5px; color: #dceeff;
+        margin-top: -10px;}
+
     </style>"""
 #______________________________________________________
 
@@ -581,33 +601,50 @@ def format_list_for_display(xlist):
 
 #______________________________________________________
 # Funtion to get label of a node   #RFTAG
-def get_node_label(node):
+def get_node_label(node, iri_prefix=True, short_BNode=True):
 
+    # URIRef
     if isinstance(node, URIRef):
-        label = split_uri(node)[1]
+        if iri_prefix:
+            try:
+                prefix, ns, local = st.session_state["g_mapping"].namespace_manager.compute_qname(node)
+                label = prefix + ": " + local
+            except Exception:
+                label = split_uri(node)[1]
+        else:
+            label = split_uri(node)[1]
+
+    # BNode
     elif isinstance(node, BNode):
-        label = "_:" + str(node)[:7] + "..."
+        if short_BNode:
+            label = "_:" + str(node)[:7] + "..."
+        else:
+            label = str(node)
+
+    # Other
     elif node:
         label = str(node)
+
+    # Empty node
     else:
         label = ""
 
     return label
 #______________________________________________________
 
-#______________________________________________________
-# Funtion to format iri to prefix:label
-def format_iri_to_prefix_label(node):
-
-    if isinstance(node, BNode):
-        return node
-
-    try:
-        prefix, ns, local = st.session_state["g_mapping"].namespace_manager.compute_qname(node)
-        return prefix + ": " + local
-    except Exception:
-        return get_node_label(node)
-#______________________________________________________
+# #______________________________________________________
+# # Funtion to format iri to prefix:label
+# def get_node_label(node):
+#
+#     if isinstance(node, BNode):
+#         return get_node_label(node)
+#
+#     try:
+#         prefix, ns, local = st.session_state["g_mapping"].namespace_manager.compute_qname(node)
+#         return prefix + ": " + local
+#     except Exception:
+#         return get_node_label(node)
+# #______________________________________________________
 
 #______________________________________________________
 # Funtion to format number
@@ -665,11 +702,16 @@ def get_max_length_for_display():
 
 #______________________________________________________
 # Function to display limited dataframed in right column
-# info db_connections / saved_views
+# info namespaces / db_connections / saved_views / tabular_ds / triplesmaps
 def display_right_column_df(info, session_state_dict, text, complete=True):
 
     # Create the dataframe
-    if info == "db_connections":
+    if info == "namespaces":
+        mapping_ns_dict = get_g_ns_dict(st.session_state["g_mapping"])
+        rows = [{"Prefix": prefix, "Namespace": mapping_ns_dict.get(prefix, "")}
+            for prefix in st.session_state["last_added_ns_list"]]
+
+    elif info == "db_connections":
         rows = [{"Label": label, "Engine": st.session_state["db_connections_dict"][label][0],
                 "Database": st.session_state["db_connections_dict"][label][3],
                 "Status": st.session_state["db_connection_status_dict"][label][0]}
@@ -717,10 +759,25 @@ def display_right_column_df(info, session_state_dict, text, complete=True):
                 "Size": file_size if file_size_kb is not None else "N/A"}
             rows.append(row)
 
+    elif info == "triplesmaps":
+        rows = [{"TriplesMap": tm, "Data Source": utils.get_tm_info_for_display(tm)[1],
+            "Table/View": utils.get_tm_info_for_display(tm)[2],
+            "Logical Source": utils.get_tm_info_for_display(tm)[0]} for tm in st.session_state["last_added_tm_list"]]
+
     else:
         rows = []
 
     df = pd.DataFrame(rows)
+
+    # Clean the dataframe (remove empty columns, including placeholder "---")
+    placeholder = "---"
+    cols_to_drop = []
+    for col in df.columns:
+        if df[col].isna().all():           # check if all values are NaN
+            cols_to_drop.append(col)
+        elif (df[col] == placeholder).all():   # check if all values equal the placeholder string
+            cols_to_drop.append(col)
+    df = df.drop(columns=cols_to_drop)
 
     # Display the dataframe
     if session_state_dict:
@@ -731,10 +788,8 @@ def display_right_column_df(info, session_state_dict, text, complete=True):
             st.markdown(f"""<div style='text-align: right; font-size: 14px; color: grey;'>
                     🔎 {text}
                 </div>""", unsafe_allow_html=True)
-            st.markdown(
-                "<div style='margin-top:0px;'></div>",
-                unsafe_allow_html=True
-            )
+            st.markdown("<div style='margin-top:0px;'></div>",
+                unsafe_allow_html=True)
         else:
             st.markdown(f"""<div style='text-align: right; font-size: 14px; color: grey;'>
                     🔎 {text}
@@ -745,6 +800,7 @@ def display_right_column_df(info, session_state_dict, text, complete=True):
 
         st.dataframe(limited_df, hide_index=True)
 
+    # Option to display complete dataframe if it was shortened   HERE LIMIT MAX LENGTH?
     if complete and session_state_dict and len(session_state_dict) > max_length:
         st.write("")
         with st.expander(f"🔎 Show all {text}"):
@@ -934,7 +990,7 @@ def init_page():
 # GLOBAL FUNCTIONS==============================================================
 #______________________________________________________
 # Function to check whether a label is valid
-def is_valid_label(label, hard=False, display_option=True):
+def is_valid_label(label, hard=False, display_option=True, blank_space=False):
 
     valid_letters = ["a","b","c","d","e","f","g","h","i","j","k","l","m",
         "n","o","p","q","r","s","t","u","v","w","x","y","z",
@@ -950,6 +1006,8 @@ def is_valid_label(label, hard=False, display_option=True):
     # disallow spaces
     if re.search(r"[ \t\n\r]", label):    # disallow spaces
         if display_option:
+            if blank_space:
+                st.write("")
             st.markdown(f"""<div class="error-message">
                 ❌ <b> Invalid label. </b>
                 <small>Please make sure it does not contain any spaces.</small>
@@ -959,6 +1017,8 @@ def is_valid_label(label, hard=False, display_option=True):
     # disallow unescaped characters
     if not hard and re.search(r"[<>\"{}|\\^`]", label):
         if display_option:
+            if blank_space:
+                st.write("")
             st.markdown(f"""<div class="error-message">
                 ❌ <b> Invalid label. </b>
                 <small>Please make sure it does not contain any invalid characters (&lt;&gt;"{{}}|\\^`).</small>
@@ -970,6 +1030,8 @@ def is_valid_label(label, hard=False, display_option=True):
         for letter in label:
             if letter not in valid_letters and letter not in valid_digits:
                 if display_option:
+                    if blank_space:
+                        st.write("")
                     st.markdown(f"""<div class="error-message">
                         ❌ <b> Invalid label. </b>
                         <small>Please make sure it contains only safe characters (a-z, A-Z, 0-9, -, _).</small>
@@ -979,6 +1041,8 @@ def is_valid_label(label, hard=False, display_option=True):
     # disallow trailing puntuation if hard
     if hard and label.endswith("_") or label.endswith("-"):
         if display_option:
+            if blank_space:
+                st.write("")
             st.markdown(f"""<div class="error-message">
                 ❌ <b> Invalid label. </b>
                 <small>Please make sure it does not end with puntuation.</small>
@@ -987,6 +1051,8 @@ def is_valid_label(label, hard=False, display_option=True):
 
     # warning if long
     if len(label) > 20 and display_option:
+        if blank_space:
+            st.write("")
         st.markdown(f"""<div class="warning-message">
             ⚠️ A <b>shorter label</b> is recommended.
         </div>""", unsafe_allow_html=True)
@@ -1159,7 +1225,7 @@ def load_mapping_from_file(f):
         except:
             st.markdown(f"""<div class="error-message">
                 ❌ Failed to parse <b>mapping</b>.
-                <small> Please, check your mapping.</small>
+                <small> Please check your mapping.</small>
             </div>""", unsafe_allow_html=True)
             return False
 
@@ -1473,7 +1539,7 @@ def is_valid_filename(filename):
     if filename.endswith("."):
         st.markdown(f"""<div class="error-message">
             ❌ <b>Trailing "."</b> in filename.
-            <small> Please, remove it.</small>
+            <small> Please remove it.</small>
         </div>""", unsafe_allow_html=True)
         return False
 
@@ -1481,7 +1547,7 @@ def is_valid_filename(filename):
     elif "." in filename:
         st.markdown(f"""<div class="error-message">
                 ❌ The filename seems to include an <b>extension</b>.
-                <small> Please, remove it.</b>
+                <small> Please remove it.</b>
             </div>""", unsafe_allow_html=True)
         return False
 
@@ -1489,7 +1555,7 @@ def is_valid_filename(filename):
     elif re.search(excluded_characters, filename):
         st.markdown(f"""<div class="error-message">
             ❌ <b>Forbidden character</b> in filename.
-            <small> Please, pick a valid filename.</small>
+            <small> Please pick a valid filename.</small>
         </div>""", unsafe_allow_html=True)
         return False
 
@@ -1499,7 +1565,7 @@ def is_valid_filename(filename):
             if item == os.path.splitext(filename)[0].upper():
                 st.markdown(f"""<div class="error-message">
                     ❌ <b>Reserved filename.</b><br>
-                    <small>Please, pick a different filename.</small>
+                    <small>Please pick a different filename.</small>
                 </div>""", unsafe_allow_html=True)
                 return False
                 break
@@ -1746,8 +1812,30 @@ def get_default_ports():
 #______________________________________________________
 
 #______________________________________________________
+# Funtion to censor the password or a url_str
+def censor_url_str(url_str):
+
+    try:
+        parsed = urlparse(url_str)
+        if "@" in parsed.netloc:
+            creds, hostpart = parsed.netloc.split("@", 1)
+            if ":" in creds:
+                user, _ = creds.split(":", 1)
+                netloc = f"{user}:*****@{hostpart}"
+            else:
+                netloc = creds + "@" + hostpart
+            parsed = parsed._replace(netloc=netloc)
+        censored_url_str = urlunparse(parsed)
+
+    except:
+        censored_url_str = url_str
+
+    return censored_url_str
+#______________________________________________________
+
+#______________________________________________________
 # Funtion to get db_url string of an already saved connection
-def get_db_url_str(conn_label):
+def get_db_url_str(conn_label, censor=False):
 
     engine, host, port, database, user, password = st.session_state["db_connections_dict"][conn_label]
 
@@ -1769,6 +1857,9 @@ def get_db_url_str(conn_label):
     else:
         return None
 
+    if censor:
+        return censor_url_str(db_url_str)
+
     return db_url_str
 #______________________________________________________
 
@@ -1779,8 +1870,7 @@ def get_db_url_str_from_input(engine, host, port, database, user, password):
     if engine == "Oracle":
         db_url_str = f"oracle+oracledb://{user}:{password}@{host}:{port}/{database}"
     elif engine == "SQL Server":
-        # recommended driver for SQLAlchemy
-        db_url_str = f"mssql+pyodbc://{user}:{password}@{host}:{port}/{database}?driver=SQL+Server"
+        db_url_str = f"mssql+pyodbc://{user}:{password}@{host}:{port}/{database}?driver=SQL+Server"  # recommended driver for SQLAlchemy
     elif engine == "PostgreSQL":
         db_url_str = f"postgresql+psycopg://{user}:{password}@{host}:{port}/{database}"
     elif engine == "MySQL":
@@ -1882,16 +1972,22 @@ def make_connection_to_db(connection_label):
 
 #______________________________________________________
 # Funtion to make a connection to a database
-def check_connection_to_db(connection_label):
+def check_connection_to_db(connection_label, different_page=False):
 
     try:
         conn = utils.make_connection_to_db(connection_label)
         connection_ok_flag = True
     except:
-        st.markdown(f"""<div class="error-message">
-            ❌ The connection <b>{connection_label}</b> is not working.
-            <small>Please check it in the <b>Manage Connections</b> pannel.</small>
-        </div>""", unsafe_allow_html=True)
+        if not different_page:
+            st.markdown(f"""<div class="error-message">
+                ❌ The connection <b>{connection_label}</b> is not working.
+                <small>Please check it in the <b>Manage Connections</b> panel.</small>
+            </div>""", unsafe_allow_html=True)
+        else:
+            st.markdown(f"""<div class="error-message">
+                ❌ The connection <b>{connection_label}</b> is not working.
+                <small>Please check it in the <b>📊 Databases</b> page.</small>
+            </div>""", unsafe_allow_html=True)
         connection_ok_flag = False
         conn = None
 
@@ -1962,7 +2058,7 @@ def get_tables_from_db(connection_label):
     elif engine == "MongoDB":
         db = conn[database]    # conn is a MongoClient
         collections = db.list_collection_names()
-        # collections = [name for name in collections if not name.startswith("system.")]
+        collections = [name for name in collections if not name.startswith("system.")]
         return [(name,) for name in collections]
 
     else:
@@ -1995,7 +2091,7 @@ def get_df_from_db(connection_label, db_table):
 
 #______________________________________________________
 # Funtion to display limited dataframe
-def display_limited_df(df, title):
+def display_limited_df(df, title, display=True):
 
     table_len = f"{len(df)} rows" if len(df) != 1 else f"{len(df)} row"
     inner_html = f"""📅 <b style="color:#F63366;"> {title} <small>({table_len}):</small></b>
@@ -2021,9 +2117,14 @@ def display_limited_df(df, title):
         elif df.shape[1] > max_cols:
             inner_html += f"""<small>Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).</small>"""
 
+    limited_df = df.head(max_rows)
+
+    if not limited_df.empty:
         st.markdown(f"""<div class="info-message-blue">
                 {inner_html}
             </div>""", unsafe_allow_html=True)
+        if display:
+            st.dataframe(limited_df, hide_index=True)
 
     return limited_df.head(max_rows)
 #______________________________________________________
@@ -2057,7 +2158,7 @@ def run_query(connection_label, query_or_collection):
         error =  str(e)
 
     return df, view_ok_flag, error
-#_________________________________________________
+#______________________________________________________
 
 #______________________________________________________
 #Function to display view results
@@ -2077,9 +2178,12 @@ def display_db_view_results(view):
                 <i><b>Full error:</b> {error}</i></small>
             </div>""", unsafe_allow_html=True)
         else:
-            limited_df = display_limited_df(df, "Results")
-            st.dataframe(limited_df, hide_index=True)
-#_________________________________________________
+            display_limited_df(df, "Results")
+
+        return view_ok_flag
+
+    return False
+#______________________________________________________
 
 #______________________________________________________
 #Function to display view results
@@ -2095,18 +2199,12 @@ def remove_view_from_db(view):
             database = st.session_state["db_connections_dict"][connection_label][3]
             db = conn[database]    # conn is a MongoClient
             db.drop_collection(view)
-#_________________________________________________
+#______________________________________________________
 
 
-#RFBOOKMARK
-#________________________________________________________
-# Funtion to get the name of the folder to save large files
-def get_ds_folder_name():
-
-        return "data_sources"
-#________________________________________________________
-
-#________________________________________________________
+# PAGE: 🏗️ BUILD MAPPING========================================================
+# PANEL: ADD TRIPLESMAP---------------------------------------------------------
+#______________________________________________________
 # Funtion to get the dictionary of the TriplesMaps
 #{tm_label: tm}
 def get_tm_dict():
@@ -2123,34 +2221,224 @@ def get_tm_dict():
 
     else:
         return {}
-#________________________________________________________
+#______________________________________________________
 
-#_________________________________________________
-# Funtion to get the logical soruce of a TriplesMap
-def get_ls(tm_label):
+#______________________________________________________
+# Funtion to get the all info of a TriplesMap
+# 0. TriplesMap iri     1. Logical Source iri        2. Data Source
+def get_tm_info(tm_label):
+
     tm_dict = get_tm_dict()
     tm_iri = tm_dict[tm_label]
-    ls = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RML.logicalSource)
-    if isinstance(ls, URIRef):
-        try:
-            ls_label = split_uri(ls)[1]
-        except:
-            ls_label = ls
-    elif isinstance(ls, BNode):
-        ls_label = "_:" + str(ls)[:7] + "..."
-    return ls_label
-#_________________________________________________
+    ls_iri = next(st.session_state["g_mapping"].objects(tm_iri, RML.logicalSource), None)
+    ds = str(next(st.session_state["g_mapping"].objects(ls_iri, RML.source), None))
 
-#_________________________________________________
-# Funtion to get the logical source of a TriplesMap
-def get_ds(tm_label):
-    tm_dict = get_tm_dict()
-    tm_iri = tm_dict[tm_label]
-    ls = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RML.logicalSource)
-    ds = st.session_state["g_mapping"].value(subject=ls, predicate=RML.source)
-    return ds
-#_________________________________________________
+    # Return info
+    return tm_iri, ls_iri, ds
+#______________________________________________________
 
+#______________________________________________________
+# Funtion to get the all info of a TriplesMap
+# 0. Logical Source     1. Data Source        2. Table/View
+def get_tm_info_for_display(tm_label):
+
+    # TriplesMap and Logical Source
+    tm_iri, ls_iri, ds_raw = get_tm_info(tm_label)
+    ls_label = get_node_label(ls_iri)
+
+    # Data Source (look for label if connection is saved, else give censored url_str)
+    saved_conn_flag = False
+    for conn_label in st.session_state["db_connections_dict"]:
+        if str(get_db_url_str(conn_label)) == str(ds_raw):
+            ds = conn_label
+            saved_conn_flag = True
+            break
+
+    if not saved_conn_flag:
+        ds = censor_url_str(ds_raw)
+
+    # View or table
+    max_length = get_max_length_for_display()[10]
+    query = st.session_state["g_mapping"].value(subject=ls_iri, predicate=RML.query)
+    if query:
+        query = query[:max_length] + "..." if len(query) > max_length else query
+    table_name = st.session_state["g_mapping"].value(subject=ls_iri, predicate=RML.tableName)
+    source_def = query or table_name or "---"
+
+    # Return info
+    return ls_label, ds, source_def
+#______________________________________________________
+
+#______________________________________________________
+# Get content from table
+def get_db_table_df(conn_label, table):
+
+    conn = utils.make_connection_to_db(conn_label)
+    engine = st.session_state["db_connections_dict"][conn_label][0]
+    database = st.session_state["db_connections_dict"][conn_label][3]
+
+    # SQL databases
+    if engine != "MongoDB":
+        result = conn.execute(text(f"SELECT * FROM {table}"))
+        rows = result.fetchall()
+        columns = result.keys()
+        df = pd.DataFrame(rows, columns=columns)
+
+    # MongoDB
+    else:
+        db = conn[database]
+        collection = db[table]
+        docs = list(collection.find())
+        df = pd.DataFrame(docs) if docs else pd.DataFrame()
+
+    return df
+#______________________________________________________
+
+# PANEL: ADD SUBJECT MAP--------------------------------------------------------
+
+#______________________________________________________
+# Funtion to read tabular data
+def read_tab_file(filename):
+
+    file = st.session_state["ds_files_dict"][filename]
+    file_format = filename.split(".")[-1]
+
+    if file_format == "csv":
+        read_content = pd.read_csv(file)
+
+    elif file_format == "tsv":
+        read_content = pd.read_csv(file, sep="\t")
+
+    elif file_format in ["xls", "xlsx", "ods"]:
+        read_content = pd.read_excel(file)
+
+    elif file_format == "parquet":
+        read_content = pd.read_parquet(file)
+
+    elif file_format == "feather":
+        read_content = pd.read_feather(file)
+
+    elif file_format == "orc":
+        import pyarrow.orc as orc
+        orc_file = orc.ORCFile(file)
+        read_content = orc_file.read().to_pandas()
+
+    elif file_format == "dta":
+        read_content, _ = pyreadstat.read_dta(file)
+
+    elif file_format == "sas7bdat":
+        read_content, _ = pyreadstat.read_sas7bdat(file)
+
+    elif file_format == "sav":
+        read_content, _ = pyreadstat.read_sav(file)
+
+    else:
+        read_content = ""   # should not occur
+
+    file.seek(0)
+
+    return read_content
+#______________________________________________________
+
+#______________________________________________________
+# Function get the column list of the data source of a tm
+# It also gives warning and info messages
+def get_column_list_and_give_info(tm_label):
+
+    # Get required info
+    tm_iri, ls_iri, ds = get_tm_info(tm_label)
+    reference_formulation = next(st.session_state["g_mapping"].objects(ls_iri, QL.referenceFormulation), None)
+    view_as_ds = next(st.session_state["g_mapping"].objects(ls_iri, RML.query), None)
+    table_name_as_ds = next(st.session_state["g_mapping"].objects(ls_iri, RML.tableName), None)
+
+    # Initialise variables
+    inner_html = ""
+    column_list = []
+
+    # Check whether the data source is a saved database
+    selected_conn_label = ""
+    for conn_label in st.session_state["db_connections_dict"]:
+        url_str = get_db_url_str(conn_label)
+        if str(ds) == str(url_str):
+            selected_conn_label = conn_label
+
+    # Saved tabular data sources
+    if ds in st.session_state["ds_files_dict"]:
+        df = read_tab_file(ds)
+        column_list = df.columns.tolist()
+        ds_for_display = f"""🛢️ <b>{ds}</b>"""
+
+    # Saved database
+    elif selected_conn_label:
+        engine = st.session_state["db_connections_dict"][selected_conn_label][0]
+        database = st.session_state["db_connections_dict"][selected_conn_label][3]
+        ds_for_display = f"""📊 <b>{selected_conn_label}</b>"""
+
+
+        if view_as_ds or table_name_as_ds:
+            try:
+                conn = utils.make_connection_to_db(selected_conn_label)
+                if view_as_ds:
+                    result = conn.execute(text(view_as_ds))
+                elif table_name_as_ds:
+                    if engine != "MongoDB":       # SQL databases
+                        result = conn.execute(text(f"SELECT * FROM {table_name_as_ds} LIMIT 0"))
+                    else:          # MongoDB case
+                        db = conn[database]
+                        collection = db[table_name_as_ds]
+                        result = collection.find_one()
+                column_list = list(result.keys())
+                if not column_list:
+                    inner_html = f"""⚠️ <b>No references found</b>.
+                    <small>Check data source in the <b>📊 Databases</b> page.
+                    <b>Manual reference entry is discouraged.</b></small>"""
+
+            except Exception as e:
+                inner_html = f"""⚠️ Connection to database <b>{selected_conn_label}</b> failed
+                    <small>(check it in the <b>📊 Databases</b> page).
+                    Manual reference entry is discouraged.</small>"""
+
+        else:
+            inner_html = f"""⚠️ <b>Column detection not possible:</b>
+                Missing <code>RML.query</code> or <code>RML.tableName</code> in mapping.
+                <small>Manual reference entry is discouraged.</small>"""
+
+    # Data source is a view but connection is not saved (try to find the columns in the view)
+    elif view_as_ds:
+        parsed = sqlglot.parse_one(view_as_ds)
+        column_list = [str(col) for col in parsed.find_all(sqlglot.expressions.Column)]
+
+        if column_list:
+            inner_html = f"""⚠️ <b>Database connection not established</b>.
+                <small>Columns have been inferred from the view.
+                Connecting to the database through the <b>📊 Databases</b> page is still recommended.</small>"""
+        else:
+            inner_html = f"""⚠️ <b>Database connection not established</b>.
+                <small>Go to the <b>📊 Databases</b> page to connect and enable column detection.
+                Manual reference entry is discouraged.</small>"""
+        ds_for_display = ""
+
+    else:                                                           # data source not saved
+        if reference_formulation == QL.SQL:
+            inner_html = f"""⚠️ <b>{ds}</b> is unavailable.
+                <small>Connect via <b>📊 SQL Databases</b> page to enable column detection.
+                <b>Manual reference entry is discouraged.</b></small>"""
+
+        else:
+            inner_html = f"""⚠️ <b>{ds}</b> is unavailable.
+                <small>Load it via <b>📊 SQL Databases</b> page to enable column detection.
+                <b>Manual reference entry is discouraged.</b></small>"""
+        ds_for_display = ""
+
+    return [column_list, inner_html, ds_for_display]
+#______________________________________________________
+
+
+
+
+
+
+#RFBOOKMARK
 #_________________________________________________________________________________
 # Function to completely remove a triplesmap
 # Remove primary and secondary triples, but dont remove any triples that are used by another triplesmap
@@ -2183,127 +2471,6 @@ def remove_triplesmap(tm_label):
 
     g.remove((tm_iri, None, None))   # remove tm triple
 #______________________________________________________
-
-#______________________________________________________
-# Function get the column list of the data source of a tm
-# It also gives warning and info messages
-def get_column_list_and_give_info(tm_iri):
-
-    ls_iri = next(st.session_state["g_mapping"].objects(tm_iri, RML.logicalSource), None)
-    ds = str(next(st.session_state["g_mapping"].objects(ls_iri, RML.source), None))
-    reference_formulation = next(st.session_state["g_mapping"].objects(ls_iri, QL.referenceFormulation), None)
-    query_as_ds = next(st.session_state["g_mapping"].objects(ls_iri, RML.query), None)
-    table_name_as_ds = next(st.session_state["g_mapping"].objects(ls_iri, RML.tableName), None)
-
-    inner_html = ""
-    column_list_ok_flag = False
-
-    jdbc_dict = {}
-    for conn in st.session_state["db_connections_dict"]:
-        jdbc_str = get_jdbc_str(conn)
-        jdbc_dict[conn] = jdbc_str
-
-    if ds in st.session_state["ds_files_dict"]:   # saved non-sql data source
-
-        df = utils.read_tab_file(ds)
-        column_list = df.columns.tolist()
-
-        inner_html = f"""🛢️ The data source is <b>{ds}</b>."""
-        column_list_ok_flag = True
-
-    elif ds in jdbc_dict.values():        # saved sql data source
-
-        for i_conn, i_jdbc_str in jdbc_dict.items():
-            if  i_jdbc_str == ds:
-                [engine, host, port, i_database, user, password] = st.session_state["db_connections_dict"][conn]
-                conn_label = i_conn
-                jdbc_str = i_jdbc_str
-                database = i_database
-                break
-
-
-        if query_as_ds:
-            try:
-                conn = utils.make_connection_to_db(conn_label)
-                cur = conn.cursor()
-                cur.execute(query_as_ds)
-                column_list = [description[0] for description in cur.description]
-                conn.close() # optional: close immediately or keep open for queries
-                if not column_list:
-                    inner_html = f"""⚠️ <b>No columns found</b> in logical source query.
-                    <small>Go to <b>📊 SQL Databases</b> page to fix it.
-                    <b>Manual reference entry is discouraged.</b></small>"""
-
-                else:
-                    inner_html = f"""📊 The data source is the database <b style="color:#F63366;">{database}</b>.<br>
-                        <small>🔌 {conn_label} → <b>{jdbc_str}</b></small>"""
-                    column_list_ok_flag = True
-
-            except:
-                inner_html = f"""⚠️ Connection to database <b>{database}</b> failed.
-                    <small>Check <b>📊 SQL Databases</b> page to fix it.
-                    <b>Manual reference entry is discouraged.</b></small>"""
-                column_list = []
-
-        elif table_name_as_ds:
-            try:
-                conn = utils.make_connection_to_db(conn_label)
-                cur = conn.cursor()
-
-                cur.execute(f"SELECT * FROM {table_name_as_ds} LIMIT 0")
-                column_list = [desc[0] for desc in cur.description]
-
-                conn.close()
-
-                if not column_list:
-                    inner_html = f"""⚠️ <b>{table_name_as_ds}</b> has no columns.
-                        <small>Check <b>📊 SQL Databases</b> page to fix it.
-                        <b>Manual reference entry is discouraged.</b></small>"""
-
-                else:
-                    inner_html = f"""📊 The data source is the database <b style="color:#F63366;">{database}</b>.<br>
-                             <small>🔌 {conn_label} → <b>{jdbc_str}</b></small>"""
-                    column_list_ok_flag = True
-
-            except:
-                inner_html = f"""⚠️ <b>Connection failed</b> for table <b>{table_name_as_ds}</b>.
-                    <small>Check it in <b>📊 SQL Databases</b> page to enable column detection.
-                    <b>Manual reference entry is discouraged.</b></small>"""
-                column_list = []
-
-        else:
-            inner_html = f"""⚠️ Missing <code>RML.query</code> or <code>RML.tableName</code>.
-                <small>Check the <b>Logical Source</b> to enable column detection.
-                <b>Manual reference entry is discouraged.</b></small>"""
-            column_list = []
-
-    elif query_as_ds:    # try to look for the columns in the query
-        parsed = sqlglot.parse_one(query_as_ds)
-        column_list = [str(col) for col in parsed.find_all(sqlglot.expressions.Column)]
-
-        if column_list:
-            inner_html = f"""⚠️ <b>{ds}</b> is unavailable. Columns were inferred from the logical source query.
-                <small><b>Connecting to the database</b> is still recommended.</small>"""
-        else:
-            inner_html = f"""⚠️ <b>{ds}</b> is unavailable.
-                <small>Load it via <b>📊 SQL Databases</b> page to enable column detection.
-                <b>Manual reference entry is discouraged.</b></small>"""
-
-
-    else:                                                           # data source not saved
-        if reference_formulation == QL.SQL:
-            inner_html = f"""⚠️ <b>{ds}</b> is unavailable.
-                <small>Connect via <b>📊 SQL Databases</b> page to enable column detection.
-                <b>Manual reference entry is discouraged.</b></small>"""
-
-        else:
-            inner_html = f"""⚠️ <b>{ds}</b> is unavailable.
-                <small>Load it via <b>📊 SQL Databases</b> page to enable column detection.
-                <b>Manual reference entry is discouraged.</b></small>"""
-        column_list = []
-
-    return [column_list, column_list_ok_flag, inner_html]
-#________________________________________________________
 
 #______________________________________________________
 # Function get the column list of the data source of a tm
@@ -2472,8 +2639,8 @@ def get_datatype_dict():
     mapping_defined_datatype_list = list(st.session_state["g_mapping"].objects(None, RML.datatype))
 
     for dt in mapping_defined_datatype_list:
-        if not format_iri_to_prefix_label(dt) in datatype_dict:
-            datatype_dict[utils.format_iri_to_prefix_label(dt)] = dt
+        if not get_node_label(dt) in datatype_dict:
+            datatype_dict[utils.get_node_label(dt)] = dt
 
     return datatype_dict
 #______________________________________________
@@ -2566,50 +2733,6 @@ def get_pom_dict():
 
     return pom_dict
 #___________________________________________
-
-#_________________________________________________
-# Funtion to read tabular data
-def read_tab_file(filename):
-
-    file = st.session_state["ds_files_dict"][filename]
-    file_format = filename.split(".")[-1]
-
-    if file_format == "csv":
-        read_content = pd.read_csv(file)
-
-    elif file_format == "tsv":
-        read_content = pd.read_csv(file, sep="\t")
-
-    elif file_format in ["xls", "xlsx", "ods"]:
-        read_content = pd.read_excel(file)
-
-    elif file_format == "parquet":
-        read_content = pd.read_parquet(file)
-
-    elif file_format == "feather":
-        read_content = pd.read_feather(file)
-
-    elif file_format == "orc":
-        import pyarrow.orc as orc
-        orc_file = orc.ORCFile(file)
-        read_content = orc_file.read().to_pandas()
-
-    elif file_format == "dta":
-        read_content, _ = pyreadstat.read_dta(file)
-
-    elif file_format == "sas7bdat":
-        read_content, _ = pyreadstat.read_sas7bdat(file)
-
-    elif file_format == "sav":
-        read_content, _ = pyreadstat.read_sav(file)
-
-    else:
-        read_content = ""   # should not occur
-
-    file.seek(0)
-
-    return read_content
-#_________________________________________________
 
 #_________________________________________________
 # Funtion to read tabular data
@@ -2800,7 +2923,7 @@ def is_valid_url_mapping(mapping_url, show_info):
                 if show_info:
                     st.markdown(f"""<div class="error-message">
                             ❌ Link working, but <b>no RML structure found</b>.
-                            <small>Please, check your mapping content.</small>
+                            <small>Please check your mapping content.</small>
                         </div>""", unsafe_allow_html=True)
                 mapping_url_ok_flag = False
 
@@ -2813,7 +2936,7 @@ def is_valid_url_mapping(mapping_url, show_info):
                 if show_info:
                     st.markdown(f"""<div class="error-message">
                             ❌ Link working, but <b>no YARRRML structure found</b>.
-                            <small>Please, check your mapping content.</small>
+                            <small>Please check your mapping content.</small>
                         </div>""", unsafe_allow_html=True)
                 mapping_url_ok_flag = False
 
@@ -2854,7 +2977,7 @@ def preview_rule(s_for_display, p_for_display, o_for_display, is_reference=False
     formatted_p = p_for_display
     formatted_o = f"{{{o_for_display}}}" if is_reference else o_for_display
 
-    formatted_o = f"""{formatted_o}^^{format_iri_to_prefix_label(datatype)}""" if datatype else formatted_o
+    formatted_o = f"""{formatted_o}^^{get_node_label(datatype)}""" if datatype else formatted_o
     formatted_o = f"""{formatted_o}@{language_tag}""" if language_tag else formatted_o
 
     formatted_s = f"""<small>{formatted_s}</small>""" if len(formatted_s) > max_length else formatted_s
@@ -2930,7 +3053,7 @@ def preview_rule_list(s_for_display, p_for_display, o_for_display):
     else:
         formatted_o = o_for_display
 
-    formatted_o = formatted_o + f"^^{utils.format_iri_to_prefix_label(datatype)}" if datatype else formatted_o
+    formatted_o = formatted_o + f"^^{utils.get_node_label(datatype)}" if datatype else formatted_o
     formatted_o = f"{formatted_o}@{language_tag}" if language_tag else formatted_o
 
     formatted_s = f"""<small>{formatted_s}</small>""" if len(formatted_s) > max_length else formatted_s
@@ -3031,11 +3154,11 @@ def get_rules_for_sm(sm_iri):
             if om_for_display:
                 break
 
-        sm_for_display = format_iri_to_prefix_label(sm_for_display)
-        p_for_display = format_iri_to_prefix_label(p_for_display)
-        om_for_display = format_iri_to_prefix_label(om_for_display)
+        sm_for_display = get_node_label(sm_for_display)
+        p_for_display = get_node_label(p_for_display)
+        om_for_display = get_node_label(om_for_display)
 
-        sm_rules_list.append([sm_for_display, p_for_display, om_for_display, format_iri_to_prefix_label(tm)])
+        sm_rules_list.append([sm_for_display, p_for_display, om_for_display, get_node_label(tm)])
 
     return sm_rules_list
 #_________________________________________________
@@ -3446,7 +3569,7 @@ def get_ontology_properties_dict(g_ont):
                 if s not in p_exclusion_list:
                     p_set.add(s)
 
-    ontology_p_dict = {format_iri_to_prefix_label(p):p for p in p_set}
+    ontology_p_dict = {get_node_label(p):p for p in p_set}
 
     return ontology_p_dict
 #______________________________________________
@@ -3835,7 +3958,7 @@ def get_graph_map_dict():
     graph_map_list = list(st.session_state["g_mapping"].objects(None, RML.graphMap))
 
     for gm in graph_map_list:
-        graph_map_dict[format_iri_to_prefix_label(gm)] = gm
+        graph_map_dict[get_node_label(gm)] = gm
 
     return graph_map_dict
 #___________________________________________

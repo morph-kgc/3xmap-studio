@@ -650,9 +650,6 @@ with tab1:
 with tab2:
     col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
 
-    with col2b:
-        utils.get_corner_status_message(mapping_info=True)
-
     if not st.session_state["g_label"]:
         with col1:
             col1a, col1b = st.columns([2,1])
@@ -666,31 +663,17 @@ with tab2:
         used_mapping_ns_dict = utils.get_used_g_ns_dict(st.session_state["g_mapping"])
 
         with col2b:
-            last_added_ns_df = pd.DataFrame({
-                "Prefix": st.session_state["last_added_ns_list"],
-                "Namespace": [mapping_ns_dict.get(prefix, "") for prefix in st.session_state["last_added_ns_list"]]})
-            last_last_added_ns_df = last_added_ns_df.head(utils.get_max_length_for_display()[1])
-
-            if st.session_state["last_added_ns_list"]:
-                st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
-                        🔎 last added namespaces
-                    </div>""", unsafe_allow_html=True)
-                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                        (complete list below)
-                    </div>""", unsafe_allow_html=True)
-                st.dataframe(last_last_added_ns_df, hide_index=True)
-                st.write("")
-
-            mapping_ns_df = pd.DataFrame(list(mapping_ns_dict.items()), columns=["Prefix", "Namespace"]).iloc[::-1]
-            used_mapping_ns_df = pd.DataFrame(list(used_mapping_ns_dict.items()), columns=["Prefix", "Namespace"]).iloc[::-1]
+            utils.display_right_column_df("namespaces", st.session_state["last_added_ns_list"], "last added namespaces", complete=False)
 
             # Option to show used bound namespaces
             with st.expander("🔎 Show used namespaces"):
+                used_mapping_ns_df = pd.DataFrame(list(used_mapping_ns_dict.items()), columns=["Prefix", "Namespace"]).iloc[::-1]
                 st.write("")
                 st.dataframe(used_mapping_ns_df, hide_index=True)
 
             # Option to show bound namespaces
             with st.expander("🔎 Show all namespaces"):
+                mapping_ns_df = pd.DataFrame(list(mapping_ns_dict.items()), columns=["Prefix", "Namespace"]).iloc[::-1]
                 st.write("")
                 st.dataframe(mapping_ns_df, hide_index=True)
 
