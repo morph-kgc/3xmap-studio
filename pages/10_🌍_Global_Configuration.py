@@ -1046,7 +1046,7 @@ with tab2:
                             st.button("Set to default", key="key_base_ns_set_to_default_button", on_click=change_base_ns)
 
 
-        # UNBIND NS SUCCESS MESSAGE---------------------------------------------
+        # SUCCESS MESSAGE: UNBIND NS--------------------------------------------
         # Only shows here when no "Unbind Namespace" purple heading
         mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
         default_ns_dict = utils.get_default_ns_dict()

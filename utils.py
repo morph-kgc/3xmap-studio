@@ -709,7 +709,11 @@ def display_right_column_df(info, session_state_dict, text, complete=True):
     if info == "namespaces":
         mapping_ns_dict = get_g_ns_dict(st.session_state["g_mapping"])
         rows = [{"Prefix": prefix, "Namespace": mapping_ns_dict.get(prefix, "")}
-            for prefix in st.session_state["last_added_ns_list"]]
+            for prefix in reversed(list(st.session_state["last_added_ns_list"]))]
+
+    elif info == "custom_terms":
+        rows = [{"Term": get_node_label(term_iri), "Type": st.session_state["custom_term_dict"][term_iri]}
+            for term_iri in reversed(list(st.session_state["custom_term_dict"]))]
 
     elif info == "db_connections":
         rows = [{"Label": label, "Engine": st.session_state["db_connections_dict"][label][0],
@@ -885,6 +889,10 @@ def init_session_state_variables():
         st.session_state["g_ontology_components_tag_dict"] = {}
         st.session_state["g_ontology_loaded_ok_flag"] = False
         st.session_state["g_ontology_reduced_ok_flag"] = False
+        # TAB4
+        st.session_state["custom_terms_dict"] = {}
+        st.session_state["custom_term_saved_ok_flag"] = False
+        st.session_state["custom_terms_removed_ok_flag"] = False
 
         # 📊 SQL DATABASES____________________________________
         # TAB1
@@ -1500,6 +1508,7 @@ def save_session_state():
     project_state_list.append(st.session_state["g_mapping_source_cache"])
     project_state_list.append(st.session_state["original_g_size_cache"])
     project_state_list.append(st.session_state["original_g_mapping_ns_dict"])
+    project_state_list.append(st.session_state["custom_terms_dict"])
 
     return project_state_list
 #______________________________________________________
@@ -1521,6 +1530,7 @@ def retrieve_session_state(project_state_list):
     st.session_state["g_mapping_source_cache"] = project_state_list[10]
     st.session_state["original_g_size_cache"] = project_state_list[11]
     st.session_state["original_g_mapping_ns_dict"] = project_state_list[12]
+    st.session_state["custom_terms_dict"] = project_state_list[13]
 
     for conn in st.session_state["db_connection_status_dict"]:
         update_db_connection_status_dict(conn)
