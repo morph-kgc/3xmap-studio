@@ -712,8 +712,8 @@ def display_right_column_df(info, session_state_dict, text, complete=True):
             for prefix in reversed(list(st.session_state["last_added_ns_list"]))]
 
     elif info == "custom_terms":
-        rows = [{"Term": get_node_label(term_iri), "Type": st.session_state["custom_term_dict"][term_iri]}
-            for term_iri in reversed(list(st.session_state["custom_term_dict"]))]
+        rows = [{"Term": get_node_label(term_iri), "Type": st.session_state["custom_terms_dict"][term_iri]}
+            for term_iri in reversed(list(st.session_state["custom_terms_dict"]))]
 
     elif info == "db_connections":
         rows = [{"Label": label, "Engine": st.session_state["db_connections_dict"][label][0],

@@ -1093,32 +1093,35 @@ with tab2:
                         if not isinstance(s, BNode):
                             ontology_classes_dict[utils.get_node_label(s)] = s
 
-                    if ontology_classes_dict:   # if the ontology includes at least one class
-                        list_to_choose = ["No class", "🧩 Ontology class", "🚫 Class outside ontology", "🔢 Multiple classes"]
-                    else:
-                        list_to_choose = ["No class", "🚫 Class outside ontology", "🔢 Multiple classes"]
+    # RFBOOKMARK
+                    custom_classes_dict = {}          # dictionary for custom classes
+                    for k, v in st.session_state["custom_terms_dict"].items():
+                        if v == "🏷️ Class":
+                            custom_classes_dict[k] = utils.get_node_label(k)
 
-                    add_subject_class_option = st.selectbox("🏷️ Subject class (optional):",
-                        list_to_choose, key="key_add_subject_class_option")
+                    ontology_filter_list = sorted(st.session_state["g_ontology_components_tag_dict"].values())
+                    if custom_classes_dict:
+                        ontology_filter_list.insert(0, "Custom classes")
 
-                    # Ontology class
-                    if add_subject_class_option == "🧩 Ontology class":
+                    if len(ontology_filter_list) > 1:
+                        list_to_choose = ontology_filter_list
+                        list_to_choose.insert(0, "No filter")
+                        ontology_filter_for_subject_class = st.selectbox("📡 Filter by ontology (optional):",
+                            list_to_choose, key="key_ontology_filter_for_subject_class")
 
-                        if len(st.session_state["g_ontology_components_dict"]) > 1:
-                            list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
-                            list_to_choose.insert(0, "No filter")
-                            ontology_filter_for_subject_class = st.selectbox("📡 Filter by ontology (optional):",
-                                list_to_choose, key="key_ontology_filter_for_subject_class")
-
-                            if ontology_filter_for_subject_class == "No filter":
-                                ontology_filter_for_subject_class = st.session_state["g_ontology"]
-                            else:
-                                for ont_label, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
-                                    if ont_tag == ontology_filter_for_subject_class:
-                                        ontology_filter_for_subject_class = st.session_state["g_ontology_components_dict"][ont_label]
-                                        break
-                        else:
+                        if ontology_filter_for_subject_class == "No filter":
                             ontology_filter_for_subject_class = st.session_state["g_ontology"]
+                        if ontology_filter_for_subject_class == "Custom classes":
+                            ontology_filter_for_subject_class = "Custom classes"
+                        else:
+                            for ont_label, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
+                                if ont_tag == ontology_filter_for_subject_class:
+                                    ontology_filter_for_subject_class = st.session_state["g_ontology_components_dict"][ont_label]
+                                    break
+                    else:
+                        ontology_filter_for_subject_class = st.session_state["g_ontology"]
+
+                    if ontology_filter_for_subject_class != "Custom classes":
 
                         ontology_classes_dict = {}   # class dictionary filtered by ontology
                         class_triples = set()
@@ -1157,7 +1160,6 @@ with tab2:
 
                         else:     #no superclasses exist (no superclass filter)
                             class_list = sorted(ontology_classes_dict.keys())
-                            class_list.insert(0, "Select class")
                             subject_class = st.selectbox("🖱️ Select class:*", class_list,
                                 key="key_subject_class")   #class label
 
@@ -1167,147 +1169,11 @@ with tab2:
                         else:
                             subject_class_iri = ""
 
-                    # Class outside ontology
-                    if add_subject_class_option == "🚫 Class outside ontology":
-
-                        mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
-
-                        subject_class_prefix_list = list(mapping_ns_dict.keys())
-                        list_to_choose = sorted(mapping_ns_dict.keys())
-                        list_to_choose.insert(0,"Select namespace")
-                        subject_class_prefix = st.selectbox("🖱️ Select namespace:", list_to_choose,
-                            key="key_subject_class_prefix")
-
-                        ns_needed_for_sm_flag = True
-                        if subject_class_prefix != "Select namespace":
-                            NS = Namespace(mapping_ns_dict[subject_class_prefix])
-                        subject_class_input = st.text_input("⌨️ Enter subject class:*", key="key_subject_class_input")
-
-                        if subject_class_input and subject_class_prefix != "Select namespace":
-                            subject_class_iri = NS[subject_class_input]
-                            st.session_state["multiple_subject_class_list"] = [subject_class_iri]
-                        else:
-                            subject_class_iri = ""
-
-                    # Multiple subject classes
-                    if add_subject_class_option == "🔢 Multiple classes":
-
-                        if ontology_classes_dict:   # if the ontology includes at least one class
-                            list_to_choose = ["🧩 Ontology class", "🚫 Class outside ontology"]
-                            if st.session_state["multiple_subject_class_list"]:
-                                list_to_choose.insert(0, "✔️ Ready")
-                                list_to_choose.append("🗑️ Remove class")
-                            add_class_option = st.selectbox("🖱️ Select an option:*", list_to_choose,
-                                key="key_add_multiple_subject_class_option")
-
-                        else:
-                            add_class_option == "🚫 Class outside ontology"
-
-                        if add_class_option == "🧩 Ontology class":
-
-                            if len(st.session_state["g_ontology_components_dict"]) > 1:
-                                list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
-                                list_to_choose.insert(0, "Select ontology")
-                                ontology_filter_for_subject_class = st.selectbox("⚙️ Filter by ontology (optional):",
-                                    list_to_choose, key="key_ontology_filter_for_subject_class")
-
-                                if ontology_filter_for_subject_class == "Select ontology":
-                                    ontology_filter_for_subject_class = st.session_state["g_ontology"]
-                                else:
-                                    for ont_label, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
-                                        if ont_tag == ontology_filter_for_subject_class:
-                                            ontology_filter_for_subject_class = st.session_state["g_ontology_components_dict"][ont_label]
-                                            break
-
-                            else:
-                                ontology_filter_for_subject_class = st.session_state["g_ontology"]
-
-                            ontology_classes_dict = {}
-                            class_triples = set()
-                            class_triples |= set(ontology_filter_for_subject_class.triples((None, RDF.type, OWL.Class)))   #collect owl:Class definitions
-                            class_triples |= set(ontology_filter_for_subject_class.triples((None, RDF.type, RDFS.Class)))    # collect rdfs:Class definitions
-                            for s, p, o in class_triples:   #we add to dictionary removing the BNodes
-                                if not isinstance(s, BNode):
-                                    ontology_classes_dict[utils.get_node_label(s)] = s
-
-                            superclass_dict = {}
-                            for s, p, o in list(set(ontology_filter_for_subject_class.triples((None, RDFS.subClassOf, None)))):
-                                if not isinstance(o, BNode) and o not in superclass_dict.values():
-                                    superclass_dict[utils.get_node_label(o)] = o
-
-                            if superclass_dict:   # there exists at least one superclass (show superclass filter)
-                                classes_in_superclass_dict = {}
-                                list_to_choose = sorted(superclass_dict.keys())
-                                list_to_choose.insert(0, "No filter")
-                                superclass = st.selectbox("⚙️ Filter by superclass (opt):", list_to_choose,
-                                    key="key_superclass")   #superclass label
-                                if superclass != "No filter":   # a superclass has been selected (filter)
-                                    classes_in_superclass_dict[superclass] = superclass_dict[superclass]
-                                    superclass = superclass_dict[superclass] #we get the superclass iri
-                                    for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, superclass)))):
-                                        classes_in_superclass_dict[utils.get_node_label(s)] = s
-                                    list_to_choose = sorted(classes_in_superclass_dict.keys())
-                                    list_to_choose.insert(0, "Select class")
-                                    subject_class = st.selectbox("🖱️ Select class:", list_to_choose,
-                                        key="key_subject_class")   #class label
-
-                                else:  #no superclass selected (list all classes)
-                                    list_to_choose = sorted(ontology_classes_dict.keys())
-                                    list_to_choose.insert(0, "Select class")
-                                    subject_class = st.selectbox("🖱️ Select Class:*", list_to_choose,
-                                        key="key_subject_class")   #class label
-
-                            else:     #no superclasses exist (no superclass filter)
-                                class_list = sorted(ontology_classes_dict.keys())
-                                class_list.insert(0, "Select class")
-                                subject_class = st.selectbox("🖱️ Select class:*", class_list,
-                                    key="key_subject_class")   #class label
-
-                            if subject_class != "Select class":
-                                subject_class_iri = ontology_classes_dict[subject_class] #we get the superclass iri
-                                st.button("Add", key="key_add_subject_class_button", on_click=add_subject_class)
-
-                        if add_class_option == "🚫 Class outside ontology":
-
-                            mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
-
-                            subject_class_prefix_list = list(mapping_ns_dict.keys())
-                            list_to_choose = sorted(mapping_ns_dict.keys())
-                            list_to_choose.insert(0,"Select namespace")
-                            subject_class_prefix = st.selectbox("🖱️ Select a namespace:*", list_to_choose,
-                                key="key_subject_class_prefix")
-
-                            ns_needed_for_sm_flag = True
-                            if subject_class_prefix != "Select namespace":
-                                NS = Namespace(mapping_ns_dict[subject_class_prefix])
-                            subject_class_input = st.text_input("⌨️ Enter subject class:*", key="key_subject_class_input")
-
-                            if subject_class_input and subject_class_prefix != "Select namespace":
-                                subject_class_iri = NS[subject_class_input]
-                                st.button("Add", key="key_add_subject_class_button", on_click=add_subject_class)
-
-                        if add_class_option == "🗑️ Remove class":
-                            list_to_choose = []
-                            for class_iri in st.session_state["multiple_subject_class_list"]:
-                                list_to_choose.append(split_uri(class_iri)[1])
-                            if len(list_to_choose) > 1:
-                                list_to_choose.insert(0, "Select all")
-                            subject_class_to_remove_list = st.multiselect("🖱️ Select classes:*", list_to_choose,
-                                key="key_subject_class_to_remove_list")
-                            if subject_class_to_remove_list:
-                                st.button("Remove", key="key_remove_multiple_subject_classes_button",
-                                    on_click=key_remove_multiple_subject_classes)
-
-                        if st.session_state["multiple_subject_class_list"]:
-                            list_for_display = []
-                            for class_iri in st.session_state["multiple_subject_class_list"]:
-                                list_for_display.append(split_uri(class_iri)[1])
-                            st.markdown(f"""
-                                <div class="gray-preview-message" style="word-wrap:break-word; overflow-wrap:anywhere;">
-                                    🏷️ <b style="color:#F63366;">Subject classes:</b><br>
-                                 <div style="margin-top:0.2em; margin-left:20px; font-size:15px;">
-                                        <small><b>{utils.format_list_for_display(list_for_display)}</b></small>
-                                </div></div>""", unsafe_allow_html=True)
+                    else:
+                        class_list = sorted(custom_classes_dict.keys())
+                        class_list.insert(0, "Select class")
+                        subject_class = st.selectbox("🖱️ Select class:*", class_list,
+                            key="key_subject_class")   #class label
 
                 # GRAPH MAP
                 with col1c:

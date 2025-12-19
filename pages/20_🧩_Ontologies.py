@@ -115,19 +115,34 @@ def reduce_ontology():
 
 # TAB4
 def add_custom_term():
-    # get info
+    # get info_____________________________________
     custom_term_type = st.session_state["custom_term_type"]
     term_iri = st.session_state["term_iri"]
     # store information___________________________
     if custom_term_type == "🏷️ Class":
-        st.session_state["custom_term_dict"][term_iri] =  "🏷️ Class"
+        st.session_state["custom_terms_dict"][term_iri] =  "🏷️ Class"
     else:
-        st.session_state["custom_term_dict"][term_iri] =  "🔗 Property"
+        st.session_state["custom_terms_dict"][term_iri] =  "🔗 Property"
     st.session_state["custom_term_saved_ok_flag"] = True
-    # reset fields
+    # reset fields____________________________________
     st.session_state["key_term_prefix"] = "Select namespace"
     st.session_state["key_term_input"] = ""
     st.session_state["key_custom_term_type"] = "🏷️ Class"
+
+def remove_custom_terms():
+    # get info__________________________________
+    keys_to_delete = []
+    for term_iri in st.session_state["custom_terms_dict"]:
+        for term_label in terms_to_remove_list:
+            if term_label == utils.get_node_label(term_iri):
+                keys_to_delete.append(term_iri)
+    # store information___________________________
+    for key in keys_to_delete:
+        del st.session_state["custom_terms_dict"][key]
+    st.session_state["custom_terms_removed_ok_flag"] = True
+    # reset fields____________________________________
+    st.session_state["key_terms_to_remove_list"] = []
+    st.session_state["filter_by_type"] = "🏷️ Class"
 
 
 #_______________________________________________________________________________
@@ -1016,7 +1031,7 @@ with tab4:
     col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
 
     with col2b:
-        utils.display_right_column_df("custom_terms", st.session_state["custom_term_dict"], "custom terms")
+        utils.display_right_column_df("custom_terms", st.session_state["custom_terms_dict"], "custom terms")
 
     # PURPLE HEADING: ADD CUSTOM TERMS------------------------------------------
     with col1:
@@ -1059,20 +1074,26 @@ with tab4:
 
     term_iri = ""
     if term_input and term_prefix != "Select namespace":
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            valid_input_flag = utils.is_valid_label(term_input, hard=True)
         NS = Namespace(mapping_ns_dict[term_prefix])
-        term_iri = NS[term_input]
+        term_iri = NS[term_input] if valid_input_flag else ""
     elif term_input and utils.is_valid_iri(term_input, delimiter_ending=False):
         term_iri = term_input
     elif term_input:
         term = "class" if custom_term_type == "🏷️ Class" else "property"
         with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
             st.markdown(f"""<div class="error-message">
                 ❌ <b> Invalid {term}. </b>
                 <small>If no namespace is selected, the <b>{term}</b> must be a <b>valid IRI</b></small>
             </div>""", unsafe_allow_html=True)
 
 
-    if term_iri and term_iri in st.session_state["custom_term_dict"]:
+    if term_iri and term_iri in st.session_state["custom_terms_dict"]:
         with col1:
             col1a, col1b = st.columns([2,1])
 
@@ -1080,7 +1101,7 @@ with tab4:
             term = "class" if custom_term_type == "🏷️ Class" else "property"
             opposite_term = "property" if custom_term_type == "🏷️ Class" else "class"
 
-            if st.session_state["custom_term_dict"][term_iri] == custom_term_type:
+            if st.session_state["custom_terms_dict"][term_iri] == custom_term_type:
                 st.markdown(f"""<div class="error-message">
                     ❌ <b> Custom {term} already exists.</b>
                 </div>""", unsafe_allow_html=True)
@@ -1100,16 +1121,13 @@ with tab4:
             col1a, col1b = st.columns([2,1])
 
         with col1a:
-            valid_input_flag = utils.is_valid_label(term_input, hard=True)
-
-            if valid_input_flag:
-                st.session_state["custom_term_type"] = custom_term_type
-                st.session_state["term_iri"] = term_iri
-                st.button("Save", key="key_add_custom_term_button", on_click=add_custom_term)
+            st.session_state["custom_term_type"] = custom_term_type
+            st.session_state["term_iri"] = term_iri
+            st.button("Save", key="key_add_custom_term_button", on_click=add_custom_term)
 
     # SUCCESS MESSAGE: REMOVE CUSTOM TERM---------------------------------------
     # Only shows here when no "Remove Custom Term" purple heading
-    if not st.session_state["custom_term_dict"]:
+    if not st.session_state["custom_terms_dict"]:
         if st.session_state["custom_terms_removed_ok_flag"]:
             with col1:
                 col1a, col1b = st.columns([2,1])
@@ -1124,10 +1142,9 @@ with tab4:
             st.rerun()
 
 
-    # RFBOOKMARK
     # PURPLE HEADING: REMOVE CUSTOM TERMS---------------------------------------
     # Only shows if there exist custom terms to be removed
-    if st.session_state["custom_term_dict"]:
+    if st.session_state["custom_terms_dict"]:
         with col1:
             st.write("_____")
             st.markdown("""<div class="purple-heading">
@@ -1153,8 +1170,8 @@ with tab4:
 
         class_list = []
         property_list = []
-        for term_iri in st.session_state["custom_term_dict"]:
-            if st.session_state["custom_term_dict"][term_iri] == "🏷️ Class":
+        for term_iri in st.session_state["custom_terms_dict"]:
+            if st.session_state["custom_terms_dict"][term_iri] == "🏷️ Class":
                 class_list.append(utils.get_node_label(term_iri))
             else:
                 property_list.append(utils.get_node_label(term_iri))
@@ -1163,17 +1180,41 @@ with tab4:
             list_to_choose = []
             if class_list:
                 list_to_choose.append("🏷️ Class")
-            if class_list:
+            if property_list:
                 list_to_choose.append("🔗 Property")
             st.write("")
+            if len(list_to_choose) == 1:
+                st.write("")
             filter_by_type = st.radio("📡 Filter by type:*", list_to_choose,
                 label_visibility="collapsed", key="key_filter_by_type")
 
         with col1a:
             list_to_choose = []
-            for term_iri in st.session_state["custom_term_dict"]:
-                if st.session_state["custom_term_dict"][term_iri] == filter_by_type:
+            for term_iri in st.session_state["custom_terms_dict"]:
+                if st.session_state["custom_terms_dict"][term_iri] == filter_by_type:
                     list_to_choose.append(utils.get_node_label(term_iri))
             list_to_choose = sorted(list_to_choose)
+            if len(list_to_choose) > 1:
+                list_to_choose.insert(0, "Select all")
             terms_to_remove_list = st.multiselect("🖱️ Select terms:*", list_to_choose,
                 key="key_terms_to_remove_list")
+
+            terms = "classes" if filter_by_type == "🏷️ Class" else "properties"
+            if "Select all" in terms_to_remove_list:
+                st.markdown(f"""<div class="warning-message">
+                    ⚠️ You are deleting <b>all custom {terms}</b>.
+                    <small>Make sure you want to go ahead.</small>
+                </div>""", unsafe_allow_html=True)
+                remove_custom_terms_checkbox = st.checkbox(
+                f"🔒 I am sure I want to remove all {terms}",
+                key="key_unbind_all_ns_button_checkbox")
+                terms_to_remove_list = class_list if filter_by_type == "🏷️ Class" else property_list
+
+            else:
+                remove_custom_terms_checkbox = st.checkbox(
+                f"🔒 I am sure I want to remove the selected {terms}",
+                key="key_unbind_all_ns_button_checkbox")
+
+            if terms_to_remove_list and remove_custom_terms_checkbox:
+                st.button("Remove", key="key_remove_custom_terms_button",
+                    on_click=remove_custom_terms)
