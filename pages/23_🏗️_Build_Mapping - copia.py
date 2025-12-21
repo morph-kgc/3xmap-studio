@@ -1129,23 +1129,23 @@ with tab2:
                     if ontology_filter_for_subject_class != "Custom classes":
 
                         ontology_classes_dict = utils.get_ontology_classes_dict(ontology_filter_for_subject_class)   # filtered class dictionary
-                        ontology_superclasses_dict = utils.get_ontology_classes_dict(ontology_filter_for_subject_class, superclass=True)
+                        superclass_dict =utils.get_ontology_classes_dict(ontology_filter_for_subject_class, superclass=True)
 
-                        if ontology_superclasses_dict:   # there exists at least one superclass (show superclass filter)
-                            classes_in_ontology_superclasses_dict = {}
-                            superclass_list = sorted(ontology_superclasses_dict.keys())
+                        if superclass_dict:   # there exists at least one superclass (show superclass filter)
+                            classes_in_superclass_dict = {}
+                            superclass_list = sorted(superclass_dict.keys())
                             superclass_list.insert(0, "No filter")
                             superclass = st.selectbox("📡 Filter by superclass (opt):", superclass_list,
-                                key="key_superclass")   # superclass label
+                                key="key_superclass")   #superclass label
 
                             if superclass != "No filter":   # a superclass has been selected (filter)
-                                classes_in_ontology_superclasses_dict[superclass] = ontology_superclasses_dict[superclass]
-                                superclass = ontology_superclasses_dict[superclass] #we get the superclass iri
+                                classes_in_superclass_dict[superclass] = superclass_dict[superclass]
+                                superclass = superclass_dict[superclass] #we get the superclass iri
                                 for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, superclass)))):
-                                    classes_in_ontology_superclasses_dict[utils.get_node_label(s)] = s
-                                class_list = sorted(classes_in_ontology_superclasses_dict.keys())
+                                    classes_in_superclass_dict[utils.get_node_label(s)] = s
+                                class_list = sorted(classes_in_superclass_dict.keys())
                                 subject_class_list = st.multiselect("🏷️️ Select class(es):", class_list,
-                                    key="key_subject_class")   # class list (labels)
+                                    key="key_subject_class")   #class label
 
                             else:  #no superclass selected (list all classes)
                                 if ontology_filter_for_subject_class == st.session_state["g_ontology"]:
@@ -1153,7 +1153,7 @@ with tab2:
                                 else:
                                     class_list = sorted(ontology_classes_dict.keys())
                                 subject_class_list = st.multiselect("🏷️️ Select class(es):", class_list,
-                                    key="key_subject_class")    # class list (labels)
+                                    key="key_subject_class")   #class label
 
                         else:     #no superclasses exist (no superclass filter)
                             if ontology_filter_for_subject_class == st.session_state["g_ontology"]:
@@ -1161,13 +1161,13 @@ with tab2:
                             else:
                                 class_list = sorted(ontology_classes_dict.keys())
                             subject_class_list = st.multiselect("🏷️ Select class(es):", class_list,
-                                key="key_subject_class")    # class list (labels)
+                                key="key_subject_class")   #class label
 
                     elif ontology_filter_for_subject_class == "Custom classes":
                         class_list = sorted(custom_classes_dict.keys())
                         class_list.insert(0, "Select class")
                         subject_class_list = st.multiselect("🏷️ Select class(es):", class_list,
-                            key="key_subject_class")    # class list (labels)
+                            key="key_subject_class")   #class label
 
                 # GRAPH MAP
                 with col1c:
@@ -1425,77 +1425,6 @@ with tab3:
                 <div style="font-size:13px; font-weight:500; margin-top:10px; margin-bottom:6px; border-top:0.5px solid #ccc; padding-bottom:4px;">
                     <b>🅿️ Predicate</b><br>
                 </div>""", unsafe_allow_html=True)
-
-            ontology_properties_dict = utils.get_ontology_classes_dict(st.session_state["g_ontology"])
-            custom_properties_dict =  utils.get_ontology_properties_dict("custom")
-
-            ontology_filter_list = sorted(st.session_state["g_ontology_components_tag_dict"].values())
-            if custom_properties_dict:
-                ontology_filter_list.insert(0, "Custom properties")
-
-            # Filter by ontology
-            if len(ontology_filter_list) > 1:
-                list_to_choose = ontology_filter_list
-                list_to_choose.insert(0, "No filter")
-                ontology_filter_for_predicate = st.selectbox("📡 Filter class by ontology (opt):",
-                    list_to_choose, key="key_ontology_filter_for_predicate")
-
-                if ontology_filter_for_predicate == "No filter":
-                    ontology_filter_for_predicate = st.session_state["g_ontology"]
-                if ontology_filter_for_predicate == "Custom classes":
-                    ontology_filter_for_predicate = "Custom classes"
-                else:
-                    for ont_label, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
-                        if ont_tag == ontology_filter_for_predicate:
-                            ontology_filter_for_predicate = st.session_state["g_ontology_components_dict"][ont_label]
-                            break
-            else:
-                ontology_filter_for_predicate = st.session_state["g_ontology"]
-
-            if ontology_filter_for_predicate != "Custom properties":
-
-                ontology_properties_dict = utils.get_ontology_properties_dict(ontology_filter_for_predicate)   # filtered property dictionary
-                ontology_superproperties_dict = utils.get_ontology_properties_dict(ontology_filter_for_predicate, superproperty=True)
-
-                if ontology_superproperties_dict:   # there exists at least one superproperty (show superproperty filter)
-                    properties_in_ontology_superproperties_dict = {}
-                    superproperties_list = sorted(ontology_superproperties_dict.keys())
-                    superproperties_list.insert(0, "No filter")
-                    superproperty = st.selectbox("📡 Filter by superproperty (opt):", superproperties_list,
-                        key="key_superproperty")   # superproperty label
-
-                    if superproperty != "No filter":   # a superproperty has been selected (filter)
-                        properties_in_ontology_superproperties_dict[superproperty] = ontology_superproperties_dict[superproperty]
-                        superproperty = ontology_superproperties_dict[superproperty] #we get the superproperty iri
-                        for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subPropertyOf, superproperty)))):
-                            properties_in_ontology_superproperties_dict[utils.get_node_label(s)] = s
-                        list_to_choose = sorted(properties_in_ontology_superproperties_dict.keys())
-                        predicate_list = st.multiselect("🏷️️ Select predicate(s):", list_to_choose,
-                            key="key_predicate")    # predicate list (labels)
-
-                    else:  #no superproperty selected (list all properties)
-                        if ontology_filter_for_predicate == st.session_state["g_ontology"]:
-                            list_to_choose = sorted(list(ontology_properties_dict.keys()) + list(custom_properties_dict.keys()))
-                        else:
-                            list_to_choose = sorted(ontology_properties_dict.keys())
-                        predicate_list = st.multiselect("🏷️️ Select predicate(s):", list_to_choose,
-                            key="key_predicate")    # predicate list (labels)
-
-                else:     #no superproperties exist (no superproperty filter)
-                    if ontology_filter_for_predicate == st.session_state["g_ontology"]:
-                        list_to_choose = sorted(list(ontology_properties_dict.keys()) + list(custom_properties_dict.keys()))
-                    else:
-                        list_to_choose = sorted(ontology_properties_dict.keys())
-                    predicate_list = st.multiselect("🏷️ Select predicate(s):", list_to_choose,
-                        key="key_predicate")    # predicate list (labels)
-
-            elif ontology_filter_for_predicate == "Custom propertiess":
-                list_to_choose = sorted(custom_properties_dict.keys())
-                predicate_list = st.multiselect("🏷️ Select predicate(s):", list_to_choose,
-                    key="key_predicate")    # predicate list (labels)
-
-
-#....................................................................................................
 
             if st.session_state["g_ontology_components_dict"]:
                 ontology_p_dict = utils.get_ontology_properties_dict(st.session_state["g_ontology"])

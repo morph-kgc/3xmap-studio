@@ -768,6 +768,13 @@ def display_right_column_df(info, session_state_dict, text, complete=True):
             "Table/View": utils.get_tm_info_for_display(tm)[2],
             "Logical Source": utils.get_tm_info_for_display(tm)[0]} for tm in st.session_state["last_added_tm_list"]]
 
+    elif info == "subject_maps":
+        sm_dict = get_sm_dict()
+        rows = [{"Triplesmap": triples_map, "Subject Map": sm_dict[subject_map][0],
+            "Type": sm_dict[subject_map][1], "Rule": sm_dict[subject_map][2]}
+            for subject_map, triples_map in st.session_state["last_added_sm_list"]
+            if subject_map in sm_dict]
+
     else:
         rows = []
 
@@ -3258,9 +3265,8 @@ def get_ontology_classes_dict(g_ont, superclass=False):
                 custom_classes_dict[utils.get_node_label(k)] = k
         return custom_classes_dict
 
-    # Ontology classes/superclasses
+    # Ontology classes
     ontology_classes_dict = {}
-    superclass_dict = {}
 
     class_triples = set()
     class_triples |= set(g_ont.triples((None, RDF.type, OWL.Class)))   #collect owl:Class definitions
@@ -3270,7 +3276,9 @@ def get_ontology_classes_dict(g_ont, superclass=False):
         if not isinstance(s, BNode):
             ontology_classes_dict[utils.get_node_label(s)] = s
 
+    # Superclasses
     if superclass:
+        superclass_dict = {}
         for s, p, o in list(set(g_ont.triples((None, RDFS.subClassOf, None)))):
             if not isinstance(o, BNode) and o not in superclass_dict.values():
                 superclass_dict[utils.get_node_label(o)] = o
@@ -3549,12 +3557,12 @@ def get_mapping_composition_by_class_donut_chart():
 # Funtion to get the dictionary of the superclasses in the ontology
 def get_ontology_superproperty_dict(g_ont):
 
-    superproperty_dict = {}
+    ontology_superproperties_dict = {}
     for s, p, o in set(g_ont.triples((None, RDFS.subPropertyOf, None))):
-        if not isinstance(o, BNode) and o not in superproperty_dict.values():
-            superproperty_dict[o.split("/")[-1].split("#")[-1]] = o
+        if not isinstance(o, BNode) and o not in ontology_superproperties_dict.values():
+            ontology_superproperties_dict[o.split("/")[-1].split("#")[-1]] = o
 
-    return superproperty_dict
+    return ontology_superproperties_dict
 #________________________________________________________
 
 #_________________________________________________________
@@ -3576,28 +3584,54 @@ def get_ontology_base_iri(g_ont):
     return base_iri_list
 #________________________________________________________
 
-#________________________________________________________
-# Funtion to get the predicates defined by an ontology
-def get_ontology_properties_dict(g_ont):
+#______________________________________________________
+# Get properties of an ontology
+# Strict filter (since properties will be used as predicates)
+# Also option to give the custom properties or the superproperties of an ontology
+def get_ontology_properties_dict(g_ont, superproperty=False):
+
+    # Custom properties
+    if g_ont == "custom":
+        custom_properties_dict = {}
+        for k, v in st.session_state["custom_terms_dict"].items():
+            if v == "🔗 Property":
+                custom_properties_dict[utils.get_node_label(k)] = k
+        return custom_properties_dict
+
+    # Ontology properties
+    ontology_properties_dict = {}
     ontology_base_iri_list = get_ontology_base_iri(g_ont)
     p_types_list = [RDF.Property, OWL.ObjectProperty, OWL.DatatypeProperty]
     p_exclusion_list = [RDFS.label, RDFS.comment, OWL.versionInfo, OWL.deprecated, RDF.type]
 
-    p_set = set()
+    prop_triples = set()
 
     for s, p, o in g_ont.triples((None, RDF.type, None)):
         if o in p_types_list:
             if ontology_base_iri_list:
                 if str(s).startswith(tuple(ontology_base_iri_list)) and s not in p_exclusion_list:
-                    p_set.add(s)
+                    prop_triples.add(s)
             else:
                 if s not in p_exclusion_list:
-                    p_set.add(s)
+                    prop_triples.add(s)
 
-    ontology_p_dict = {get_node_label(p):p for p in p_set}
+    ontology_properties_dict = {get_node_label(p):p for p in prop_triples}
 
-    return ontology_p_dict
-#______________________________________________
+    # Ontology superproperties
+    if superproperty:
+        ontology_superproperties_dict = {}
+        for s, p, o in g_ont.triples((None, RDFS.subPropertyOf, None)):
+            if not isinstance(o, BNode):
+                if ontology_base_iri_list:
+                    if str(o).startswith(tuple(ontology_base_iri_list)) and o not in p_exclusion_list:
+                        ontology_superproperties_dict[utils.get_node_label(o)] = o
+                else:
+                    if o not in p_exclusion_list:
+                        ontology_superproperties_dict[utils.get_node_label(o)] = o
+        return ontology_superproperties_dict
+
+    return ontology_properties_dict
+#______________________________________________________
 
 #________________________________________________________
 # Funtion to get the dictionary of the superclasses in the ontology
