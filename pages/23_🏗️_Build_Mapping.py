@@ -1094,6 +1094,8 @@ with tab2:
                             ontology_classes_dict[utils.get_node_label(s)] = s
 
     # RFBOOKMARK
+
+                    # Custom classes
                     custom_classes_dict = {}          # dictionary for custom classes
                     for k, v in st.session_state["custom_terms_dict"].items():
                         if v == "🏷️ Class":
@@ -1103,6 +1105,7 @@ with tab2:
                     if custom_classes_dict:
                         ontology_filter_list.insert(0, "Custom classes")
 
+                    # Filter by ontology
                     if len(ontology_filter_list) > 1:
                         list_to_choose = ontology_filter_list
                         list_to_choose.insert(0, "No filter")
@@ -1123,7 +1126,7 @@ with tab2:
 
                     if ontology_filter_for_subject_class != "Custom classes":
 
-                        ontology_classes_dict = {}   # class dictionary filtered by ontology
+                        ontology_classes_dict = {}          # filtered class dictionary
                         class_triples = set()
                         class_triples |= set(ontology_filter_for_subject_class.triples((None, RDF.type, OWL.Class)))   #collect owl:Class definitions
                         class_triples |= set(ontology_filter_for_subject_class.triples((None, RDF.type, RDFS.Class)))    # collect rdfs:Class definitions
@@ -1131,7 +1134,7 @@ with tab2:
                             if not isinstance(s, BNode):
                                 ontology_classes_dict[utils.get_node_label(s)] = s
 
-                        superclass_dict = {}                # dictionary for superclasses
+                        superclass_dict = {}                # filtered supplerclass dictionary
                         for s, p, o in list(set(ontology_filter_for_subject_class.triples((None, RDFS.subClassOf, None)))):
                             if not isinstance(o, BNode) and o not in superclass_dict.values():
                                 superclass_dict[utils.get_node_label(o)] = o
@@ -1148,31 +1151,23 @@ with tab2:
                                 for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, superclass)))):
                                     classes_in_superclass_dict[utils.get_node_label(s)] = s
                                 class_list = sorted(classes_in_superclass_dict.keys())
-                                class_list.insert(0, "Select class")
-                                subject_class = st.selectbox("🖱️ Select class:", class_list,
+                                subject_class = st.multiselect("🖱️ Select class/es:", class_list,
                                     key="key_subject_class")   #class label
 
                             else:  #no superclass selected (list all classes)
                                 class_list = sorted(ontology_classes_dict.keys())
-                                class_list.insert(0, "Select class")
-                                subject_class = st.selectbox("🖱️ Select class:*", class_list,
+                                subject_class = st.multiselect("🖱️ Select class/es:", class_list,
                                     key="key_subject_class")   #class label
 
                         else:     #no superclasses exist (no superclass filter)
                             class_list = sorted(ontology_classes_dict.keys())
-                            subject_class = st.selectbox("🖱️ Select class:*", class_list,
+                            subject_class = st.multiselect("🖱️ Select class/es:", class_list,
                                 key="key_subject_class")   #class label
 
-                        if subject_class != "Select class":
-                            subject_class_iri = ontology_classes_dict[subject_class] #we get the class iri
-                            st.session_state["multiple_subject_class_list"] = [subject_class_iri]
-                        else:
-                            subject_class_iri = ""
-
-                    else:
+                    elif ontology_filter_for_subject_class == "Custom classes":
                         class_list = sorted(custom_classes_dict.keys())
                         class_list.insert(0, "Select class")
-                        subject_class = st.selectbox("🖱️ Select class:*", class_list,
+                        subject_class = st.multiselect("🖱️ Select class/es:", class_list,
                             key="key_subject_class")   #class label
 
                 # GRAPH MAP
