@@ -1418,9 +1418,6 @@ with tab3:
 
             # PREDICATE
             with col1:
-                col1a, col1b = st.columns(2)
-
-            with col1a:
                 st.markdown("""
                 <div style="font-size:13px; font-weight:500; margin-top:10px; margin-bottom:6px; border-top:0.5px solid #ccc; padding-bottom:4px;">
                     <b>🅿️ Predicate</b><br>
@@ -1435,21 +1432,26 @@ with tab3:
 
             # Filter by ontology
             if len(ontology_filter_list) > 1:
+                with col1:
+                    col1a, col1b, col1c = st.columns(3)
                 list_to_choose = ontology_filter_list
                 list_to_choose.insert(0, "No filter")
-                ontology_filter_for_predicate = st.selectbox("📡 Filter class by ontology (opt):",
-                    list_to_choose, key="key_ontology_filter_for_predicate")
+                with col1a:
+                    ontology_filter_for_predicate = st.selectbox("📡 Filter by ontology (opt):",
+                        list_to_choose, key="key_ontology_filter_for_predicate")
 
                 if ontology_filter_for_predicate == "No filter":
                     ontology_filter_for_predicate = st.session_state["g_ontology"]
-                if ontology_filter_for_predicate == "Custom classes":
-                    ontology_filter_for_predicate = "Custom classes"
+                if ontology_filter_for_predicate == "Custom properties":
+                    ontology_filter_for_predicate = "Custom properties"
                 else:
                     for ont_label, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
                         if ont_tag == ontology_filter_for_predicate:
                             ontology_filter_for_predicate = st.session_state["g_ontology_components_dict"][ont_label]
                             break
             else:
+                with col1:
+                    col1b, col1c = st.columns(2)
                 ontology_filter_for_predicate = st.session_state["g_ontology"]
 
             if ontology_filter_for_predicate != "Custom properties":
@@ -1458,41 +1460,46 @@ with tab3:
                 ontology_superproperties_dict = utils.get_ontology_properties_dict(ontology_filter_for_predicate, superproperty=True)
 
                 if ontology_superproperties_dict:   # there exists at least one superproperty (show superproperty filter)
-                    properties_in_ontology_superproperties_dict = {}
-                    superproperties_list = sorted(ontology_superproperties_dict.keys())
-                    superproperties_list.insert(0, "No filter")
-                    superproperty = st.selectbox("📡 Filter by superproperty (opt):", superproperties_list,
-                        key="key_superproperty")   # superproperty label
+                    with col1b:
+                        properties_in_ontology_superproperties_dict = {}
+                        superproperties_list = sorted(ontology_superproperties_dict.keys())
+                        superproperties_list.insert(0, "No filter")
+                        superproperty = st.selectbox("📡 Filter by superproperty (opt):", superproperties_list,
+                            key="key_superproperty")   # superproperty label
 
                     if superproperty != "No filter":   # a superproperty has been selected (filter)
                         properties_in_ontology_superproperties_dict[superproperty] = ontology_superproperties_dict[superproperty]
                         superproperty = ontology_superproperties_dict[superproperty] #we get the superproperty iri
                         for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subPropertyOf, superproperty)))):
                             properties_in_ontology_superproperties_dict[utils.get_node_label(s)] = s
-                        list_to_choose = sorted(properties_in_ontology_superproperties_dict.keys())
-                        predicate_list = st.multiselect("🏷️️ Select predicate(s):", list_to_choose,
-                            key="key_predicate")    # predicate list (labels)
+                        with col1c:
+                            list_to_choose = sorted(properties_in_ontology_superproperties_dict.keys())
+                            predicate_list = st.multiselect("🏷️️ Select predicate(s):", list_to_choose,
+                                key="key_predicate")    # predicate list (labels)
 
                     else:  #no superproperty selected (list all properties)
+                        with col1c:
+                            if ontology_filter_for_predicate == st.session_state["g_ontology"]:
+                                list_to_choose = sorted(list(ontology_properties_dict.keys()) + list(custom_properties_dict.keys()))
+                            else:
+                                list_to_choose = sorted(ontology_properties_dict.keys())
+                            predicate_list = st.multiselect("🏷️️ Select predicate(s):", list_to_choose,
+                                key="key_predicate")    # predicate list (labels)
+
+                else:     #no superproperties exist (no superproperty filter)
+                    with col1b:
                         if ontology_filter_for_predicate == st.session_state["g_ontology"]:
                             list_to_choose = sorted(list(ontology_properties_dict.keys()) + list(custom_properties_dict.keys()))
                         else:
                             list_to_choose = sorted(ontology_properties_dict.keys())
-                        predicate_list = st.multiselect("🏷️️ Select predicate(s):", list_to_choose,
+                        predicate_list = st.multiselect("🏷️ Select predicate(s):", list_to_choose,
                             key="key_predicate")    # predicate list (labels)
 
-                else:     #no superproperties exist (no superproperty filter)
-                    if ontology_filter_for_predicate == st.session_state["g_ontology"]:
-                        list_to_choose = sorted(list(ontology_properties_dict.keys()) + list(custom_properties_dict.keys()))
-                    else:
-                        list_to_choose = sorted(ontology_properties_dict.keys())
+            elif ontology_filter_for_predicate == "Custom properties":
+                with col1b:
+                    list_to_choose = sorted(custom_properties_dict.keys())
                     predicate_list = st.multiselect("🏷️ Select predicate(s):", list_to_choose,
                         key="key_predicate")    # predicate list (labels)
-
-            elif ontology_filter_for_predicate == "Custom propertiess":
-                list_to_choose = sorted(custom_properties_dict.keys())
-                predicate_list = st.multiselect("🏷️ Select predicate(s):", list_to_choose,
-                    key="key_predicate")    # predicate list (labels)
 
 
 #....................................................................................................
