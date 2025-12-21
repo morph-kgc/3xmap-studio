@@ -691,7 +691,7 @@ with tab2:
             with col1a:
                 st.write("")
                 st.markdown(f"""<div class="success-message-flag">
-                    ✅ The <b>Namespace/s</b> have been bound!
+                    ✅ The <b>Namespace(s)</b> have been bound!
                 </div>""", unsafe_allow_html=True)
             st.write("")
             st.write("")
@@ -1061,7 +1061,7 @@ with tab2:
                     col1a, col1b = st.columns([2,1])
                 with col1a:
                     st.markdown(f"""<div class="success-message-flag">
-                        ✅ The <b>Namespace/s</b> have been unbound!
+                        ✅ The <b>Namespace(s)</b> have been unbound!
                     </div>""", unsafe_allow_html=True)
                 st.write("")
                 st.write("")
@@ -1084,7 +1084,7 @@ with tab2:
                     col1a, col1b = st.columns([2,1])
                 with col1a:
                     st.markdown(f"""<div class="success-message-flag">
-                        ✅ The <b>Namespace/s</b> have been unbound!
+                        ✅ The <b>Namespace(s)</b> have been unbound!
                     </div>""", unsafe_allow_html=True)
                 st.write("")
                 st.session_state["ns_unbound_ok_flag"] = False
@@ -1282,7 +1282,7 @@ with tab3:
                 col1a, col1b = st.columns([2,1])
             with col1a:
                 st.markdown(f"""<div class="success-message-flag">
-                    ✅ The <b>session/s</b> have been deleted!
+                    ✅ The <b>session(s)</b> have been deleted!
                 </div>""", unsafe_allow_html=True)
             st.session_state["session_removed_ok_flag"] = False
             time.sleep(utils.get_success_message_time())

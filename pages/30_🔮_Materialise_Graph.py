@@ -692,7 +692,7 @@ with tab2:
                         with col1a:
                             st.write("")
                             st.markdown(f"""<div class="success-message-flag">
-                                ✅ The <b>data source/s</b> have been removed!
+                                ✅ The <b>data source(s)</b> have been removed!
                             </div>""", unsafe_allow_html=True)
                         st.session_state["ds_for_mkgcgc_removed_ok_flag"] = False
                         time.sleep(utils.get_success_message_time())
@@ -731,7 +731,7 @@ with tab2:
                     elif ds_for_mkgcgc_to_remove_list:
                         with col1a:
                             remove_ds_checkbox = st.checkbox(
-                            "🔒 I am sure I want to remove the selected Data Source/s",
+                            "🔒 I am sure I want to remove the selected Data Source(s)",
                             key="key_remove_ds_checkbox")
                             if remove_ds_checkbox:
                                 st.button("Remove", key="remove_ds_for_mkgcgc_button", on_click=remove_ds_for_mkgc)
@@ -985,7 +985,7 @@ with tab2:
             with col1a:
                 st.write("")
                 st.markdown(f"""<div class="success-message-flag">
-                    ✅ The <b>additional mapping/s</b> have been removed!
+                    ✅ The <b>additional mapping(s)</b> have been removed!
                 </div>""", unsafe_allow_html=True)
             st.session_state["additional_mapping_removed_ok_flag"] = False
             time.sleep(utils.get_success_message_time())
@@ -1172,7 +1172,7 @@ with tab2:
             elif mappings_to_remove_list:
                 with col1a:
                     delete_mappings_checkbox = st.checkbox(
-                    "🔒 I am sure I want to delete the selected mapping/s",
+                    "🔒 I am sure I want to delete the selected mapping(s)",
                     key="key_delete_mappings_checkbox")
                     if delete_mappings_checkbox:
                         st.button("Remove", key="key_remove_additional_mapping_for_mkgcgc_button", on_click=remove_additional_mapping_for_mkgc)

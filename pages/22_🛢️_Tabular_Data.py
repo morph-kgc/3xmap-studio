@@ -199,7 +199,7 @@ with tab1:
         with col1a:
             st.write("")
             st.markdown(f"""<div class="success-message-flag">
-                ✅ The <b>data source file/s</b> have been removed!
+                ✅ The <b>data source file(s)</b> have been removed!
             </div>""", unsafe_allow_html=True)
         st.session_state["ds_file_removed_ok_flag"] = False
         time.sleep(utils.get_success_message_time())
@@ -220,7 +220,7 @@ with tab1:
             with col1a:
                 st.write("")
                 st.markdown(f"""<div class="success-message-flag">
-                    ✅ The <b>data source file/s</b> have been removed!
+                    ✅ The <b>data source file(s)</b> have been removed!
                 </div>""", unsafe_allow_html=True)
             st.session_state["ds_file_removed_ok_flag"] = False
             time.sleep(utils.get_success_message_time())
@@ -254,7 +254,7 @@ with tab1:
         elif ds_files_to_remove_list:
             with col1a:
                 delete_files_checkbox= st.checkbox(
-                "🔒 I am sure I want to remove the selected file/s",
+                "🔒 I am sure I want to remove the selected file(s)",
                 key="key_delete_files_checkbox")
                 if delete_files_checkbox:
                     st.button("Remove", key="key_remove_files_button", on_click=remove_files)

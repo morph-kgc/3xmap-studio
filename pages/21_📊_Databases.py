@@ -262,7 +262,7 @@ with tab1:
         with col1a:
             st.write("")
             st.markdown(f"""<div class="success-message-flag">
-                ✅ The <b>connection to the database/s</b> have been removed!
+                ✅ The <b>connection to the database(s)</b> have been removed!
             </div>""", unsafe_allow_html=True)
         st.session_state["db_connection_removed_ok_flag"] = False
         time.sleep(utils.get_success_message_time())
@@ -284,7 +284,7 @@ with tab1:
             with col1a:
                 st.write("")
                 st.markdown(f"""<div class="success-message-flag">
-                    ✅ The <b>connection/s to the database</b> have been removed!
+                    ✅ The <b>connection(s) to the database</b> have been removed!
                 </div>""", unsafe_allow_html=True)
             st.session_state["db_connection_removed_ok_flag"] = False
             time.sleep(utils.get_success_message_time())
@@ -746,7 +746,7 @@ with tab3:
         with col1a:
             st.write("")
             st.markdown(f"""<div class="success-message-flag">
-                ✅ The <b>view/s</b> have been removed!
+                ✅ The <b>view(s)</b> have been removed!
             </div>""", unsafe_allow_html=True)
         st.session_state["view_removed_ok_flag"] = False
         time.sleep(utils.get_success_message_time())

@@ -923,7 +923,6 @@ def init_session_state_variables():
         # TAB2
         st.session_state["key_ds_uploader_for_sm"] = str(uuid.uuid4())
         st.session_state["last_added_sm_list"] = []
-        st.session_state["sm_label"] = ""
         st.session_state["tm_label_for_sm"] = False
         st.session_state["sm_template_list"] = []
         st.session_state["sm_iri"] = None
@@ -2305,7 +2304,6 @@ def get_db_table_df(conn_label, table):
 #______________________________________________________
 
 # PANEL: ADD SUBJECT MAP--------------------------------------------------------
-
 #______________________________________________________
 # Funtion to read tabular data
 def read_tab_file(filename):
@@ -2442,7 +2440,6 @@ def get_column_list_and_give_info(tm_label):
 
     return [column_list, inner_html, ds_for_display]
 #______________________________________________________
-
 
 
 
@@ -3248,21 +3245,39 @@ def get_ontology_superclass_dict(g_ont):
     return superclass_dict
 #________________________________________________________
 
-#________________________________________________________
-# Funtion to get the dictionary of the classes in the ontology
-def get_ontology_classes_dict(g_ont):
+#______________________________________________________
+# Get classes of an ontology
+# Also option to give the custom classes or the superclasses of an ontology
+def get_ontology_classes_dict(g_ont, superclass=False):
 
+    # Custom classes
+    if g_ont == "custom":
+        custom_classes_dict = {}          # dictionary for custom classes
+        for k, v in st.session_state["custom_terms_dict"].items():
+            if v == "🏷️ Class":
+                custom_classes_dict[utils.get_node_label(k)] = k
+        return custom_classes_dict
+
+    # Ontology classes/superclasses
     ontology_classes_dict = {}
+    superclass_dict = {}
+
     class_triples = set()
     class_triples |= set(g_ont.triples((None, RDF.type, OWL.Class)))   #collect owl:Class definitions
     class_triples |= set(g_ont.triples((None, RDF.type, RDFS.Class)))    # collect rdfs:Class definitions
 
     for s, p, o in class_triples:   #we add to dictionary removing the BNodes
         if not isinstance(s, BNode):
-            ontology_classes_dict[split_uri(s)[1]] = s
+            ontology_classes_dict[utils.get_node_label(s)] = s
+
+    if superclass:
+        for s, p, o in list(set(g_ont.triples((None, RDFS.subClassOf, None)))):
+            if not isinstance(o, BNode) and o not in superclass_dict.values():
+                superclass_dict[utils.get_node_label(o)] = o
+        return superclass_dict
 
     return ontology_classes_dict
-#________________________________________________________
+#______________________________________________________
 
 #________________________________________________________
 # Funtion to get the dictionary of the ontology classes used by the mapping

@@ -1133,7 +1133,7 @@ with tab4:
                 col1a, col1b = st.columns([2,1])
             with col1a:
                 st.markdown(f"""<div class="success-message-flag">
-                    ✅ The <b>custom term/s</b> have been removed!
+                    ✅ The <b>custom term(s)</b> have been removed!
                 </div>""", unsafe_allow_html=True)
             st.write("")
             st.write("")
@@ -1157,7 +1157,7 @@ with tab4:
                 col1a, col1b = st.columns([2,1])
             with col1a:
                 st.markdown(f"""<div class="success-message-flag">
-                    ✅ The <b>custom term/s</b> have been removed!
+                    ✅ The <b>custom term(s)</b> have been removed!
                 </div>""", unsafe_allow_html=True)
             st.write("")
             st.write("")
