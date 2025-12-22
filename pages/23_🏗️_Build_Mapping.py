@@ -1,6 +1,7 @@
 import streamlit as st
 import os
 import utils
+import langcodes
 import pandas as pd
 import pickle
 from rdflib import Graph, URIRef, Literal, Namespace, BNode
@@ -119,27 +120,6 @@ def save_sm_existing():
     st.session_state["last_added_sm_list"].insert(0, [st.session_state["sm_iri"], tm_label_for_sm])
     st.session_state["sm_saved_ok_flag"] = True
 
-def remove_ns_from_sm_template():
-    # update template and store information_________
-    st.session_state["sm_template_list"].pop(0)
-    # reset fields_____________
-    st.session_state["sm_template_prefix"] = ""
-    st.session_state["key_sm_template_ns_prefix"] = "Select a namespace"
-    st.session_state["key_build_template_action_sm"] = "🔒 Fixed part"
-
-def add_ns_to_sm_template():
-    # update template and store information_________
-    if not st.session_state["sm_template_prefix"]:    # no ns added yet
-        st.session_state["sm_template_list"].insert(0, sm_template_ns)
-    elif not st.session_state["sm_template_list"]:
-        st.session_state["sm_template_list"] = [sm_template_ns]
-    else:   # a ns was added (replace)
-        st.session_state["sm_template_list"][0] = sm_template_ns
-    # reset fields_____________
-    st.session_state["sm_template_prefix"] = sm_template_ns_prefix if sm_template_ns_prefix else utils.get_g_ns_dict(st.session_state["g_mapping"])[sm_template_ns_prefix]
-    st.session_state["key_sm_template_ns_prefix"] = "Select a namespace"
-    st.session_state["key_build_template_action_sm"] = "🔒 Fixed part"
-
 def save_sm_template_fixed_part():
     # update template_____________
     st.session_state["sm_template_list"].append(sm_template_fixed_part)
@@ -154,27 +134,35 @@ def save_sm_template_variable_part():
     # reset fields_____________
     st.session_state["key_build_template_action_sm"] = "🔒 Fixed part"
 
+def add_ns_to_sm_template():
+    # update template and store information_________
+    if not st.session_state["sm_template_list"]:   # template empty yet
+        st.session_state["sm_template_list"] = [sm_template_ns]
+    elif not st.session_state["sm_template_is_iri_flag"]:    # no ns added yet
+        st.session_state["sm_template_list"].insert(0, sm_template_ns)
+    else:   # a ns was added (replace)
+        st.session_state["sm_template_list"][0] = sm_template_ns
+    st.session_state["sm_template_is_iri_flag"] = True
+    # reset fields_____________
+    st.session_state["key_sm_template_ns_prefix"] = "Select namespace"
+    st.session_state["key_build_template_action_sm"] = "🔒 Fixed part"
+
+def remove_ns_from_sm_template():
+    # update template and store information_________
+    st.session_state["sm_template_list"].pop(0)
+    st.session_state["sm_template_is_iri_flag"] = False
+    # reset fields_____________
+    st.session_state["key_sm_template_ns_prefix"] = "Select namespace"
+    st.session_state["key_build_template_action_sm"] = "🔒 Fixed part"
+
 def reset_sm_template():
     # reset template___________________-
     st.session_state["sm_template_list"] = []
     # store information____________________
-    st.session_state["sm_template_prefix"] = ""
-    st.session_state["template_sm_is_iri_flag"] = False
+    st.session_state["sm_template_is_iri_flag"] = False
     st.session_state["sm_template_variable_part_flag"] = False
     # reset fields_____________
     st.session_state["key_build_template_action_sm"] = "🔒 Fixed part"
-
-def key_remove_multiple_subject_classes():
-    # remove subject classes____________________
-    if "Select all" in subject_class_to_remove_list:
-        st.session_state["multiple_subject_class_list"] = []
-    else:
-        for class_iri in st.session_state["multiple_subject_class_list"]:
-            if split_uri(class_iri)[1] in subject_class_to_remove_list:
-                st.session_state["multiple_subject_class_list"].remove(class_iri)
-    # reset fields___________________
-    st.session_state["key_add_subject_class_option"] = "🔢 Multiple Classes"
-    st.session_state["key_add_multiple_subject_class_option"] = "✔️ Ready" if st.session_state["multiple_subject_class_list"] else "🧩 Add Ontology Class"
 
 def save_sm_template():   #function to save subject map (template option)
     # get info_______________________
@@ -206,10 +194,10 @@ def save_sm_template():   #function to save subject map (template option)
     st.session_state["last_added_sm_list"].insert(0, [sm_iri, tm_label_for_sm])
     st.session_state["sm_saved_ok_flag"] = True
     st.session_state["sm_template_list"] = []
-    st.session_state["sm_template_prefix"] = ""
+    st.session_state["sm_template_is_iri_flag"] = False
     st.session_state["sm_template_variable_part_flag"] = False
     # reset fields____________________
-    st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
+    st.session_state["key_tm_label_input_for_sm"] = "Select TriplesMap"
 
 def save_sm_constant():   #function to save subject map (constant option)
     # get info_______________________
@@ -218,7 +206,7 @@ def save_sm_constant():   #function to save subject map (constant option)
     # add triples________________________
     st.session_state["g_mapping"].add((tm_iri_for_sm, RML.subjectMap, sm_iri))
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RML.SubjectMap))
-    if sm_constant_ns_prefix != "Select a namespace":
+    if sm_constant_ns_prefix != "Select namespace":
         sm_constant_ns = mapping_ns_dict[sm_constant_ns_prefix]
         NS = Namespace(sm_constant_ns)
         sm_constant_iri = NS[sm_constant]
@@ -247,7 +235,7 @@ def save_sm_constant():   #function to save subject map (constant option)
     st.session_state["sm_template_prefix"] = ""
     st.session_state["sm_template_variable_part_flag"] = False
     # reset fields_________________________
-    st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
+    st.session_state["key_tm_label_input_for_sm"] = "Select TriplesMap"
 
 def save_sm_reference():   #function to save subject map (reference option)
     # get info_______________________
@@ -282,21 +270,9 @@ def save_sm_reference():   #function to save subject map (reference option)
     st.session_state["sm_template_prefix"] = ""
     st.session_state["sm_template_variable_part_flag"] = False
     # reset fields____________________
-    st.session_state["key_tm_label_input_for_sm"] = "Select a TriplesMap"
+    st.session_state["key_tm_label_input_for_sm"] = "Select TriplesMap"
 
 # TAB3
-def add_ns_to_om_template():
-    # update template and store information_________
-    if not st.session_state["template_om_is_iri_flag"]:    # no ns added yet
-        st.session_state["om_template_list"].insert(0, om_template_ns)
-    else:   # a ns was added (replace)
-        st.session_state["om_template_list"][0] = om_template_ns
-    # reset fields_____________
-    st.session_state["om_template_ns_prefix"] = om_template_ns_prefix
-    st.session_state["template_om_is_iri_flag"] = True
-    st.session_state["key_om_template_ns_prefix"] = "Select a namespace"
-    st.session_state["key_build_template_action_om"] = "🔒 Fixed part"
-
 def save_om_template_fixed_part():
     # update template_____________
     st.session_state["om_template_list"].append(om_template_fixed_part)
@@ -311,15 +287,37 @@ def save_om_template_variable_part():
     # reset fields_____________
     st.session_state["key_build_template_action_om"] = "🔒 Fixed part"
 
+def add_ns_to_om_template():
+    # update template and store information_________
+    if not st.session_state["om_template_list"]:   # empty template yet
+        st.session_state["om_template_list"] = [om_template_ns]
+    elif not st.session_state["om_template_is_iri_flag"]:    # no ns added yet
+        st.session_state["om_template_list"].insert(0, om_template_ns)
+    else:   # a ns was added (replace)
+        st.session_state["om_template_list"][0] = om_template_ns
+    st.session_state["om_template_is_iri_flag"] = True
+    # reset fields_____________
+    st.session_state["key_om_template_ns_prefix"] = "Select namespace"
+    st.session_state["key_build_template_action_om"] = "🔒 Fixed part"
+
+def remove_ns_from_om_template():
+    # update template and store information_________
+    st.session_state["om_template_list"].pop(0)
+    st.session_state["om_template_is_iri_flag"] = False
+    # reset fields_____________
+    st.session_state["key_om_template_ns_prefix"] = "Select namespace"
+    st.session_state["key_build_template_action_om"] = "🔒 Fixed part"
+
 def reset_om_template():
     # reset template
     st.session_state["om_template_list"] = []
     # store information____________________
-    st.session_state["om_template_ns_prefix"] = ""
-    st.session_state["template_om_is_iri_flag"] = False
+    st.session_state["om_template_is_iri_flag"] = False
     st.session_state["om_template_variable_part_flag"] = False
     # reset fields_____________
     st.session_state["key_build_template_action_om"] = "🔒 Fixed part"
+
+
 
 def save_pom_template():
     # add triples pom________________________
@@ -332,12 +330,12 @@ def save_pom_template():
     st.session_state["g_mapping"].add((om_iri, RML.template, Literal(om_template)))
     if om_term_type == "📘 Literal":
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.Literal))
-        if om_datatype != "No datatype" and om_datatype != "🈳 Natural language tag" and om_datatype != "✚ New datatype":
+        if om_datatype != "No datatype" and om_datatype != "空 Natural language tag" and om_datatype != "✚ New datatype":
             datatype_dict = utils.get_datatype_dict()
             st.session_state["g_mapping"].add((om_iri, RML.datatype, datatype_dict[om_datatype]))
         elif om_datatype == "✚ New datatype":
             st.session_state["g_mapping"].add((om_iri, RML.datatype, om_datatype_iri))
-        elif om_datatype == "🈳 Natural language tag":
+        elif om_datatype == "空 Natural language tag":
             st.session_state["g_mapping"].add((om_iri, RML.language, Literal(om_language_tag)))
     elif om_term_type == "🌐 IRI":
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.IRI))
@@ -348,16 +346,17 @@ def save_pom_template():
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
     st.session_state["last_added_pom_list"].insert(0, [st.session_state["pom_iri_to_create"], st.session_state["tm_iri_for_pom"]])
-    # reset fields_____________________________
-    st.session_state["template_om_is_iri_flag"] = False
     st.session_state["om_template_list"] = []    # reset template
+    st.session_state["om_template_is_iri_flag"] = False
+    st.session_state["om_template_variable_part_flag"] = False
+    # reset fields_____________________________
     st.session_state["key_tm_label_for_pom"] = tm_label_for_pom   # keep same tm to add more pom
     st.session_state["key_selected_p_label"] = "Select a predicate"
-    st.session_state["key_manual_p_ns_prefix"] = "Select a namespace"
+    st.session_state["key_manual_p_ns_prefix"] = "Select namespace"
     st.session_state["key_manual_p_label"] = ""
     st.session_state["key_pom_label"] = ""
     st.session_state["key_build_template_action_om"] = "🔒 Fixed part"
-    st.session_state["key_om_template_ns_prefix"] = "Select a namespace"
+    st.session_state["key_om_template_ns_prefix"] = "Select namespace"
     st.session_state["om_term_type"] = "🌐 IRI"
     st.session_state["key_om_label"] = ""
     st.session_state["key_add_om_graph_map_option"] = "Default graph"
@@ -370,7 +369,7 @@ def save_pom_constant():
     st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RDF.type, RML.PredicateObjectMap))
     # add triples om________________________
     st.session_state["g_mapping"].add((om_iri, RDF.type, RML.ObjectMap))
-    if om_constant_ns_prefix != "Select a namespace":
+    if om_constant_ns_prefix != "Select namespace":
         om_constant_ns = mapping_ns_dict[om_constant_ns_prefix]
         NS = Namespace(om_constant_ns)
         om_constant_iri = NS[om_constant]
@@ -381,12 +380,12 @@ def save_pom_constant():
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.IRI))
     elif om_term_type == "📘 Literal":
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.Literal))
-        if om_datatype != "No datatype" and om_datatype != "🈳 Natural language tag" and om_datatype != "✚ New datatype":
+        if om_datatype != "No datatype" and om_datatype != "空 Natural language tag" and om_datatype != "✚ New datatype":
             datatype_dict = utils.get_datatype_dict()
             st.session_state["g_mapping"].add((om_iri, RML.datatype, datatype_dict[om_datatype]))
         elif om_datatype == "✚ New datatype":
             st.session_state["g_mapping"].add((om_iri, RML.datatype, om_datatype_iri))
-        elif om_datatype == "🈳 Natural language tag":
+        elif om_datatype == "空 Natural language tag":
             st.session_state["g_mapping"].add((om_iri, RML.language, Literal(om_language_tag)))
     if add_om_graph_map_option == "✚ New graph map" or add_om_graph_map_option == "🔄 Existing graph map":
         st.session_state["g_mapping"].add((om_iri, RML.graphMap, om_graph))
@@ -399,7 +398,7 @@ def save_pom_constant():
     st.session_state["key_tm_label_for_pom"] = tm_label_for_pom   # keep same tm to add more pom
     st.session_state["key_om_generation_rule_radio"] = "Constant 🔒"
     st.session_state["key_selected_p_label"] = "Select a predicate"
-    st.session_state["key_manual_p_ns_prefix"] = "Select a namespace"
+    st.session_state["key_manual_p_ns_prefix"] = "Select namespace"
     st.session_state["key_manual_p_label"] = ""
     st.session_state["key_pom_label"] = ""
     st.session_state["key_om_constant"] = ""
@@ -420,12 +419,12 @@ def save_pom_reference():
     st.session_state["g_mapping"].add((om_iri, RML.reference, Literal(om_column_name)))    #HERE change to RML.column in R2RML
     if om_term_type == "📘 Literal":
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.Literal))
-        if om_datatype != "No datatype" and om_datatype != "🈳 Natural language tag" and om_datatype != "✚ New datatype":
+        if om_datatype != "No datatype" and om_datatype != "空 Natural language tag" and om_datatype != "✚ New datatype":
             datatype_dict = utils.get_datatype_dict()
             st.session_state["g_mapping"].add((om_iri, RML.datatype, datatype_dict[om_datatype]))
         elif om_datatype == "✚ New datatype":
             st.session_state["g_mapping"].add((om_iri, RML.datatype, om_datatype_iri))
-        elif om_datatype == "🈳 Natural language tag":
+        elif om_datatype == "空 Natural language tag":
             st.session_state["g_mapping"].add((om_iri, RML.language, Literal(om_language_tag)))
     elif om_term_type == "🌐 IRI":
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.IRI))
@@ -442,7 +441,7 @@ def save_pom_reference():
     st.session_state["key_tm_label_for_pom"] = tm_label_for_pom   # keep same tm to add more pom
     st.session_state["key_om_generation_rule_radio"] = "Reference 📊"
     st.session_state["key_selected_p_label"] = "Select a predicate"
-    st.session_state["key_manual_p_ns_prefix"] = "Select a namespace"
+    st.session_state["key_manual_p_ns_prefix"] = "Select namespace"
     st.session_state["key_manual_p_label"] = ""
     st.session_state["key_pom_label"] = ""
     st.session_state["key_om_column_name"] = "Select reference"
@@ -830,16 +829,16 @@ with tab2:
         with col1a:
             if st.session_state["last_added_tm_list"] and st.session_state["last_added_tm_list"][0] in tm_wo_sm_list:  # Last added tm available (selected by default)
                 list_to_choose = sorted(tm_wo_sm_list)
-                list_to_choose.insert(0, "Select a TriplesMap")
-                tm_label_for_sm = st.selectbox("🖱️ Select a TriplesMap:*", list_to_choose, key="key_tm_label_input_for_sm_default",
+                list_to_choose.insert(0, "Select TriplesMap")
+                tm_label_for_sm = st.selectbox("🖱️ Select TriplesMap:*", list_to_choose, key="key_tm_label_input_for_sm_default",
                     index=list_to_choose.index(st.session_state["last_added_tm_list"][0]))
 
             else:             # Last added tm not available (no preselected tm)
                 list_to_choose = sorted(tm_wo_sm_list)
-                list_to_choose.insert(0, "Select a TriplesMap")
-                tm_label_for_sm = st.selectbox("🖱️ Select a TriplesMap:*", list_to_choose, key="key_tm_label_input_for_sm")
+                list_to_choose.insert(0, "Select TriplesMap")
+                tm_label_for_sm = st.selectbox("🖱️ Select TriplesMap:*", list_to_choose, key="key_tm_label_input_for_sm")
 
-        if tm_label_for_sm != "Select a TriplesMap":
+        if tm_label_for_sm != "Select TriplesMap":
 
             tm_iri_for_sm, ls_iri_for_sm, ds_for_sm = utils.get_tm_info(tm_label_for_sm)
 
@@ -902,7 +901,7 @@ with tab2:
                                     ⚠️ <b>Spaces and unescaped characters</b> are discouraged.
                                 </div>""", unsafe_allow_html=True)
 
-                            elif re.search(r"[ \t]", sm_template_fixed_part) and re.search(r"[\n\r<>\"{}|\\^`]", sm_template_fixed_part):
+                            elif re.search(r"[ \t]", sm_template_fixed_part):
                                 st.markdown(f"""<div class="warning-message">
                                     ⚠️ <b>Spaces</b> are discouraged.
                                 </div>""", unsafe_allow_html=True)
@@ -923,7 +922,7 @@ with tab2:
                         if not column_list:   #data source is not available (load)
                             with col1b:
                                 sm_template_variable_part = st.text_input("⌨️ Manually enter column of the data source:*",
-                                    label_visibility="collapsed")
+                                    key="key_sm_template_variable_part_manual", label_visibility="collapsed")
                                 st.markdown("""<div class="very-small-info">
                                     Manual reference entry <b>(discouraged)</b>
                                 </div>""", unsafe_allow_html=True)
@@ -948,14 +947,16 @@ with tab2:
 
                         if st.session_state["sm_template_list"] and st.session_state["sm_template_list"][-1].endswith("}"):
                             if inner_html:
-                                inner_html += """<br>⚠️ <b>Best practice:</b>
-                                    Add a fixed part between two variable parts to improve clarity.</div>"""
+                                inner_html += """&nbsp&nbsp&nbsp•&nbsp&nbsp&nbsp <b>Best practice:</b>
+                                    Add a fixed part between two variable parts <small>to improve clarity.</small></div>"""
                             else:
                                 inner_html += """⚠️ <b>Best practice:</b>
-                                    Add a fixed part between two variable parts to improve clarity.</div>"""
+                                    Add a fixed part between two variable parts <small>to improve clarity.</small></div>"""
 
                         if inner_html:
                             with col1:
+                                col1a, col1b = st.columns([2,0.5])
+                            with col1a:
                                 st.markdown(f"""<div class="warning-message">
                                     {inner_html}
                                 </div>""", unsafe_allow_html=True)
@@ -964,16 +965,16 @@ with tab2:
                         with col1b:
                             mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                             list_to_choose = sorted(mapping_ns_dict.keys())
-                            if st.session_state["sm_template_prefix"]:
+                            if st.session_state["sm_template_is_iri_flag"]:
                                 list_to_choose.insert(0, "Remove namespace")
-                            list_to_choose.insert(0, "Select a namespace")
+                            list_to_choose.insert(0, "Select namespace")
                             sm_template_ns_prefix = st.selectbox("🖱️ Select a namespace for the template:", list_to_choose,
                                 label_visibility="collapsed", key="key_sm_template_ns_prefix")
 
                         with col1c:
                             if sm_template_ns_prefix == "Remove namespace":
                                 st.button("Remove", key="key_add_ns_to_sm_template_button", on_click=remove_ns_from_sm_template)
-                            elif sm_template_ns_prefix != "Select a namespace":
+                            elif sm_template_ns_prefix != "Select namespace":
                                 sm_template_ns = mapping_ns_dict[sm_template_ns_prefix]
                                 st.button("Add", key="key_add_ns_to_sm_template_button", on_click=add_ns_to_sm_template)
 
@@ -983,7 +984,7 @@ with tab2:
                                     ⚠️ The current template <b>will be deleted</b>.
                                 </div>""", unsafe_allow_html=True)
                         with col1c:
-                            st.button("Reset", on_click=reset_sm_template)
+                            st.button("Reset", key="key_reset_sm_template_button", on_click=reset_sm_template)
 
                     with col1:
                         sm_template = "".join(st.session_state["sm_template_list"])
@@ -1023,7 +1024,7 @@ with tab2:
 
                     mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                     list_to_choose = sorted(mapping_ns_dict.keys())
-                    list_to_choose.insert(0, "Select a namespace")
+                    list_to_choose.insert(0, "Select namespace")
                     with col1a:
                         sm_constant_ns_prefix = st.selectbox("🖱️ Namespace (opt):", list_to_choose,
                             key="key_sm_constant_ns")
@@ -1037,13 +1038,13 @@ with tab2:
                         </div>""", unsafe_allow_html=True)
                     with col1:
                         col1a, col1b = st.columns([2,1])
-                    with col1a:
-                        column_list, inner_html, ds_for_display = utils.get_column_list_and_give_info(tm_label_for_sm)
+
+                    column_list, inner_html, ds_for_display = utils.get_column_list_and_give_info(tm_label_for_sm)
 
                     if not column_list:   #data source is not available (load)
                         with col1a:
                             sm_column_name = st.text_input("⌨️ Manually enter logical source reference:*",
-                                label_visibility="collapsed")
+                                key="key_sm_column_name_manual", label_visibility="collapsed")
                             st.markdown("""<div class="very-small-info">
                                 Manual reference entry <b>(discouraged)</b>
                             </div>""", unsafe_allow_html=True)
@@ -1060,7 +1061,7 @@ with tab2:
                                 </div>""", unsafe_allow_html=True)
 
                     if inner_html:
-                        with col1a:
+                        with col1b:
                             st.markdown(f"""<div class="warning-message">
                                 {inner_html}
                             </div>""", unsafe_allow_html=True)
@@ -1225,7 +1226,7 @@ with tab2:
                             at least one <b>variable part</b>.</small><br>"""
                         sm_complete_flag = False
                     if sm_template and sm_term_type == "🌐 IRI":   # if term type is IRI the NS is recommended
-                        if not st.session_state["sm_template_prefix"]:
+                        if not st.session_state["sm_template_is_iri_flag"]:
                             inner_html_warning += """<small>· Term type is <b>🌐 IRI</b>.
                                 <b>Adding a namespace to the template</b> is recommended.</small><br>"""
 
@@ -1234,7 +1235,7 @@ with tab2:
                         sm_complete_flag = False
                         inner_html_error += "<small>· No <b>constant</b> entered.</small><br>"
 
-                    if sm_constant and sm_constant_ns_prefix == "Select a namespace":
+                    if sm_constant and sm_constant_ns_prefix == "Select namespace":
                         if not utils.is_valid_iri(sm_constant, delimiter_ending=False):
                             sm_complete_flag = False
                             inner_html_error += """<small>· If no namespace is selected,
@@ -1246,7 +1247,7 @@ with tab2:
                         inner_html_error += "<small>· The <b>reference</b> has not been selected.<small><br>"
                     elif not column_list and not sm_column_name:
                         sm_complete_flag = False
-                        inner_html_error += "<small>· The <b>reference</b> has not been entered.<small><br>"
+                        inner_html_error += "<small>· The <b>reference</b> has not been entered.</small><br>"
 
                     if sm_column_name and sm_term_type == "🌐 IRI":
                         inner_html_warning += """<small>· Term type is <b>🌐 IRI</b>.
@@ -1394,15 +1395,15 @@ with tab3:
         with col1a:
             if st.session_state["last_added_tm_list"]:
                 list_to_choose = sorted(tm_dict)
-                list_to_choose.insert(0, "Select a TriplesMap")
-                tm_label_for_pom = st.selectbox("🖱️ Select a TriplesMap:*", list_to_choose, key="key_tm_label_for_pom",
+                list_to_choose.insert(0, "Select TriplesMap")
+                tm_label_for_pom = st.selectbox("🖱️ Select TriplesMap:*", list_to_choose, key="key_tm_label_for_pom",
                     index=list_to_choose.index(st.session_state["last_added_tm_list"][0]))
             else:
                 list_to_choose = list(reversed(tm_dict))
-                list_to_choose.insert(0, "Select a TriplesMap")
-                tm_label_for_pom = st.selectbox("🖱️ Select a TriplesMap:*", list_to_choose, key="key_tm_label_for_pom")
+                list_to_choose.insert(0, "Select TriplesMap")
+                tm_label_for_pom = st.selectbox("🖱️ Select TriplesMap:*", list_to_choose, key="key_tm_label_for_pom")
 
-        if tm_label_for_pom != "Select a TriplesMap":
+        if tm_label_for_pom != "Select TriplesMap":
 
             tm_iri_for_pom = tm_dict[tm_label_for_pom]
             pom_iri = BNode()
@@ -1501,74 +1502,11 @@ with tab3:
                     predicate_list = st.multiselect("🏷️ Select predicate(s):", list_to_choose,
                         key="key_predicate")    # predicate list (labels)
 
-
-#....................................................................................................
-
-            if st.session_state["g_ontology_components_dict"]:
-                ontology_p_dict = utils.get_ontology_properties_dict(st.session_state["g_ontology"])
-
-                if ontology_p_dict:   # if the ontology includes at least one predicate
-
-                    # Filter by ontology
-                    if len(st.session_state["g_ontology_components_dict"]) > 1:
-                        with col1a:
-                            list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
-                            list_to_choose.insert(0, "Select ontology")
-                            ontology_filter_for_predicate = st.selectbox("⚙️ Filter by ontology (optional):",
-                                list_to_choose, key="key_ontology_filter_for_predicate")
-
-                        if ontology_filter_for_predicate == "Select ontology":
-                            ontology_filter_for_predicate = st.session_state["g_ontology"]
-                        else:
-                            for ont_label, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
-                                if ont_tag == ontology_filter_for_predicate:
-                                    ontology_filter_for_predicate = st.session_state["g_ontology_components_dict"][ont_label]
-                                    break
-
-                    else:
-                        ontology_filter_for_predicate = st.session_state["g_ontology"]
-
-                    ontology_p_dict = utils.get_ontology_properties_dict(ontology_filter_for_predicate)
-
-            else:     # no ontology predicates
-                ontology_p_dict = {}
-
-            with col1a:
-                list_to_choose = sorted(ontology_p_dict.keys())
-                if ontology_filter_for_predicate == st.session_state["g_ontology"]:
-                    list_to_choose.insert(0, "🚫 Predicate outside ontology")
-                list_to_choose.insert(0, "Select a predicate")
-                selected_p_label = st.selectbox("🖱️ Select a predicate:*", list_to_choose, key="key_selected_p_label")
-
-            if selected_p_label != "Select a predicate" and selected_p_label != "🚫 Predicate outside ontology":
-                selected_p_iri = ontology_p_dict[selected_p_label]
-
-            if selected_p_label == "🚫 Predicate outside ontology":
-
-                mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
-
-                if not mapping_ns_dict:
-                    ns_needed_for_pom_flag = True
-
-                with col1a:
-                    list_to_choose = sorted(mapping_ns_dict.keys())
-                    list_to_choose.insert(0, "Select a namespace")
-                    manual_p_ns_prefix = st.selectbox("🖱️ Select a namespace (for the predicate):*", list_to_choose, key="key_manual_p_ns_prefix")
-                    manual_p_label = st.text_input("⌨️ Enter a predicate:*", key="key_manual_p_label")
-
-                if manual_p_ns_prefix != "Select a namespace" and manual_p_label:
-                    NS = Namespace(mapping_ns_dict[manual_p_ns_prefix])
-                    selected_p_iri = NS[manual_p_label]
-                elif manual_p_label and utils.is_valid_iri(manual_p_label, delimiter_ending=False):
-                    selected_p_iri = URIRef(manual_p_label)
-
-            #_______________________________________________
-            # OBJECT MAP - TEMPLATE-VALUED
+            # TEMPLATE-VALUED OBJECT MAP
             if om_generation_rule == "Template 📐":
 
                 with col1:
-                    st.markdown("""
-                    <div style="font-size:13px; font-weight:500; margin-top:10px; margin-bottom:6px; border-top:0.5px solid #ccc; padding-bottom:4px;">
+                    st.markdown("""<div class="small-subsection-heading">
                         <b>📐 Template</b><br>
                     </div>""", unsafe_allow_html=True)
                 with col1:
@@ -1579,75 +1517,90 @@ with tab3:
                     build_template_action_om = st.selectbox("🖱️ Add template part:", list_to_choose,
                         label_visibility="collapsed", key="key_build_template_action_om")
 
-
                 if build_template_action_om == "🔒 Fixed part":
                     with col1b:
                         om_template_fixed_part = st.text_input("⌨️ Enter fixed part:", key="key_om_fixed_part",
                             label_visibility="collapsed")
-                        if re.search(r"[ \t\n\r<>\"{}|\\^`]", om_template_fixed_part):
+
+                        if re.search(r"[ \t]", om_template_fixed_part) and re.search(r"[\n\r<>\"{}|\\^`]", om_template_fixed_part):
                             st.markdown(f"""<div class="warning-message">
-                                    ⚠️ You included a space or an unescaped character, which is discouraged.
-                                </div>""", unsafe_allow_html=True)
-                            st.write("")
+                                ⚠️ <b>Spaces and unescaped characters</b> are discouraged.
+                            </div>""", unsafe_allow_html=True)
+
+                        elif re.search(r"[ \t]", om_template_fixed_part):
+                            st.markdown(f"""<div class="warning-message">
+                                ⚠️ <b>Spaces</b> are discouraged.
+                            </div>""", unsafe_allow_html=True)
+
+                        elif re.search(r"[\n\r<>\"{}|\\^`]", om_template_fixed_part):
+                            st.markdown(f"""<div class="warning-message">
+                                ⚠️ <b>Unescaped characters</b> are discouraged.
+                            </div>""", unsafe_allow_html=True)
+
                     with col1c:
                         if om_template_fixed_part:
                             st.button("Add", key="key_save_om_template_fixed_part_button", on_click=save_om_template_fixed_part)
 
                 elif build_template_action_om == "📈 Variable part":
 
-                    column_list = utils.get_column_list_and_give_info(tm_iri_for_pom)[0]
-                    column_list_ok_flag = utils.get_column_list_and_give_info(tm_iri_for_pom)[1]
-                    inner_column_list_html = utils.get_column_list_and_give_info(tm_iri_for_pom)[2]
-
-                    with col2b:
-                        if column_list_ok_flag:
-                            st.markdown(f"""<div class="info-message-blue">
-                                {inner_column_list_html}
-                            </div>""", unsafe_allow_html=True)
-                        else:
-                            st.markdown(f"""<div class="warning-message">
-                                {inner_column_list_html}
-                            </div>""", unsafe_allow_html=True)
+                    column_list, inner_html, ds_for_display = utils.get_column_list_and_give_info(tm_label_for_pom)
 
                     if not column_list:   #data source is not available (load)
                         with col1b:
-                            om_template_variable_part = st.text_input("⌨️ Manually enter reference:*",
-                                label_visibility="collapsed", key="key_om_template_variable_part")
-                            st.markdown("""<div style='text-align: right; font-size: 10.5px; color: #cc9a06; font-weight: bold; margin-top: -10px;'>
-                                ⚠️ discouraged
+                            om_template_variable_part = st.text_input("⌨️ Manually enter column of the data source:*",
+                                key="key_om_template_variable_part_manual", label_visibility="collapsed")
+                            st.markdown("""<div class="very-small-info">
+                                Manual reference entry <b>(discouraged)</b>
                             </div>""", unsafe_allow_html=True)
-                        if om_template_variable_part:
-                            with col1c:
-                                save_om_template_variable_part_button = st.button("Add", key="save_om_template_variable_part_button", on_click=save_om_template_variable_part)
+                        with col1c:
+                            if om_template_variable_part:
+                                st.button("Add", key="save_om_template_variable_part_button", on_click=save_om_template_variable_part)
 
                     else:  # data source is available
                         with col1b:
                             list_to_choose = column_list.copy()
                             list_to_choose.insert(0, "Select reference")
-                            om_template_variable_part = st.selectbox("🖱️ Select reference:", list_to_choose,
+                            om_template_variable_part = st.selectbox("🖱️ Select the column of the data source:", list_to_choose,
                                 label_visibility="collapsed", key="key_om_template_variable_part")
-                        if st.session_state["om_template_list"] and st.session_state["om_template_list"][-1].endswith("}"):
-                            with col1:
-                                st.markdown(f"""<div class="warning-message">
-                                        ⚠️ <b>Best practice:</b> Add a fixed part between two variable parts to improve clarity.
-                                    </div>""", unsafe_allow_html=True)
-                        if om_template_variable_part != "Select reference":
-                            with col1c:
-                                save_om_template_variable_part_button = st.button("Add", key="save_om_template_variable_part_button", on_click=save_om_template_variable_part)
+                            if ds_for_display:
+                                st.markdown(f"""<div class="very-small-info">
+                                    Data source: <b>{ds_for_display}</b>
+                                </div>""", unsafe_allow_html=True)
 
+                        with col1c:
+                            if om_template_variable_part != "Select reference":
+                                st.button("Add", key="save_om_template_variable_part_button", on_click=save_om_template_variable_part)
+
+                    if st.session_state["om_template_list"] and st.session_state["om_template_list"][-1].endswith("}"):
+                        if inner_html:
+                            inner_html += """&nbsp&nbsp&nbsp•&nbsp&nbsp&nbsp <b>Best practice:</b>
+                                Add a fixed part between two variable parts <small>to improve clarity.</small></div>"""
+                        else:
+                            inner_html += """⚠️ <b>Best practice:</b>
+                                Add a fixed part between two variable parts <small>to improve clarity.</small></div>"""
+
+                    if inner_html:
+                        with col1:
+                            col1a, col1b = st.columns([2,0.5])
+                        with col1a:
+                            st.markdown(f"""<div class="warning-message">
+                                {inner_html}
+                            </div>""", unsafe_allow_html=True)
 
                 elif build_template_action_om == "🏷️ Fixed namespace":
                     with col1b:
                         mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                         list_to_choose = sorted(mapping_ns_dict.keys())
-                        list_to_choose.insert(0, "Select a namespace")
-                        om_template_ns_prefix = st.selectbox("🖱️ Select a namespace:", list_to_choose,
+                        if st.session_state["om_template_is_iri_flag"]:
+                            list_to_choose.insert(0, "Remove namespace")
+                        list_to_choose.insert(0, "Select namespace")
+                        om_template_ns_prefix = st.selectbox("🖱️ Select a namespace for the template:", list_to_choose,
                             label_visibility="collapsed", key="key_om_template_ns_prefix")
-                        if not mapping_ns_dict:
-                            ns_needed_for_pom_flag = True
 
                     with col1c:
-                        if om_template_ns_prefix != "Select a namespace":
+                        if om_template_ns_prefix == "Remove namespace":
+                            st.button("Remove", key="key_add_ns_to_om_template_button", on_click=remove_ns_from_om_template)
+                        elif om_template_ns_prefix != "Select namespace":
                             om_template_ns = mapping_ns_dict[om_template_ns_prefix]
                             st.button("Add", key="key_add_ns_to_om_template_button", on_click=add_ns_to_om_template)
 
@@ -1655,10 +1608,10 @@ with tab3:
                 elif build_template_action_om == "🗑️ Reset template":
                     with col1b:
                         st.markdown(f"""<div class="warning-message">
-                                ⚠️ The current template will be deleted.
+                                ⚠️ The current template <b>will be deleted</b>.
                             </div>""", unsafe_allow_html=True)
                     with col1c:
-                        st.button("Reset", on_click=reset_om_template)
+                        st.button("Reset", key="key_reset_om_template_button", on_click=reset_om_template)
 
                 with col1:
                     om_template = "".join(st.session_state["om_template_list"])
@@ -1684,69 +1637,64 @@ with tab3:
                                 above and preview it here.</b> <small>You can add as many parts as you need.</small></div>""", unsafe_allow_html=True)
                         st.write("")
 
-
-            #_______________________________________________
-            # OBJECT MAP - CONSTANT-VALUED
+            # CONSTANT-VALUED OBJECT MAP
             if om_generation_rule == "Constant 🔒":
 
-                # with col1:
-                #     st.markdown("""
-                #     <div style="font-size:13px; font-weight:500; margin-top:10px; margin-bottom:6px; border-top:0.5px solid #ccc; padding-bottom:4px;">
-                #         <b>🔒 Constant</b><br>
-                #     </div>""", unsafe_allow_html=True)
-
-                with col1b:
-                    st.markdown("""
-                    <div style="font-size:13px; font-weight:500; margin-top:10px; margin-bottom:6px; border-top:0.5px solid #ccc; padding-bottom:4px;">
+                with col1:
+                    st.markdown("""<div class="small-subsection-heading">
                         <b>🔒 Constant</b><br>
                     </div>""", unsafe_allow_html=True)
+
+                with col1:
+                    col1a, col1b = st.columns(2)
+
+                with col1a:
                     mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                     list_to_choose = sorted(mapping_ns_dict.keys())
-                    list_to_choose.insert(0, "Select a namespace")
-                    om_constant_ns_prefix = st.selectbox("🖱️ Namespace for the constant:", list_to_choose,
+                    list_to_choose.insert(0, "Select namespace")
+                    om_constant_ns_prefix = st.selectbox("🖱️ Select namespace for the constant:", list_to_choose,
                         key="key_om_constant_ns")
-                    om_constant = st.text_input("⌨️ Enter Object Map constant:*", key="key_om_constant")
-
-
-            #_______________________________________________
-            #OBJECT MAP - REFERENCED-VALUED
-            if om_generation_rule ==  "Reference 📊":
-                om_datatype = ""
-                om_language_tag = ""
-                om_ready_flag_reference = False
-
-                column_list = utils.get_column_list_and_give_info(tm_iri_for_pom)[0]
-                column_list_ok_flag = utils.get_column_list_and_give_info(tm_iri_for_pom)[1]
-                inner_column_list_html = utils.get_column_list_and_give_info(tm_iri_for_pom)[2]
-
-                with col2b:
-                    if column_list_ok_flag:
-                        st.markdown(f"""<div class="info-message-blue">
-                            {inner_column_list_html}
-                        </div>""", unsafe_allow_html=True)
-                    else:
-                        st.markdown(f"""<div class="warning-message">
-                            {inner_column_list_html}
-                        </div>""", unsafe_allow_html=True)
 
                 with col1b:
-                    st.markdown("""
-                    <div style="font-size:13px; font-weight:500; margin-top:10px; margin-bottom:6px; border-top:0.5px solid #ccc; padding-bottom:4px;">
+                    om_constant = st.text_input("⌨️ Enter Object Map constant:*", key="key_om_constant")
+
+            # REFERENCED-VALUE OBJECT MAP
+            if om_generation_rule ==  "Reference 📊":
+
+                with col1:
+                    st.markdown("""<div class="small-subsection-heading">
                         <b>📊 Reference</b><br>
                     </div>""", unsafe_allow_html=True)
 
+                with col1:
+                    col1a, col1b = st.columns([2,1])
+
+                column_list, inner_html, ds_for_display = utils.get_column_list_and_give_info(tm_label_for_pom)
+
                 if not column_list:   #data source is not available (load)
-                    with col1b:
-                        om_column_name = st.text_input("⌨️ Enter reference manually:*", key="key_om_column_name")
-                        st.markdown("""<div style='text-align: right; font-size: 10.5px; color: #cc9a06; font-weight: bold; margin-top: -10px;'>
-                            ⚠️ discouraged
+                    with col1a:
+                        om_column_name = st.text_input("⌨️ Manually enter logical source reference:*",
+                            key="key_om_column_name_manual", label_visibility="collapsed")
+                        st.markdown("""<div class="very-small-info">
+                            Manual reference entry <b>(discouraged)</b>
                         </div>""", unsafe_allow_html=True)
+
                 else:
-                    with col1b:
+                    with col1a:
                         list_to_choose = column_list.copy()
                         list_to_choose.insert(0, "Select reference")
                         om_column_name = st.selectbox(f"""🖱️ Select reference:*""", list_to_choose,
-                            key="key_om_column_name")
+                            label_visibility="collapsed", key="key_om_column_name")
+                        if ds_for_display:
+                            st.markdown(f"""<div class="very-small-info">
+                                Data source: <b>{ds_for_display}</b>
+                            </div>""", unsafe_allow_html=True)
+
+                if inner_html:
+                    with col1b:
+                        st.markdown(f"""<div class="warning-message">
+                            {inner_html}
+                        </div>""", unsafe_allow_html=True)
 
 
             # ADDITIONAL CONFIGURATION
@@ -1755,6 +1703,7 @@ with tab3:
                 <div style="font-size:13px; font-weight:500; margin-top:10px; margin-bottom:6px; border-top:0.5px solid #ccc; padding-bottom:4px;">
                     <b>⚙️ Additional Configuration</b><br>
                 </div>""", unsafe_allow_html=True)
+
             with col1:
                 col1a, col1b, col1c = st.columns(3)
 
@@ -1768,44 +1717,50 @@ with tab3:
                 om_term_type = st.selectbox("🆔 Select term type:*", list_to_choose,
                     key="om_term_type")
 
-
             # DATATYPE
             if om_term_type == "📘 Literal":
 
                 with col1b:
                     datatypes_dict = utils.get_datatype_dict()
                     list_to_choose = sorted(datatypes_dict.keys())
+                    list_to_choose.insert(0, "空 Natural language tag")
                     list_to_choose.insert(0, "✚ New datatype")
-                    list_to_choose.insert(0, "🈳 Natural language tag")
                     list_to_choose.insert(0, "No datatype")
                     om_datatype = st.selectbox("🖱️ Select datatype (optional):", list_to_choose,
                         key="key_om_datatype")
 
-                if om_datatype == "✚ New datatype": #HEREIGO
+                if om_datatype == "✚ New datatype":
                     with col1b:
                         mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                         list_to_choose = sorted(mapping_ns_dict.keys())
-                        list_to_choose.insert(0,"Select namespace")
+                        list_to_choose.insert(0, "Select namespace")
                         datatype_prefix = st.selectbox("🖱️ Namespace (opt):", list_to_choose,  #HEREIGO
                             key="key_datatype_prefix")
                         datatype_label = st.text_input("⌨️ Enter datatype:*", key="key_datatype_label")
 
-                    if datatype_prefix == "Select namespace":
+                    if datatype_prefix == "Select namespace":   # HERE MOVE
                         om_datatype_iri = URIRef(datatype_label)
                     else:
                         NS = Namespace(mapping_ns_dict[datatype_prefix])
                         om_datatype_iri = NS[datatype_label]
 
-                elif om_datatype == "🈳 Natural language tag":
-                    language_tags = utils.get_language_tags_list()
+                elif om_datatype == "空 Natural language tag":
+                    language_tags_list = utils.get_language_tags_list()
 
                     with col1b:
-                        om_language_tag = st.selectbox("🖱️ Select language tag:*", language_tags,
-                            key="key_om_language_tag")
+                        list_to_choose = language_tags_list
+                        list_to_choose.insert(0, "✚ New language tag")
+                        om_language_tag = st.selectbox("🈳 Select language tag:*", list_to_choose,
+                            index=list_to_choose.index("en"), key="key_om_language_tag")
 
+                        if om_language_tag == "✚ New language tag":
+                            om_language_tag = st.text_input("⌨️ Enter new language tag:*")
 
             # GRAPH MAP
-            with col1c:
+
+            col_graph_map = col1c if om_term_type == "📘 Literal" else col1b
+
+            with col_graph_map:
 
                 graph_map_dict = utils.get_graph_map_dict()
                 list_to_choose = ["Default graph", "✚ New graph map"]
@@ -1814,6 +1769,7 @@ with tab3:
                 add_om_graph_map_option = st.selectbox("️🗺️️ Graph map (optional):",
                     list_to_choose, key="key_add_om_graph_map_option")
 
+            with col1c:
                 if add_om_graph_map_option == "🔄 Existing graph map":
 
                     list_to_choose = sorted(graph_map_dict.keys())
@@ -1842,7 +1798,7 @@ with tab3:
                     else:
                         om_graph = ""
 
-        if tm_label_for_pom != "Select a TriplesMap":
+        if tm_label_for_pom != "Select TriplesMap":
 
             # POM MAP ______________________________________
             inner_html_error = ""
@@ -1867,7 +1823,7 @@ with tab3:
                     pom_complete_flag = False
                     inner_html_error += "<small>· The <b>predicate</b> has not been given.</small><br>"
 
-                elif manual_p_ns_prefix == "Select a namespace" and not utils.is_valid_iri(manual_p_label, delimiter_ending=False):
+                elif manual_p_ns_prefix == "Select namespace" and not utils.is_valid_iri(manual_p_label, delimiter_ending=False):
                     pom_complete_flag = False
                     inner_html_error += """<small>· If no namespace is selected,
                         the <b>predicate</b> must be a <b>valid IRI</b>.</small><br>"""
@@ -1903,12 +1859,12 @@ with tab3:
                     inner_html_error += "<small>· You must enter a <b>constant</b>.</small><br>"
 
                 if om_term_type == "📘 Literal":
-                    if om_constant_ns_prefix != "Select a namespace":
+                    if om_constant_ns_prefix != "Select namespace":
                         inner_html_warning += """<small>· Term type is <b>Literal</b>, but you selected a <b>namespace</b>
                             for the constant.</small><br>"""
 
                 elif om_term_type == "🌐 IRI":
-                    if om_constant and om_constant_ns_prefix == "Select a namespace":
+                    if om_constant and om_constant_ns_prefix == "Select namespace":
                         if not utils.is_valid_iri(om_constant, delimiter_ending=False):
                             pom_complete_flag = False
                             inner_html_error += """<small>· Term type is <b>🌐 IRI</b>.
@@ -1945,7 +1901,7 @@ with tab3:
                             inner_html_error += """<small>· If no namespace is selected,
                                 the <b>datatype</b> must be a <b>valid IRI</b>.</small><br>"""
 
-                elif om_datatype == "🈳 Natural language tag":
+                elif om_datatype == "空 Natural language tag":
 
                     if om_language_tag == "Select language tag":
                         pom_complete_flag = False
@@ -2035,7 +1991,7 @@ with tab3:
                     om_iri_for_display = Literal(om_template)
 
                 elif om_generation_rule == "Constant 🔒":
-                    if om_constant_ns_prefix != "Select a namespace":
+                    if om_constant_ns_prefix != "Select namespace":
                         om_constant_ns = mapping_ns_dict[om_constant_ns_prefix]
                         NS = Namespace(om_constant_ns)
                         om_iri_for_display = NS[om_constant]
@@ -2074,10 +2030,10 @@ with tab3:
                 datatype_iri = False
                 language_tag = False
                 if om_term_type == "📘 Literal":
-                    if om_datatype != "No datatype" and om_datatype != "🈳 Natural language tag" and om_datatype != "✚ New datatype": #HEREIGO
+                    if om_datatype != "No datatype" and om_datatype != "空 Natural language tag" and om_datatype != "✚ New datatype": #HEREIGO
                         datatype_dict = utils.get_datatype_dict()
                         datatype_iri = datatype_dict[om_datatype]
-                    elif om_datatype == "🈳 Natural language tag":
+                    elif om_datatype == "空 Natural language tag":
                         language_tag = Literal(om_language_tag)
 
 
@@ -2465,10 +2421,10 @@ with tab4:
 
             with col1a:
                 list_to_choose = list(reversed(tm_w_pom_list))
-                list_to_choose.insert(0, "Select a TriplesMap")
-                tm_to_delete_pom_label = st.selectbox("🖱️ Select a TriplesMap:*", list_to_choose, key="key_tm_to_delete_pom")
+                list_to_choose.insert(0, "Select TriplesMap")
+                tm_to_delete_pom_label = st.selectbox("🖱️ Select TriplesMap:*", list_to_choose, key="key_tm_to_delete_pom")
 
-            if tm_to_delete_pom_label != "Select a TriplesMap":
+            if tm_to_delete_pom_label != "Select TriplesMap":
                 tm_to_delete_pom_iri = tm_dict[tm_to_delete_pom_label]
                 pom_of_selected_tm_list = []
                 for pom_iri in pom_dict:
@@ -2520,7 +2476,7 @@ with tab4:
                                 st.button("Delete", on_click=delete_pom, key="key_delete_all_pom_button")
 
 
-            if tm_to_delete_pom_label != "Select a TriplesMap":
+            if tm_to_delete_pom_label != "Select TriplesMap":
 
 
                 rows = [{"P-O Map": pom_dict[pom_iri][2],

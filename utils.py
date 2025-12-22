@@ -133,6 +133,30 @@ def get_predefined_ns_dict():
     return filtered_ns_dict
 #_____________________________________________________
 
+#______________________________________________
+# Funtion to get list of datatypes
+def get_default_datatypes_dict():
+
+    datatype_dict = {"xsd:string": XSD.string, "xsd:integer": XSD.integer,
+        "xsd:decimal": XSD.decimal, "xsd:float": XSD.float,
+        "xsd:double": XSD. double, "xsd:boolean": XSD.boolean,
+        "xsd:date": XSD.date, "xsd:dateTime": XSD.dateTime,
+        "xsd:time": XSD.time, "xsd:anyURI": XSD.anyURI,
+        "rdf:XMLLiteral": XSD.XMLLiteral, "rdf:HTML": RDF.HTML,
+        "rdf:JSON": RDF.JSON}
+
+    return datatype_dict
+#______________________________________________
+
+#______________________________________________
+# Funtion to get list of language tags (should be valid BCP 47 language tags)
+def get_default_language_tags_list():
+
+    language_tags_list = ["en", "es", "fr", "de", "zh",
+        "ja", "pt", "en-US", "en-GB", "ar", "ru", "hi", "zh", "sr"]
+
+    return language_tags_list
+#______________________________________________
 
 # AESTHETICS====================================================================
 #______________________________________________________
@@ -933,16 +957,15 @@ def init_session_state_variables():
         st.session_state["tm_label_for_sm"] = False
         st.session_state["sm_template_list"] = []
         st.session_state["sm_iri"] = None
-        st.session_state["sm_template_prefix"] = ""
+        st.session_state["sm_template_is_iri_flag"] = False
         st.session_state["multiple_subject_class_list"] = []
         st.session_state["sm_template_variable_part_flag"] = False
         st.session_state["sm_saved_ok_flag"] = False
         # TAB3
         st.session_state["key_ds_uploader_for_pom"] = str(uuid.uuid4())
-        st.session_state["om_template_ns_prefix"] = ""
+        st.session_state["om_template_is_iri_flag"] = False
         st.session_state["om_template_list"] = []
         st.session_state["last_added_pom_list"] = []
-        st.session_state["template_om_is_iri_flag"] = False
         st.session_state["pom_saved_ok_flag"] = False
         st.session_state["om_template_variable_part_flag"] = False
         # TAB4
@@ -2449,6 +2472,34 @@ def get_column_list_and_give_info(tm_label):
 #______________________________________________________
 
 
+# PANEL: ADD RPEDICATE-OBJECT MAP-----------------------------------------------
+#______________________________________________
+# Funtion to get list of datatypes (including possible dt defined by mapping)
+def get_datatype_dict():
+
+    datatype_dict = get_default_datatypes_dict()
+    mapping_defined_datatype_list = list(st.session_state["g_mapping"].objects(None, RML.datatype))
+
+    for dt in mapping_defined_datatype_list:
+        if not get_node_label(dt) in datatype_dict:
+            datatype_dict[utils.get_node_label(dt)] = dt
+
+    return datatype_dict
+#______________________________________________
+
+#______________________________________________
+# Funtion to get list of language tags
+def get_language_tags_list():
+
+    language_tags_list = get_default_language_tags_list()
+
+    # Add mapping-defined language tags
+    for s, p, o in st.session_state["g_mapping"]:
+        if isinstance(o, Literal) and o.language and o.language not in language_tags_list:
+            language_tags_list.append(o.language)
+
+    return language_tags_list
+#______________________________________________
 
 
 
@@ -2630,44 +2681,7 @@ def get_sm_dict():
     return sm_dict
 #___________________________________________
 
-#______________________________________________
-# Funtion to get list of datatypes
-def get_default_datatypes_dict():
 
-    datatype_dict = {"xsd:string": XSD.string, "xsd:integer": XSD.integer,
-        "xsd:decimal": XSD.decimal, "xsd:float": XSD.float,
-        "xsd:double": XSD. double, "xsd:boolean": XSD.boolean,
-        "xsd:date": XSD.date, "xsd:dateTime": XSD.dateTime,
-        "xsd:time": XSD.time, "xsd:anyURI": XSD.anyURI,
-        "rdf:XMLLiteral": XSD.XMLLiteral, "rdf:HTML": RDF.HTML,
-        "rdf:JSON": RDF.JSON}
-
-    return datatype_dict
-#______________________________________________
-
-#______________________________________________
-# Funtion to get list of datatypes
-def get_datatype_dict():
-
-    datatype_dict = get_default_datatypes_dict()
-    mapping_defined_datatype_list = list(st.session_state["g_mapping"].objects(None, RML.datatype))
-
-    for dt in mapping_defined_datatype_list:
-        if not get_node_label(dt) in datatype_dict:
-            datatype_dict[utils.get_node_label(dt)] = dt
-
-    return datatype_dict
-#______________________________________________
-
-#______________________________________________
-# Funtion to get list of language tags
-def get_language_tags_list():
-
-    language_tags_list = ["Select language tag", "en", "es", "fr", "de", "zh",
-        "ja", "pt-BR", "en-US", "ar", "ru", "hi", "zh-Hans", "sr-Cyrl"]
-
-    return language_tags_list
-#______________________________________________
 
 #________________________________________________________
 # Funtion to get the dictionary of the Predicate-Object Maps
