@@ -318,23 +318,9 @@ def reset_om_template():
     st.session_state["key_build_template_action_om"] = "🔒 Fixed part"
 
 def save_pom_template():
-    # pom and om iri______________________________
+    # get info______________________________
     pom_iri = BNode()
     om_iri = BNode()
-    # predicate list______________________________
-    predicate_iri_list = []
-    for p in predicate_list:        # get the rpedicates iris
-        if p in ontology_properties_dict:
-            predicate_iri_list.append(ontology_properties_dict[p])
-        elif p in custom_classes_dict:
-            predicate_iri_list.append(custom_properties_dict[p])
-    # datatype______________________________
-    if om_term_type == "📘 Literal":              # get the datatype iri
-        if datatype_prefix == "Select namespace":
-            om_datatype_iri = URIRef(datatype_label)
-        else:
-            NS = Namespace(mapping_ns_dict[datatype_prefix])
-            om_datatype_iri = NS[datatype_label]           # get graph map iri
     # add triples pom________________________
     st.session_state["g_mapping"].add((st.session_state["tm_iri_for_pom"], RML.predicateObjectMap, pom_iri))
     for p_iri in predicate_iri_list:
@@ -344,19 +330,18 @@ def save_pom_template():
     # add triples om________________________
     st.session_state["g_mapping"].add((om_iri, RDF.type, RML.ObjectMap))
     st.session_state["g_mapping"].add((om_iri, RML.template, Literal(om_template)))
+    # term type, datatype and language tag
     if om_term_type == "📘 Literal":
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.Literal))
-        if om_datatype != "No datatype" and om_datatype != "空 Natural language tag" and om_datatype != "✚ New datatype":
-            datatype_dict = utils.get_datatype_dict()
-            st.session_state["g_mapping"].add((om_iri, RML.datatype, datatype_dict[om_datatype]))
-        elif om_datatype == "✚ New datatype":
+        if om_datatype_option != "No datatype" and om_datatype_option != "空 Natural language tag":
             st.session_state["g_mapping"].add((om_iri, RML.datatype, om_datatype_iri))
-        elif om_datatype == "空 Natural language tag":
+        elif om_datatype_option == "空 Natural language tag":
             st.session_state["g_mapping"].add((om_iri, RML.language, Literal(om_language_tag)))
     elif om_term_type == "🌐 IRI":
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.IRI))
     elif om_term_type == "👻 BNode":
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.BlankNode))
+    # graph map
     if add_om_graph_map_option != "Default graph map":
         st.session_state["g_mapping"].add((om_iri, RML.graphMap, om_graph))
     # store information________________________
@@ -367,105 +352,96 @@ def save_pom_template():
     st.session_state["om_template_variable_part_flag"] = False
     # reset fields_____________________________
     st.session_state["key_tm_label_for_pom"] = tm_label_for_pom   # keep same tm to add more pom
-    st.session_state["key_selected_p_label"] = "Select a predicate"
-    st.session_state["key_manual_p_ns_prefix"] = "Select namespace"
-    st.session_state["key_manual_p_label"] = ""
-    st.session_state["key_pom_label"] = ""
+    st.session_state["key_om_generation_rule_radio"] = "Template 📐"
+    st.session_state["key_predicate"] = []
     st.session_state["key_build_template_action_om"] = "🔒 Fixed part"
-    st.session_state["key_om_template_ns_prefix"] = "Select namespace"
-    st.session_state["om_term_type"] = "🌐 IRI"
-    st.session_state["key_om_label"] = ""
+    st.session_state["key_om_term_type"] = "🌐 IRI"
     st.session_state["key_add_om_graph_map_option"] = "Default graph map"
 
 def save_pom_constant():
+    # get info______________________________
+    pom_iri = BNode()
+    om_iri = BNode()
     # add triples pom________________________
-    st.session_state["g_mapping"].add((st.session_state["tm_iri_for_pom"], RML.predicateObjectMap, st.session_state["pom_iri_to_create"]))
-    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RML.predicate, selected_p_iri))
-    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RML.objectMap, om_iri))
-    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RDF.type, RML.PredicateObjectMap))
+    st.session_state["g_mapping"].add((st.session_state["tm_iri_for_pom"], RML.predicateObjectMap, pom_iri))
+    for p_iri in predicate_iri_list:
+        st.session_state["g_mapping"].add((pom_iri, RML.predicate, p_iri))
+    st.session_state["g_mapping"].add((pom_iri, RML.objectMap, om_iri))
+    st.session_state["g_mapping"].add((pom_iri, RDF.type, RML.PredicateObjectMap))
     # add triples om________________________
     st.session_state["g_mapping"].add((om_iri, RDF.type, RML.ObjectMap))
     if om_constant_ns_prefix != "Select namespace":
-        om_constant_ns = mapping_ns_dict[om_constant_ns_prefix]
-        NS = Namespace(om_constant_ns)
+        NS = Namespace(mapping_ns_dict[om_constant_ns_prefix])
         om_constant_iri = NS[om_constant]
         st.session_state["g_mapping"].add((om_iri, RML.constant, URIRef(om_constant_iri)))
     else:
         st.session_state["g_mapping"].add((om_iri, RML.constant, Literal(om_constant)))
-    if om_term_type == "🌐 IRI":
-        st.session_state["g_mapping"].add((om_iri, RML.termType, RML.IRI))
-    elif om_term_type == "📘 Literal":
+    # term type, datatype and language tag
+    if om_term_type == "📘 Literal":
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.Literal))
-        if om_datatype != "No datatype" and om_datatype != "空 Natural language tag" and om_datatype != "✚ New datatype":
-            datatype_dict = utils.get_datatype_dict()
-            st.session_state["g_mapping"].add((om_iri, RML.datatype, datatype_dict[om_datatype]))
-        elif om_datatype == "✚ New datatype":
+        if om_datatype_option != "No datatype" and om_datatype_option != "空 Natural language tag":
             st.session_state["g_mapping"].add((om_iri, RML.datatype, om_datatype_iri))
-        elif om_datatype == "空 Natural language tag":
+        elif om_datatype_option == "空 Natural language tag":
             st.session_state["g_mapping"].add((om_iri, RML.language, Literal(om_language_tag)))
-    if add_om_graph_map_option == "✚ New graph map" or add_om_graph_map_option == "🔄 Existing graph map":
+    elif om_term_type == "🌐 IRI":
+        st.session_state["g_mapping"].add((om_iri, RML.termType, RML.IRI))
+    # graph map
+    if add_om_graph_map_option != "Default graph map":
         st.session_state["g_mapping"].add((om_iri, RML.graphMap, om_graph))
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
-    st.session_state["last_added_pom_list"].insert(0, [st.session_state["pom_iri_to_create"], st.session_state["tm_iri_for_pom"]])
+    st.session_state["last_added_pom_list"].insert(0, [pom_iri, st.session_state["tm_iri_for_pom"]])
+    st.session_state["om_template_list"] = []    # reset template (in case it was modified)
+    st.session_state["om_template_is_iri_flag"] = False
+    st.session_state["om_template_variable_part_flag"] = False
     # reset fields_____________________________
-    st.session_state["template_om_is_iri_flag"] = False
-    st.session_state["om_template_list"] = []    # reset template in case it was modified
     st.session_state["key_tm_label_for_pom"] = tm_label_for_pom   # keep same tm to add more pom
-    st.session_state["key_om_generation_rule_radio"] = "Constant 🔒"
-    st.session_state["key_selected_p_label"] = "Select a predicate"
-    st.session_state["key_manual_p_ns_prefix"] = "Select namespace"
-    st.session_state["key_manual_p_label"] = ""
-    st.session_state["key_pom_label"] = ""
-    st.session_state["key_om_constant"] = ""
-    st.session_state["om_term_type"] = "📘 Literal"
-    st.session_state["key_om_label"] = ""
-    st.session_state["key_om_datatype"] = "No datatype"
+    st.session_state["key_om_generation_rule_radio"] = "Template 📐"
+    st.session_state["key_predicate"] = []
+    st.session_state["key_build_template_action_om"] = "🔒 Fixed part"
+    st.session_state["key_om_term_type"] = "🌐 IRI"
     st.session_state["key_add_om_graph_map_option"] = "Default graph map"
 
-
 def save_pom_reference():
+    # get info______________________________
+    pom_iri = BNode()
+    om_iri = BNode()
     # add triples pom________________________
-    st.session_state["g_mapping"].add((st.session_state["tm_iri_for_pom"], RML.predicateObjectMap, st.session_state["pom_iri_to_create"]))
-    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RML.predicate, selected_p_iri))
-    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RML.objectMap, om_iri))
-    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RDF.type, RML.PredicateObjectMap))
+    st.session_state["g_mapping"].add((st.session_state["tm_iri_for_pom"], RML.predicateObjectMap, pom_iri))
+    for p_iri in predicate_iri_list:
+        st.session_state["g_mapping"].add((pom_iri, RML.predicate, p_iri))
+    st.session_state["g_mapping"].add((pom_iri, RML.objectMap, om_iri))
+    st.session_state["g_mapping"].add((pom_iri, RDF.type, RML.PredicateObjectMap))
     # add triples om________________________
     st.session_state["g_mapping"].add((om_iri, RDF.type, RML.ObjectMap))
-    st.session_state["g_mapping"].add((om_iri, RML.reference, Literal(om_column_name)))    #HERE change to RML.column in R2RML
+    st.session_state["g_mapping"].add((om_iri, RML.reference, Literal(om_column_name)))
+    # term type, datatype and language tag
     if om_term_type == "📘 Literal":
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.Literal))
-        if om_datatype != "No datatype" and om_datatype != "空 Natural language tag" and om_datatype != "✚ New datatype":
-            datatype_dict = utils.get_datatype_dict()
-            st.session_state["g_mapping"].add((om_iri, RML.datatype, datatype_dict[om_datatype]))
-        elif om_datatype == "✚ New datatype":
+        if om_datatype_option != "No datatype" and om_datatype_option != "空 Natural language tag":
             st.session_state["g_mapping"].add((om_iri, RML.datatype, om_datatype_iri))
-        elif om_datatype == "空 Natural language tag":
+        elif om_datatype_option == "空 Natural language tag":
             st.session_state["g_mapping"].add((om_iri, RML.language, Literal(om_language_tag)))
     elif om_term_type == "🌐 IRI":
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.IRI))
     elif om_term_type == "👻 BNode":
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.BlankNode))
-    if add_om_graph_map_option == "✚ New graph map" or add_om_graph_map_option == "🔄 Existing graph map":
+    # graph map
+    if add_om_graph_map_option != "Default graph map":
         st.session_state["g_mapping"].add((om_iri, RML.graphMap, om_graph))
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
-    st.session_state["last_added_pom_list"].insert(0, [st.session_state["pom_iri_to_create"], st.session_state["tm_iri_for_pom"]])
+    st.session_state["last_added_pom_list"].insert(0, [pom_iri, st.session_state["tm_iri_for_pom"]])
+    st.session_state["om_template_list"] = []    # reset template (in case it was modified)
+    st.session_state["om_template_is_iri_flag"] = False
+    st.session_state["om_template_variable_part_flag"] = False
     # reset fields_____________________________
-    st.session_state["template_om_is_iri_flag"] = False
-    st.session_state["om_template_list"] = []    # reset template in case it was modified
     st.session_state["key_tm_label_for_pom"] = tm_label_for_pom   # keep same tm to add more pom
-    st.session_state["key_om_generation_rule_radio"] = "Reference 📊"
-    st.session_state["key_selected_p_label"] = "Select a predicate"
-    st.session_state["key_manual_p_ns_prefix"] = "Select namespace"
-    st.session_state["key_manual_p_label"] = ""
-    st.session_state["key_pom_label"] = ""
-    st.session_state["key_om_column_name"] = "Select reference"
-    st.session_state["om_term_type"] = "🌐 IRI"
-    st.session_state["key_om_label"] = ""
-    st.session_state["key_om_datatype"] = "No datatype"
+    st.session_state["key_om_generation_rule_radio"] = "Template 📐"
+    st.session_state["key_predicate"] = []
+    st.session_state["key_build_template_action_om"] = "🔒 Fixed part"
+    st.session_state["key_om_term_type"] = "🌐 IRI"
     st.session_state["key_add_om_graph_map_option"] = "Default graph map"
-
 
 # TAB4
 def delete_tm():   #function to delete a TriplesMap
@@ -1503,6 +1479,13 @@ with tab3:
                     predicate_list = st.multiselect("🏷️ Select predicate(s):*", list_to_choose,
                         key="key_predicate")    # predicate list (labels)
 
+            predicate_iri_list = []
+            for p in predicate_list:        # get the predicates iris
+                if p in ontology_properties_dict:
+                    predicate_iri_list.append(ontology_properties_dict[p])
+                elif p in custom_classes_dict:
+                    predicate_iri_list.append(custom_properties_dict[p])
+
             # TEMPLATE-VALUED OBJECT MAP
             if om_generation_rule == "Template 📐":
 
@@ -1716,7 +1699,7 @@ with tab3:
                     list_to_choose = ["🌐 IRI", "📘 Literal", "👻 BNode"]
 
                 om_term_type = st.selectbox("🆔 Select term type:*", list_to_choose,
-                    key="om_term_type")
+                    key="key_om_term_type")
 
             # DATATYPE
             if om_term_type == "📘 Literal":
@@ -1727,10 +1710,10 @@ with tab3:
                     list_to_choose.insert(0, "空 Natural language tag")
                     list_to_choose.insert(0, "✚ New datatype")
                     list_to_choose.insert(0, "No datatype")
-                    om_datatype = st.selectbox("🖱️ Select datatype (optional):", list_to_choose,
+                    om_datatype_option = st.selectbox("🖱️ Select datatype (optional):", list_to_choose,
                         key="key_om_datatype")
 
-                if om_datatype == "✚ New datatype":
+                if om_datatype_option == "✚ New datatype":
                     with col1b:
                         mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                         list_to_choose = sorted(mapping_ns_dict.keys())
@@ -1738,8 +1721,16 @@ with tab3:
                         datatype_prefix = st.selectbox("🖱️ Namespace (opt):", list_to_choose,  #HEREIGO
                             key="key_datatype_prefix")
                         datatype_label = st.text_input("⌨️ Enter datatype:*", key="key_datatype_label")
+                        if datatype_prefix == "Select namespace":
+                            om_datatype_iri = URIRef(datatype_label)
+                        else:
+                            NS = Namespace(mapping_ns_dict[datatype_prefix])
+                            om_datatype_iri = NS[datatype_label]
 
-                elif om_datatype == "空 Natural language tag":
+                elif om_datatype_option != "No datatype" and om_datatype_option != "空 Natural language tag":
+                    om_datatype_iri = datatypes_dict[om_datatype_option]
+
+                elif om_datatype_option == "空 Natural language tag":
                     language_tags_list = utils.get_language_tags_list()
 
                     with col1b:
@@ -1849,14 +1840,14 @@ with tab3:
                     pom_complete_flag = False
                     inner_html_error += "<small>· The <b>reference</b> has not been entered.</small><br>"
                 else:
-                    if sm_term_type == "🌐 IRI":
+                    if om_term_type == "🌐 IRI":
                         inner_html_warning += """<small>· Term type is <b>IRI</b>.
                             Make sure the values in the referenced column
                             are valid IRIs.</small><br>"""
 
             if om_term_type == "📘 Literal":
 
-                if om_datatype == "✚ New datatype":
+                if om_datatype_option == "✚ New datatype":
                     if not datatype_label:
                         pom_complete_flag = False
                         inner_html_error += "<small>· You must enter a <b>datatype</b>.</small><br>"
@@ -1866,7 +1857,7 @@ with tab3:
                             inner_html_error += """<small>· If no namespace is selected,
                                 the <b>datatype</b> must be a <b>valid IRI</b>.</small><br>"""
 
-                elif om_datatype == "空 Natural language tag":
+                elif om_datatype_option == "空 Natural language tag":
                     if not om_language_tag:
                         pom_complete_flag = False
                         inner_html_error += "<small>· You must enter a <b>language tag</b>.</small><br>"
@@ -1937,21 +1928,19 @@ with tab3:
                 language_tag = False
                 datatype_iri = False
                 if om_term_type == "📘 Literal":
-                    if om_datatype != "No datatype" and om_datatype != "空 Natural language tag" and om_datatype != "✚ New datatype": #HEREIGO
-                        datatype_dict = utils.get_datatype_dict()
-                        datatype_iri = datatype_dict[om_datatype]
-                    elif om_datatype == "空 Natural language tag":
+                    if om_datatype_option != "No datatype" and om_datatype_option != "空 Natural language tag":
+                        datatype_iri = om_datatype_iri
+                    elif om_datatype_option == "空 Natural language tag":
                         language_tag = Literal(om_language_tag)
 
                 # DISPLAY RULE
-                existing_datatype = om_datatype if om_generation_rule == "Reference 📊" else False
                 is_reference = True if om_generation_rule == "Reference 📊" else False
                 if om_generation_rule == "Template 📐":
                     om_rule = om_template
                 elif om_generation_rule == "Constant 🔒":
                     om_rule = om_constant
                 elif om_generation_rule == "Reference 📊":
-                    om_rule = om_reference
+                    om_rule = om_column_name
                 with col1a:
                     utils.preview_rule(tm_iri_for_pom, predicate_list, om_rule, o_is_reference=o_is_reference,
                         datatype=datatype_iri, language_tag=language_tag)
