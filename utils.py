@@ -152,7 +152,7 @@ def get_default_datatypes_dict():
 # Funtion to get list of language tags (should be valid BCP 47 language tags)
 def get_default_language_tags_list():
 
-    language_tags_list = ["en", "es", "fr", "de", "zh",
+    language_tags_list = ["en", "es", "fr", "de",
         "ja", "pt", "en-US", "en-GB", "ar", "ru", "hi", "zh", "sr"]
 
     return language_tags_list
@@ -2471,8 +2471,20 @@ def get_column_list_and_give_info(tm_label):
     return [column_list, inner_html, ds_for_display]
 #______________________________________________________
 
+#________________________________________________________
+# Funtion to get the dictionary of the graph maps existing in mapping
+def get_graph_map_dict():
 
-# PANEL: ADD RPEDICATE-OBJECT MAP-----------------------------------------------
+    graph_map_dict = {}
+    graph_map_list = list(st.session_state["g_mapping"].objects(None, RML.graphMap))
+
+    for gm in graph_map_list:
+        graph_map_dict[get_node_label(gm)] = gm
+
+    return graph_map_dict
+#___________________________________________
+
+# PANEL: ADD PREDICATE-OBJECT MAP-----------------------------------------------
 #______________________________________________
 # Funtion to get list of datatypes (including possible dt defined by mapping)
 def get_datatype_dict():
@@ -2500,6 +2512,92 @@ def get_language_tags_list():
 
     return language_tags_list
 #______________________________________________
+
+#______________________________________________
+# Funtion to prepare a node for the rule preview
+def prepare_node_for_rule_preview(node, subject=False, predicate=False, object=False):
+
+    # Subject (node = tm)
+    if subject:
+        sm_iri_for_pom = next(st.session_state["g_mapping"].objects(node, RML.subjectMap), None)
+
+        if sm_iri_for_pom:
+            template_sm_for_pom = next(st.session_state["g_mapping"].objects(sm_iri_for_pom, RML.template), None)
+            constant_sm_for_pom = next(st.session_state["g_mapping"].objects(sm_iri_for_pom, RML.constant), None)
+            reference_sm_for_pom = next(st.session_state["g_mapping"].objects(sm_iri_for_pom, RML.reference), None)
+
+            if template_sm_for_pom:
+                sm_rule = template_sm_for_pom
+            elif constant_sm_for_pom:
+                sm_rule = constant_sm_for_pom
+            elif reference_sm_for_pom:
+                sm_rule = reference_sm_for_pom
+
+            if isinstance(sm_rule, URIRef):
+                sm_rule = utils.get_node_label(sm_rule)
+
+        else:
+            sm_rule = """No Subject Map"""
+#______________________________________________
+
+#________________________________________________
+# Function to display a rule when creating it (in 🏗️_Build_Mapping page)
+def preview_rule(tm_iri_for_pom, predicate_list, om_rule, o_is_reference=False, datatype=None, language_tag=None):
+
+    max_length = 40   # to adjust font size
+    inner_html = ""
+    small_header = """<small><b style="color:#F63366; font-size:10px;margin-top:8px; margin-bottom:8px; display:block;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>"""
+
+    # Get subject and prepare for display
+    sm_iri_for_pom = next(st.session_state["g_mapping"].objects(tm_iri_for_pom, RML.subjectMap), None)
+
+    if sm_iri_for_pom:
+        template_sm_for_pom = next(st.session_state["g_mapping"].objects(sm_iri_for_pom, RML.template), None)
+        constant_sm_for_pom = next(st.session_state["g_mapping"].objects(sm_iri_for_pom, RML.constant), None)
+        reference_sm_for_pom = next(st.session_state["g_mapping"].objects(sm_iri_for_pom, RML.reference), None)
+
+        s_for_display = template_sm_for_pom or constant_sm_for_pom or reference_sm_for_pom or ""
+
+        if isinstance(s_for_display, URIRef):
+            s_for_display = get_node_label(s_for_display)
+
+        if (None, RML.reference, Literal(s_for_display)) in st.session_state["g_mapping"]:  # if reference, add {}
+            formatted_s = f"{{{s_for_display}}}"
+
+    else:
+        s_for_display = """No Subject Map"""
+
+    # Get object and prepare for display
+    o_for_display = get_node_label(om_rule)
+
+    o_for_display = f"{{{o_for_display}}}" if o_is_reference else o_for_display     # if reference, add {}
+    o_for_display = f"""{o_for_display}^^{get_node_label(datatype)}""" if datatype else o_for_display    # add datatype
+    o_for_display = f"""{o_for_display}@{language_tag}""" if language_tag else o_for_display    # add language tag
+
+    # Adjust font size based on length
+    s_for_display = f"""<small>{s_for_display}</small>""" if len(s_for_display) > max_length else s_for_display
+    o_for_display = f"""<small>{o_for_display}</small>""" if len(o_for_display) > max_length else o_for_display
+
+    for p in predicate_list:
+        p_for_display = f"""<small>{p}</small>""" if len(p) > max_length else p    # adjust font size
+        inner_html += f"""<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:0px;">
+                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.2;"><b>{s_for_display}</b></div>
+                </div>
+                <div style="flex:0; font-size:18px;">🡆</div>
+                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.2;"><b>{p_for_display}</b></div>
+                </div>
+                <div style="flex:0; font-size:18px;">🡆</div>
+                <div style="flex:1; min-width:140px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.2;"><b>{o_for_display}</b></div>
+                </div>
+            </div><br>"""
+
+    st.markdown(f"""<div class="blue-preview-message" style="margin-top:0px; padding-top:4px;">
+            {small_header}{inner_html}
+        </div>""", unsafe_allow_html=True)
+#_________________________________________________
 
 
 
@@ -2987,48 +3085,6 @@ def is_valid_url_mapping(mapping_url, show_info):
 
 #_________________________________________________
 
-#________________________________________________
-# Function to display a rule
-def preview_rule(s_for_display, p_for_display, o_for_display, is_reference=False, datatype=None, language_tag=None):
-
-    inner_html = ""
-    max_length = 40
-
-    s_for_display = "" if not s_for_display else s_for_display
-    p_for_display = "" if not p_for_display else p_for_display
-    o_for_display = "" if not o_for_display else o_for_display
-
-    if (None, RML.reference, Literal(s_for_display)) in st.session_state["g_mapping"]:  # if reference
-        formatted_s = f"{{{s_for_display}}}"
-    else:
-        formatted_s = s_for_display
-    formatted_p = p_for_display
-    formatted_o = f"{{{o_for_display}}}" if is_reference else o_for_display
-
-    formatted_o = f"""{formatted_o}^^{get_node_label(datatype)}""" if datatype else formatted_o
-    formatted_o = f"""{formatted_o}@{language_tag}""" if language_tag else formatted_o
-
-    formatted_s = f"""<small>{formatted_s}</small>""" if len(formatted_s) > max_length else formatted_s
-    formatted_p = f"""<small>{formatted_p}</small>""" if len(formatted_p) > max_length else formatted_p
-    formatted_o = f"""<small>{formatted_o}</small>""" if len(formatted_o) > max_length else formatted_o
-
-    st.markdown(f"""<div class="blue-preview-message" style="margin-top:0px; padding-top:4px;">
-        <small><b style="color:#F63366; font-size:10px; margin-top:0px;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:0px;">
-            <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{formatted_s}</b></div>
-            </div>
-            <div style="flex:0; font-size:18px;">🡆</div>
-            <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{formatted_p}</b></div>
-            </div>
-            <div style="flex:0; font-size:18px;">🡆</div>
-            <div style="flex:1; min-width:140px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{formatted_o}</b></div>
-            </div>
-        </div>
-    </div>""", unsafe_allow_html=True)
-#_________________________________________________
 
 #________________________________________________
 # Function to display a rule
@@ -3104,7 +3160,6 @@ def preview_rule_list(s_for_display, p_for_display, o_for_display):
 
     return [small_header, inner_html]
 #_________________________________________________
-
 
 #________________________________________________
 # Function to display a rule
@@ -4022,19 +4077,7 @@ def display_db_table(table, conn_label):
     return connection_ok_flag
 #_________________________________________________
 
-#________________________________________________________
-# Funtion to get the dictionary of the Graph Maps
-def get_graph_map_dict():
 
-    graph_map_dict = {}
-
-    graph_map_list = list(st.session_state["g_mapping"].objects(None, RML.graphMap))
-
-    for gm in graph_map_list:
-        graph_map_dict[get_node_label(gm)] = gm
-
-    return graph_map_dict
-#___________________________________________
 
 
 

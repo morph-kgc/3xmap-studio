@@ -183,8 +183,8 @@ def save_sm_template():   #function to save subject map (template option)
         subject_class_iri = ontology_classes_dict[class_label]
         st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
     # graph map_____________________
-    if add_sm_graph_map_option == "✚ New graph map" or add_sm_graph_map_option == "🔄 Existing graph map":
-        st.session_state["g_mapping"].add((sm_iri, RML.graphMap, subject_graph))
+    if add_sm_graph_map_option == "Default graph map":
+        st.session_state["g_mapping"].add((sm_iri, RML.graphMap, sm_graph))
     # term type__________________________
     if sm_term_type == "🌐 IRI":
         st.session_state["g_mapping"].add((sm_iri, RML.termType, RML.IRI))
@@ -224,8 +224,8 @@ def save_sm_constant():   #function to save subject map (constant option)
         subject_class_iri = ontology_classes_dict[class_label]
         st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
     # graph map_____________________
-    if add_sm_graph_map_option == "✚ New graph map" or add_sm_graph_map_option == "🔄 Existing graph map":
-        st.session_state["g_mapping"].add((sm_iri, RML.graphMap, subject_graph))
+    if add_sm_graph_map_option == "Default graph map":
+        st.session_state["g_mapping"].add((sm_iri, RML.graphMap, sm_graph))
     # term type__________________________
     st.session_state["g_mapping"].add((sm_iri, RML.termType, RML.IRI))
     # store information____________________
@@ -256,8 +256,8 @@ def save_sm_reference():   #function to save subject map (reference option)
         subject_class_iri = ontology_classes_dict[class_label]
         st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
     # graph map_____________________
-    if add_sm_graph_map_option == "✚ New graph map" or add_sm_graph_map_option == "🔄 Existing graph map":
-        st.session_state["g_mapping"].add((sm_iri, RML.graphMap, subject_graph))
+    if add_sm_graph_map_option == "Default graph map":
+        st.session_state["g_mapping"].add((sm_iri, RML.graphMap, sm_graph))
     # term type__________________________
     if sm_term_type == "🌐 IRI":
         st.session_state["g_mapping"].add((sm_iri, RML.termType, RML.IRI))
@@ -317,14 +317,30 @@ def reset_om_template():
     # reset fields_____________
     st.session_state["key_build_template_action_om"] = "🔒 Fixed part"
 
-
-
 def save_pom_template():
+    # pom and om iri______________________________
+    pom_iri = BNode()
+    om_iri = BNode()
+    # predicate list______________________________
+    predicate_iri_list = []
+    for p in predicate_list:        # get the rpedicates iris
+        if p in ontology_properties_dict:
+            predicate_iri_list.append(ontology_properties_dict[p])
+        elif p in custom_classes_dict:
+            predicate_iri_list.append(custom_properties_dict[p])
+    # datatype______________________________
+    if om_term_type == "📘 Literal":              # get the datatype iri
+        if datatype_prefix == "Select namespace":
+            om_datatype_iri = URIRef(datatype_label)
+        else:
+            NS = Namespace(mapping_ns_dict[datatype_prefix])
+            om_datatype_iri = NS[datatype_label]           # get graph map iri
     # add triples pom________________________
-    st.session_state["g_mapping"].add((st.session_state["tm_iri_for_pom"], RML.predicateObjectMap, st.session_state["pom_iri_to_create"]))
-    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RML.predicate, selected_p_iri))
-    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RML.objectMap, om_iri))
-    st.session_state["g_mapping"].add((st.session_state["pom_iri_to_create"], RDF.type, RML.PredicateObjectMap))
+    st.session_state["g_mapping"].add((st.session_state["tm_iri_for_pom"], RML.predicateObjectMap, pom_iri))
+    for p_iri in predicate_iri_list:
+        st.session_state["g_mapping"].add((pom_iri, RML.predicate, p_iri))
+    st.session_state["g_mapping"].add((pom_iri, RML.objectMap, om_iri))
+    st.session_state["g_mapping"].add((pom_iri, RDF.type, RML.PredicateObjectMap))
     # add triples om________________________
     st.session_state["g_mapping"].add((om_iri, RDF.type, RML.ObjectMap))
     st.session_state["g_mapping"].add((om_iri, RML.template, Literal(om_template)))
@@ -341,11 +357,11 @@ def save_pom_template():
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.IRI))
     elif om_term_type == "👻 BNode":
         st.session_state["g_mapping"].add((om_iri, RML.termType, RML.BlankNode))
-    if add_om_graph_map_option == "✚ New graph map" or add_om_graph_map_option == "🔄 Existing graph map":
+    if add_om_graph_map_option != "Default graph map":
         st.session_state["g_mapping"].add((om_iri, RML.graphMap, om_graph))
     # store information________________________
     st.session_state["pom_saved_ok_flag"] = True
-    st.session_state["last_added_pom_list"].insert(0, [st.session_state["pom_iri_to_create"], st.session_state["tm_iri_for_pom"]])
+    st.session_state["last_added_pom_list"].insert(0, [pom_iri, st.session_state["tm_iri_for_pom"]])
     st.session_state["om_template_list"] = []    # reset template
     st.session_state["om_template_is_iri_flag"] = False
     st.session_state["om_template_variable_part_flag"] = False
@@ -359,7 +375,7 @@ def save_pom_template():
     st.session_state["key_om_template_ns_prefix"] = "Select namespace"
     st.session_state["om_term_type"] = "🌐 IRI"
     st.session_state["key_om_label"] = ""
-    st.session_state["key_add_om_graph_map_option"] = "Default graph"
+    st.session_state["key_add_om_graph_map_option"] = "Default graph map"
 
 def save_pom_constant():
     # add triples pom________________________
@@ -405,7 +421,7 @@ def save_pom_constant():
     st.session_state["om_term_type"] = "📘 Literal"
     st.session_state["key_om_label"] = ""
     st.session_state["key_om_datatype"] = "No datatype"
-    st.session_state["key_add_om_graph_map_option"] = "Default graph"
+    st.session_state["key_add_om_graph_map_option"] = "Default graph map"
 
 
 def save_pom_reference():
@@ -448,7 +464,7 @@ def save_pom_reference():
     st.session_state["om_term_type"] = "🌐 IRI"
     st.session_state["key_om_label"] = ""
     st.session_state["key_om_datatype"] = "No datatype"
-    st.session_state["key_add_om_graph_map_option"] = "Default graph"
+    st.session_state["key_add_om_graph_map_option"] = "Default graph map"
 
 
 # TAB4
@@ -1174,45 +1190,28 @@ with tab2:
                 with col1c:
 
                     graph_map_dict = utils.get_graph_map_dict()
-                    list_to_choose = ["Default graph", "✚ New graph map"]
-                    if graph_map_dict:
-                        list_to_choose.insert(1, "🔄 Existing graph map")
+                    list_to_choose = sorted(graph_map_dict.keys())
+                    list_to_choose.insert(0, "✚ New graph map")
+                    list_to_choose.insert(0, "Default graph map")
                     add_sm_graph_map_option = st.selectbox("️🗺️️ Graph map (optional):",
                         list_to_choose, key="key_add_sm_graph_map_option")
 
-
-                    if add_sm_graph_map_option == "🔄 Existing graph map":
-
-                        list_to_choose = sorted(graph_map_dict.keys())
-                        list_to_choose.insert(0,"Select graph map")
-                        s_existing_graph_label = st.selectbox("🖱️ Select graph map:*", list_to_choose, key="key_s_existing_graph_label")
-
-                        if s_existing_graph_label != "Select graph map":
-                            subject_graph = graph_map_dict[s_existing_graph_label]
-                        else:
-                            subject_graph = ""
-
-
                     if add_sm_graph_map_option == "✚ New graph map":
-
                         mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                         list_to_choose = sorted(mapping_ns_dict.keys())
                         list_to_choose.insert(0,"Select namespace")
-                        subject_graph_prefix = st.selectbox("🖱️ Select namespace:", list_to_choose,
-                            key="key_subject_graph_prefix")
-
-                        subject_graph_input = st.text_input("🖱️ Enter graph map:*", key="key_subject_graph_input")
-                        if subject_graph_prefix != "Select namespace":
-                            NS = Namespace(mapping_ns_dict[subject_graph_prefix])
-
-                        if subject_graph_input and subject_graph_prefix != "Select namespace":
-                            subject_graph = NS[subject_graph_input]
-
+                        sm_graph_prefix = st.selectbox("🖱️ Namespace (opt):", list_to_choose,
+                            key="key_sm_graph_prefix")
+                        sm_graph_input = st.text_input("⌨️ Enter graph map:*", key="key_sm_graph_input")
+                        if sm_graph_prefix != "Select namespace":
+                            NS = Namespace(mapping_ns_dict[sm_graph_prefix])
+                            sm_graph = NS[sm_graph_input]
                         else:
-                            subject_graph = ""
+                            sm_graph = sm_graph_input
+                    elif add_sm_graph_map_option != "Default graph map":
+                        sm_graph = graph_map_dict[add_sm_graph_map_option]
 
-
-                # CHECK EVERYTHING IS READY________________________________
+                # CHECK EVERYTHING IS READY
                 sm_complete_flag = True
                 inner_html_error = ""
                 inner_html_warning = ""
@@ -1227,7 +1226,7 @@ with tab2:
                         sm_complete_flag = False
                     if sm_template and sm_term_type == "🌐 IRI":   # if term type is IRI the NS is recommended
                         if not st.session_state["sm_template_is_iri_flag"]:
-                            inner_html_warning += """<small>· Term type is <b>🌐 IRI</b>.
+                            inner_html_warning += """<small>· Term type is <b>IRI</b>.
                                 <b>Adding a namespace to the template</b> is recommended.</small><br>"""
 
                 if sm_generation_rule == "Constant 🔒":
@@ -1244,15 +1243,15 @@ with tab2:
                 if sm_generation_rule == "Reference 📊":
                     if column_list and sm_column_name == "Select reference":
                         sm_complete_flag = False
-                        inner_html_error += "<small>· The <b>reference</b> has not been selected.<small><br>"
+                        inner_html_error += "<small>· The <b>reference</b> has not been selected.</small><br>"
                     elif not column_list and not sm_column_name:
                         sm_complete_flag = False
                         inner_html_error += "<small>· The <b>reference</b> has not been entered.</small><br>"
-
-                    if sm_column_name and sm_term_type == "🌐 IRI":
-                        inner_html_warning += """<small>· Term type is <b>🌐 IRI</b>.
-                            Make sure the values in the referenced column
-                            are valid IRIs.</small><br>"""
+                    else:
+                        if sm_term_type == "🌐 IRI":
+                            inner_html_warning += """<small>· Term type is <b>IRI</b>.
+                                Make sure the values in the referenced column
+                                are valid IRIs.</small><br>"""
 
                 if not custom_classes_dict and not ontology_classes_dict:
                     inner_html_warning += """<small>· </b> No classes available</b>
@@ -1264,16 +1263,16 @@ with tab2:
                 for class_label in subject_class_list:
                     if class_label in custom_classes_dict:
                         inner_html_warning += """<small>· <b>Custom classes</b> lack ontology alignment.
-                                      An ontology-driven approach is recommended.</small><br>"""
+                             An ontology-driven approach is recommended.</small><br>"""
                         break
 
                 if add_sm_graph_map_option == "✚ New graph map":
-                    if not subject_graph_input:
+                    if not sm_graph_input:
                         sm_complete_flag = False
                         inner_html_error += """<small>· The <b>graph map</b>
                             has not been given.</small><br>"""
                     else:
-                        if subject_graph_prefix == "Select namespace" and not utils.is_valid_iri(subject_graph_input, delimiter_ending=False):
+                        if sm_graph_prefix == "Select namespace" and not utils.is_valid_iri(sm_graph_input, delimiter_ending=False):
                             sm_complete_flag = False
                             inner_html_error += """<small>· If no namespace is selected,
                                 the <b>graph map</b> must be a <b>valid IRI</b>.</small><br>"""
@@ -1301,25 +1300,21 @@ with tab2:
                             inner_html_error += """<small>· That <b>Subject Map label</b> is already in use.
                                 Please pick a different label.</small><br>"""
 
-                # INFO AND SAVE BUTTON____________________________________
+                # INFO MESSAGES (RIGHT COLUMN)
                 with col2b:
                     messages = []
-
                     if inner_html_error:
                         messages.append(f"""❌ <b>Subject Map is incomplete.</b><br>
                         <div style='margin-left: 1.5em;'>{inner_html_error}</div>""")
-
                     if inner_html_warning:
                         messages.append(f"""⚠️ <b>Caution.</b><br>
                         <div style='margin-left: 1.5em;'>{inner_html_warning}</div>""")
-
                     if sm_complete_flag:
                         messages.append("""✔️ All <b>required fields (*)</b> are complete.
                         <small>Double-check the information before saving.</small>""")
 
                     separator = "<hr style='border:0; border-top:1px solid #999; margin:10px 0;'>"
                     final_message = separator.join(messages)
-
                     if final_message:
                         st.markdown(f"""<div class="gray-preview-message" style="font-size:13px; line-height:1.2;">
                                 {final_message}
@@ -1327,6 +1322,7 @@ with tab2:
                         st.write("")
                         st.write("")
 
+                # SAVE BUTTON
                 with col1c:
                     if sm_complete_flag:
                         st.markdown("""
@@ -1406,8 +1402,6 @@ with tab3:
         if tm_label_for_pom != "Select TriplesMap":
 
             tm_iri_for_pom = tm_dict[tm_label_for_pom]
-            pom_iri = BNode()
-            om_iri = BNode()
             column_list = [] # will search only if needed, can be slow with failed connections
 
             # GENERATION RULE
@@ -1424,7 +1418,7 @@ with tab3:
                     <b>🅿️ Predicate</b><br>
                 </div>""", unsafe_allow_html=True)
 
-            ontology_properties_dict = utils.get_ontology_classes_dict(st.session_state["g_ontology"])
+            ontology_properties_dict = utils.get_ontology_properties_dict(st.session_state["g_ontology"])
             custom_properties_dict =  utils.get_ontology_properties_dict("custom")
 
             ontology_filter_list = sorted(st.session_state["g_ontology_components_tag_dict"].values())
@@ -1455,6 +1449,13 @@ with tab3:
                     col1b, col1c = st.columns(2)
                 ontology_filter_for_predicate = st.session_state["g_ontology"]
 
+            if not ontology_properties_dict and not custom_properties_dict:
+                with col1c:
+                    st.markdown(f"""<div class="warning-message">
+                        ⚠️ <b>No properties</b> have been added. <small> Go to the <b>🧩 Ontologies</b> page
+                        to add ontology and/or custom properties.</small>
+                    </div>""", unsafe_allow_html=True)
+
             if ontology_filter_for_predicate != "Custom properties":
 
                 ontology_properties_dict = utils.get_ontology_properties_dict(ontology_filter_for_predicate)   # filtered property dictionary
@@ -1475,7 +1476,7 @@ with tab3:
                             properties_in_ontology_superproperties_dict[utils.get_node_label(s)] = s
                         with col1c:
                             list_to_choose = sorted(properties_in_ontology_superproperties_dict.keys())
-                            predicate_list = st.multiselect("🏷️️ Select predicate(s):", list_to_choose,
+                            predicate_list = st.multiselect("🏷️️ Select predicate(s):*", list_to_choose,
                                 key="key_predicate")    # predicate list (labels)
 
                     else:  #no superproperty selected (list all properties)
@@ -1484,7 +1485,7 @@ with tab3:
                                 list_to_choose = sorted(list(ontology_properties_dict.keys()) + list(custom_properties_dict.keys()))
                             else:
                                 list_to_choose = sorted(ontology_properties_dict.keys())
-                            predicate_list = st.multiselect("🏷️️ Select predicate(s):", list_to_choose,
+                            predicate_list = st.multiselect("🏷️️ Select predicate(s):*", list_to_choose,
                                 key="key_predicate")    # predicate list (labels)
 
                 else:     #no superproperties exist (no superproperty filter)
@@ -1493,13 +1494,13 @@ with tab3:
                             list_to_choose = sorted(list(ontology_properties_dict.keys()) + list(custom_properties_dict.keys()))
                         else:
                             list_to_choose = sorted(ontology_properties_dict.keys())
-                        predicate_list = st.multiselect("🏷️ Select predicate(s):", list_to_choose,
+                        predicate_list = st.multiselect("🏷️ Select predicate(s):*", list_to_choose,
                             key="key_predicate")    # predicate list (labels)
 
             elif ontology_filter_for_predicate == "Custom properties":
                 with col1b:
                     list_to_choose = sorted(custom_properties_dict.keys())
-                    predicate_list = st.multiselect("🏷️ Select predicate(s):", list_to_choose,
+                    predicate_list = st.multiselect("🏷️ Select predicate(s):*", list_to_choose,
                         key="key_predicate")    # predicate list (labels)
 
             # TEMPLATE-VALUED OBJECT MAP
@@ -1707,7 +1708,7 @@ with tab3:
             with col1:
                 col1a, col1b, col1c = st.columns(3)
 
-            #TERM TYPE
+            # TERM TYPE
             with col1a:
                 if om_generation_rule == "Constant 🔒":
                     list_to_choose = ["📘 Literal", "🌐 IRI"]
@@ -1738,17 +1739,11 @@ with tab3:
                             key="key_datatype_prefix")
                         datatype_label = st.text_input("⌨️ Enter datatype:*", key="key_datatype_label")
 
-                    if datatype_prefix == "Select namespace":   # HERE MOVE
-                        om_datatype_iri = URIRef(datatype_label)
-                    else:
-                        NS = Namespace(mapping_ns_dict[datatype_prefix])
-                        om_datatype_iri = NS[datatype_label]
-
                 elif om_datatype == "空 Natural language tag":
                     language_tags_list = utils.get_language_tags_list()
 
                     with col1b:
-                        list_to_choose = language_tags_list
+                        list_to_choose = sorted(language_tags_list)
                         list_to_choose.insert(0, "✚ New language tag")
                         om_language_tag = st.selectbox("🈳 Select language tag:*", list_to_choose,
                             index=list_to_choose.index("en"), key="key_om_language_tag")
@@ -1757,106 +1752,82 @@ with tab3:
                             om_language_tag = st.text_input("⌨️ Enter new language tag:*")
 
             # GRAPH MAP
-
             col_graph_map = col1c if om_term_type == "📘 Literal" else col1b
 
             with col_graph_map:
 
                 graph_map_dict = utils.get_graph_map_dict()
-                list_to_choose = ["Default graph", "✚ New graph map"]
-                if graph_map_dict:
-                    list_to_choose.insert(1, "🔄 Existing graph map")
+                list_to_choose = sorted(graph_map_dict.keys())
+                list_to_choose.insert(0, "✚ New graph map")
+                list_to_choose.insert(0, "Default graph map")
                 add_om_graph_map_option = st.selectbox("️🗺️️ Graph map (optional):",
                     list_to_choose, key="key_add_om_graph_map_option")
 
-            with col1c:
-                if add_om_graph_map_option == "🔄 Existing graph map":
-
-                    list_to_choose = sorted(graph_map_dict.keys())
-                    list_to_choose.insert(0,"Select graph map")
-                    om_existing_graph_label = st.selectbox("🖱️ Select graph map:*", list_to_choose, key="key_om_existing_graph_label")
-
-                    if om_existing_graph_label != "Select graph map":
-                        om_graph = graph_map_dict[om_existing_graph_label]
-                    else:
-                        om_graph = ""
-
-                if add_om_graph_map_option == "✚ New graph map":
-
+            if add_om_graph_map_option == "✚ New graph map":
+                with col1c:
                     mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
                     list_to_choose = sorted(mapping_ns_dict.keys())
                     list_to_choose.insert(0,"Select namespace")
                     om_graph_prefix = st.selectbox("🖱️ Namespace (opt):", list_to_choose,
                         key="key_om_graph_prefix")
                     om_graph_input = st.text_input("⌨️ Enter graph map:*", key="key_om_graph_input")
-
-                    if om_graph_input and om_graph_prefix != "Select namespace":
+                    if om_graph_prefix != "Select namespace":
                         NS = Namespace(mapping_ns_dict[om_graph_prefix])
                         om_graph = NS[om_graph_input]
-                    elif om_graph_input:
-                        om_graph = om_graph_input
                     else:
-                        om_graph = ""
+                        om_graph = om_graph_input
+            elif add_om_graph_map_option != "Default graph map":
+                om_graph = graph_map_dict[add_om_graph_map_option]
 
+        # CHECK EVERYTHING IS READY
         if tm_label_for_pom != "Select TriplesMap":
 
-            # POM MAP ______________________________________
+            pom_complete_flag = True
             inner_html_error = ""
             inner_html_warning = ""
-            pom_complete_flag = True
-
-            if ns_needed_for_pom_flag:
-                inner_html_error += f"""<small>· <b>No namespaces available.</b> Go to the
-                    <b>Global Configuration</b> page to add them.</small><br>"""
-
 
             if not tm_label_for_pom in tm_w_sm_list:
                 inner_html_warning += f"""<small>· TriplesMap <b>{tm_label_for_pom}</b> has no Subject Map.
-                            It will be invalid without one.</small><br>"""
+                    It will be invalid without one.</small><br>"""
 
-            if selected_p_label == "Select a predicate":
+            if not ontology_properties_dict and not custom_properties_dict:
+                inner_html_error += """<small>· At least one <b>property</b> must be added
+                    to allow <b>predicate selection</b>.</small><br>"""
                 pom_complete_flag = False
-                inner_html_error += "<small>· You must select a <b>predicate</b>.</small><br>"
+            elif not predicate_list:
+                inner_html_error += "<small>· A <b>predicate</b> must be selected.</small><br>"
+                pom_complete_flag = False
+            elif len(predicate_list) > 1:
+                inner_html_warning += """<small>· <b>More than one predicate</b> selected (allowed).</small><br>"""
+            for predicate_label in predicate_list:
+                if predicate_label in custom_properties_dict:
+                    inner_html_warning += """<small>· <b>Custom properties</b> lack ontology alignment.
+                         An ontology-driven approach is recommended.</small><br>"""
+                    break
 
-            elif selected_p_label == "🚫 Predicate outside ontology":
-                if not manual_p_label:
-                    pom_complete_flag = False
-                    inner_html_error += "<small>· The <b>predicate</b> has not been given.</small><br>"
-
-                elif manual_p_ns_prefix == "Select namespace" and not utils.is_valid_iri(manual_p_label, delimiter_ending=False):
-                    pom_complete_flag = False
-                    inner_html_error += """<small>· If no namespace is selected,
-                        the <b>predicate</b> must be a <b>valid IRI</b>.</small><br>"""
-
-                inner_html_warning += f"""<small>· Manual predicate input is <b>discouraged</b>.
-                    Use an ontology for safer results.</small><br>"""
-
-            # OBJECT MAP - TEMPLATE______________________________________________________-
             if om_generation_rule == "Template 📐":
                 if not om_template:
-                    pom_complete_flag = False
                     inner_html_error += "<small>· The <b>template</b> is empty.</small><br>"
-                elif not st.session_state["om_template_variable_part_flag"]:
                     pom_complete_flag = False
+                elif not st.session_state["om_template_variable_part_flag"]:
                     inner_html_error += """<small>· The <b>template</b> must contain
                         at least one <b>variable part</b>..</small><br>"""
+                    pom_complete_flag = False
 
-                if om_template and om_term_type == "🌐 IRI":
-                    if not st.session_state["template_om_is_iri_flag"]:
-                        inner_html_warning += """<small>· Term type is <b>🌐 IRI</b>.
-                            We recommend <b>adding a namespace to the template</b>.<br>"""
+                if om_template and om_term_type == "🌐 IRI":   # if term type is IRI the NS is recommended
+                    if not st.session_state["om_template_is_iri_flag"]:
+                        inner_html_warning += """<small>· Term type is <b>IRI</b>.
+                            <b>Adding a namespace to the template</b> is recommended.</small><br>"""
 
                 if om_template and om_term_type == "📘 Literal":
-                    if st.session_state["template_om_is_iri_flag"]:
+                    if st.session_state["om_template_is_iri_flag"]:
                         inner_html_warning += """<small>· Term type is <b>Literal</b>, but you added a <b>namespace</b>
                             to the template.</small><br>"""
 
-            # OBJECT MAP - CONSTANT____________________________________________
             if om_generation_rule == "Constant 🔒":
-
                 if not om_constant:
                     pom_complete_flag = False
-                    inner_html_error += "<small>· You must enter a <b>constant</b>.</small><br>"
+                    inner_html_error += "<small>· No <b>constant</b> entered.</small><br>"
 
                 if om_term_type == "📘 Literal":
                     if om_constant_ns_prefix != "Select namespace":
@@ -1867,28 +1838,22 @@ with tab3:
                     if om_constant and om_constant_ns_prefix == "Select namespace":
                         if not utils.is_valid_iri(om_constant, delimiter_ending=False):
                             pom_complete_flag = False
-                            inner_html_error += """<small>· Term type is <b>🌐 IRI</b>.
+                            inner_html_error += """<small>· Term type is <b>IRI</b>.
                                 If no namespace is selected, the <b>constant</b> must be a <b>valid IRI</b>.</small><br>"""
 
-
-            # OBJECT MAP - REFERENCE___________________________
             if om_generation_rule == "Reference 📊":
-
-                if column_list:
-                    if om_column_name == "Select reference":
-                        pom_complete_flag = False
-                        inner_html_error += "<small>· You must select a <b>reference</b>.</small><br>"
+                if column_list and om_column_name == "Select reference":
+                    pom_complete_flag = False
+                    inner_html_error += "<small>· The <b>reference</b> has not been selected.<small><br>"
+                elif not column_list and not om_column_name:
+                    pom_complete_flag = False
+                    inner_html_error += "<small>· The <b>reference</b> has not been entered.</small><br>"
                 else:
-                    if not om_column_name:
-                        pom_complete_flag = False
-                        inner_html_error += "<small>· You must enter a <b>reference</b>.</small><br>"
+                    if sm_term_type == "🌐 IRI":
+                        inner_html_warning += """<small>· Term type is <b>IRI</b>.
+                            Make sure the values in the referenced column
+                            are valid IRIs.</small><br>"""
 
-                if om_term_type == "🌐 IRI":
-                    inner_html_warning += """<small>· Term type is <b>🌐 IRI</b>.
-                                Make sure that the values in the referenced column
-                                are valid IRIs.</small><br>"""
-
-            # DATATYPE
             if om_term_type == "📘 Literal":
 
                 if om_datatype == "✚ New datatype":
@@ -1902,109 +1867,50 @@ with tab3:
                                 the <b>datatype</b> must be a <b>valid IRI</b>.</small><br>"""
 
                 elif om_datatype == "空 Natural language tag":
-
-                    if om_language_tag == "Select language tag":
+                    if not om_language_tag:
                         pom_complete_flag = False
-                        inner_html_error += "<small>· You must select a <b>🌐 language tag</b>.</small><br>"
+                        inner_html_error += "<small>· You must enter a <b>language tag</b>.</small><br>"
+                    elif not langcodes.tag_is_valid(om_language_tag):
+                        pom_complete_flag = False
+                        inner_html_error += """<small>· The <b>language tag</b> is
+                            not a <b>valid BCP 47 tag</b>.</small><br>"""
 
-
-            # GRAPH MAP
             if add_om_graph_map_option == "✚ New graph map":
-
                 if not om_graph_input:
                     pom_complete_flag = False
                     inner_html_error += """<small>· The <b>graph map</b>
                         has not been given.</small><br>"""
-
                 else:
                     if om_graph_prefix == "Select namespace" and not utils.is_valid_iri(om_graph_input, delimiter_ending=False):
                         pom_complete_flag = False
                         inner_html_error += """<small>· If no namespace is selected,
                             the <b>graph map</b> must be a <b>valid IRI</b>.</small><br>"""
 
-            if add_om_graph_map_option == "🔄 Existing graph map":
-
-                if om_existing_graph_label == "Select graph map":
-                    pom_complete_flag = False
-                    inner_html_error += """<small>· The <b>graph map</b>
-                        has not been selected.</small><br>"""
-
-
-            # INFO AND SAVE BUTTON____________________________________
+            # INFO MESSAGES (RIGHT COLUMN)
             with col2b:
 
-                if inner_html_warning:
-                    st.markdown(f"""<div class="warning-message" style="font-size:13px; line-height:1.2;">
-                        ⚠️ <b>Caution.</b><br>
-                        <div style='margin-left: 1.5em;'>{inner_html_warning}</div>
-                    </div>""", unsafe_allow_html=True)
-
+                messages = []
                 if inner_html_error:
-                    st.markdown(f"""<div class="error-message" style="font-size:13px; line-height:1.2;">
-                            ❌ <b>Predicate-Object Map is incomplete.</b><br>
-                        <div style='margin-left: 1.5em;'>{inner_html_error}</div>
-                        </div>""", unsafe_allow_html=True)
-
+                    messages.append(f"""❌ <b>Predicate-Object Map is incomplete.</b><br>
+                    <div style='margin-left: 1.5em;'>{inner_html_error}</div>""")
+                if inner_html_warning:
+                    messages.append(f"""⚠️ <b>Caution.</b><br>
+                    <div style='margin-left: 1.5em;'>{inner_html_warning}</div>""")
                 if pom_complete_flag:
-                    st.markdown(f"""<div class="success-message">
-                        ✔️ All <b>required fields (*)</b> are complete.
-                        <small>Double-check the information before saving.</smalL> </div>
-                    """, unsafe_allow_html=True)
+                    messages.append("""✔️ All <b>required fields (*)</b> are complete.
+                    <small>Double-check the information before saving.</small>""")
 
+                separator = "<hr style='border:0; border-top:1px solid #999; margin:10px 0;'>"
+                final_message = separator.join(messages)
+                if final_message:
+                    st.markdown(f"""<div class="gray-preview-message" style="font-size:13px; line-height:1.2;">
+                            {final_message}
+                        </div>""", unsafe_allow_html=True)
+                    st.write("")
+                    st.write("")
 
+            # SAVE BUTTON
             if pom_complete_flag:
-
-                # Prepare subject for display
-                sm_iri_for_pom = next(st.session_state["g_mapping"].objects(tm_iri_for_pom, RML.subjectMap), None)
-
-                if sm_iri_for_pom:
-                    template_sm_for_pom = next(st.session_state["g_mapping"].objects(sm_iri_for_pom, RML.template), None)
-                    constant_sm_for_pom = next(st.session_state["g_mapping"].objects(sm_iri_for_pom, RML.constant), None)
-                    reference_sm_for_pom = next(st.session_state["g_mapping"].objects(sm_iri_for_pom, RML.reference), None)
-
-                    if template_sm_for_pom:
-                        sm_rule = template_sm_for_pom
-                    elif constant_sm_for_pom:
-                        sm_rule = constant_sm_for_pom
-                    elif reference_sm_for_pom:
-                        sm_rule = reference_sm_for_pom
-
-                    if isinstance(sm_rule, URIRef):
-                        sm_rule_ns = URIRef(split_uri(sm_rule)[0])
-                        sm_rule_prefix = st.session_state["g_mapping"].namespace_manager.store.prefix(sm_rule_ns)
-                        if sm_rule_prefix:
-                            sm_rule = f"{sm_rule_prefix}: {split_uri(sm_rule)[1]}"
-
-                else:
-                    sm_rule = """No Subject Map"""
-
-                # Prepare predicate for display
-                selected_p_ns = URIRef(split_uri(selected_p_iri)[0])
-                selected_p_prefix = st.session_state["g_mapping"].namespace_manager.store.prefix(selected_p_ns)
-                if selected_p_prefix:
-                    selected_p_for_display = f"{selected_p_prefix}: {split_uri(selected_p_iri)[1]}"
-                else:
-                    selected_p_for_display = selected_p_iri
-
-                # Prepare object for display
-                if om_generation_rule == "Template 📐":
-                    om_iri_for_display = Literal(om_template)
-
-                elif om_generation_rule == "Constant 🔒":
-                    if om_constant_ns_prefix != "Select namespace":
-                        om_constant_ns = mapping_ns_dict[om_constant_ns_prefix]
-                        NS = Namespace(om_constant_ns)
-                        om_iri_for_display = NS[om_constant]
-                    else:
-                        om_iri_for_display = Literal(om_constant)
-
-                elif om_generation_rule == "Reference 📊":
-                    om_iri_for_display = Literal(om_column_name)
-
-                om_iri_for_display = utils.get_node_label(om_iri_for_display)
-
-
-
                 with col1:
                     col1a, col1b = st.columns([6,1])
                 with col1b:
@@ -2012,8 +1918,7 @@ with tab3:
                     <div style="font-size:13px; font-weight:500; margin-top:10px; margin-bottom:6px; border-top:0.5px solid #ccc; padding-bottom:4px;">
                         <b>💾 Save</b><br>
                     </div>""", unsafe_allow_html=True)
-                    st.session_state["pom_iri_to_create"] = pom_iri    # otherwise it will change value in the on_click function
-                    st.session_state["tm_iri_for_pom"] = tm_iri_for_pom
+                    st.session_state["tm_iri_for_pom"] = tm_iri_for_pom             # otherwise it will change value in the on_click function
                     if om_generation_rule == "Template 📐":
                         save_pom_template_button = st.button("Save", on_click=save_pom_template, key="key_save_pom_template_button")
                     elif om_generation_rule == "Constant 🔒":
@@ -2021,14 +1926,16 @@ with tab3:
                     elif om_generation_rule == "Reference 📊":
                         save_pom_reference_button = st.button("Save", on_click=save_pom_reference, key="key_save_pom_reference_button")
 
+                # PREVIEW
                 with col1a:
                     st.markdown("""
                     <div style="font-size:13px; font-weight:500; margin-top:10px; margin-bottom:6px; border-top:0.5px solid #ccc; padding-bottom:4px;">
                         <b>🔍 Preview</b><br>
                     </div>""", unsafe_allow_html=True)
 
-                datatype_iri = False
+                o_is_reference = True if om_generation_rule == "Reference 📊" else False
                 language_tag = False
+                datatype_iri = False
                 if om_term_type == "📘 Literal":
                     if om_datatype != "No datatype" and om_datatype != "空 Natural language tag" and om_datatype != "✚ New datatype": #HEREIGO
                         datatype_dict = utils.get_datatype_dict()
@@ -2036,13 +1943,20 @@ with tab3:
                     elif om_datatype == "空 Natural language tag":
                         language_tag = Literal(om_language_tag)
 
-
+                # DISPLAY RULE
                 existing_datatype = om_datatype if om_generation_rule == "Reference 📊" else False
                 is_reference = True if om_generation_rule == "Reference 📊" else False
+                if om_generation_rule == "Template 📐":
+                    om_rule = om_template
+                elif om_generation_rule == "Constant 🔒":
+                    om_rule = om_constant
+                elif om_generation_rule == "Reference 📊":
+                    om_rule = om_reference
                 with col1a:
-                    utils.preview_rule(sm_rule, selected_p_for_display, om_iri_for_display, is_reference=is_reference,
-                        datatype=datatype_iri, language_tag=language_tag)  # display rule
+                    utils.preview_rule(tm_iri_for_pom, predicate_list, om_rule, o_is_reference=o_is_reference,
+                        datatype=datatype_iri, language_tag=language_tag)
 
+    # RFBOOKMARK FIX save constant and reference pom
 
     with col2b:
 
@@ -2050,7 +1964,6 @@ with tab3:
         st.write("")
 
         pom_dict = utils.get_pom_dict()
-        # st.write("HERE", st.session_state["last_added_pom_list"], pom_dict)
 
 
         last_added_pom_df = pd.DataFrame([
