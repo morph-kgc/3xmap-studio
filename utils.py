@@ -727,7 +727,9 @@ def get_max_length_for_display():
 #______________________________________________________
 # Function to display limited dataframed in right column
 # info namespaces / db_connections / saved_views / tabular_ds / triplesmaps
-def display_right_column_df(info, session_state_dict, text, complete=True):
+def display_right_column_df(info, session_state_dict, text, complete=True, display=True):
+
+    max_length = get_max_length_for_display()[1]
 
     # Create the dataframe
     if info == "namespaces":
@@ -795,9 +797,17 @@ def display_right_column_df(info, session_state_dict, text, complete=True):
     elif info == "subject_maps":
         sm_dict = get_sm_dict()
         rows = [{"Triplesmap": triples_map, "Subject Map": sm_dict[subject_map][0],
-            "Type": sm_dict[subject_map][1], "Rule": sm_dict[subject_map][2]}
+            "Rule": sm_dict[subject_map][2], "Type": sm_dict[subject_map][1]}
             for subject_map, triples_map in st.session_state["last_added_sm_list"]
             if subject_map in sm_dict]
+
+    elif info == "predicate-object_maps":
+        pom_dict = get_pom_dict()
+        rows = [{"Rule": pom_dict[pom_iri][5], "Type": pom_dict[pom_iri][4],
+            "Predicate(s)": utils.format_list_for_display(pom_dict[pom_iri][1]),
+            "TriplesMap": utils.get_node_label(tm_iri)}
+            for pom_iri, tm_iri in st.session_state["last_added_pom_list"]
+            if pom_iri in pom_dict]
 
     else:
         rows = []
@@ -815,31 +825,33 @@ def display_right_column_df(info, session_state_dict, text, complete=True):
     df = df.drop(columns=cols_to_drop)
 
     # Display the dataframe
-    if session_state_dict:
-        max_length = get_max_length_for_display()[1]
-        limited_df = df.head(max_length)
+    if display:
+        if session_state_dict:
+            limited_df = df.head(max_length)
 
-        if len(session_state_dict) < max_length:
-            st.markdown(f"""<div style='text-align: right; font-size: 14px; color: grey;'>
-                    🔎 {text}
-                </div>""", unsafe_allow_html=True)
-            st.markdown("<div style='margin-top:0px;'></div>",
-                unsafe_allow_html=True)
-        else:
-            st.markdown(f"""<div style='text-align: right; font-size: 14px; color: grey;'>
-                    🔎 {text}
-                </div>""", unsafe_allow_html=True)
-            st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                    (complete list below)
-                </div>""", unsafe_allow_html=True)
+            if len(session_state_dict) < max_length:
+                st.markdown(f"""<div style='text-align: right; font-size: 14px; color: grey;'>
+                        🔎 {text}
+                    </div>""", unsafe_allow_html=True)
+                st.markdown("<div style='margin-top:0px;'></div>",
+                    unsafe_allow_html=True)
+            else:
+                st.markdown(f"""<div style='text-align: right; font-size: 14px; color: grey;'>
+                        🔎 {text}
+                    </div>""", unsafe_allow_html=True)
+                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                        (complete list below)
+                    </div>""", unsafe_allow_html=True)
 
-        st.dataframe(limited_df, hide_index=True)
+            st.dataframe(limited_df, hide_index=True)
 
     # Option to display complete dataframe if it was shortened   HERE LIMIT MAX LENGTH?
     if complete and session_state_dict and len(session_state_dict) > max_length:
         st.write("")
         with st.expander(f"🔎 Show all {text}"):
             st.dataframe(df, hide_index=True)
+
+    return df
 #______________________________________________________
 
 
@@ -2471,7 +2483,7 @@ def get_column_list_and_give_info(tm_label):
     return [column_list, inner_html, ds_for_display]
 #______________________________________________________
 
-#________________________________________________________
+#______________________________________________________
 # Funtion to get the dictionary of the graph maps existing in mapping
 def get_graph_map_dict():
 
@@ -2482,10 +2494,10 @@ def get_graph_map_dict():
         graph_map_dict[get_node_label(gm)] = gm
 
     return graph_map_dict
-#___________________________________________
+#______________________________________________________
 
 # PANEL: ADD PREDICATE-OBJECT MAP-----------------------------------------------
-#______________________________________________
+#______________________________________________________
 # Funtion to get list of datatypes (including possible dt defined by mapping)
 def get_datatype_dict():
 
@@ -2497,9 +2509,9 @@ def get_datatype_dict():
             datatype_dict[utils.get_node_label(dt)] = dt
 
     return datatype_dict
-#______________________________________________
+#______________________________________________________
 
-#______________________________________________
+#______________________________________________________
 # Funtion to get list of language tags
 def get_language_tags_list():
 
@@ -2511,9 +2523,9 @@ def get_language_tags_list():
             language_tags_list.append(o.language)
 
     return language_tags_list
-#______________________________________________
+#______________________________________________________
 
-#______________________________________________
+#______________________________________________________
 # Funtion to prepare a node for the rule preview
 def prepare_node_for_rule_preview(node, subject=False, predicate=False, object=False):
 
@@ -2538,9 +2550,9 @@ def prepare_node_for_rule_preview(node, subject=False, predicate=False, object=F
 
         else:
             sm_rule = """No Subject Map"""
-#______________________________________________
+#______________________________________________________
 
-#________________________________________________
+#______________________________________________________
 # Function to display a rule when creating it (in 🏗️_Build_Mapping page)
 def preview_rule(tm_iri_for_pom, predicate_list, om_rule, o_is_reference=False, datatype=None, language_tag=None):
 
@@ -2597,7 +2609,120 @@ def preview_rule(tm_iri_for_pom, predicate_list, om_rule, o_is_reference=False, 
     st.markdown(f"""<div class="blue-preview-message" style="margin-top:0px; padding-top:4px;">
             {small_header}{inner_html}
         </div>""", unsafe_allow_html=True)
-#_________________________________________________
+#______________________________________________________
+
+#______________________________________________________
+# Funtion to get the dictionary of the Subject Maps
+# {sm_iri: [LIST]}
+# the keys are a list of:
+# 0. sm label     1. sm type (template, constant or reference)
+# 2. sm_id_iri      # 3. sm_id_label    (info on the id)
+# 4. List of all tm to which sm is assigned
+def get_sm_dict():
+
+    sm_dict = {}
+
+    tm_list = list(st.session_state["g_mapping"].subjects(RML.logicalSource, None))
+    for tm in tm_list:
+        tm_label = split_uri(tm)[1]
+        sm_iri = st.session_state["g_mapping"].value(tm, RML.subjectMap)
+
+        template = st.session_state["g_mapping"].value(sm_iri, RML.template)
+        constant = st.session_state["g_mapping"].value(sm_iri, RML.constant)
+        reference = st.session_state["g_mapping"].value(sm_iri, RML.reference)
+
+        sm_id_iri = None
+        sm_type = None
+        sm_id_label = None
+
+        if sm_iri:
+
+            if isinstance(sm_iri, URIRef):
+                sm_label = split_uri(sm_iri)[1]
+            elif isinstance(sm_iri, BNode):
+                sm_label = "_:" + str(sm_iri)[:7] + "..."
+            else:
+                sm_label = "Unlabelled"
+
+            if template:
+                sm_type = "template"
+                sm_id_iri = str(template)
+                matches = re.findall(r"{([^}]+)}", template)   #splitting template is not so easy but we try
+                if matches:
+                    sm_id_label = str(matches[-1])
+                else:
+                    sm_id_label = str(template)
+
+            elif constant:
+                sm_type = "constant"
+                sm_id_iri = str(constant)
+                sm_id_label = str(split_uri(constant)[1])
+
+            elif reference:
+                sm_type = "reference"
+                sm_id_iri = str(reference)
+                sm_id_label = str(reference)
+
+            if sm_iri not in sm_dict:
+                sm_dict[sm_iri] = [sm_label, sm_type, sm_id_iri, sm_id_label, [tm_label]]
+            else:
+                sm_dict[sm_iri][4].append(tm_label)
+
+    return sm_dict
+#______________________________________________________
+
+#______________________________________________________
+# Funtion to get the dictionary of the Predicate-Object Maps
+# {pom_iri: [LIST]}
+# the keys are a list of:
+# 0. tm    1. tm_label
+# 2. pom label     3. predicate iri     4. predicate label
+# 5. om label      6. om type (template, constant or reference)
+# 7. om_id_iri      # 8. om_id_label    (info on the id)
+
+# 0. tm      1. predicate list     2. pom iri        3. om iri
+# 4. om type (template, constant or reference)    5. om rule
+def get_pom_dict():
+
+    pom_dict = {}
+    pom_list = list(st.session_state["g_mapping"].objects(None, RML.predicateObjectMap))
+
+    for pom_iri in pom_list:
+
+        tm_iri = next(st.session_state["g_mapping"].subjects(RML.predicateObjectMap, pom_iri), None)
+        predicate_list = list(st.session_state["g_mapping"].objects(pom_iri, RML.predicate))
+        om_iri = st.session_state["g_mapping"].value(pom_iri, RML.objectMap)
+
+        template = st.session_state["g_mapping"].value(om_iri, RML.template)
+        constant = st.session_state["g_mapping"].value(om_iri, RML.constant)
+        reference = st.session_state["g_mapping"].value(om_iri, RML.reference)
+
+        if template:
+            om_type = "template"
+            om_rule = str(template)
+
+        elif constant:
+            om_type = "constant"
+            om_rule = str(constant)
+
+        elif reference:
+            om_type = "reference"
+            om_rule = str(reference)
+
+        else:
+            om_type = "---"
+            om_rule = "---"
+
+        pom_dict[pom_iri] = [tm_iri, predicate_list, pom_iri, om_iri, om_type, om_rule]
+
+    return pom_dict
+#______________________________________________________
+
+
+
+
+
+
 
 
 
@@ -2719,146 +2844,8 @@ def get_column_list(tm_iri):
 #________________________________________________________
 
 
-#________________________________________________________
-# Funtion to get the dictionary of the Subject Maps
-# {sm_iri: [LIST]}
-# the keys are a list of:
-# 0. sm label     1. sm type (template, constant or reference)
-# 2. sm_id_iri      # 3. sm_id_label    (info on the id)
-# 4. List of all tm to which sm is assigned
-def get_sm_dict():
-
-    sm_dict = {}
-
-    tm_list = list(st.session_state["g_mapping"].subjects(RML.logicalSource, None))
-    for tm in tm_list:
-        tm_label = split_uri(tm)[1]
-        sm_iri = st.session_state["g_mapping"].value(tm, RML.subjectMap)
-
-        template = st.session_state["g_mapping"].value(sm_iri, RML.template)
-        constant = st.session_state["g_mapping"].value(sm_iri, RML.constant)
-        reference = st.session_state["g_mapping"].value(sm_iri, RML.reference)
-
-        sm_id_iri = None
-        sm_type = None
-        sm_id_label = None
-
-        if sm_iri:
-
-            if isinstance(sm_iri, URIRef):
-                sm_label = split_uri(sm_iri)[1]
-            elif isinstance(sm_iri, BNode):
-                sm_label = "_:" + str(sm_iri)[:7] + "..."
-            else:
-                sm_label = "Unlabelled"
-
-            if template:
-                sm_type = "template"
-                sm_id_iri = str(template)
-                matches = re.findall(r"{([^}]+)}", template)   #splitting template is not so easy but we try
-                if matches:
-                    sm_id_label = str(matches[-1])
-                else:
-                    sm_id_label = str(template)
-
-            elif constant:
-                sm_type = "constant"
-                sm_id_iri = str(constant)
-                sm_id_label = str(split_uri(constant)[1])
-
-            elif reference:
-                sm_type = "reference"
-                sm_id_iri = str(reference)
-                sm_id_label = str(reference)
-
-            if sm_iri not in sm_dict:
-                sm_dict[sm_iri] = [sm_label, sm_type, sm_id_iri, sm_id_label, [tm_label]]
-            else:
-                sm_dict[sm_iri][4].append(tm_label)
-
-    return sm_dict
-#___________________________________________
 
 
-
-#________________________________________________________
-# Funtion to get the dictionary of the Predicate-Object Maps
-# {pom_iri: [LIST]}
-# the keys are a list of:
-# 0. tm    1. tm_label
-# 2. pom label     3. predicate iri     4. predicate label
-# 5. om label      6. om type (template, constant or reference)
-# 7. om_id_iri      # 8. om_id_label    (info on the id)
-def get_pom_dict():
-
-    pom_dict = {}
-    pom_list = list(st.session_state["g_mapping"].objects(None, RML.predicateObjectMap))
-
-    for pom_iri in pom_list:
-
-        tm_iri = next(st.session_state["g_mapping"].subjects(RML.predicateObjectMap, pom_iri), None)
-        tm_label = split_uri(tm_iri)[1]
-        predicate = st.session_state["g_mapping"].value(pom_iri, RML.predicate)
-        om_iri = st.session_state["g_mapping"].value(pom_iri, RML.objectMap)
-
-        template = st.session_state["g_mapping"].value(om_iri, RML.template)
-        constant = st.session_state["g_mapping"].value(om_iri, RML.constant)
-        reference = st.session_state["g_mapping"].value(om_iri, RML.reference)
-
-        pom_id_iri = None
-        pom_type = None
-        pom_id_label = None
-
-        if isinstance(pom_iri, URIRef):
-            pom_label = split_uri(pom_iri)[1]
-        elif isinstance(pom_iri, BNode):
-            pom_label = "_:" + str(pom_iri)[:7] + "..."
-        else:
-            pom_label = "Unlabelled"
-
-        if isinstance(om_iri, URIRef):
-            om_label = split_uri(om_iri)[1]
-        elif isinstance(om_iri, BNode):
-            om_label = "_:" + str(om_iri)[:7] + "..."
-        else:
-            om_label = "Unlabelled"
-
-        try:
-            predicate_label = split_uri(predicate)[1]
-        except:
-            predicate_label = ""
-
-        if template:
-            om_type = "template"
-            om_id_iri = str(template)
-            matches = re.findall(r"{([^}]+)}", template)   #splitting template is not so easy but we try
-            if matches:
-                om_id_label = str(matches[-1])
-            else:
-                om_id_label = str(template)
-
-        elif constant:
-            om_type = "constant"
-            om_id_iri = str(constant)
-            if isinstance(constant, URIRef):
-                om_id_label = str(split_uri(constant)[1])
-            else:
-                om_id_label = constant
-
-        elif reference:
-            om_type = "reference"
-            om_id_iri = str(reference)
-            om_id_label = str(reference)
-
-        else:
-            om_type = "None"
-            om_id_iri = ""
-            om_id_label = ""
-
-        pom_dict[pom_iri] = [tm_iri, tm_label, pom_label, predicate, predicate_label, om_label, om_type, om_id_iri, om_id_label]
-
-    return pom_dict
-#___________________________________________
 
 #_________________________________________________
 # Funtion to read tabular data

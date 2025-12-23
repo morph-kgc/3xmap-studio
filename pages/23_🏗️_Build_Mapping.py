@@ -183,7 +183,7 @@ def save_sm_template():   #function to save subject map (template option)
         subject_class_iri = ontology_classes_dict[class_label]
         st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
     # graph map_____________________
-    if add_sm_graph_map_option == "Default graph map":
+    if add_sm_graph_map_option != "Default graph map":
         st.session_state["g_mapping"].add((sm_iri, RML.graphMap, sm_graph))
     # term type__________________________
     if sm_term_type == "🌐 IRI":
@@ -224,7 +224,7 @@ def save_sm_constant():   #function to save subject map (constant option)
         subject_class_iri = ontology_classes_dict[class_label]
         st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
     # graph map_____________________
-    if add_sm_graph_map_option == "Default graph map":
+    if add_sm_graph_map_option != "Default graph map":
         st.session_state["g_mapping"].add((sm_iri, RML.graphMap, sm_graph))
     # term type__________________________
     st.session_state["g_mapping"].add((sm_iri, RML.termType, RML.IRI))
@@ -256,7 +256,7 @@ def save_sm_reference():   #function to save subject map (reference option)
         subject_class_iri = ontology_classes_dict[class_label]
         st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
     # graph map_____________________
-    if add_sm_graph_map_option == "Default graph map":
+    if add_sm_graph_map_option != "Default graph map":
         st.session_state["g_mapping"].add((sm_iri, RML.graphMap, sm_graph))
     # term type__________________________
     if sm_term_type == "🌐 IRI":
@@ -1312,9 +1312,8 @@ with tab2:
                         if sm_generation_rule == "Reference 📊":
                             save_sm_reference_button = st.button("Save", on_click=save_sm_reference, key="key_save_sm_reference_button")
 
-
     with col2b:
-        utils.display_right_column_df("subject_maps", st.session_state["last_added_sm_list"], "las added subject maps")
+        utils.display_right_column_df("subject_maps", st.session_state["last_added_sm_list"], "last added Subject Maps")
 
 
 #_______________________________________________________________________________
@@ -1368,7 +1367,7 @@ with tab3:
             if st.session_state["last_added_tm_list"]:
                 list_to_choose = sorted(tm_dict)
                 list_to_choose.insert(0, "Select TriplesMap")
-                tm_label_for_pom = st.selectbox("🖱️ Select TriplesMap:*", list_to_choose, key="key_tm_label_for_pom",
+                tm_label_for_pom = st.selectbox("🖱️ Select TriplesMap:*", list_to_choose, key="key_tm_label_for_pom_default",
                     index=list_to_choose.index(st.session_state["last_added_tm_list"][0]))
             else:
                 list_to_choose = list(reversed(tm_dict))
@@ -1835,7 +1834,7 @@ with tab3:
             if om_generation_rule == "Reference 📊":
                 if column_list and om_column_name == "Select reference":
                     pom_complete_flag = False
-                    inner_html_error += "<small>· The <b>reference</b> has not been selected.<small><br>"
+                    inner_html_error += "<small>· The <b>reference</b> has not been selected.</small><br>"
                 elif not column_list and not om_column_name:
                     pom_complete_flag = False
                     inner_html_error += "<small>· The <b>reference</b> has not been entered.</small><br>"
@@ -1946,59 +1945,8 @@ with tab3:
                         datatype=datatype_iri, language_tag=language_tag)
 
     # RFBOOKMARK FIX save constant and reference pom
-
     with col2b:
-
-        st.write("")
-        st.write("")
-
-        pom_dict = utils.get_pom_dict()
-
-
-        last_added_pom_df = pd.DataFrame([
-            {"Predicate-Object Map": pom_dict[pom_iri][2], "Assigned to": utils.get_node_label(tm_iri),
-            "Type": pom_dict[pom_iri][6], "Rule": pom_dict[pom_iri][7]}
-            for pom_iri, tm_iri in st.session_state["last_added_pom_list"]
-            if pom_iri in pom_dict])
-
-        last_last_added_pom_df = last_added_pom_df.head(utils.get_max_length_for_display()[1])
-
-        max_length = utils.get_max_length_for_display()[0]   # max number of tm shown in dataframe
-        if st.session_state["last_added_pom_list"]:
-            st.markdown("""<div style='text-align: right; font-size: 14px; color: grey;'>
-                    🔎 last added Predicate-Object Maps
-                </div>""", unsafe_allow_html=True)
-            if len(sm_dict) < max_length:
-                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                        (complete list below)
-                    </div>""", unsafe_allow_html=True)
-            else:
-                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                        (longer list below)
-                    </div>""", unsafe_allow_html=True)
-            st.dataframe(last_last_added_pom_df, hide_index=True)
-            st.write("")
-
-
-        #Option to show all Predicate-Object Maps
-        pom_df = pd.DataFrame([
-            {"Predicate-Object Map": v[2], "Assigned to": utils.get_node_label(v[0]),
-            "Type": v[6], "Rule": v[7]}
-            for k, v in reversed(pom_dict.items())])
-        pom_df_short = pom_df.head(max_length)
-
-        if pom_dict and len(pom_dict) < max_length:
-            with st.expander("🔎 Show all Predicate-Object Maps"):
-                st.write("")
-                st.dataframe(pom_df, hide_index=True)
-        elif pom_dict:
-            with st.expander("🔎 Show more Subject Maps"):
-                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
-                        Go to the <b>Display Mapping</b> page for more information.
-                    </div>""", unsafe_allow_html=True)
-                st.write("")
-                st.dataframe(pom_df_short, hide_index=True)
-
+        utils.display_right_column_df("predicate-object_maps", st.session_state["last_added_pom_list"], "last added Predicate-Object maps")
 
 #________________________________________________
 # MANAGE MAPPING
