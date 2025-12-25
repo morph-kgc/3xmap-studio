@@ -1,33 +1,33 @@
+import base64
+import configparser
+import io
 import os
+import pandas as pd
+from PIL import Image   # for logo rendering
 from pymongo import MongoClient
-import streamlit as st
 import rdflib
 from rdflib import BNode, Graph, Literal, Namespace, URIRef
 from rdflib.namespace import split_uri
 from rdflib.namespace import DC, DCTERMS, OWL, RDF, RDFS, XSD
-from sqlalchemy import create_engine, text
-from sqlalchemy.exc import OperationalError, ArgumentError
-import utils
-import pandas as pd
-
-import base64
-from collections import defaultdict
-import configparser
-import io
-import pickle
-import oracledb
-from PIL import Image   # for logo rendering
-import plotly.express as px
-import psycopg
-from pymongo import MongoClient
-import pymysql
-import pyodbc
 import re
 import requests
-import sqlglot
+from sqlalchemy import create_engine, text
+from sqlalchemy.exc import OperationalError, ArgumentError
+import streamlit as st
 from streamlit_js_eval import streamlit_js_eval
+import time
 from urllib.parse import urlparse
+import utils
 import uuid   # to handle uploader keys
+
+from urllib.parse import urlparse, urlunparse
+
+
+
+from collections import defaultdict
+import plotly.express as px
+import sqlglot
+
 
 
 # REQUIRED NS===================================================================
@@ -88,11 +88,15 @@ RML, QL = get_required_ns_dict().values()
 
 # DEFAULT VARIABLES (CAN BE CUSTOMISED)=========================================
 #________________________________________________________
-# Name of the folder where sessions are saved
-# Used in 🌍 Global Configuration page
-def get_saved_sessions_folder_name():
+# Function to get the name of the used folders (only one argument should be True)
+# Used in 🌍 Global Configuration and 🛢️ Tabular Data pages
+def get_folder_name(saved_sessions=False, data_sources=False):
 
-    return "saved_sessions"
+    if saved_sessions:
+        return "saved_sessions"
+
+    elif data_sources:
+        return "data_sources"
 #________________________________________________________
 
 #_____________________________________________________
@@ -129,6 +133,30 @@ def get_predefined_ns_dict():
     return filtered_ns_dict
 #_____________________________________________________
 
+#______________________________________________
+# Funtion to get list of datatypes
+def get_default_datatypes_dict():
+
+    datatype_dict = {"xsd:string": XSD.string, "xsd:integer": XSD.integer,
+        "xsd:decimal": XSD.decimal, "xsd:float": XSD.float,
+        "xsd:double": XSD. double, "xsd:boolean": XSD.boolean,
+        "xsd:date": XSD.date, "xsd:dateTime": XSD.dateTime,
+        "xsd:time": XSD.time, "xsd:anyURI": XSD.anyURI,
+        "rdf:XMLLiteral": XSD.XMLLiteral, "rdf:HTML": RDF.HTML,
+        "rdf:JSON": RDF.JSON}
+
+    return datatype_dict
+#______________________________________________
+
+#______________________________________________
+# Funtion to get list of language tags (should be valid BCP 47 language tags)
+def get_default_language_tags_list():
+
+    language_tags_list = ["en", "es", "fr", "de",
+        "ja", "pt", "en-US", "en-GB", "ar", "ru", "hi", "zh", "sr"]
+
+    return language_tags_list
+#______________________________________________
 
 # AESTHETICS====================================================================
 #______________________________________________________
@@ -297,6 +325,15 @@ def import_st_aesthetics():
     .info-message-blue b {
         color: #003366; font-weight:600;}
 
+    /* SMALL HEADING FOR SUBSECTIONS */
+    .small-subsection-heading {font-size: 13px; font-weight: 500;
+        margin-top: 10px; margin-bottom: 6px; border-top: 0.5px solid #ccc;
+        padding-bottom: 4px;}
+
+    /* VERY SMALL INFO */
+    .very-small-info {text-align: right; font-size: 10.5px; color: #003366;
+        margin-top: -10px;}
+
     </style>"""
 #_______________________________________________________
 
@@ -457,6 +494,15 @@ def import_st_aesthetics_dark_mode():
 
         .info-message-blue b {color: #dceeff; font-weight: 600;}
 
+    /* SMALL HEADING FOR SUBSECTIONS */
+    .small-subsection-heading {font-size: 13px; font-weight: 500;
+        margin-top: 10px; margin-bottom: 6px; border-top: 0.5px solid #ccc;
+        padding-bottom: 4px;}
+
+    /* VERY SMALL INFO */
+    .very-small-info {text-align: right; font-size: 10.5px; color: #dceeff;
+        margin-top: -10px;}
+
     </style>"""
 #______________________________________________________
 
@@ -579,33 +625,50 @@ def format_list_for_display(xlist):
 
 #______________________________________________________
 # Funtion to get label of a node   #RFTAG
-def get_node_label(node):
+def get_node_label(node, iri_prefix=True, short_BNode=True):
 
+    # URIRef
     if isinstance(node, URIRef):
-        label = split_uri(node)[1]
+        if iri_prefix:
+            try:
+                prefix, ns, local = st.session_state["g_mapping"].namespace_manager.compute_qname(node)
+                label = prefix + ": " + local
+            except Exception:
+                label = split_uri(node)[1]
+        else:
+            label = split_uri(node)[1]
+
+    # BNode
     elif isinstance(node, BNode):
-        label = "_:" + str(node)[:7] + "..."
+        if short_BNode:
+            label = "_:" + str(node)[:7] + "..."
+        else:
+            label = str(node)
+
+    # Other
     elif node:
         label = str(node)
+
+    # Empty node
     else:
         label = ""
 
     return label
 #______________________________________________________
 
-#______________________________________________________
-# Funtion to format iri to prefix:label
-def format_iri_to_prefix_label(node):
-
-    if isinstance(node, BNode):
-        return node
-
-    try:
-        prefix, ns, local = st.session_state["g_mapping"].namespace_manager.compute_qname(node)
-        return prefix + ": " + local
-    except Exception:
-        return get_node_label(node)
-#______________________________________________________
+# #______________________________________________________
+# # Funtion to format iri to prefix:label
+# def get_node_label(node):
+#
+#     if isinstance(node, BNode):
+#         return get_node_label(node)
+#
+#     try:
+#         prefix, ns, local = st.session_state["g_mapping"].namespace_manager.compute_qname(node)
+#         return prefix + ": " + local
+#     except Exception:
+#         return get_node_label(node)
+# #______________________________________________________
 
 #______________________________________________________
 # Funtion to format number
@@ -655,17 +718,156 @@ def format_number_for_display(number):
 # 6. Label in network visualisation (characters)
 # 7. Suggested mapping label (characters)    8. URL for display (characters)
 # 9. Max characters when displaying ontology/mapping serialisation (ttl or nt)
-# 10. Query text for display
+# 10. Query text for display    RFTAG check everything is used
+# 11. Max characters in a rule before using small fint size
 def get_max_length_for_display():
 
-    return [50, 10, 100, 20, 5, 5, 20, 15, 40, 100000, 30]
+    return [50, 10, 100, 20, 8, 10, 20, 15, 40, 100000, 30, 40]
 #_______________________________________________________
+
+#______________________________________________________
+# Function to display limited dataframed in right column
+# info namespaces / db_connections / saved_views / tabular_ds / triplesmaps
+def display_right_column_df(info, text, complete=True, display=True):
+
+    max_length = get_max_length_for_display()[1]
+
+    # Create the dataframe
+    if info == "namespaces":
+        session_state_dict = st.session_state["last_added_ns_list"]
+        mapping_ns_dict = get_g_ns_dict(st.session_state["g_mapping"])
+        rows = [{"Prefix": prefix, "Namespace": mapping_ns_dict.get(prefix, "")}
+            for prefix in reversed(list(st.session_state["last_added_ns_list"]))]
+
+    elif info == "custom_terms":
+        session_state_dict = st.session_state["custom_terms_dict"]
+        rows = [{"Term": get_node_label(term_iri), "Type": st.session_state["custom_terms_dict"][term_iri]}
+            for term_iri in reversed(list(st.session_state["custom_terms_dict"]))]
+
+    elif info == "db_connections":
+        session_state_dict = st.session_state["db_connections_dict"]
+        rows = [{"Label": label, "Engine": st.session_state["db_connections_dict"][label][0],
+                "Database": st.session_state["db_connections_dict"][label][3],
+                "Status": st.session_state["db_connection_status_dict"][label][0]}
+                for label in reversed(list(st.session_state["db_connections_dict"].keys()))]
+
+    elif info == "saved_views":
+        session_state_dict = st.session_state["saved_views_dict"]
+        rows = []
+        for label in reversed(list(st.session_state["saved_views_dict"].keys())):
+            connection = st.session_state["saved_views_dict"][label][0]
+            database =  st.session_state["db_connections_dict"][connection][3]
+
+            query_or_collection = st.session_state["saved_views_dict"][label][1]
+            max_length = get_max_length_for_display()[10]
+            query_or_collection = query_or_collection[:max_length] + "..." if len(query_or_collection) > max_length else query_or_collection
+
+            rows.append({"Label": label, "Source": connection,
+                    "Database": database, "Query/Collection": query_or_collection})
+
+    elif info == "tabular_ds":
+        session_state_dict = st.session_state["ds_files_dict"]
+        rows = []
+        ds_files = list(st.session_state["ds_files_dict"].items())
+        ds_files.reverse()
+
+        for filename, file_obj in ds_files:
+            base_name = filename.split(".")[0]
+            file_format = filename.split(".")[-1]
+
+            if hasattr(file_obj, "size"):               # Streamlit UploadedFile
+                file_size_kb = file_obj.size / 1024
+            elif hasattr(file_obj, "fileno"):                 # File object from open(path, "rb")
+                file_size_kb = os.fstat(file_obj.fileno()).st_size / 1024
+            else:
+                file_size_kb = None  # Unknown format
+
+            if not file_size_kb:
+                file_size = None
+            elif file_size_kb < 1:
+                file_size = f"""{int(file_size_kb*1024)} bytes"""
+            elif file_size_kb < 1024:
+                file_size = f"""{int(file_size_kb)} kB"""
+            else:
+                file_size = f"""{int(file_size_kb/1024)} MB"""
+
+            row = {"Filename": base_name, "Format": file_format,
+                "Size": file_size if file_size_kb is not None else "N/A"}
+            rows.append(row)
+
+    elif info == "triplesmaps":
+        session_state_dict = st.session_state["last_added_tm_list"]
+        rows = [{"TriplesMap": tm, "Data Source": utils.get_tm_info_for_display(tm)[1],
+            "Table/View": utils.get_tm_info_for_display(tm)[2],
+            "Logical Source": utils.get_tm_info_for_display(tm)[0]} for tm in st.session_state["last_added_tm_list"]]
+
+    elif info == "subject_maps":
+        session_state_dict = st.session_state["last_added_sm_list"]
+        sm_dict = get_sm_dict()
+        rows = [{"Triplesmap": triples_map, "Subject Map": sm_dict[subject_map][0],
+            "Rule": sm_dict[subject_map][2], "Type": sm_dict[subject_map][1]}
+            for subject_map, triples_map in st.session_state["last_added_sm_list"]
+            if subject_map in sm_dict]
+
+    elif info == "predicate-object_maps":
+        session_state_dict =  st.session_state["last_added_pom_list"]
+        pom_dict = get_pom_dict()
+        rows = [{"Rule": pom_dict[pom_iri][5], "Type": pom_dict[pom_iri][4],
+            "Predicate(s)": utils.format_list_for_display(pom_dict[pom_iri][1]),
+            "TriplesMap": utils.get_node_label(tm_iri)}
+            for pom_iri, tm_iri in st.session_state["last_added_pom_list"]
+            if pom_iri in pom_dict]
+
+    else:
+        rows = []
+
+    df = pd.DataFrame(rows)
+
+    # Clean the dataframe (remove empty columns, including placeholder "---")
+    placeholder = "---"
+    cols_to_drop = []
+    for col in df.columns:
+        if df[col].isna().all():           # check if all values are NaN
+            cols_to_drop.append(col)
+        elif (df[col] == placeholder).all():   # check if all values equal the placeholder string
+            cols_to_drop.append(col)
+    df = df.drop(columns=cols_to_drop)
+
+    # Display the dataframe
+    if display:
+        if session_state_dict:
+            limited_df = df.head(max_length)
+
+            if len(session_state_dict) < max_length:
+                st.markdown(f"""<div style='text-align: right; font-size: 14px; color: grey;'>
+                        🔎 {text}
+                    </div>""", unsafe_allow_html=True)
+                st.markdown("<div style='margin-top:0px;'></div>",
+                    unsafe_allow_html=True)
+            else:
+                st.markdown(f"""<div style='text-align: right; font-size: 14px; color: grey;'>
+                        🔎 {text}
+                    </div>""", unsafe_allow_html=True)
+                st.markdown("""<div style='text-align: right; font-size: 11px; color: grey; margin-top: -5px;'>
+                        (complete list below)
+                    </div>""", unsafe_allow_html=True)
+
+            st.dataframe(limited_df, hide_index=True)
+
+        # Option to display complete dataframe if it was shortened   HERE LIMIT MAX LENGTH?
+        if complete and session_state_dict and len(session_state_dict) > max_length:
+            st.write("")
+            with st.expander(f"🔎 Show all {text}"):
+                st.dataframe(df, hide_index=True)
+
+    return df
+#______________________________________________________
 
 
 # SUPPORTED FORMATS ============================================================
 #_______________________________________________________
 # List of allowed mapping file formats
-def get_supported_formats(mapping=False, ontology=False, databases=False):
+def get_supported_formats(mapping=False, ontology=False, databases=False, tab_data=False):
 
     if mapping:
         allowed_formats = {"turtle": ".ttl",
@@ -678,6 +880,10 @@ def get_supported_formats(mapping=False, ontology=False, databases=False):
 
     elif databases:
         allowed_formats = ["PostgreSQL", "MySQL", "SQL Server", "MariaDB", "Oracle", "MongoDB"]
+
+    if tab_data:
+        allowed_formats = [".csv", ".tsv", ".xls", ".xlsx", ".parquet", ".feather",
+            ".orc", ".dta", ".sas7bdat", ".sav", ".ods"]
 
     return allowed_formats
 #_______________________________________________________
@@ -735,6 +941,10 @@ def init_session_state_variables():
         st.session_state["g_ontology_components_tag_dict"] = {}
         st.session_state["g_ontology_loaded_ok_flag"] = False
         st.session_state["g_ontology_reduced_ok_flag"] = False
+        # TAB4
+        st.session_state["custom_terms_dict"] = {}
+        st.session_state["custom_term_saved_ok_flag"] = False
+        st.session_state["custom_terms_removed_ok_flag"] = False
 
         # 📊 SQL DATABASES____________________________________
         # TAB1
@@ -765,27 +975,25 @@ def init_session_state_variables():
         # TAB2
         st.session_state["key_ds_uploader_for_sm"] = str(uuid.uuid4())
         st.session_state["last_added_sm_list"] = []
-        st.session_state["sm_label"] = ""
         st.session_state["tm_label_for_sm"] = False
         st.session_state["sm_template_list"] = []
         st.session_state["sm_iri"] = None
-        st.session_state["sm_template_prefix"] = ""
+        st.session_state["sm_template_is_iri_flag"] = False
         st.session_state["multiple_subject_class_list"] = []
         st.session_state["sm_template_variable_part_flag"] = False
         st.session_state["sm_saved_ok_flag"] = False
         # TAB3
         st.session_state["key_ds_uploader_for_pom"] = str(uuid.uuid4())
-        st.session_state["om_template_ns_prefix"] = ""
+        st.session_state["om_template_is_iri_flag"] = False
         st.session_state["om_template_list"] = []
         st.session_state["last_added_pom_list"] = []
-        st.session_state["template_om_is_iri_flag"] = False
         st.session_state["pom_saved_ok_flag"] = False
         st.session_state["om_template_variable_part_flag"] = False
         # TAB4
-        st.session_state["tm_deleted_ok_flag"] = False
+        st.session_state["tm_removed_ok_flag"] = False
         st.session_state["sm_unassigned_ok_flag"] = False
         st.session_state["g_mapping_cleaned_ok_flag"]  = False
-        st.session_state["pom_deleted_ok_flag"] = False
+        st.session_state["pom_removed_ok_flag"] = False
 
         # 🔮 MATERIALISE GRAPH
         # TAB1
@@ -840,7 +1048,7 @@ def init_page():
 # GLOBAL FUNCTIONS==============================================================
 #______________________________________________________
 # Function to check whether a label is valid
-def is_valid_label(label, hard=False, display_option=True):
+def is_valid_label(label, hard=False, display_option=True, blank_space=False):
 
     valid_letters = ["a","b","c","d","e","f","g","h","i","j","k","l","m",
         "n","o","p","q","r","s","t","u","v","w","x","y","z",
@@ -856,6 +1064,8 @@ def is_valid_label(label, hard=False, display_option=True):
     # disallow spaces
     if re.search(r"[ \t\n\r]", label):    # disallow spaces
         if display_option:
+            if blank_space:
+                st.write("")
             st.markdown(f"""<div class="error-message">
                 ❌ <b> Invalid label. </b>
                 <small>Please make sure it does not contain any spaces.</small>
@@ -865,6 +1075,8 @@ def is_valid_label(label, hard=False, display_option=True):
     # disallow unescaped characters
     if not hard and re.search(r"[<>\"{}|\\^`]", label):
         if display_option:
+            if blank_space:
+                st.write("")
             st.markdown(f"""<div class="error-message">
                 ❌ <b> Invalid label. </b>
                 <small>Please make sure it does not contain any invalid characters (&lt;&gt;"{{}}|\\^`).</small>
@@ -876,6 +1088,8 @@ def is_valid_label(label, hard=False, display_option=True):
         for letter in label:
             if letter not in valid_letters and letter not in valid_digits:
                 if display_option:
+                    if blank_space:
+                        st.write("")
                     st.markdown(f"""<div class="error-message">
                         ❌ <b> Invalid label. </b>
                         <small>Please make sure it contains only safe characters (a-z, A-Z, 0-9, -, _).</small>
@@ -885,6 +1099,8 @@ def is_valid_label(label, hard=False, display_option=True):
     # disallow trailing puntuation if hard
     if hard and label.endswith("_") or label.endswith("-"):
         if display_option:
+            if blank_space:
+                st.write("")
             st.markdown(f"""<div class="error-message">
                 ❌ <b> Invalid label. </b>
                 <small>Please make sure it does not end with puntuation.</small>
@@ -893,6 +1109,8 @@ def is_valid_label(label, hard=False, display_option=True):
 
     # warning if long
     if len(label) > 20 and display_option:
+        if blank_space:
+            st.write("")
         st.markdown(f"""<div class="warning-message">
             ⚠️ A <b>shorter label</b> is recommended.
         </div>""", unsafe_allow_html=True)
@@ -1065,7 +1283,7 @@ def load_mapping_from_file(f):
         except:
             st.markdown(f"""<div class="error-message">
                 ❌ Failed to parse <b>mapping</b>.
-                <small> Please, check your mapping.</small>
+                <small> Please check your mapping.</small>
             </div>""", unsafe_allow_html=True)
             return False
 
@@ -1340,6 +1558,7 @@ def save_session_state():
     project_state_list.append(st.session_state["g_mapping_source_cache"])
     project_state_list.append(st.session_state["original_g_size_cache"])
     project_state_list.append(st.session_state["original_g_mapping_ns_dict"])
+    project_state_list.append(st.session_state["custom_terms_dict"])
 
     return project_state_list
 #______________________________________________________
@@ -1361,6 +1580,7 @@ def retrieve_session_state(project_state_list):
     st.session_state["g_mapping_source_cache"] = project_state_list[10]
     st.session_state["original_g_size_cache"] = project_state_list[11]
     st.session_state["original_g_mapping_ns_dict"] = project_state_list[12]
+    st.session_state["custom_terms_dict"] = project_state_list[13]
 
     for conn in st.session_state["db_connection_status_dict"]:
         update_db_connection_status_dict(conn)
@@ -1379,7 +1599,7 @@ def is_valid_filename(filename):
     if filename.endswith("."):
         st.markdown(f"""<div class="error-message">
             ❌ <b>Trailing "."</b> in filename.
-            <small> Please, remove it.</small>
+            <small> Please remove it.</small>
         </div>""", unsafe_allow_html=True)
         return False
 
@@ -1387,7 +1607,7 @@ def is_valid_filename(filename):
     elif "." in filename:
         st.markdown(f"""<div class="error-message">
                 ❌ The filename seems to include an <b>extension</b>.
-                <small> Please, remove it.</b>
+                <small> Please remove it.</b>
             </div>""", unsafe_allow_html=True)
         return False
 
@@ -1395,7 +1615,7 @@ def is_valid_filename(filename):
     elif re.search(excluded_characters, filename):
         st.markdown(f"""<div class="error-message">
             ❌ <b>Forbidden character</b> in filename.
-            <small> Please, pick a valid filename.</small>
+            <small> Please pick a valid filename.</small>
         </div>""", unsafe_allow_html=True)
         return False
 
@@ -1405,7 +1625,7 @@ def is_valid_filename(filename):
             if item == os.path.splitext(filename)[0].upper():
                 st.markdown(f"""<div class="error-message">
                     ❌ <b>Reserved filename.</b><br>
-                    <small>Please, pick a different filename.</small>
+                    <small>Please pick a different filename.</small>
                 </div>""", unsafe_allow_html=True)
                 return False
                 break
@@ -1639,7 +1859,7 @@ def get_unique_ontology_tag(g_label):
 
 
 
-# PAGE: SQL DATABASES===========================================================
+# PAGE: 📊 DATABASES============================================================
 # PANEL: MANAGE CONNECTIONS-----------------------------------------------------
 #________________________________________________________
 # Dictionary with default ports for the different engines
@@ -1652,8 +1872,30 @@ def get_default_ports():
 #______________________________________________________
 
 #______________________________________________________
+# Funtion to censor the password or a url_str
+def censor_url_str(url_str):
+
+    try:
+        parsed = urlparse(url_str)
+        if "@" in parsed.netloc:
+            creds, hostpart = parsed.netloc.split("@", 1)
+            if ":" in creds:
+                user, _ = creds.split(":", 1)
+                netloc = f"{user}:*****@{hostpart}"
+            else:
+                netloc = creds + "@" + hostpart
+            parsed = parsed._replace(netloc=netloc)
+        censored_url_str = urlunparse(parsed)
+
+    except:
+        censored_url_str = url_str
+
+    return censored_url_str
+#______________________________________________________
+
+#______________________________________________________
 # Funtion to get db_url string of an already saved connection
-def get_db_url_str(conn_label):
+def get_db_url_str(conn_label, censor=False):
 
     engine, host, port, database, user, password = st.session_state["db_connections_dict"][conn_label]
 
@@ -1675,6 +1917,9 @@ def get_db_url_str(conn_label):
     else:
         return None
 
+    if censor:
+        return censor_url_str(db_url_str)
+
     return db_url_str
 #______________________________________________________
 
@@ -1685,8 +1930,7 @@ def get_db_url_str_from_input(engine, host, port, database, user, password):
     if engine == "Oracle":
         db_url_str = f"oracle+oracledb://{user}:{password}@{host}:{port}/{database}"
     elif engine == "SQL Server":
-        # recommended driver for SQLAlchemy
-        db_url_str = f"mssql+pyodbc://{user}:{password}@{host}:{port}/{database}?driver=SQL+Server"
+        db_url_str = f"mssql+pyodbc://{user}:{password}@{host}:{port}/{database}?driver=SQL+Server"  # recommended driver for SQLAlchemy
     elif engine == "PostgreSQL":
         db_url_str = f"postgresql+psycopg://{user}:{password}@{host}:{port}/{database}"
     elif engine == "MySQL":
@@ -1721,8 +1965,8 @@ def try_connection_to_db(db_connection_type, host, port, database, user, passwor
         except Exception as e:
             if display_msg:
                 st.markdown(f"""<div class="error-message">
-                    ❌ <b>Connection failed.</b><br>
-                    <small><b>Full error</b>: {str(e)} </small>
+                    ❌ <b>Connection failed.</b>
+                    <small><i><b>Full error</b>: {str(e)}</i></small>
                 </div>""", unsafe_allow_html=True)
                 return False
             else:
@@ -1738,8 +1982,8 @@ def try_connection_to_db(db_connection_type, host, port, database, user, passwor
     except OperationalError as e:
         if display_msg:
             st.markdown(f"""<div class="error-message">
-                ❌ <b>Connection failed.</b><br>
-                <small><b>Full error</b>: {str(e)} </small>
+                ❌ <b>Connection failed.</b>
+                <small><i><b>Full error</b>: {str(e)}</i></small>
             </div>""", unsafe_allow_html=True)
             return False
         else:
@@ -1749,7 +1993,7 @@ def try_connection_to_db(db_connection_type, host, port, database, user, passwor
         if display_msg:
             st.markdown(f"""<div class="error-message">
                 ❌ <b>Invalid connection string.</b><br>
-                <small><b>Full error</b>: {str(e)} </small>
+                <small><i><b>Full error</b>: {str(e)}</i></small>
             </div>""", unsafe_allow_html=True)
             return False
         else:
@@ -1759,7 +2003,7 @@ def try_connection_to_db(db_connection_type, host, port, database, user, passwor
         if display_msg:
             st.markdown(f"""<div class="error-message">
                 ❌ <b>Unexpected error.</b><br>
-                <small><b>Full error</b>: {str(e)} </small>
+                <small><i><b>Full error</b>: {str(e)}</i></small>
             </div>""", unsafe_allow_html=True)
             return False
         else:
@@ -1788,16 +2032,22 @@ def make_connection_to_db(connection_label):
 
 #______________________________________________________
 # Funtion to make a connection to a database
-def check_connection_to_db(connection_label):
+def check_connection_to_db(connection_label, different_page=False):
 
     try:
         conn = utils.make_connection_to_db(connection_label)
         connection_ok_flag = True
     except:
-        st.markdown(f"""<div class="error-message">
-            ❌ The connection <b>{connection_label}</b> is not working.
-            <small>Please check it in the <b>Manage Connections</b> pannel.</small>
-        </div>""", unsafe_allow_html=True)
+        if not different_page:
+            st.markdown(f"""<div class="error-message">
+                ❌ The connection <b>{connection_label}</b> is not working.
+                <small>Please check it in the <b>Manage Connections</b> panel.</small>
+            </div>""", unsafe_allow_html=True)
+        else:
+            st.markdown(f"""<div class="error-message">
+                ❌ The connection <b>{connection_label}</b> is not working.
+                <small>Please check it in the <b>📊 Databases</b> page.</small>
+            </div>""", unsafe_allow_html=True)
         connection_ok_flag = False
         conn = None
 
@@ -1868,7 +2118,7 @@ def get_tables_from_db(connection_label):
     elif engine == "MongoDB":
         db = conn[database]    # conn is a MongoClient
         collections = db.list_collection_names()
-        # collections = [name for name in collections if not name.startswith("system.")]
+        collections = [name for name in collections if not name.startswith("system.")]
         return [(name,) for name in collections]
 
     else:
@@ -1901,7 +2151,7 @@ def get_df_from_db(connection_label, db_table):
 
 #______________________________________________________
 # Funtion to display limited dataframe
-def display_limited_df(df, title):
+def display_limited_df(df, title, display=True):
 
     table_len = f"{len(df)} rows" if len(df) != 1 else f"{len(df)} row"
     inner_html = f"""📅 <b style="color:#F63366;"> {title} <small>({table_len}):</small></b>
@@ -1927,9 +2177,14 @@ def display_limited_df(df, title):
         elif df.shape[1] > max_cols:
             inner_html += f"""<small>Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).</small>"""
 
+    limited_df = df.head(max_rows)
+
+    if not limited_df.empty:
         st.markdown(f"""<div class="info-message-blue">
                 {inner_html}
             </div>""", unsafe_allow_html=True)
+        if display:
+            st.dataframe(limited_df, hide_index=True)
 
     return limited_df.head(max_rows)
 #______________________________________________________
@@ -1963,7 +2218,7 @@ def run_query(connection_label, query_or_collection):
         error =  str(e)
 
     return df, view_ok_flag, error
-#_________________________________________________
+#______________________________________________________
 
 #______________________________________________________
 #Function to display view results
@@ -1979,13 +2234,16 @@ def display_db_view_results(view):
 
         if not view_ok_flag:
             st.markdown(f"""<div class="error-message">
-                ❌ <b>Invalid syntax</b>. <small>Please check your query or collection.<br>
-                <b> Full error:</b> {error}</small>
+                ❌ <b>Invalid syntax</b>. <small>Please check your query or collection.
+                <i><b>Full error:</b> {error}</i></small>
             </div>""", unsafe_allow_html=True)
         else:
-            limited_df = display_limited_df(df, "Results")
-            st.dataframe(limited_df, hide_index=True)
-#_________________________________________________
+            display_limited_df(df, "Results")
+
+        return view_ok_flag
+
+    return False
+#______________________________________________________
 
 #______________________________________________________
 #Function to display view results
@@ -2001,18 +2259,12 @@ def remove_view_from_db(view):
             database = st.session_state["db_connections_dict"][connection_label][3]
             db = conn[database]    # conn is a MongoClient
             db.drop_collection(view)
-#_________________________________________________
+#______________________________________________________
 
 
-#RFBOOKMARK
-#________________________________________________________
-# Funtion to get the name of the folder to save large files
-def get_ds_folder_name():
-
-        return "data_sources"
-#________________________________________________________
-
-#________________________________________________________
+# PAGE: 🏗️ BUILD MAPPING========================================================
+# PANEL: ADD TRIPLESMAP---------------------------------------------------------
+#______________________________________________________
 # Funtion to get the dictionary of the TriplesMaps
 #{tm_label: tm}
 def get_tm_dict():
@@ -2023,178 +2275,207 @@ def get_tm_dict():
         triples_maps = list(st.session_state["g_mapping"].subjects(RML.logicalSource, None))
 
         for tm in triples_maps:
-            tm_label = split_uri(tm)[1]
+            tm_label = get_node_label(tm)
             tm_dict[tm_label] = tm
         return tm_dict
 
     else:
         return {}
-#________________________________________________________
+#______________________________________________________
 
-#_________________________________________________
-# Funtion to get the logical soruce of a TriplesMap
-def get_ls(tm_label):
+#______________________________________________________
+# Funtion to get the all info of a TriplesMap
+# 0. TriplesMap iri     1. Logical Source iri        2. Data Source
+def get_tm_info(tm_label):
+
     tm_dict = get_tm_dict()
     tm_iri = tm_dict[tm_label]
-    ls = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RML.logicalSource)
-    if isinstance(ls, URIRef):
-        try:
-            ls_label = split_uri(ls)[1]
-        except:
-            ls_label = ls
-    elif isinstance(ls, BNode):
-        ls_label = "_:" + str(ls)[:7] + "..."
-    return ls_label
-#_________________________________________________
+    ls_iri = next(st.session_state["g_mapping"].objects(tm_iri, RML.logicalSource), None)
+    ds = str(next(st.session_state["g_mapping"].objects(ls_iri, RML.source), None))
 
-#_________________________________________________
-# Funtion to get the logical source of a TriplesMap
-def get_ds(tm_label):
-    tm_dict = get_tm_dict()
-    tm_iri = tm_dict[tm_label]
-    ls = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RML.logicalSource)
-    ds = st.session_state["g_mapping"].value(subject=ls, predicate=RML.source)
-    return ds
-#_________________________________________________
+    # Return info
+    return tm_iri, ls_iri, ds
+#______________________________________________________
 
-#_________________________________________________________________________________
-# Function to completely remove a triplesmap
-# Remove primary and secondary triples, but dont remove any triples that are used by another triplesmap
-def remove_triplesmap(tm_label):
+#______________________________________________________
+# Funtion to get the all info of a TriplesMap
+# 0. Logical Source     1. Data Source        2. Table/View
+def get_tm_info_for_display(tm_label):
 
-    tm_dict = get_tm_dict()
-    tm_iri = tm_dict[tm_label]   #get tm iri
-    g = st.session_state["g_mapping"]  #for convenience
+    # TriplesMap and Logical Source
+    tm_iri, ls_iri, ds_raw = get_tm_info(tm_label)
+    ls_label = get_node_label(ls_iri)
 
-    # remove ls if not reused
-    logical_source = g.value(subject=tm_iri, predicate=RML.logicalSource)
-    if logical_source:
-        ls_reused = any(s != tm_iri for s, p, o in g.triples((None, RML.logicalSource, logical_source)))
-        if not ls_reused:
-            g.remove((logical_source, None, None))
+    # Data Source (look for label if connection is saved, else give censored url_str)
+    saved_conn_flag = False
+    for conn_label in st.session_state["db_connections_dict"]:
+        if str(get_db_url_str(conn_label)) == str(ds_raw):
+            ds = conn_label
+            saved_conn_flag = True
+            break
 
-    # remove sm if not reused
-    subject_map = g.value(subject=tm_iri, predicate=RML.subjectMap)
-    if subject_map:
-        sm_reused = any(s != tm_iri for s, p, o in g.triples((None, RML.subjectMap, subject_map)))
-        if not sm_reused:
-            g.remove((subject_map, None, None))
+    if not saved_conn_flag:
+        ds = censor_url_str(ds_raw)
 
-    # remove all associated pom (and om)
-    pom_iri_list = list(g.objects(subject=tm_iri, predicate=RML.predicateObjectMap))
-    for pom_iri in pom_iri_list:
-        om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RML.objectMap)
-        st.session_state["g_mapping"].remove((pom_iri, None, None))
-        st.session_state["g_mapping"].remove((om_to_delete, None, None))
+    # View or table
+    max_length = get_max_length_for_display()[10]
+    query = st.session_state["g_mapping"].value(subject=ls_iri, predicate=RML.query)
+    if query:
+        query = query[:max_length] + "..." if len(query) > max_length else query
+    table_name = st.session_state["g_mapping"].value(subject=ls_iri, predicate=RML.tableName)
+    source_def = query or table_name or "---"
 
-    g.remove((tm_iri, None, None))   # remove tm triple
+    # Return info
+    return ls_label, ds, source_def
+#______________________________________________________
+
+#______________________________________________________
+# Get content from table
+def get_db_table_df(conn_label, table):
+
+    conn = utils.make_connection_to_db(conn_label)
+    engine = st.session_state["db_connections_dict"][conn_label][0]
+    database = st.session_state["db_connections_dict"][conn_label][3]
+
+    # SQL databases
+    if engine != "MongoDB":
+        result = conn.execute(text(f"SELECT * FROM {table}"))
+        rows = result.fetchall()
+        columns = result.keys()
+        df = pd.DataFrame(rows, columns=columns)
+
+    # MongoDB
+    else:
+        db = conn[database]
+        collection = db[table]
+        docs = list(collection.find())
+        df = pd.DataFrame(docs) if docs else pd.DataFrame()
+
+    return df
+#______________________________________________________
+
+# PANEL: ADD SUBJECT MAP--------------------------------------------------------
+#______________________________________________________
+# Funtion to read tabular data
+def read_tab_file(filename):
+
+    file = st.session_state["ds_files_dict"][filename]
+    file_format = filename.split(".")[-1]
+
+    if file_format == "csv":
+        read_content = pd.read_csv(file)
+
+    elif file_format == "tsv":
+        read_content = pd.read_csv(file, sep="\t")
+
+    elif file_format in ["xls", "xlsx", "ods"]:
+        read_content = pd.read_excel(file)
+
+    elif file_format == "parquet":
+        read_content = pd.read_parquet(file)
+
+    elif file_format == "feather":
+        read_content = pd.read_feather(file)
+
+    elif file_format == "orc":
+        import pyarrow.orc as orc
+        orc_file = orc.ORCFile(file)
+        read_content = orc_file.read().to_pandas()
+
+    elif file_format == "dta":
+        read_content, _ = pyreadstat.read_dta(file)
+
+    elif file_format == "sas7bdat":
+        read_content, _ = pyreadstat.read_sas7bdat(file)
+
+    elif file_format == "sav":
+        read_content, _ = pyreadstat.read_sav(file)
+
+    else:
+        read_content = ""   # should not occur
+
+    file.seek(0)
+
+    return read_content
 #______________________________________________________
 
 #______________________________________________________
 # Function get the column list of the data source of a tm
 # It also gives warning and info messages
-def get_column_list_and_give_info(tm_iri):
+def get_column_list_and_give_info(tm_label):
 
-    ls_iri = next(st.session_state["g_mapping"].objects(tm_iri, RML.logicalSource), None)
-    ds = str(next(st.session_state["g_mapping"].objects(ls_iri, RML.source), None))
+    # Get required info
+    tm_iri, ls_iri, ds = get_tm_info(tm_label)
     reference_formulation = next(st.session_state["g_mapping"].objects(ls_iri, QL.referenceFormulation), None)
-    query_as_ds = next(st.session_state["g_mapping"].objects(ls_iri, RML.query), None)
+    view_as_ds = next(st.session_state["g_mapping"].objects(ls_iri, RML.query), None)
     table_name_as_ds = next(st.session_state["g_mapping"].objects(ls_iri, RML.tableName), None)
 
+    # Initialise variables
     inner_html = ""
-    column_list_ok_flag = False
+    column_list = []
 
-    jdbc_dict = {}
-    for conn in st.session_state["db_connections_dict"]:
-        jdbc_str = get_jdbc_str(conn)
-        jdbc_dict[conn] = jdbc_str
+    # Check whether the data source is a saved database
+    selected_conn_label = ""
+    for conn_label in st.session_state["db_connections_dict"]:
+        url_str = get_db_url_str(conn_label)
+        if str(ds) == str(url_str):
+            selected_conn_label = conn_label
 
-    if ds in st.session_state["ds_files_dict"]:   # saved non-sql data source
-
-        df = utils.read_tab_file(ds)
+    # Saved tabular data sources
+    if ds in st.session_state["ds_files_dict"]:
+        df = read_tab_file(ds)
         column_list = df.columns.tolist()
+        ds_for_display = f"""🛢️ <b>{ds}</b>"""
 
-        inner_html = f"""🛢️ The data source is <b>{ds}</b>."""
-        column_list_ok_flag = True
-
-    elif ds in jdbc_dict.values():        # saved sql data source
-
-        for i_conn, i_jdbc_str in jdbc_dict.items():
-            if  i_jdbc_str == ds:
-                [engine, host, port, i_database, user, password] = st.session_state["db_connections_dict"][conn]
-                conn_label = i_conn
-                jdbc_str = i_jdbc_str
-                database = i_database
-                break
+    # Saved database
+    elif selected_conn_label:
+        engine = st.session_state["db_connections_dict"][selected_conn_label][0]
+        database = st.session_state["db_connections_dict"][selected_conn_label][3]
+        ds_for_display = f"""📊 <b>{selected_conn_label}</b>"""
 
 
-        if query_as_ds:
+        if view_as_ds or table_name_as_ds:
             try:
-                conn = utils.make_connection_to_db(conn_label)
-                cur = conn.cursor()
-                cur.execute(query_as_ds)
-                column_list = [description[0] for description in cur.description]
-                conn.close() # optional: close immediately or keep open for queries
+                conn = utils.make_connection_to_db(selected_conn_label)
+                if view_as_ds:
+                    result = conn.execute(text(view_as_ds))
+                elif table_name_as_ds:
+                    if engine != "MongoDB":       # SQL databases
+                        result = conn.execute(text(f"SELECT * FROM {table_name_as_ds} LIMIT 0"))
+                    else:          # MongoDB case
+                        db = conn[database]
+                        collection = db[table_name_as_ds]
+                        result = collection.find_one()
+                column_list = list(result.keys())
                 if not column_list:
-                    inner_html = f"""⚠️ <b>No columns found</b> in logical source query.
-                    <small>Go to <b>📊 SQL Databases</b> page to fix it.
+                    inner_html = f"""⚠️ <b>No references found</b>.
+                    <small>Check data source in the <b>📊 Databases</b> page.
                     <b>Manual reference entry is discouraged.</b></small>"""
 
-                else:
-                    inner_html = f"""📊 The data source is the database <b style="color:#F63366;">{database}</b>.<br>
-                        <small>🔌 {conn_label} → <b>{jdbc_str}</b></small>"""
-                    column_list_ok_flag = True
-
-            except:
-                inner_html = f"""⚠️ Connection to database <b>{database}</b> failed.
-                    <small>Check <b>📊 SQL Databases</b> page to fix it.
-                    <b>Manual reference entry is discouraged.</b></small>"""
-                column_list = []
-
-        elif table_name_as_ds:
-            try:
-                conn = utils.make_connection_to_db(conn_label)
-                cur = conn.cursor()
-
-                cur.execute(f"SELECT * FROM {table_name_as_ds} LIMIT 0")
-                column_list = [desc[0] for desc in cur.description]
-
-                conn.close()
-
-                if not column_list:
-                    inner_html = f"""⚠️ <b>{table_name_as_ds}</b> has no columns.
-                        <small>Check <b>📊 SQL Databases</b> page to fix it.
-                        <b>Manual reference entry is discouraged.</b></small>"""
-
-                else:
-                    inner_html = f"""📊 The data source is the database <b style="color:#F63366;">{database}</b>.<br>
-                             <small>🔌 {conn_label} → <b>{jdbc_str}</b></small>"""
-                    column_list_ok_flag = True
-
-            except:
-                inner_html = f"""⚠️ <b>Connection failed</b> for table <b>{table_name_as_ds}</b>.
-                    <small>Check it in <b>📊 SQL Databases</b> page to enable column detection.
-                    <b>Manual reference entry is discouraged.</b></small>"""
-                column_list = []
+            except Exception as e:
+                inner_html = f"""⚠️ Connection to database <b>{selected_conn_label}</b> failed
+                    <small>(check it in the <b>📊 Databases</b> page).
+                    Manual reference entry is discouraged.</small>"""
 
         else:
-            inner_html = f"""⚠️ Missing <code>RML.query</code> or <code>RML.tableName</code>.
-                <small>Check the <b>Logical Source</b> to enable column detection.
-                <b>Manual reference entry is discouraged.</b></small>"""
-            column_list = []
+            inner_html = f"""⚠️ <b>Column detection not possible:</b>
+                Missing <code>RML.query</code> or <code>RML.tableName</code> in mapping.
+                <small>Manual reference entry is discouraged.</small>"""
 
-    elif query_as_ds:    # try to look for the columns in the query
-        parsed = sqlglot.parse_one(query_as_ds)
+    # Data source is a view but connection is not saved (try to find the columns in the view)
+    elif view_as_ds:
+        parsed = sqlglot.parse_one(view_as_ds)
         column_list = [str(col) for col in parsed.find_all(sqlglot.expressions.Column)]
 
         if column_list:
-            inner_html = f"""⚠️ <b>{ds}</b> is unavailable. Columns were inferred from the logical source query.
-                <small><b>Connecting to the database</b> is still recommended.</small>"""
+            inner_html = f"""⚠️ <b>Database connection not established</b>.
+                <small>Columns have been inferred from the view.
+                Connecting to the database through the <b>📊 Databases</b> page is still recommended.</small>"""
         else:
-            inner_html = f"""⚠️ <b>{ds}</b> is unavailable.
-                <small>Load it via <b>📊 SQL Databases</b> page to enable column detection.
-                <b>Manual reference entry is discouraged.</b></small>"""
-
+            inner_html = f"""⚠️ <b>Database connection not established</b>.
+                <small>Go to the <b>📊 Databases</b> page to connect and enable column detection.
+                Manual reference entry is discouraged.</small>"""
+        ds_for_display = ""
 
     else:                                                           # data source not saved
         if reference_formulation == QL.SQL:
@@ -2206,11 +2487,457 @@ def get_column_list_and_give_info(tm_iri):
             inner_html = f"""⚠️ <b>{ds}</b> is unavailable.
                 <small>Load it via <b>📊 SQL Databases</b> page to enable column detection.
                 <b>Manual reference entry is discouraged.</b></small>"""
-        column_list = []
+        ds_for_display = ""
 
-    return [column_list, column_list_ok_flag, inner_html]
-#________________________________________________________
+    return [column_list, inner_html, ds_for_display]
+#______________________________________________________
 
+#______________________________________________________
+# Funtion to get the dictionary of the graph maps existing in mapping
+def get_graph_map_dict():
+
+    graph_map_dict = {}
+    graph_map_list = list(st.session_state["g_mapping"].objects(None, RML.graphMap))
+
+    for gm in graph_map_list:
+        graph_map_dict[get_node_label(gm)] = gm
+
+    return graph_map_dict
+#______________________________________________________
+
+# PANEL: ADD PREDICATE-OBJECT MAP-----------------------------------------------
+#______________________________________________________
+# Funtion to get list of datatypes (including possible dt defined by mapping)
+def get_datatype_dict():
+
+    datatype_dict = get_default_datatypes_dict()
+    mapping_defined_datatype_list = list(st.session_state["g_mapping"].objects(None, RML.datatype))
+
+    for dt in mapping_defined_datatype_list:
+        if not get_node_label(dt) in datatype_dict:
+            datatype_dict[utils.get_node_label(dt)] = dt
+
+    return datatype_dict
+#______________________________________________________
+
+#______________________________________________________
+# Funtion to get list of language tags
+def get_language_tags_list():
+
+    language_tags_list = get_default_language_tags_list()
+
+    # Add mapping-defined language tags
+    for s, p, o in st.session_state["g_mapping"]:
+        if isinstance(o, Literal) and o.language and o.language not in language_tags_list:
+            language_tags_list.append(o.language)
+
+    return language_tags_list
+#______________________________________________________
+
+#______________________________________________________
+# Funtion to prepare a node for the rule preview
+def prepare_node_for_rule_preview(node, subject=False, predicate=False, object=False):
+
+    # Subject (node = tm)
+    if subject:
+        sm_iri_for_pom = next(st.session_state["g_mapping"].objects(node, RML.subjectMap), None)
+
+        if sm_iri_for_pom:
+            template_sm_for_pom = next(st.session_state["g_mapping"].objects(sm_iri_for_pom, RML.template), None)
+            constant_sm_for_pom = next(st.session_state["g_mapping"].objects(sm_iri_for_pom, RML.constant), None)
+            reference_sm_for_pom = next(st.session_state["g_mapping"].objects(sm_iri_for_pom, RML.reference), None)
+
+            if template_sm_for_pom:
+                sm_rule = template_sm_for_pom
+            elif constant_sm_for_pom:
+                sm_rule = constant_sm_for_pom
+            elif reference_sm_for_pom:
+                sm_rule = reference_sm_for_pom
+
+            if isinstance(sm_rule, URIRef):
+                sm_rule = utils.get_node_label(sm_rule)
+
+        else:
+            sm_rule = """No Subject Map"""
+#______________________________________________________
+
+#______________________________________________________
+# Function to display a rule when creating it (in 🏗️_Build_Mapping page)
+def preview_rule(tm_iri_for_pom, predicate_list, om_rule, o_is_reference=False, datatype=None, language_tag=None):
+
+    max_length = get_max_length_for_display()[11]   # to adjust font size
+    inner_html = ""
+    small_header = """<small><b style="color:#F63366; font-size:10px;margin-top:8px; margin-bottom:8px; display:block;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>"""
+
+    # Get subject and prepare for display
+    sm_iri_for_pom = next(st.session_state["g_mapping"].objects(tm_iri_for_pom, RML.subjectMap), None)
+
+    if sm_iri_for_pom:
+        template_sm_for_pom = next(st.session_state["g_mapping"].objects(sm_iri_for_pom, RML.template), None)
+        constant_sm_for_pom = next(st.session_state["g_mapping"].objects(sm_iri_for_pom, RML.constant), None)
+        reference_sm_for_pom = next(st.session_state["g_mapping"].objects(sm_iri_for_pom, RML.reference), None)
+
+        s_for_display = template_sm_for_pom or constant_sm_for_pom or reference_sm_for_pom or ""
+
+        if isinstance(s_for_display, URIRef):
+            s_for_display = get_node_label(s_for_display)
+
+        if (None, RML.reference, Literal(s_for_display)) in st.session_state["g_mapping"]:  # if reference, add {}
+            formatted_s = f"{{{s_for_display}}}"
+
+    else:
+        s_for_display = """No Subject Map"""
+
+    # Get object and prepare for display
+    o_for_display = get_node_label(om_rule)
+
+    o_for_display = f"{{{o_for_display}}}" if o_is_reference else o_for_display     # if reference, add {}
+    o_for_display = f"""{o_for_display}^^{get_node_label(datatype)}""" if datatype else o_for_display    # add datatype
+    o_for_display = f"""{o_for_display}@{language_tag}""" if language_tag else o_for_display    # add language tag
+
+    # Adjust font size based on length
+    s_for_display = f"""<small>{s_for_display}</small>""" if len(s_for_display) > max_length else s_for_display
+    o_for_display = f"""<small>{o_for_display}</small>""" if len(o_for_display) > max_length else o_for_display
+
+    for p in predicate_list:
+        p_for_display = f"""<small>{p}</small>""" if len(p) > max_length else p    # adjust font size
+        inner_html += f"""<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:0px;">
+                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.2;"><b>{s_for_display}</b></div>
+                </div>
+                <div style="flex:0; font-size:18px;">🡆</div>
+                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.2;"><b>{p_for_display}</b></div>
+                </div>
+                <div style="flex:0; font-size:18px;">🡆</div>
+                <div style="flex:1; min-width:140px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                    <div style="margin-top:1px; font-size:13px; line-height:1.2;"><b>{o_for_display}</b></div>
+                </div>
+            </div><br>"""
+
+    st.markdown(f"""<div class="blue-preview-message" style="margin-top:0px; padding-top:4px;">
+            {small_header}{inner_html}
+        </div>""", unsafe_allow_html=True)
+#______________________________________________________
+
+#______________________________________________________
+# Funtion to get the dictionary of the Subject Maps
+# {sm_iri: [LIST]}
+# the keys are a list of:
+# 0. sm label     1. sm type (template, constant or reference)
+# 2. sm_id_iri      # 3. sm_id_label    (info on the id)
+# 4. List of all tm to which sm is assigned
+def get_sm_dict():
+
+    sm_dict = {}
+
+    tm_list = list(st.session_state["g_mapping"].subjects(RML.logicalSource, None))
+    for tm in tm_list:
+        tm_label = get_node_label(tm)
+        sm_iri = st.session_state["g_mapping"].value(tm, RML.subjectMap)
+
+        template = st.session_state["g_mapping"].value(sm_iri, RML.template)
+        constant = st.session_state["g_mapping"].value(sm_iri, RML.constant)
+        reference = st.session_state["g_mapping"].value(sm_iri, RML.reference)
+
+        sm_id_iri = None
+        sm_type = None
+        sm_id_label = None
+
+        if sm_iri:
+
+            sm_label = get_node_label(sm_iri)
+
+            if template:
+                sm_type = "template"
+                sm_id_iri = str(template)
+                matches = re.findall(r"{([^}]+)}", template)   #splitting template is not so easy but we try
+                if matches:
+                    sm_id_label = str(matches[-1])
+                else:
+                    sm_id_label = str(template)
+
+            elif constant:
+                sm_type = "constant"
+                sm_id_iri = str(constant)
+                sm_id_label = str(split_uri(constant)[1])
+
+            elif reference:
+                sm_type = "reference"
+                sm_id_iri = str(reference)
+                sm_id_label = str(reference)
+
+            if sm_iri not in sm_dict:
+                sm_dict[sm_iri] = [sm_label, sm_type, sm_id_iri, sm_id_label, [tm_label]]
+            else:
+                sm_dict[sm_iri][4].append(tm_label)
+
+    return sm_dict
+#______________________________________________________
+
+#______________________________________________________
+# Funtion to get the dictionary of the Predicate-Object Maps
+# {pom_iri: [LIST]}
+# the keys are a list of:
+# 0. tm    1. tm_label
+# 2. pom label     3. predicate iri     4. predicate label
+# 5. om label      6. om type (template, constant or reference)
+# 7. om_id_iri      # 8. om_id_label    (info on the id)
+
+# 0. tm      1. predicate list     2. pom iri        3. om iri
+# 4. om type (template, constant or reference)    5. om rule
+def get_pom_dict():
+
+    pom_dict = {}
+    pom_list = list(st.session_state["g_mapping"].objects(None, RML.predicateObjectMap))
+
+    for pom_iri in pom_list:
+
+        tm_iri = next(st.session_state["g_mapping"].subjects(RML.predicateObjectMap, pom_iri), None)
+        predicate_list = list(st.session_state["g_mapping"].objects(pom_iri, RML.predicate))
+        om_iri = st.session_state["g_mapping"].value(pom_iri, RML.objectMap)
+
+        template = st.session_state["g_mapping"].value(om_iri, RML.template)
+        constant = st.session_state["g_mapping"].value(om_iri, RML.constant)
+        reference = st.session_state["g_mapping"].value(om_iri, RML.reference)
+
+        if template:
+            om_type = "template"
+            om_rule = str(template)
+
+        elif constant:
+            om_type = "constant"
+            om_rule = str(constant)
+
+        elif reference:
+            om_type = "reference"
+            om_rule = str(reference)
+
+        else:
+            om_type = "---"
+            om_rule = "---"
+
+        predicate_label_list = []
+        for p_iri in predicate_list:
+            predicate_label_list.append(get_node_label(p_iri))
+
+
+        pom_dict[pom_iri] = [tm_iri, predicate_label_list, pom_iri, om_iri, om_type, om_rule]
+
+    return pom_dict
+#______________________________________________________
+
+
+# PANEL: MANAGE MAPPING---------------------------------------------------------
+#______________________________________________________
+# Preview tm to be removed (tm/sm/pom)
+def display_tm_info_for_removal(tm_to_remove_list):
+
+    tm_dict = get_tm_dict()
+    sm_dict = get_sm_dict()
+    inner_html = f"""<div style="margin-bottom:1px;">
+        <small> <b style="color:#F63366;">TriplesMap</b> <span style="color:#F63366;">
+        (Subject Map | Predicate-Object Maps)</span> </small> </div>"""
+    max_length = utils.get_max_length_for_display()[4]
+
+    # Show tm uo to max_length
+    for tm in sorted(tm_to_remove_list)[:max_length]:
+        inner_html += f"""<b>🗺️ {tm}</b> ("""
+        tm_iri = tm_dict[tm]
+        sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RML.subjectMap)), None)
+        if sm_to_remove_tm:
+            inner_html += f"""<span style="font-size:0.85em;">🏷️ {sm_dict[sm_to_remove_tm][0]} | </span>"""
+        else:
+            inner_html += f"""<span style="font-size:0.85em;">🏷️ No Subject Map | </span>"""
+        pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RML.predicateObjectMap))
+        if len(pom_to_remove_tm_list) == 1:
+            inner_html += f"""<span style="font-size:0.85em;">🔗 {len(pom_to_remove_tm_list)} Predicate-Object Map)<br></span>"""
+        elif pom_to_remove_tm_list:
+            inner_html += f"""<span style="font-size:0.85em;">🔗 {len(pom_to_remove_tm_list)} Predicate-Object Maps)<br></span>"""
+        else:
+            inner_html += f"""<span style="font-size:0.85em;">🔗 No Predicate-Object Maps)<br></span>"""
+
+    # Add "..." if there are more tm
+    if len(tm_to_remove_list) > max_length:
+        inner_html += f"""🗺️ ..."""
+
+    # Display
+    if tm_to_remove_list:
+        st.markdown(f"""<div class="info-message-gray">
+                {inner_html}
+            <div>""", unsafe_allow_html=True)
+#______________________________________________________
+
+#______________________________________________________
+# Function to completely remove a triplesmap
+# Remove primary and secondary triples, but dont remove any triples that are used by another triplesmap
+def remove_triplesmap(tm_label):
+
+    tm_dict = get_tm_dict()
+    tm_iri = tm_dict[tm_label]   #get tm iri
+    g = st.session_state["g_mapping"]  #for convenience
+
+    # Remove ls if not reused
+    logical_source = g.value(subject=tm_iri, predicate=RML.logicalSource)
+    if logical_source:
+        ls_reused = any(s != tm_iri for s, p, o in g.triples((None, RML.logicalSource, logical_source)))
+        if not ls_reused:
+            g.remove((logical_source, None, None))
+
+    # Remove sm if not reused
+    subject_map = g.value(subject=tm_iri, predicate=RML.subjectMap)
+    if subject_map:
+        sm_reused = any(s != tm_iri for s, p, o in g.triples((None, RML.subjectMap, subject_map)))
+        if not sm_reused:
+            g.remove((subject_map, None, None))
+
+    # Remove all associated pom (and om)
+    pom_iri_list = list(g.objects(subject=tm_iri, predicate=RML.predicateObjectMap))
+    for pom_iri in pom_iri_list:
+        om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RML.objectMap)
+        st.session_state["g_mapping"].remove((pom_iri, None, None))
+        st.session_state["g_mapping"].remove((om_to_delete, None, None))
+
+    # Remove from last added tm list if it is there
+    if tm_label in st.session_state["last_added_tm_list"]:
+        st.session_state["last_added_tm_list"].remove(tm_label)       # if it is in last added list, remove
+
+    g.remove((tm_iri, None, None))   # remove tm triple
+#______________________________________________________
+
+#______________________________________________________
+# Preview tm to be removed (tm/sm/pom)
+def display_sm_info_for_removal(tm_to_unassign_sm_list):
+
+    max_length = utils.get_max_length_for_display()[4]
+    tm_dict = get_tm_dict()
+    sm_dict = get_sm_dict()
+    inner_html = f"""<div style="margin-bottom:1px;">
+            <small><span style="color:#F63366;">TriplesMap → </span>
+            <b style="color:#F63366;">Subject Map</b></small>
+        </div>"""
+
+    # Display sm up to max_length
+    for tm in sorted(tm_to_unassign_sm_list)[:max_length]:
+        tm_iri = tm_dict[tm]
+        sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RML.subjectMap)
+        sm_label_to_unassign = sm_dict[sm_iri][0]
+        inner_html += f"""<div style="margin-bottom:1px;">
+            <small>🗺️ {tm} →  🏷️ <b>{sm_label_to_unassign}</b></small>
+        </div>"""
+
+    # Add "..." if there are more sm
+    if len(tm_to_unassign_sm_list) > max_length:   # many sm to remove
+        inner_html += f"""<div style="margin-bottom:1px;">
+            <small>🗺️ ... (+{len(tm_to_unassign_sm_list[:max_length])})</small>
+        </div>"""
+
+    # Display
+    if tm_to_unassign_sm_list:
+        st.markdown(f"""<div class="info-message-gray">
+                {inner_html}
+            </div>""", unsafe_allow_html=True)
+#______________________________________________________
+
+#______________________________________________________
+# Function to check if mapping is complete
+def check_g_mapping(g=st.session_state["g_mapping"]):
+
+    tm_dict = get_tm_dict()
+    max_length = utils.get_max_length_for_display()[5]
+
+    tm_wo_sm_list = []   # list of all tm with assigned sm
+    tm_wo_pom_list = []
+    for tm_label, tm_iri in tm_dict.items():
+        if not any(g.triples((tm_iri, RML.subjectMap, None))):
+            tm_wo_sm_list.append(tm_label)
+    for tm_label, tm_iri in tm_dict.items():
+        if not any(g.triples((tm_iri, RML.predicateObjectMap, None))):
+            tm_wo_pom_list.append(tm_label)
+
+    pom_wo_om_list = []
+    pom_wo_predicate_list = []
+    for pom_iri in g.subjects(RDF.type, RML.PredicateObjectMap):
+        pom_label = get_node_label(pom_iri)
+        if not any(g.triples((pom_iri, RML.objectMap, None))):
+            pom_wo_om_list.append(pom_label)
+        if not any(g.triples((pom_iri, RML.predicate, None))):
+            pom_wo_predicate_list.append(pom_label)
+
+    tm_wo_pom_list_display = utils.format_list_for_display(tm_wo_pom_list)
+    tm_wo_sm_list_display = utils.format_list_for_display(tm_wo_sm_list)
+    pom_wo_om_list_display = utils.format_list_for_display(pom_wo_om_list)
+    pom_wo_predicate_list_display = utils.format_list_for_display(pom_wo_predicate_list)
+
+    inner_html = ""
+    g_mapping_complete_flag = True
+
+    if tm_wo_sm_list or tm_wo_pom_list or pom_wo_om_list or pom_wo_predicate_list_display:
+
+        max_length = get_max_length_for_display()[5]
+        if g == st.session_state["g_mapping"]:
+            inner_html += f"""ℹ️ Mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> is incomplete."""
+        else:
+            inner_html += f"""The <b>Mapping</b> is incomplete."""
+
+        if tm_wo_sm_list:
+            g_mapping_complete_flag = False
+            if len(tm_wo_sm_list) < max_length:
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· TriplesMap(s) without a Subject Map: <b>
+                {tm_wo_sm_list_display}</b></small><br></div>"""
+            else:
+                inner_html += f"""<div style="margin-left: 20px">
+                <small><b>· {len(tm_wo_sm_list)}
+                TriplesMaps</b> without
+                a Subject Map.</small><br></div>"""
+
+        if tm_wo_pom_list:
+            g_mapping_complete_flag = False
+            if len(tm_wo_pom_list) < max_length:
+                tm_wo_pom_list_display = utils.format_list_for_display(tm_wo_pom_list)
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· TriplesMap(s) without Predicate-Object Maps
+                <b>{tm_wo_pom_list_display}</b></small><br></div>"""
+            else:
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· <b>{len(tm_wo_pom_list)}
+                TriplesMap(s)</b> without Predicate-Object Maps</small><br></div>"""
+
+        if pom_wo_om_list:
+            g_mapping_complete_flag = False
+            if len(pom_wo_om_list) < max_length:
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· Predicate-Object Map(s) without an Object Map:
+                <b>{pom_wo_om_list_display}</b></small><br></div>"""
+            else:
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· <b>{len(pom_wo_om_list_display)}
+                Predicate-Object Maps</b> without
+                an Object Map.</small><br></div>"""
+
+        if pom_wo_predicate_list:
+            g_mapping_complete_flag = False
+            if len(pom_wo_om_list) < max_length:
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· Predicate-Object Map(s) without a predicate
+                <b>{pom_wo_predicate_list_display}</b></small><br></div>"""
+            else:
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· <b>{len(pom_wo_predicate_list_display)}
+                Predicate-Object Maps</b> without
+                a predicate.</small><br></div>"""
+
+    return g_mapping_complete_flag, inner_html, tm_wo_sm_list, tm_wo_pom_list, pom_wo_om_list, pom_wo_predicate_list
+#_________________________________________________
+
+
+
+
+
+
+
+#RFBOOKMARK
 #______________________________________________________
 # Function get the column list of the data source of a tm
 def get_column_list(tm_iri):
@@ -2295,239 +3022,8 @@ def get_column_list(tm_iri):
 #________________________________________________________
 
 
-#________________________________________________________
-# Funtion to get the dictionary of the Subject Maps
-# {sm_iri: [LIST]}
-# the keys are a list of:
-# 0. sm label     1. sm type (template, constant or reference)
-# 2. sm_id_iri      # 3. sm_id_label    (info on the id)
-# 4. List of all tm to which sm is assigned
-def get_sm_dict():
-
-    sm_dict = {}
-
-    tm_list = list(st.session_state["g_mapping"].subjects(RML.logicalSource, None))
-    for tm in tm_list:
-        tm_label = split_uri(tm)[1]
-        sm_iri = st.session_state["g_mapping"].value(tm, RML.subjectMap)
-
-        template = st.session_state["g_mapping"].value(sm_iri, RML.template)
-        constant = st.session_state["g_mapping"].value(sm_iri, RML.constant)
-        reference = st.session_state["g_mapping"].value(sm_iri, RML.reference)
-
-        sm_id_iri = None
-        sm_type = None
-        sm_id_label = None
-
-        if sm_iri:
-
-            if isinstance(sm_iri, URIRef):
-                sm_label = split_uri(sm_iri)[1]
-            elif isinstance(sm_iri, BNode):
-                sm_label = "_:" + str(sm_iri)[:7] + "..."
-            else:
-                sm_label = "Unlabelled"
-
-            if template:
-                sm_type = "template"
-                sm_id_iri = str(template)
-                matches = re.findall(r"{([^}]+)}", template)   #splitting template is not so easy but we try
-                if matches:
-                    sm_id_label = str(matches[-1])
-                else:
-                    sm_id_label = str(template)
-
-            elif constant:
-                sm_type = "constant"
-                sm_id_iri = str(constant)
-                sm_id_label = str(split_uri(constant)[1])
-
-            elif reference:
-                sm_type = "reference"
-                sm_id_iri = str(reference)
-                sm_id_label = str(reference)
-
-            if sm_iri not in sm_dict:
-                sm_dict[sm_iri] = [sm_label, sm_type, sm_id_iri, sm_id_label, [tm_label]]
-            else:
-                sm_dict[sm_iri][4].append(tm_label)
-
-    return sm_dict
-#___________________________________________
-
-#______________________________________________
-# Funtion to get list of datatypes
-def get_default_datatypes_dict():
-
-    datatype_dict = {"xsd:string": XSD.string, "xsd:integer": XSD.integer,
-        "xsd:decimal": XSD.decimal, "xsd:float": XSD.float,
-        "xsd:double": XSD. double, "xsd:boolean": XSD.boolean,
-        "xsd:date": XSD.date, "xsd:dateTime": XSD.dateTime,
-        "xsd:time": XSD.time, "xsd:anyURI": XSD.anyURI,
-        "rdf:XMLLiteral": XSD.XMLLiteral, "rdf:HTML": RDF.HTML,
-        "rdf:JSON": RDF.JSON}
-
-    return datatype_dict
-#______________________________________________
-
-#______________________________________________
-# Funtion to get list of datatypes
-def get_datatype_dict():
-
-    datatype_dict = get_default_datatypes_dict()
-    mapping_defined_datatype_list = list(st.session_state["g_mapping"].objects(None, RML.datatype))
-
-    for dt in mapping_defined_datatype_list:
-        if not format_iri_to_prefix_label(dt) in datatype_dict:
-            datatype_dict[utils.format_iri_to_prefix_label(dt)] = dt
-
-    return datatype_dict
-#______________________________________________
-
-#______________________________________________
-# Funtion to get list of language tags
-def get_language_tags_list():
-
-    language_tags_list = ["Select language tag", "en", "es", "fr", "de", "zh",
-        "ja", "pt-BR", "en-US", "ar", "ru", "hi", "zh-Hans", "sr-Cyrl"]
-
-    return language_tags_list
-#______________________________________________
-
-#________________________________________________________
-# Funtion to get the dictionary of the Predicate-Object Maps
-# {pom_iri: [LIST]}
-# the keys are a list of:
-# 0. tm    1. tm_label
-# 2. pom label     3. predicate iri     4. predicate label
-# 5. om label      6. om type (template, constant or reference)
-# 7. om_id_iri      # 8. om_id_label    (info on the id)
-def get_pom_dict():
-
-    pom_dict = {}
-    pom_list = list(st.session_state["g_mapping"].objects(None, RML.predicateObjectMap))
-
-    for pom_iri in pom_list:
-
-        tm_iri = next(st.session_state["g_mapping"].subjects(RML.predicateObjectMap, pom_iri), None)
-        tm_label = split_uri(tm_iri)[1]
-        predicate = st.session_state["g_mapping"].value(pom_iri, RML.predicate)
-        om_iri = st.session_state["g_mapping"].value(pom_iri, RML.objectMap)
-
-        template = st.session_state["g_mapping"].value(om_iri, RML.template)
-        constant = st.session_state["g_mapping"].value(om_iri, RML.constant)
-        reference = st.session_state["g_mapping"].value(om_iri, RML.reference)
-
-        pom_id_iri = None
-        pom_type = None
-        pom_id_label = None
-
-        if isinstance(pom_iri, URIRef):
-            pom_label = split_uri(pom_iri)[1]
-        elif isinstance(pom_iri, BNode):
-            pom_label = "_:" + str(pom_iri)[:7] + "..."
-        else:
-            pom_label = "Unlabelled"
-
-        if isinstance(om_iri, URIRef):
-            om_label = split_uri(om_iri)[1]
-        elif isinstance(om_iri, BNode):
-            om_label = "_:" + str(om_iri)[:7] + "..."
-        else:
-            om_label = "Unlabelled"
-
-        try:
-            predicate_label = split_uri(predicate)[1]
-        except:
-            predicate_label = ""
-
-        if template:
-            om_type = "template"
-            om_id_iri = str(template)
-            matches = re.findall(r"{([^}]+)}", template)   #splitting template is not so easy but we try
-            if matches:
-                om_id_label = str(matches[-1])
-            else:
-                om_id_label = str(template)
-
-        elif constant:
-            om_type = "constant"
-            om_id_iri = str(constant)
-            if isinstance(constant, URIRef):
-                om_id_label = str(split_uri(constant)[1])
-            else:
-                om_id_label = constant
-
-        elif reference:
-            om_type = "reference"
-            om_id_iri = str(reference)
-            om_id_label = str(reference)
-
-        else:
-            om_type = "None"
-            om_id_iri = ""
-            om_id_label = ""
-
-        pom_dict[pom_iri] = [tm_iri, tm_label, pom_label, predicate, predicate_label, om_label, om_type, om_id_iri, om_id_label]
-
-    return pom_dict
-#___________________________________________
 
 
-#_________________________________________________
-# Funtion to get the allowed format for the data sources
-def get_ds_allowed_tab_formats():
-
-    allowed_tab_formats_list = [".csv", ".tsv", ".xls",
-    ".xlsx", ".parquet", ".feather", ".orc", ".dta",
-    ".sas7bdat", ".sav", ".ods"]
-
-    return allowed_tab_formats_list
-#_________________________________________________
-
-#_________________________________________________
-# Funtion to read tabular data
-def read_tab_file(filename):
-
-    file = st.session_state["ds_files_dict"][filename]
-    file_format = filename.split(".")[-1]
-
-    if file_format == "csv":
-        read_content = pd.read_csv(file)
-
-    elif file_format == "tsv":
-        read_content = pd.read_csv(file, sep="\t")
-
-    elif file_format in ["xls", "xlsx", "ods"]:
-        read_content = pd.read_excel(file)
-
-    elif file_format == "parquet":
-        read_content = pd.read_parquet(file)
-
-    elif file_format == "feather":
-        read_content = pd.read_feather(file)
-
-    elif file_format == "orc":
-        import pyarrow.orc as orc
-        orc_file = orc.ORCFile(file)
-        read_content = orc_file.read().to_pandas()
-
-    elif file_format == "dta":
-        read_content, _ = pyreadstat.read_dta(file)
-
-    elif file_format == "sas7bdat":
-        read_content, _ = pyreadstat.read_sas7bdat(file)
-
-    elif file_format == "sav":
-        read_content, _ = pyreadstat.read_sav(file)
-
-    else:
-        read_content = ""   # should not occur
-
-    file.seek(0)
-
-    return read_content
-#_________________________________________________
 
 #_________________________________________________
 # Funtion to read tabular data
@@ -2575,120 +3071,6 @@ def read_tab_file_unsaved(file):
     return read_content
 #_________________________________________________
 
-#_______________________________________________
-# Function to check mapping before materialisation
-def check_g_mapping(g):
-
-    tm_dict = {}
-    for tm in g.subjects(RML.logicalSource, None):
-        tm_label = split_uri(tm)[1]
-        tm_dict[tm_label] = tm
-
-    tm_wo_sm_list = []   # list of all tm with assigned sm
-    tm_wo_pom_list = []
-    for tm_label, tm_iri in tm_dict.items():
-        if not any(g.triples((tm_iri, RML.subjectMap, None))):
-            tm_wo_sm_list.append(tm_label)
-    for tm_label, tm_iri in tm_dict.items():
-        if not any(g.triples((tm_iri, RML.predicateObjectMap, None))):
-            tm_wo_pom_list.append(tm_label)
-
-    pom_wo_om_list = []
-    pom_wo_predicate_list = []
-    for pom_iri in g.subjects(RDF.type, RML.PredicateObjectMap):
-        pom_label = get_node_label(pom_iri)
-        if not any(g.triples((pom_iri, RML.objectMap, None))):
-            pom_wo_om_list.append(pom_label)
-        if not any(g.triples((pom_iri, RML.predicate, None))):
-            pom_wo_predicate_list.append(pom_label)
-
-    tm_wo_pom_list_display = utils.format_list_for_display(tm_wo_pom_list)
-    tm_wo_sm_list_display = utils.format_list_for_display(tm_wo_sm_list)
-    pom_wo_om_list_display = utils.format_list_for_display(pom_wo_om_list)
-    pom_wo_predicate_list_display = utils.format_list_for_display(pom_wo_predicate_list)
-
-    if tm_wo_sm_list or tm_wo_pom_list or pom_wo_om_list or pom_wo_predicate_list_display:
-
-        max_length = utils.get_max_length_for_display()[5]
-
-        inner_html = f"""The <b>mapping</b> is incomplete."""
-
-        if tm_wo_sm_list:
-            if len(tm_wo_sm_list) == 1:
-                inner_html += f"""<div style="margin-left: 20px">
-                <small>· The TriplesMap <b>
-                {tm_wo_sm_list_display}</b> has not been assigned
-                a Subject Map.</small><br></div>"""
-            elif len(tm_wo_sm_list) < max_length:
-                inner_html += f"""<div style="margin-left: 20px">
-                <small>· The TriplesMaps
-                <b>{tm_wo_sm_list_display}</b> have not been assigned
-                a Subject Map.</small><br></div>"""
-            else:
-                inner_html += f"""<div style="margin-left: 20px">
-                <small><b>· {len(tm_wo_sm_list)}
-                TriplesMaps</b> have not been assigned
-                a Subject Map.</small><br></div>"""
-
-        if tm_wo_pom_list:
-            if len(tm_wo_pom_list) == 1:
-                tm_wo_pom_list_display = utils.format_list_for_display(tm_wo_pom_list)
-                inner_html += f"""<div style="margin-left: 20px">
-                <small>· The TriplesMap
-                <b>{tm_wo_pom_list_display}</b> has not been assigned
-                a Predicate-Object Map.</small><br></div>"""
-            elif len(tm_wo_pom_list) < max_length:
-                tm_wo_pom_list_display = utils.format_list_for_display(tm_wo_pom_list)
-                inner_html += f"""<div style="margin-left: 20px">
-                <small>· The TriplesMaps
-                <b>{tm_wo_pom_list_display}</b> have not been assigned
-                a Predicate-Object Map.</small><br></div>"""
-            else:
-                inner_html += f"""<div style="margin-left: 20px">
-                <small><b>· {len(tm_wo_pom_list)}
-                TriplesMaps</b> have not been assigned
-                a Predicate-Object Map.</small><br></div>"""
-
-        if pom_wo_om_list:
-            if len(pom_wo_om_list) == 1:
-                inner_html += f"""<div style="margin-left: 20px">
-                <small>· The Predicate-Object Map
-                <b>{pom_wo_om_list_display}</b> has not been assigned
-                an Object Map.</small><br></div>"""
-            elif len(pom_wo_om_list) < max_length:
-                inner_html += f"""<div style="margin-left: 20px">
-                <small>· The Predicate-Object Maps
-                <b>{pom_wo_om_list_display}</b> have not been assigned
-                an Object Map.</small><br></div>"""
-            else:
-                inner_html += f"""<div style="margin-left: 20px">
-                <small>· <b>{len(pom_wo_om_list_display)}
-                Predicate-Object Maps</b> have not been assigned
-                an Object Map.</small><br></div>"""
-
-        if pom_wo_predicate_list:
-            if len(pom_wo_om_list) == 1:
-                inner_html += f"""<div style="margin-left: 20px">
-                <small>· The Predicate-Object Map
-                <b>{pom_wo_predicate_list_display}</b> has not been assigned
-                a predicate.</small><br></div>"""
-            elif len(pom_wo_om_list) < max_length:
-                inner_html += f"""<div style="margin-left: 20px">
-                <small>· The Predicate-Object Maps
-                <b>{pom_wo_predicate_list_display}</b> have not been assigned
-                a predicate.</small><br></div>"""
-            else:
-                inner_html += f"""<div style="margin-left: 20px">
-                <small>· <b>{len(pom_wo_predicate_list_display)}
-                Predicate-Object Maps</b> have not been assigned
-                a predicate.</small><br></div>"""
-
-        return inner_html
-
-    return ""
-
-#_________________________________________________
-
 #_________________________________________________
 # Funtion to check a mapping loaded from URL is ok
 def is_valid_url_mapping(mapping_url, show_info):
@@ -2718,7 +3100,7 @@ def is_valid_url_mapping(mapping_url, show_info):
                 if show_info:
                     st.markdown(f"""<div class="error-message">
                             ❌ Link working, but <b>no RML structure found</b>.
-                            <small>Please, check your mapping content.</small>
+                            <small>Please check your mapping content.</small>
                         </div>""", unsafe_allow_html=True)
                 mapping_url_ok_flag = False
 
@@ -2731,7 +3113,7 @@ def is_valid_url_mapping(mapping_url, show_info):
                 if show_info:
                     st.markdown(f"""<div class="error-message">
                             ❌ Link working, but <b>no YARRRML structure found</b>.
-                            <small>Please, check your mapping content.</small>
+                            <small>Please check your mapping content.</small>
                         </div>""", unsafe_allow_html=True)
                 mapping_url_ok_flag = False
 
@@ -2745,8 +3127,8 @@ def is_valid_url_mapping(mapping_url, show_info):
     except Exception as e:
         if show_info:
             st.markdown(f"""<div class="error-message">
-                ❌ <b>Validation failed.</b><br>
-                <small><b>Full error:</b> {e}</small>
+                ❌ <b>Validation failed.</b>
+                <small><i><b>Full error:</b> {e}</i></small>
             </div>""", unsafe_allow_html=True)
         mapping_url_ok_flag = False
 
@@ -2754,48 +3136,6 @@ def is_valid_url_mapping(mapping_url, show_info):
 
 #_________________________________________________
 
-#________________________________________________
-# Function to display a rule
-def preview_rule(s_for_display, p_for_display, o_for_display, is_reference=False, datatype=None, language_tag=None):
-
-    inner_html = ""
-    max_length = 40
-
-    s_for_display = "" if not s_for_display else s_for_display
-    p_for_display = "" if not p_for_display else p_for_display
-    o_for_display = "" if not o_for_display else o_for_display
-
-    if (None, RML.reference, Literal(s_for_display)) in st.session_state["g_mapping"]:  # if reference
-        formatted_s = f"{{{s_for_display}}}"
-    else:
-        formatted_s = s_for_display
-    formatted_p = p_for_display
-    formatted_o = f"{{{o_for_display}}}" if is_reference else o_for_display
-
-    formatted_o = f"""{formatted_o}^^{format_iri_to_prefix_label(datatype)}""" if datatype else formatted_o
-    formatted_o = f"""{formatted_o}@{language_tag}""" if language_tag else formatted_o
-
-    formatted_s = f"""<small>{formatted_s}</small>""" if len(formatted_s) > max_length else formatted_s
-    formatted_p = f"""<small>{formatted_p}</small>""" if len(formatted_p) > max_length else formatted_p
-    formatted_o = f"""<small>{formatted_o}</small>""" if len(formatted_o) > max_length else formatted_o
-
-    st.markdown(f"""<div class="blue-preview-message" style="margin-top:0px; padding-top:4px;">
-        <small><b style="color:#F63366; font-size:10px; margin-top:0px;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:0px;">
-            <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{formatted_s}</b></div>
-            </div>
-            <div style="flex:0; font-size:18px;">🡆</div>
-            <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{formatted_p}</b></div>
-            </div>
-            <div style="flex:0; font-size:18px;">🡆</div>
-            <div style="flex:1; min-width:140px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{formatted_o}</b></div>
-            </div>
-        </div>
-    </div>""", unsafe_allow_html=True)
-#_________________________________________________
 
 #________________________________________________
 # Function to display a rule
@@ -2804,7 +3144,7 @@ def preview_rule_list(s_for_display, p_for_display, o_for_display):
     small_header = """<small><b style="color:#F63366; font-size:10px;margin-top:8px; margin-bottom:8px; display:block;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>"""
 
     inner_html = ""
-    max_length = 40
+    max_length = get_max_length_for_display()[11]
 
     s_for_display = "" if not s_for_display else s_for_display
     p_for_display = "" if not p_for_display else p_for_display
@@ -2848,7 +3188,7 @@ def preview_rule_list(s_for_display, p_for_display, o_for_display):
     else:
         formatted_o = o_for_display
 
-    formatted_o = formatted_o + f"^^{utils.format_iri_to_prefix_label(datatype)}" if datatype else formatted_o
+    formatted_o = formatted_o + f"^^{utils.get_node_label(datatype)}" if datatype else formatted_o
     formatted_o = f"{formatted_o}@{language_tag}" if language_tag else formatted_o
 
     formatted_s = f"""<small>{formatted_s}</small>""" if len(formatted_s) > max_length else formatted_s
@@ -2871,7 +3211,6 @@ def preview_rule_list(s_for_display, p_for_display, o_for_display):
 
     return [small_header, inner_html]
 #_________________________________________________
-
 
 #________________________________________________
 # Function to display a rule
@@ -2949,11 +3288,11 @@ def get_rules_for_sm(sm_iri):
             if om_for_display:
                 break
 
-        sm_for_display = format_iri_to_prefix_label(sm_for_display)
-        p_for_display = format_iri_to_prefix_label(p_for_display)
-        om_for_display = format_iri_to_prefix_label(om_for_display)
+        sm_for_display = get_node_label(sm_for_display)
+        p_for_display = get_node_label(p_for_display)
+        om_for_display = get_node_label(om_for_display)
 
-        sm_rules_list.append([sm_for_display, p_for_display, om_for_display, format_iri_to_prefix_label(tm)])
+        sm_rules_list.append([sm_for_display, p_for_display, om_for_display, get_node_label(tm)])
 
     return sm_rules_list
 #_________________________________________________
@@ -3033,21 +3372,40 @@ def get_ontology_superclass_dict(g_ont):
     return superclass_dict
 #________________________________________________________
 
-#________________________________________________________
-# Funtion to get the dictionary of the classes in the ontology
-def get_ontology_classes_dict(g_ont):
+#______________________________________________________
+# Get classes of an ontology
+# Also option to give the custom classes or the superclasses of an ontology
+def get_ontology_classes_dict(g_ont, superclass=False):
 
+    # Custom classes
+    if g_ont == "custom":
+        custom_classes_dict = {}          # dictionary for custom classes
+        for k, v in st.session_state["custom_terms_dict"].items():
+            if v == "🏷️ Class":
+                custom_classes_dict[utils.get_node_label(k)] = k
+        return custom_classes_dict
+
+    # Ontology classes
     ontology_classes_dict = {}
+
     class_triples = set()
     class_triples |= set(g_ont.triples((None, RDF.type, OWL.Class)))   #collect owl:Class definitions
     class_triples |= set(g_ont.triples((None, RDF.type, RDFS.Class)))    # collect rdfs:Class definitions
 
     for s, p, o in class_triples:   #we add to dictionary removing the BNodes
         if not isinstance(s, BNode):
-            ontology_classes_dict[split_uri(s)[1]] = s
+            ontology_classes_dict[utils.get_node_label(s)] = s
+
+    # Superclasses
+    if superclass:
+        superclass_dict = {}
+        for s, p, o in list(set(g_ont.triples((None, RDFS.subClassOf, None)))):
+            if not isinstance(o, BNode) and o not in superclass_dict.values():
+                superclass_dict[utils.get_node_label(o)] = o
+        return superclass_dict
 
     return ontology_classes_dict
-#________________________________________________________
+#______________________________________________________
 
 #________________________________________________________
 # Funtion to get the dictionary of the ontology classes used by the mapping
@@ -3319,12 +3677,12 @@ def get_mapping_composition_by_class_donut_chart():
 # Funtion to get the dictionary of the superclasses in the ontology
 def get_ontology_superproperty_dict(g_ont):
 
-    superproperty_dict = {}
+    ontology_superproperties_dict = {}
     for s, p, o in set(g_ont.triples((None, RDFS.subPropertyOf, None))):
-        if not isinstance(o, BNode) and o not in superproperty_dict.values():
-            superproperty_dict[o.split("/")[-1].split("#")[-1]] = o
+        if not isinstance(o, BNode) and o not in ontology_superproperties_dict.values():
+            ontology_superproperties_dict[o.split("/")[-1].split("#")[-1]] = o
 
-    return superproperty_dict
+    return ontology_superproperties_dict
 #________________________________________________________
 
 #_________________________________________________________
@@ -3346,28 +3704,54 @@ def get_ontology_base_iri(g_ont):
     return base_iri_list
 #________________________________________________________
 
-#________________________________________________________
-# Funtion to get the predicates defined by an ontology
-def get_ontology_properties_dict(g_ont):
+#______________________________________________________
+# Get properties of an ontology
+# Strict filter (since properties will be used as predicates)
+# Also option to give the custom properties or the superproperties of an ontology
+def get_ontology_properties_dict(g_ont, superproperty=False):
+
+    # Custom properties
+    if g_ont == "custom":
+        custom_properties_dict = {}
+        for k, v in st.session_state["custom_terms_dict"].items():
+            if v == "🔗 Property":
+                custom_properties_dict[utils.get_node_label(k)] = k
+        return custom_properties_dict
+
+    # Ontology properties
+    ontology_properties_dict = {}
     ontology_base_iri_list = get_ontology_base_iri(g_ont)
     p_types_list = [RDF.Property, OWL.ObjectProperty, OWL.DatatypeProperty]
     p_exclusion_list = [RDFS.label, RDFS.comment, OWL.versionInfo, OWL.deprecated, RDF.type]
 
-    p_set = set()
+    prop_triples = set()
 
     for s, p, o in g_ont.triples((None, RDF.type, None)):
         if o in p_types_list:
             if ontology_base_iri_list:
                 if str(s).startswith(tuple(ontology_base_iri_list)) and s not in p_exclusion_list:
-                    p_set.add(s)
+                    prop_triples.add(s)
             else:
                 if s not in p_exclusion_list:
-                    p_set.add(s)
+                    prop_triples.add(s)
 
-    ontology_p_dict = {format_iri_to_prefix_label(p):p for p in p_set}
+    ontology_properties_dict = {get_node_label(p):p for p in prop_triples}
 
-    return ontology_p_dict
-#______________________________________________
+    # Ontology superproperties
+    if superproperty:
+        ontology_superproperties_dict = {}
+        for s, p, o in g_ont.triples((None, RDFS.subPropertyOf, None)):
+            if not isinstance(o, BNode):
+                if ontology_base_iri_list:
+                    if str(o).startswith(tuple(ontology_base_iri_list)) and o not in p_exclusion_list:
+                        ontology_superproperties_dict[utils.get_node_label(o)] = o
+                else:
+                    if o not in p_exclusion_list:
+                        ontology_superproperties_dict[utils.get_node_label(o)] = o
+        return ontology_superproperties_dict
+
+    return ontology_properties_dict
+#______________________________________________________
 
 #________________________________________________________
 # Funtion to get the dictionary of the superclasses in the ontology
@@ -3744,19 +4128,7 @@ def display_db_table(table, conn_label):
     return connection_ok_flag
 #_________________________________________________
 
-#________________________________________________________
-# Funtion to get the dictionary of the Graph Maps
-def get_graph_map_dict():
 
-    graph_map_dict = {}
-
-    graph_map_list = list(st.session_state["g_mapping"].objects(None, RML.graphMap))
-
-    for gm in graph_map_list:
-        graph_map_dict[format_iri_to_prefix_label(gm)] = gm
-
-    return graph_map_dict
-#___________________________________________
 
 
 

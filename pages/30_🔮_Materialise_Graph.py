@@ -559,7 +559,7 @@ with tab2:
                         with col1a:
                             st.markdown(f"""<div class="error-message">
                                 ❌ <b>Forbidden character</b> in data source label.
-                                <small> Please, pick a valid label.</small>
+                                <small> Please pick a valid label.</small>
                             </div>""", unsafe_allow_html=True)
                     elif mkgc_ds_label.lower() == "CONFIGURATION":
                         with col1a:
@@ -692,7 +692,7 @@ with tab2:
                         with col1a:
                             st.write("")
                             st.markdown(f"""<div class="success-message-flag">
-                                ✅ The <b>data source/s</b> have been removed!
+                                ✅ The <b>data source(s)</b> have been removed!
                             </div>""", unsafe_allow_html=True)
                         st.session_state["ds_for_mkgcgc_removed_ok_flag"] = False
                         time.sleep(utils.get_success_message_time())
@@ -731,7 +731,7 @@ with tab2:
                     elif ds_for_mkgcgc_to_remove_list:
                         with col1a:
                             remove_ds_checkbox = st.checkbox(
-                            "🔒 I am sure I want to remove the selected Data Source/s",
+                            "🔒 I am sure I want to remove the selected Data Source(s)",
                             key="key_remove_ds_checkbox")
                             if remove_ds_checkbox:
                                 st.button("Remove", key="remove_ds_for_mkgcgc_button", on_click=remove_ds_for_mkgc)
@@ -802,13 +802,13 @@ with tab2:
                     if re.search(excluded_characters, output_filename):
                         st.markdown(f"""<div class="error-message">
                             ❌ <b>Forbidden character</b> in filename.
-                            <small> Please, pick a valid filename.</small>
+                            <small> Please pick a valid filename.</small>
                         </div>""", unsafe_allow_html=True)
                         options_for_mkgcgc_ok_flag = False
                     elif output_filename.endswith("."):
                         st.markdown(f"""<div class="error-message">
                             ❌ <b>Trailing "."</b> in filename.
-                            <small> Please, remove it.</small>
+                            <small> Please remove it.</small>
                         </div>""", unsafe_allow_html=True)
                         options_for_mkgcgc_ok_flag = False
                     else:
@@ -816,7 +816,7 @@ with tab2:
                             if item == os.path.splitext(output_filename)[0].upper():
                                 st.markdown(f"""<div class="error-message">
                                     ❌ <b>Reserved filename.</b><br>
-                                    <small>Please, pick a different filename.</small>
+                                    <small>Please pick a different filename.</small>
                                 </div>""", unsafe_allow_html=True)
                                 options_for_mkgcgc_ok_flag = False
                                 break  # Stop checking after first match
@@ -934,7 +934,7 @@ with tab2:
                         if re.search(pattern, output_kafka_topic):
                             st.markdown(f"""<div class="error-message">
                                 ❌ <b>Forbidden character</b> in output Kafka topic.
-                                <small> Please, pick a valid topic.</small>
+                                <small> Please pick a valid topic.</small>
                             </div>""", unsafe_allow_html=True)
                             options_for_mkgcgc_ok_flag = False
 
@@ -985,7 +985,7 @@ with tab2:
             with col1a:
                 st.write("")
                 st.markdown(f"""<div class="success-message-flag">
-                    ✅ The <b>additional mapping/s</b> have been removed!
+                    ✅ The <b>additional mapping(s)</b> have been removed!
                 </div>""", unsafe_allow_html=True)
             st.session_state["additional_mapping_removed_ok_flag"] = False
             time.sleep(utils.get_success_message_time())
@@ -1026,7 +1026,7 @@ with tab2:
                     with col1a:
                         st.markdown(f"""<div class="error-message">
                             ❌ Label <b>{additional_mapping_label}</b> is already in use.
-                            <small>Please, pick a different label.</small>
+                            <small>Please pick a different label.</small>
                         </div>""", unsafe_allow_html=True)
 
             elif additional_mapping_label:
@@ -1069,7 +1069,7 @@ with tab2:
                                         st.write("")
                                         st.markdown(f"""<div class="error-message">
                                                 ❌ File loaded, but <b>no RML structure found</b>.
-                                                <small>Please, check your mapping content.</small>
+                                                <small>Please check your mapping content.</small>
                                             </div>""", unsafe_allow_html=True)
                                         uploaded_mapping_ok_flag = False
 
@@ -1115,7 +1115,7 @@ with tab2:
                     with col1a:
                         st.markdown(f"""<div class="error-message">
                             ❌ Label <b>{additional_mapping_label}</b> is already in use.
-                            <small>Please, pick a different label.</small>
+                            <small>Please pick a different label.</small>
                         </div>""", unsafe_allow_html=True)
 
             elif additional_mapping_label:
@@ -1172,7 +1172,7 @@ with tab2:
             elif mappings_to_remove_list:
                 with col1a:
                     delete_mappings_checkbox = st.checkbox(
-                    "🔒 I am sure I want to delete the selected mapping/s",
+                    "🔒 I am sure I want to delete the selected mapping(s)",
                     key="key_delete_mappings_checkbox")
                     if delete_mappings_checkbox:
                         st.button("Remove", key="key_remove_additional_mapping_for_mkgcgc_button", on_click=remove_additional_mapping_for_mkgc)

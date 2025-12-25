@@ -58,7 +58,7 @@ def extend_ontology_from_link():
     # load ontology
     g_ontology_new_part = st.session_state["g_ontology_from_link_candidate"]
     g_ontology_new_part_label = utils.get_ontology_human_readable_name(g_ontology_new_part, source_link=st.session_state["key_ontology_link"])
-    #store information___________________________
+    # store information___________________________
     st.session_state["g_ontology_loaded_ok_flag"] = True
     st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
     st.session_state["g_ontology_components_tag_dict"][g_ontology_new_part_label] = utils.get_unique_ontology_tag(g_ontology_new_part_label)
@@ -81,7 +81,7 @@ def extend_ontology_from_file():
     # load ontology
     g_ontology_new_part = st.session_state["g_ontology_from_file_candidate"]
     g_ontology_new_part_label = utils.get_ontology_human_readable_name(g_ontology_new_part, source_file=st.session_state["ontology_file"])
-    #store information___________________________
+    # store information___________________________
     st.session_state["g_ontology_loaded_ok_flag"] = True
     st.session_state["g_ontology_components_dict"][g_ontology_new_part_label] = g_ontology_new_part
     st.session_state["g_ontology_components_tag_dict"][g_ontology_new_part_label] = utils.get_unique_ontology_tag(g_ontology_new_part_label)
@@ -101,7 +101,7 @@ def extend_ontology_from_file():
     st.session_state["key_import_ontology_selected_option"] = "🌐 URL"
 
 def reduce_ontology():
-    #store information___________________________
+    # store information___________________________
     st.session_state["g_ontology_reduced_ok_flag"] = True
     # drop the given ontology components from the dictionary_______________________
     st.session_state["g_ontology_components_dict"] = {label: ont for label, ont in st.session_state["g_ontology_components_dict"].items() if label not in ontologies_to_drop_list}
@@ -113,9 +113,41 @@ def reduce_ontology():
         for prefix, namespace in ont.namespaces():
             st.session_state["g_ontology"].bind(prefix, namespace)
 
+# TAB4
+def add_custom_term():
+    # get info_____________________________________
+    custom_term_type = st.session_state["custom_term_type"]
+    term_iri = st.session_state["term_iri"]
+    # store information___________________________
+    if custom_term_type == "🏷️ Class":
+        st.session_state["custom_terms_dict"][term_iri] =  "🏷️ Class"
+    else:
+        st.session_state["custom_terms_dict"][term_iri] =  "🔗 Property"
+    st.session_state["custom_term_saved_ok_flag"] = True
+    # reset fields____________________________________
+    st.session_state["key_term_prefix"] = "Select namespace"
+    st.session_state["key_term_input"] = ""
+    st.session_state["key_custom_term_type"] = "🏷️ Class"
+
+def remove_custom_terms():
+    # get info__________________________________
+    keys_to_delete = []
+    for term_iri in st.session_state["custom_terms_dict"]:
+        for term_label in terms_to_remove_list:
+            if term_label == utils.get_node_label(term_iri):
+                keys_to_delete.append(term_iri)
+    # store information___________________________
+    for key in keys_to_delete:
+        del st.session_state["custom_terms_dict"][key]
+    st.session_state["custom_terms_removed_ok_flag"] = True
+    # reset fields____________________________________
+    st.session_state["key_terms_to_remove_list"] = []
+    st.session_state["filter_by_type"] = "🏷️ Class"
+
+
 #_______________________________________________________________________________
 # PANELS OF THE PAGE (tabs)
-tab1, tab2, tab3 = st.tabs(["Import Ontology", "Explore Ontology", "View Ontology"])
+tab1, tab2, tab3, tab4 = st.tabs(["Import Ontology", "Explore Ontology", "View Ontology", "Custom Terms"])
 
 #_______________________________________________________________________________
 # PANEL: IMPORT ONTOLOGY
@@ -412,7 +444,7 @@ with tab2:
             superclass_dict = {}
             for s, p, o in list(set(ontology_for_search.triples((None, RDFS.subClassOf, None)))):
                 if not isinstance(o, BNode) and o not in superclass_dict.values():
-                    superclass_dict[utils.format_iri_to_prefix_label(o)] = o
+                    superclass_dict[utils.get_node_label(o)] = o
 
             list_to_choose = ["No filter", "Class type", "Annotation"]
             if superclass_dict:
@@ -534,7 +566,7 @@ with tab2:
 
                 if isinstance(class_iri, URIRef):  # filter out BNodes
                     df_data.append({
-                        "Class": utils.format_iri_to_prefix_label(class_iri),
+                        "Class": utils.get_node_label(class_iri),
                         "Label": label, "Comment": comment,
                         "Class Type": ("owl: Class" if str(class_type) == "http://www.w3.org/2002/07/owl#Class" else
                             "rdfs: Class" if str(class_type) == "http://www.w3.org/2000/01/rdf-schema#Class" else
@@ -595,17 +627,17 @@ with tab2:
             superproperty_dict = {}
             for s, p, o in ontology_for_search.triples((None, RDFS.subPropertyOf, None)):
                 if isinstance(o, URIRef) and o not in superproperty_dict.values():
-                    superproperty_dict[utils.format_iri_to_prefix_label(o)] = o
+                    superproperty_dict[utils.get_node_label(o)] = o
 
             domain_dict = {}
             for s, p, o in ontology_for_search.triples((None, RDFS.domain, None)):
                 if isinstance(o, URIRef) and o not in domain_dict.values():
-                    domain_dict[utils.format_iri_to_prefix_label(o)] = o
+                    domain_dict[utils.get_node_label(o)] = o
 
             range_dict = {}
             for s, p, o in ontology_for_search.triples((None, RDFS.range, None)):
                 if isinstance(o, URIRef) and o not in range_dict.values():
-                    range_dict[utils.format_iri_to_prefix_label(o)] = o
+                    range_dict[utils.get_node_label(o)] = o
 
             list_to_choose = ["No filter", "Property type", "Annotation"]
             if range_dict:
@@ -829,7 +861,7 @@ with tab2:
                     prop_types_list.append("owl: AnnotationProperty")
                 prop_types = utils.format_list_for_display(prop_types_list)
 
-                df_data.append({"Property": utils.format_iri_to_prefix_label(prop_iri),
+                df_data.append({"Property": utils.get_node_label(prop_iri),
                     "Label": label, "Comment": comment, "Property Type": prop_types,
                      "Property IRI": prop_iri  })
 
@@ -992,3 +1024,197 @@ with tab3:
 
         if st.session_state["ontology_downloaded_ok_flag"]:
             st.rerun()
+
+#_______________________________________________________________________________
+# PANEL: CUSTOM TERMS
+with tab4:
+    col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
+
+    with col2b:
+        utils.display_right_column_df("custom_terms", "custom terms")
+
+    # PURPLE HEADING: ADD CUSTOM TERMS------------------------------------------
+    with col1:
+        st.markdown("""<div class="purple-heading">
+                ✏️ Add Custom Terms
+            </div>""", unsafe_allow_html=True)
+        st.write("")
+
+    if st.session_state["custom_term_saved_ok_flag"]:
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.write("")
+            st.markdown(f"""<div class="success-message-flag">
+                ✅ The <b>term</b> has been saved!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["custom_term_saved_ok_flag"] = False
+        time.sleep(utils.get_success_message_time())
+        st.rerun()
+
+    with col1:
+        col1a, col1b, col1c = st.columns(3)
+
+    with col1a:
+        mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
+        prefix_list = list(mapping_ns_dict.keys())
+        list_to_choose = sorted(mapping_ns_dict.keys())
+        list_to_choose.insert(0,"Select namespace")
+        term_prefix = st.selectbox("🖱️ Select namespace:", list_to_choose,
+            key="key_term_prefix")
+
+    with col1b:
+        term_input = st.text_input("⌨️ Enter term:*", key="key_term_input")
+
+    with col1c:
+        list_to_choose = ["🏷️ Class", "🔗 Property"]
+        st.write("")
+        custom_term_type = st.radio("Select type*", list_to_choose, label_visibility="collapsed",
+            key="key_custom_term_type")
+
+    term_iri = ""
+    if term_input and term_prefix != "Select namespace":
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            valid_input_flag = utils.is_valid_label(term_input, hard=True)
+        NS = Namespace(mapping_ns_dict[term_prefix])
+        term_iri = NS[term_input] if valid_input_flag else ""
+    elif term_input and utils.is_valid_iri(term_input, delimiter_ending=False):
+        term_iri = term_input
+    elif term_input:
+        term = "class" if custom_term_type == "🏷️ Class" else "property"
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.markdown(f"""<div class="error-message">
+                ❌ <b> Invalid {term}. </b>
+                <small>If no namespace is selected, the <b>{term}</b> must be a <b>valid IRI</b></small>
+            </div>""", unsafe_allow_html=True)
+
+
+    if term_iri and term_iri in st.session_state["custom_terms_dict"]:
+        with col1:
+            col1a, col1b = st.columns([2,1])
+
+        with col1a:
+            term = "class" if custom_term_type == "🏷️ Class" else "property"
+            opposite_term = "property" if custom_term_type == "🏷️ Class" else "class"
+
+            if st.session_state["custom_terms_dict"][term_iri] == custom_term_type:
+                st.markdown(f"""<div class="error-message">
+                    ❌ <b> Custom {term} already exists.</b>
+                </div>""", unsafe_allow_html=True)
+
+            else:
+                st.markdown(f"""<div class="warning-message">
+                    ⚠️ <b>This custom {term} already exists as a {opposite_term}.</b>
+                    <small>If you continue, it will be overwritten.</small>
+                </div>""", unsafe_allow_html=True)
+                st.write("")
+                st.session_state["custom_term_type"] = custom_term_type
+                st.session_state["term_iri"] = term_iri
+                st.button("Save", key="key_add_custom_term_button", on_click=add_custom_term)
+
+    elif term_iri:
+        with col1:
+            col1a, col1b = st.columns([2,1])
+
+        with col1a:
+            st.session_state["custom_term_type"] = custom_term_type
+            st.session_state["term_iri"] = term_iri
+            st.button("Save", key="key_add_custom_term_button", on_click=add_custom_term)
+
+    # SUCCESS MESSAGE: REMOVE CUSTOM TERM---------------------------------------
+    # Only shows here when no "Remove Custom Term" purple heading
+    if not st.session_state["custom_terms_dict"]:
+        if st.session_state["custom_terms_removed_ok_flag"]:
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                st.markdown(f"""<div class="success-message-flag">
+                    ✅ The <b>custom term(s)</b> have been removed!
+                </div>""", unsafe_allow_html=True)
+            st.write("")
+            st.write("")
+            st.session_state["custom_terms_removed_ok_flag"] = False
+            time.sleep(utils.get_success_message_time())
+            st.rerun()
+
+
+    # PURPLE HEADING: REMOVE CUSTOM TERMS---------------------------------------
+    # Only shows if there exist custom terms to be removed
+    if st.session_state["custom_terms_dict"]:
+        with col1:
+            st.write("_____")
+            st.markdown("""<div class="purple-heading">
+                    🗑️ Remove Custom Terms
+                </div>""", unsafe_allow_html=True)
+            st.write("")
+
+        if st.session_state["custom_terms_removed_ok_flag"]:
+            with col1:
+                col1a, col1b = st.columns([2,1])
+            with col1a:
+                st.markdown(f"""<div class="success-message-flag">
+                    ✅ The <b>custom term(s)</b> have been removed!
+                </div>""", unsafe_allow_html=True)
+            st.write("")
+            st.write("")
+            st.session_state["custom_terms_removed_ok_flag"] = False
+            time.sleep(utils.get_success_message_time())
+            st.rerun()
+
+        with col1:
+            col1a, col1b = st.columns([2,1])
+
+        class_list = []
+        property_list = []
+        for term_iri in st.session_state["custom_terms_dict"]:
+            if st.session_state["custom_terms_dict"][term_iri] == "🏷️ Class":
+                class_list.append(utils.get_node_label(term_iri))
+            else:
+                property_list.append(utils.get_node_label(term_iri))
+
+        with col1b:
+            list_to_choose = []
+            if class_list:
+                list_to_choose.append("🏷️ Class")
+            if property_list:
+                list_to_choose.append("🔗 Property")
+            st.write("")
+            if len(list_to_choose) == 1:
+                st.write("")
+            filter_by_type = st.radio("📡 Filter by type:*", list_to_choose,
+                label_visibility="collapsed", key="key_filter_by_type")
+
+        with col1a:
+            list_to_choose = []
+            for term_iri in st.session_state["custom_terms_dict"]:
+                if st.session_state["custom_terms_dict"][term_iri] == filter_by_type:
+                    list_to_choose.append(utils.get_node_label(term_iri))
+            list_to_choose = sorted(list_to_choose)
+            if len(list_to_choose) > 1:
+                list_to_choose.insert(0, "Select all")
+            terms_to_remove_list = st.multiselect("🖱️ Select terms:*", list_to_choose,
+                key="key_terms_to_remove_list")
+
+            terms = "classes" if filter_by_type == "🏷️ Class" else "properties"
+            if "Select all" in terms_to_remove_list:
+                st.markdown(f"""<div class="warning-message">
+                    ⚠️ You are deleting <b>all custom {terms}</b>.
+                    <small>Make sure you want to go ahead.</small>
+                </div>""", unsafe_allow_html=True)
+                remove_custom_terms_checkbox = st.checkbox(
+                f"🔒 I am sure I want to remove all {terms}",
+                key="key_unbind_all_ns_button_checkbox")
+                terms_to_remove_list = class_list if filter_by_type == "🏷️ Class" else property_list
+
+            else:
+                remove_custom_terms_checkbox = st.checkbox(
+                f"🔒 I am sure I want to remove the selected {terms}",
+                key="key_unbind_all_ns_button_checkbox")
+
+            if terms_to_remove_list and remove_custom_terms_checkbox:
+                st.button("Remove", key="key_remove_custom_terms_button",
+                    on_click=remove_custom_terms)
