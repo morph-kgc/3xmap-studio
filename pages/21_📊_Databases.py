@@ -134,7 +134,7 @@ with tab1:
     if st.session_state["db_connections_dict"]:
 
         with col2b:
-            utils.display_right_column_df("db_connections", st.session_state["db_connections_dict"], "database connections", complete=False)
+            utils.display_right_column_df("db_connections", "database connections", complete=False)
 
         with col2:
             col2a, col2b, col2c = st.columns([0.5,0.8,1.2])
@@ -155,7 +155,7 @@ with tab1:
                 </div>""", unsafe_allow_html=True)
 
         # Option to show all connections (if too many)
-        db_connections_df = utils.display_right_column_df("db_connections", st.session_state["db_connections_dict"], "database connections",  display=False)
+        db_connections_df = utils.display_right_column_df("db_connections", "database connections",  display=False)
         if st.session_state["db_connections_dict"] and len(st.session_state["db_connections_dict"]) > utils.get_max_length_for_display()[1]:
             with col2:
                 col2a, col2b = st.columns([0.5,2])
@@ -452,7 +452,7 @@ with tab2:
         if st.session_state["db_connections_dict"]:
 
             with col2b:
-                utils.display_right_column_df("db_connections", st.session_state["db_connections_dict"], "database connections", complete=False)
+                utils.display_right_column_df("db_connections", "database connections", complete=False)
 
             with col2:
                 col2a, col2b, col2c = st.columns([0.5,0.8,1.2])
@@ -573,7 +573,7 @@ with tab3:
 
     else:
         with col2b:
-            utils.display_right_column_df("saved_views", st.session_state["saved_views_dict"], "saved views", complete=False)
+            utils.display_right_column_df("saved_views", "saved views", complete=False)
 
             with col2:
                 col2a, col2b = st.columns([1,0.8])

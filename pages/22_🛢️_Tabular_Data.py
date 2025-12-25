@@ -53,7 +53,7 @@ with tab1:
     col1, col2, col2a, col2b = utils.get_panel_layout()
 
     with col2b:
-        utils.display_right_column_df("tabular_ds", st.session_state["ds_files_dict"], "uploaded files")
+        utils.display_right_column_df("tabular_ds", "uploaded files")
 
     # PURPLE HEADING: UPLOAD FILE-----------------------------------------------
     with col1:
@@ -276,7 +276,7 @@ with tab2:
 
     else:
         with col2b:
-            utils.display_right_column_df("tabular_ds", st.session_state["ds_files_dict"], "uploaded files")
+            utils.display_right_column_df("tabular_ds", "uploaded files")
 
         #PURPLE HEADING: DISPLAY TABLE------------------------------------------
         with col1:

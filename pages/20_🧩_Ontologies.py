@@ -1031,7 +1031,7 @@ with tab4:
     col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
 
     with col2b:
-        utils.display_right_column_df("custom_terms", st.session_state["custom_terms_dict"], "custom terms")
+        utils.display_right_column_df("custom_terms", "custom terms")
 
     # PURPLE HEADING: ADD CUSTOM TERMS------------------------------------------
     with col1:

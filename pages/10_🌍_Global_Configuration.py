@@ -663,7 +663,7 @@ with tab2:
         used_mapping_ns_dict = utils.get_used_g_ns_dict(st.session_state["g_mapping"])
 
         with col2b:
-            utils.display_right_column_df("namespaces", st.session_state["last_added_ns_list"], "last added namespaces", complete=False)
+            utils.display_right_column_df("namespaces", "last added namespaces", complete=False)
 
             # Option to show used bound namespaces
             with st.expander("🔎 Show used namespaces"):

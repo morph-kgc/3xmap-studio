@@ -719,48 +719,54 @@ def format_number_for_display(number):
 # 7. Suggested mapping label (characters)    8. URL for display (characters)
 # 9. Max characters when displaying ontology/mapping serialisation (ttl or nt)
 # 10. Query text for display    RFTAG check everything is used
+# 11. Max characters in a rule before using small fint size
 def get_max_length_for_display():
 
-    return [50, 10, 100, 20, 5, 5, 20, 15, 40, 100000, 30]
+    return [50, 10, 100, 20, 8, 10, 20, 15, 40, 100000, 30, 40]
 #_______________________________________________________
 
 #______________________________________________________
 # Function to display limited dataframed in right column
 # info namespaces / db_connections / saved_views / tabular_ds / triplesmaps
-def display_right_column_df(info, session_state_dict, text, complete=True, display=True):
+def display_right_column_df(info, text, complete=True, display=True):
 
     max_length = get_max_length_for_display()[1]
 
     # Create the dataframe
     if info == "namespaces":
+        session_state_dict = st.session_state["last_added_ns_list"]
         mapping_ns_dict = get_g_ns_dict(st.session_state["g_mapping"])
         rows = [{"Prefix": prefix, "Namespace": mapping_ns_dict.get(prefix, "")}
             for prefix in reversed(list(st.session_state["last_added_ns_list"]))]
 
     elif info == "custom_terms":
+        session_state_dict = st.session_state["custom_terms_dict"]
         rows = [{"Term": get_node_label(term_iri), "Type": st.session_state["custom_terms_dict"][term_iri]}
             for term_iri in reversed(list(st.session_state["custom_terms_dict"]))]
 
     elif info == "db_connections":
+        session_state_dict = st.session_state["db_connections_dict"]
         rows = [{"Label": label, "Engine": st.session_state["db_connections_dict"][label][0],
                 "Database": st.session_state["db_connections_dict"][label][3],
                 "Status": st.session_state["db_connection_status_dict"][label][0]}
                 for label in reversed(list(st.session_state["db_connections_dict"].keys()))]
 
     elif info == "saved_views":
+        session_state_dict = st.session_state["saved_views_dict"]
         rows = []
         for label in reversed(list(st.session_state["saved_views_dict"].keys())):
             connection = st.session_state["saved_views_dict"][label][0]
             database =  st.session_state["db_connections_dict"][connection][3]
 
             query_or_collection = st.session_state["saved_views_dict"][label][1]
-            max_length = utils.get_max_length_for_display()[10]
+            max_length = get_max_length_for_display()[10]
             query_or_collection = query_or_collection[:max_length] + "..." if len(query_or_collection) > max_length else query_or_collection
 
             rows.append({"Label": label, "Source": connection,
                     "Database": database, "Query/Collection": query_or_collection})
 
     elif info == "tabular_ds":
+        session_state_dict = st.session_state["ds_files_dict"]
         rows = []
         ds_files = list(st.session_state["ds_files_dict"].items())
         ds_files.reverse()
@@ -790,11 +796,13 @@ def display_right_column_df(info, session_state_dict, text, complete=True, displ
             rows.append(row)
 
     elif info == "triplesmaps":
+        session_state_dict = st.session_state["last_added_tm_list"]
         rows = [{"TriplesMap": tm, "Data Source": utils.get_tm_info_for_display(tm)[1],
             "Table/View": utils.get_tm_info_for_display(tm)[2],
             "Logical Source": utils.get_tm_info_for_display(tm)[0]} for tm in st.session_state["last_added_tm_list"]]
 
     elif info == "subject_maps":
+        session_state_dict = st.session_state["last_added_sm_list"]
         sm_dict = get_sm_dict()
         rows = [{"Triplesmap": triples_map, "Subject Map": sm_dict[subject_map][0],
             "Rule": sm_dict[subject_map][2], "Type": sm_dict[subject_map][1]}
@@ -802,6 +810,7 @@ def display_right_column_df(info, session_state_dict, text, complete=True, displ
             if subject_map in sm_dict]
 
     elif info == "predicate-object_maps":
+        session_state_dict =  st.session_state["last_added_pom_list"]
         pom_dict = get_pom_dict()
         rows = [{"Rule": pom_dict[pom_iri][5], "Type": pom_dict[pom_iri][4],
             "Predicate(s)": utils.format_list_for_display(pom_dict[pom_iri][1]),
@@ -845,11 +854,11 @@ def display_right_column_df(info, session_state_dict, text, complete=True, displ
 
             st.dataframe(limited_df, hide_index=True)
 
-    # Option to display complete dataframe if it was shortened   HERE LIMIT MAX LENGTH?
-    if complete and session_state_dict and len(session_state_dict) > max_length:
-        st.write("")
-        with st.expander(f"🔎 Show all {text}"):
-            st.dataframe(df, hide_index=True)
+        # Option to display complete dataframe if it was shortened   HERE LIMIT MAX LENGTH?
+        if complete and session_state_dict and len(session_state_dict) > max_length:
+            st.write("")
+            with st.expander(f"🔎 Show all {text}"):
+                st.dataframe(df, hide_index=True)
 
     return df
 #______________________________________________________
@@ -981,10 +990,10 @@ def init_session_state_variables():
         st.session_state["pom_saved_ok_flag"] = False
         st.session_state["om_template_variable_part_flag"] = False
         # TAB4
-        st.session_state["tm_deleted_ok_flag"] = False
+        st.session_state["tm_removed_ok_flag"] = False
         st.session_state["sm_unassigned_ok_flag"] = False
         st.session_state["g_mapping_cleaned_ok_flag"]  = False
-        st.session_state["pom_deleted_ok_flag"] = False
+        st.session_state["pom_removed_ok_flag"] = False
 
         # 🔮 MATERIALISE GRAPH
         # TAB1
@@ -2266,7 +2275,7 @@ def get_tm_dict():
         triples_maps = list(st.session_state["g_mapping"].subjects(RML.logicalSource, None))
 
         for tm in triples_maps:
-            tm_label = split_uri(tm)[1]
+            tm_label = get_node_label(tm)
             tm_dict[tm_label] = tm
         return tm_dict
 
@@ -2556,7 +2565,7 @@ def prepare_node_for_rule_preview(node, subject=False, predicate=False, object=F
 # Function to display a rule when creating it (in 🏗️_Build_Mapping page)
 def preview_rule(tm_iri_for_pom, predicate_list, om_rule, o_is_reference=False, datatype=None, language_tag=None):
 
-    max_length = 40   # to adjust font size
+    max_length = get_max_length_for_display()[11]   # to adjust font size
     inner_html = ""
     small_header = """<small><b style="color:#F63366; font-size:10px;margin-top:8px; margin-bottom:8px; display:block;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>"""
 
@@ -2624,7 +2633,7 @@ def get_sm_dict():
 
     tm_list = list(st.session_state["g_mapping"].subjects(RML.logicalSource, None))
     for tm in tm_list:
-        tm_label = split_uri(tm)[1]
+        tm_label = get_node_label(tm)
         sm_iri = st.session_state["g_mapping"].value(tm, RML.subjectMap)
 
         template = st.session_state["g_mapping"].value(sm_iri, RML.template)
@@ -2637,12 +2646,7 @@ def get_sm_dict():
 
         if sm_iri:
 
-            if isinstance(sm_iri, URIRef):
-                sm_label = split_uri(sm_iri)[1]
-            elif isinstance(sm_iri, BNode):
-                sm_label = "_:" + str(sm_iri)[:7] + "..."
-            else:
-                sm_label = "Unlabelled"
+            sm_label = get_node_label(sm_iri)
 
             if template:
                 sm_type = "template"
@@ -2713,21 +2717,58 @@ def get_pom_dict():
             om_type = "---"
             om_rule = "---"
 
-        pom_dict[pom_iri] = [tm_iri, predicate_list, pom_iri, om_iri, om_type, om_rule]
+        predicate_label_list = []
+        for p_iri in predicate_list:
+            predicate_label_list.append(get_node_label(p_iri))
+
+
+        pom_dict[pom_iri] = [tm_iri, predicate_label_list, pom_iri, om_iri, om_type, om_rule]
 
     return pom_dict
 #______________________________________________________
 
 
+# PANEL: MANAGE MAPPING---------------------------------------------------------
+#______________________________________________________
+# Preview tm to be removed (tm/sm/pom)
+def display_tm_info_for_removal(tm_to_remove_list):
 
+    tm_dict = get_tm_dict()
+    sm_dict = get_sm_dict()
+    inner_html = f"""<div style="margin-bottom:1px;">
+        <small> <b style="color:#F63366;">TriplesMap</b> <span style="color:#F63366;">
+        (Subject Map | Predicate-Object Maps)</span> </small> </div>"""
+    max_length = utils.get_max_length_for_display()[4]
 
+    # Show tm uo to max_length
+    for tm in sorted(tm_to_remove_list)[:max_length]:
+        inner_html += f"""<b>🗺️ {tm}</b> ("""
+        tm_iri = tm_dict[tm]
+        sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RML.subjectMap)), None)
+        if sm_to_remove_tm:
+            inner_html += f"""<span style="font-size:0.85em;">🏷️ {sm_dict[sm_to_remove_tm][0]} | </span>"""
+        else:
+            inner_html += f"""<span style="font-size:0.85em;">🏷️ No Subject Map | </span>"""
+        pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RML.predicateObjectMap))
+        if len(pom_to_remove_tm_list) == 1:
+            inner_html += f"""<span style="font-size:0.85em;">🔗 {len(pom_to_remove_tm_list)} Predicate-Object Map)<br></span>"""
+        elif pom_to_remove_tm_list:
+            inner_html += f"""<span style="font-size:0.85em;">🔗 {len(pom_to_remove_tm_list)} Predicate-Object Maps)<br></span>"""
+        else:
+            inner_html += f"""<span style="font-size:0.85em;">🔗 No Predicate-Object Maps)<br></span>"""
 
+    # Add "..." if there are more tm
+    if len(tm_to_remove_list) > max_length:
+        inner_html += f"""🗺️ ..."""
 
+    # Display
+    if tm_to_remove_list:
+        st.markdown(f"""<div class="info-message-gray">
+                {inner_html}
+            <div>""", unsafe_allow_html=True)
+#______________________________________________________
 
-
-
-#RFBOOKMARK
-#_________________________________________________________________________________
+#______________________________________________________
 # Function to completely remove a triplesmap
 # Remove primary and secondary triples, but dont remove any triples that are used by another triplesmap
 def remove_triplesmap(tm_label):
@@ -2736,30 +2777,167 @@ def remove_triplesmap(tm_label):
     tm_iri = tm_dict[tm_label]   #get tm iri
     g = st.session_state["g_mapping"]  #for convenience
 
-    # remove ls if not reused
+    # Remove ls if not reused
     logical_source = g.value(subject=tm_iri, predicate=RML.logicalSource)
     if logical_source:
         ls_reused = any(s != tm_iri for s, p, o in g.triples((None, RML.logicalSource, logical_source)))
         if not ls_reused:
             g.remove((logical_source, None, None))
 
-    # remove sm if not reused
+    # Remove sm if not reused
     subject_map = g.value(subject=tm_iri, predicate=RML.subjectMap)
     if subject_map:
         sm_reused = any(s != tm_iri for s, p, o in g.triples((None, RML.subjectMap, subject_map)))
         if not sm_reused:
             g.remove((subject_map, None, None))
 
-    # remove all associated pom (and om)
+    # Remove all associated pom (and om)
     pom_iri_list = list(g.objects(subject=tm_iri, predicate=RML.predicateObjectMap))
     for pom_iri in pom_iri_list:
         om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RML.objectMap)
         st.session_state["g_mapping"].remove((pom_iri, None, None))
         st.session_state["g_mapping"].remove((om_to_delete, None, None))
 
+    # Remove from last added tm list if it is there
+    if tm_label in st.session_state["last_added_tm_list"]:
+        st.session_state["last_added_tm_list"].remove(tm_label)       # if it is in last added list, remove
+
     g.remove((tm_iri, None, None))   # remove tm triple
 #______________________________________________________
 
+#______________________________________________________
+# Preview tm to be removed (tm/sm/pom)
+def display_sm_info_for_removal(tm_to_unassign_sm_list):
+
+    max_length = utils.get_max_length_for_display()[4]
+    tm_dict = get_tm_dict()
+    sm_dict = get_sm_dict()
+    inner_html = f"""<div style="margin-bottom:1px;">
+            <small><span style="color:#F63366;">TriplesMap → </span>
+            <b style="color:#F63366;">Subject Map</b></small>
+        </div>"""
+
+    # Display sm up to max_length
+    for tm in sorted(tm_to_unassign_sm_list)[:max_length]:
+        tm_iri = tm_dict[tm]
+        sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RML.subjectMap)
+        sm_label_to_unassign = sm_dict[sm_iri][0]
+        inner_html += f"""<div style="margin-bottom:1px;">
+            <small>🗺️ {tm} →  🏷️ <b>{sm_label_to_unassign}</b></small>
+        </div>"""
+
+    # Add "..." if there are more sm
+    if len(tm_to_unassign_sm_list) > max_length:   # many sm to remove
+        inner_html += f"""<div style="margin-bottom:1px;">
+            <small>🗺️ ... (+{len(tm_to_unassign_sm_list[:max_length])})</small>
+        </div>"""
+
+    # Display
+    if tm_to_unassign_sm_list:
+        st.markdown(f"""<div class="info-message-gray">
+                {inner_html}
+            </div>""", unsafe_allow_html=True)
+#______________________________________________________
+
+#______________________________________________________
+# Function to check if mapping is complete
+def check_g_mapping(g=st.session_state["g_mapping"]):
+
+    tm_dict = get_tm_dict()
+    max_length = utils.get_max_length_for_display()[5]
+
+    tm_wo_sm_list = []   # list of all tm with assigned sm
+    tm_wo_pom_list = []
+    for tm_label, tm_iri in tm_dict.items():
+        if not any(g.triples((tm_iri, RML.subjectMap, None))):
+            tm_wo_sm_list.append(tm_label)
+    for tm_label, tm_iri in tm_dict.items():
+        if not any(g.triples((tm_iri, RML.predicateObjectMap, None))):
+            tm_wo_pom_list.append(tm_label)
+
+    pom_wo_om_list = []
+    pom_wo_predicate_list = []
+    for pom_iri in g.subjects(RDF.type, RML.PredicateObjectMap):
+        pom_label = get_node_label(pom_iri)
+        if not any(g.triples((pom_iri, RML.objectMap, None))):
+            pom_wo_om_list.append(pom_label)
+        if not any(g.triples((pom_iri, RML.predicate, None))):
+            pom_wo_predicate_list.append(pom_label)
+
+    tm_wo_pom_list_display = utils.format_list_for_display(tm_wo_pom_list)
+    tm_wo_sm_list_display = utils.format_list_for_display(tm_wo_sm_list)
+    pom_wo_om_list_display = utils.format_list_for_display(pom_wo_om_list)
+    pom_wo_predicate_list_display = utils.format_list_for_display(pom_wo_predicate_list)
+
+    inner_html = ""
+    g_mapping_complete_flag = True
+
+    if tm_wo_sm_list or tm_wo_pom_list or pom_wo_om_list or pom_wo_predicate_list_display:
+
+        max_length = get_max_length_for_display()[5]
+        if g == st.session_state["g_mapping"]:
+            inner_html += f"""ℹ️ Mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> is incomplete."""
+        else:
+            inner_html += f"""The <b>Mapping</b> is incomplete."""
+
+        if tm_wo_sm_list:
+            g_mapping_complete_flag = False
+            if len(tm_wo_sm_list) < max_length:
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· TriplesMap(s) without a Subject Map: <b>
+                {tm_wo_sm_list_display}</b></small><br></div>"""
+            else:
+                inner_html += f"""<div style="margin-left: 20px">
+                <small><b>· {len(tm_wo_sm_list)}
+                TriplesMaps</b> without
+                a Subject Map.</small><br></div>"""
+
+        if tm_wo_pom_list:
+            g_mapping_complete_flag = False
+            if len(tm_wo_pom_list) < max_length:
+                tm_wo_pom_list_display = utils.format_list_for_display(tm_wo_pom_list)
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· TriplesMap(s) without Predicate-Object Maps
+                <b>{tm_wo_pom_list_display}</b></small><br></div>"""
+            else:
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· <b>{len(tm_wo_pom_list)}
+                TriplesMap(s)</b> without Predicate-Object Maps</small><br></div>"""
+
+        if pom_wo_om_list:
+            g_mapping_complete_flag = False
+            if len(pom_wo_om_list) < max_length:
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· Predicate-Object Map(s) without an Object Map:
+                <b>{pom_wo_om_list_display}</b></small><br></div>"""
+            else:
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· <b>{len(pom_wo_om_list_display)}
+                Predicate-Object Maps</b> without
+                an Object Map.</small><br></div>"""
+
+        if pom_wo_predicate_list:
+            g_mapping_complete_flag = False
+            if len(pom_wo_om_list) < max_length:
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· Predicate-Object Map(s) without a predicate
+                <b>{pom_wo_predicate_list_display}</b></small><br></div>"""
+            else:
+                inner_html += f"""<div style="margin-left: 20px">
+                <small>· <b>{len(pom_wo_predicate_list_display)}
+                Predicate-Object Maps</b> without
+                a predicate.</small><br></div>"""
+
+    return g_mapping_complete_flag, inner_html, tm_wo_sm_list, tm_wo_pom_list, pom_wo_om_list, pom_wo_predicate_list
+#_________________________________________________
+
+
+
+
+
+
+
+#RFBOOKMARK
 #______________________________________________________
 # Function get the column list of the data source of a tm
 def get_column_list(tm_iri):
@@ -2893,120 +3071,6 @@ def read_tab_file_unsaved(file):
     return read_content
 #_________________________________________________
 
-#_______________________________________________
-# Function to check mapping before materialisation
-def check_g_mapping(g):
-
-    tm_dict = {}
-    for tm in g.subjects(RML.logicalSource, None):
-        tm_label = split_uri(tm)[1]
-        tm_dict[tm_label] = tm
-
-    tm_wo_sm_list = []   # list of all tm with assigned sm
-    tm_wo_pom_list = []
-    for tm_label, tm_iri in tm_dict.items():
-        if not any(g.triples((tm_iri, RML.subjectMap, None))):
-            tm_wo_sm_list.append(tm_label)
-    for tm_label, tm_iri in tm_dict.items():
-        if not any(g.triples((tm_iri, RML.predicateObjectMap, None))):
-            tm_wo_pom_list.append(tm_label)
-
-    pom_wo_om_list = []
-    pom_wo_predicate_list = []
-    for pom_iri in g.subjects(RDF.type, RML.PredicateObjectMap):
-        pom_label = get_node_label(pom_iri)
-        if not any(g.triples((pom_iri, RML.objectMap, None))):
-            pom_wo_om_list.append(pom_label)
-        if not any(g.triples((pom_iri, RML.predicate, None))):
-            pom_wo_predicate_list.append(pom_label)
-
-    tm_wo_pom_list_display = utils.format_list_for_display(tm_wo_pom_list)
-    tm_wo_sm_list_display = utils.format_list_for_display(tm_wo_sm_list)
-    pom_wo_om_list_display = utils.format_list_for_display(pom_wo_om_list)
-    pom_wo_predicate_list_display = utils.format_list_for_display(pom_wo_predicate_list)
-
-    if tm_wo_sm_list or tm_wo_pom_list or pom_wo_om_list or pom_wo_predicate_list_display:
-
-        max_length = utils.get_max_length_for_display()[5]
-
-        inner_html = f"""The <b>mapping</b> is incomplete."""
-
-        if tm_wo_sm_list:
-            if len(tm_wo_sm_list) == 1:
-                inner_html += f"""<div style="margin-left: 20px">
-                <small>· The TriplesMap <b>
-                {tm_wo_sm_list_display}</b> has not been assigned
-                a Subject Map.</small><br></div>"""
-            elif len(tm_wo_sm_list) < max_length:
-                inner_html += f"""<div style="margin-left: 20px">
-                <small>· The TriplesMaps
-                <b>{tm_wo_sm_list_display}</b> have not been assigned
-                a Subject Map.</small><br></div>"""
-            else:
-                inner_html += f"""<div style="margin-left: 20px">
-                <small><b>· {len(tm_wo_sm_list)}
-                TriplesMaps</b> have not been assigned
-                a Subject Map.</small><br></div>"""
-
-        if tm_wo_pom_list:
-            if len(tm_wo_pom_list) == 1:
-                tm_wo_pom_list_display = utils.format_list_for_display(tm_wo_pom_list)
-                inner_html += f"""<div style="margin-left: 20px">
-                <small>· The TriplesMap
-                <b>{tm_wo_pom_list_display}</b> has not been assigned
-                a Predicate-Object Map.</small><br></div>"""
-            elif len(tm_wo_pom_list) < max_length:
-                tm_wo_pom_list_display = utils.format_list_for_display(tm_wo_pom_list)
-                inner_html += f"""<div style="margin-left: 20px">
-                <small>· The TriplesMaps
-                <b>{tm_wo_pom_list_display}</b> have not been assigned
-                a Predicate-Object Map.</small><br></div>"""
-            else:
-                inner_html += f"""<div style="margin-left: 20px">
-                <small><b>· {len(tm_wo_pom_list)}
-                TriplesMaps</b> have not been assigned
-                a Predicate-Object Map.</small><br></div>"""
-
-        if pom_wo_om_list:
-            if len(pom_wo_om_list) == 1:
-                inner_html += f"""<div style="margin-left: 20px">
-                <small>· The Predicate-Object Map
-                <b>{pom_wo_om_list_display}</b> has not been assigned
-                an Object Map.</small><br></div>"""
-            elif len(pom_wo_om_list) < max_length:
-                inner_html += f"""<div style="margin-left: 20px">
-                <small>· The Predicate-Object Maps
-                <b>{pom_wo_om_list_display}</b> have not been assigned
-                an Object Map.</small><br></div>"""
-            else:
-                inner_html += f"""<div style="margin-left: 20px">
-                <small>· <b>{len(pom_wo_om_list_display)}
-                Predicate-Object Maps</b> have not been assigned
-                an Object Map.</small><br></div>"""
-
-        if pom_wo_predicate_list:
-            if len(pom_wo_om_list) == 1:
-                inner_html += f"""<div style="margin-left: 20px">
-                <small>· The Predicate-Object Map
-                <b>{pom_wo_predicate_list_display}</b> has not been assigned
-                a predicate.</small><br></div>"""
-            elif len(pom_wo_om_list) < max_length:
-                inner_html += f"""<div style="margin-left: 20px">
-                <small>· The Predicate-Object Maps
-                <b>{pom_wo_predicate_list_display}</b> have not been assigned
-                a predicate.</small><br></div>"""
-            else:
-                inner_html += f"""<div style="margin-left: 20px">
-                <small>· <b>{len(pom_wo_predicate_list_display)}
-                Predicate-Object Maps</b> have not been assigned
-                a predicate.</small><br></div>"""
-
-        return inner_html
-
-    return ""
-
-#_________________________________________________
-
 #_________________________________________________
 # Funtion to check a mapping loaded from URL is ok
 def is_valid_url_mapping(mapping_url, show_info):
@@ -3080,7 +3144,7 @@ def preview_rule_list(s_for_display, p_for_display, o_for_display):
     small_header = """<small><b style="color:#F63366; font-size:10px;margin-top:8px; margin-bottom:8px; display:block;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>"""
 
     inner_html = ""
-    max_length = 40
+    max_length = get_max_length_for_display()[11]
 
     s_for_display = "" if not s_for_display else s_for_display
     p_for_display = "" if not p_for_display else p_for_display

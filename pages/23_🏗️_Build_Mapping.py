@@ -33,13 +33,14 @@ def save_tm_w_existing_ls():
     # get required info
     NS = st.session_state["base_ns"][1]
     tm_iri = NS[f"{st.session_state['tm_label']}"]
+    tm_label = utils.get_node_label(tm_iri)
     ls_iri =  NS[f"{existing_ls}"]
     # add triples___________________
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    # bind to logical source
     st.session_state["g_mapping"].add((tm_iri, RDF.type, RML.TriplesMap))
     # store information________________
     st.session_state["tm_saved_ok_flag"] = True  # for success message
-    st.session_state["last_added_tm_list"].insert(0, st.session_state["tm_label"])    # to display last added tm
+    st.session_state["last_added_tm_list"].insert(0, tm_label)    # to display last added tm
     # reset fields_____________________
     st.session_state["key_tm_label_input"] = ""
 
@@ -47,6 +48,7 @@ def save_tm_w_tab_ls():
     # get required info
     NS = st.session_state["base_ns"][1]
     tm_iri = NS[f"{st.session_state['tm_label']}"]
+    tm_label = utils.get_node_label(tm_iri)
     ds_filename = ds_file.name
     ls_iri = NS[f"{ls_label}"] if label_ls_option == "Yes (add label 🏷️)" else BNode()
     # add triples__________________
@@ -64,7 +66,7 @@ def save_tm_w_tab_ls():
     st.session_state["g_mapping"].add((tm_iri, RDF.type, RML.TriplesMap))
     # store information____________________
     st.session_state["tm_saved_ok_flag"] = True  # for success message
-    st.session_state["last_added_tm_list"].insert(0, st.session_state["tm_label"])    # to display last added tm
+    st.session_state["last_added_tm_list"].insert(0, tm_label)    # to display last added tm
     # reset fields_______________________
     st.session_state["key_tm_label_input"] = ""
 
@@ -75,6 +77,7 @@ def save_tm_w_view():
     sql_query = st.session_state["saved_views_dict"][selected_view_for_ls][1]
     NS = st.session_state["base_ns"][1]
     tm_iri = NS[f"{st.session_state['tm_label']}"]
+    tm_label = utils.get_node_label(tm_iri)
     ls_iri = NS[f"{ls_label}"] if label_ls_option == "Yes (add label 🏷️)" else BNode()
     # add triples__________________
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    # bind to logical source
@@ -87,7 +90,7 @@ def save_tm_w_view():
     st.session_state["g_mapping"].add((tm_iri, RDF.type, RML.TriplesMap))
     # store information____________________
     st.session_state["tm_saved_ok_flag"] = True  # for success message
-    st.session_state["last_added_tm_list"].insert(0, st.session_state["tm_label"])    # to display last added tm
+    st.session_state["last_added_tm_list"].insert(0, tm_label)    # to display last added tm
     # reset fields_______________________
     st.session_state["key_tm_label_input"] = ""
 
@@ -97,6 +100,7 @@ def save_tm_w_table_name():
     # add triples__________________
     NS = st.session_state["base_ns"][1]
     tm_iri = NS[f"{st.session_state['tm_label']}"]
+    tm_label = utils.get_node_label(tm_iri)
     ls_iri = NS[f"{ls_label}"] if label_ls_option == "Yes (add label 🏷️)" else BNode()
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    # bind to logical source
     st.session_state["g_mapping"].add((ls_iri, RML.source, Literal(url_str)))    # bind ls to database
@@ -108,7 +112,7 @@ def save_tm_w_table_name():
     st.session_state["g_mapping"].add((tm_iri, RDF.type, RML.TriplesMap))
     # store information____________________
     st.session_state["tm_saved_ok_flag"] = True  # for success message
-    st.session_state["last_added_tm_list"].insert(0, st.session_state["tm_label"])    # to display last added tm
+    st.session_state["last_added_tm_list"].insert(0, tm_label)    # to display last added tm
     # reset fields_______________________
     st.session_state["key_tm_label_input"] = ""
 
@@ -444,34 +448,33 @@ def save_pom_reference():
     st.session_state["key_add_om_graph_map_option"] = "Default graph map"
 
 # TAB4
-def delete_tm():   #function to delete a TriplesMap
+def remove_tm():   #function to remove TriplesMaps
     # remove triples and store information___________
     for tm in tm_to_remove_list:
         utils.remove_triplesmap(tm)      # remove the tm
-        if tm in st.session_state["last_added_tm_list"]:
-            st.session_state["last_added_tm_list"].remove(tm)       # if it is in last added list, remove
     #store information
     st.session_state["last_added_sm_list"] = [pair for pair in st.session_state["last_added_sm_list"]
         if pair[1] in utils.get_tm_dict()]
     st.session_state["last_added_pom_list"] = [pair for pair in st.session_state["last_added_pom_list"]
         if pair[1] in utils.get_tm_dict()]
-    st.session_state["tm_deleted_ok_flag"] = True
+    st.session_state["tm_removed_ok_flag"] = True
     #reset fields_________________________
     st.session_state["key_tm_to_remove_list"] = []
 
-def delete_all_tm():   #function to delete a TriplesMap
+def remove_all_tm():   #function to remove all TriplesMaps (empty mapping)
     # remove all triples
     st.session_state["g_mapping"] = Graph()
     #store information
     st.session_state["last_added_tm_list"] = []
     st.session_state["last_added_sm_list"] = []
     st.session_state["last_added_pom_list"] = []
-    st.session_state["tm_deleted_ok_flag"] = True
+    st.session_state["tm_removed_ok_flag"] = True
     #reset fields_______________________
     st.session_state["key_tm_to_remove_list"] = []
 
 def unassign_sm():
     # remove triples______________________
+    tm_dict = utils.get_tm_dict()
     for tm in tm_to_unassign_sm_list:
         tm_iri = tm_dict[tm]
         sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RML.subjectMap)
@@ -486,48 +489,39 @@ def unassign_sm():
     st.session_state["last_added_sm_list"] = [pair for pair in st.session_state["last_added_sm_list"]
         if pair[1] not in tm_to_unassign_sm_list]
     # reset fields__________________
-    st.session_state["key_map_type_to_remove"] = "🗺️ TriplesMap"
+    st.session_state["key_component_type_to_remove"] = "🗺️ TriplesMap"
 
-def delete_pom():           #function to delete a Predicate-Object Map
-    for pom_iri in pom_to_delete_iri_list:
-        om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RML.objectMap)
-        # remove triples______________________
+def remove_pom():           #function to remove a Predicate-Object Map
+    # remove triples______________________
+    for pom_iri in pom_to_remove_iri_list:
+        om_to_remove = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RML.objectMap)
         st.session_state["g_mapping"].remove((pom_iri, None, None))
         st.session_state["g_mapping"].remove((None, None, pom_iri))
-        st.session_state["g_mapping"].remove((om_to_delete, None, None))
+        st.session_state["g_mapping"].remove((om_to_remove, None, None))
     # store information__________________
-    st.session_state["pom_deleted_ok_flag"] = True
+    st.session_state["pom_removed_ok_flag"] = True
     st.session_state["last_added_pom_list"] = [pair for pair in st.session_state["last_added_pom_list"]
-        if pair[0] not in pom_to_delete_iri_list]
-    # reset fields
-    st.session_state["key_map_type_to_remove"] = "🗺️ TriplesMap"
+        if pair[0] not in pom_to_remove_iri_list]
+    # reset fields_______________________________-
+    st.session_state["key_component_type_to_remove"] = "🗺️ TriplesMap"
 
 def clean_g_mapping():
-    # REMOVE TRIPLESMAPS
-    # remove triples and store information___________
+    # remove triples and store information____________________________
     for tm in tm_to_clean_list:
         utils.remove_triplesmap(tm)      # remove the tm
-        if tm in st.session_state["last_added_tm_list"]:
-            st.session_state["last_added_tm_list"].remove(tm)       # if it is in last added list, remove
-    #store information________________________________
+    # remove predicate-object maps
+    for pom_iri in pom_to_clean_list:
+        om_to_remove = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RML.objectMap)
+        st.session_state["g_mapping"].remove((pom_iri, None, None))
+        st.session_state["g_mapping"].remove((None, None, pom_iri))
+        st.session_state["g_mapping"].remove((om_to_remove, None, None))
+    # store information__________________
     st.session_state["last_added_sm_list"] = [pair for pair in st.session_state["last_added_sm_list"]
         if pair[1] in utils.get_tm_dict()]
     st.session_state["last_added_pom_list"] = [pair for pair in st.session_state["last_added_pom_list"]
         if pair[1] in utils.get_tm_dict()]
-
-    # REMOVE PREDICATE-OBJECT MAPS
-    for pom_iri in pom_to_clean_list:
-        om_to_delete = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RML.objectMap)
-        # remove triples______________________
-        st.session_state["g_mapping"].remove((pom_iri, None, None))
-        st.session_state["g_mapping"].remove((None, None, pom_iri))
-        st.session_state["g_mapping"].remove((om_to_delete, None, None))
-    # store information__________________
     st.session_state["last_added_pom_list"] = [pair for pair in st.session_state["last_added_pom_list"]
-        if pair[0] not in pom_to_delete_iri_list]
-
-    #GENERAL
-    #store information________________________________
+        if pair[0] not in pom_to_remove_iri_list]
     st.session_state["g_mapping_cleaned_ok_flag"] = True
 
 #_______________________________________________________________________________
@@ -547,7 +541,7 @@ with tab1:
     col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
 
     with col2b:
-        utils.display_right_column_df("triplesmaps", st.session_state["last_added_tm_list"], "last added TriplesMaps")
+        utils.display_right_column_df("triplesmaps", "last added TriplesMaps")
 
     #PURPLE HEADING: ADD TRIPLESMAP---------------------------------------------
     with col1:
@@ -973,7 +967,7 @@ with tab2:
                     elif build_template_action_sm == "🗑️ Reset template":
                         with col1b:
                             st.markdown(f"""<div class="warning-message">
-                                    ⚠️ The current template <b>will be deleted</b>.
+                                    ⚠️ The current template <b>will be removed</b>.
                                 </div>""", unsafe_allow_html=True)
                         with col1c:
                             st.button("Reset", key="key_reset_sm_template_button", on_click=reset_sm_template)
@@ -1313,7 +1307,7 @@ with tab2:
                             save_sm_reference_button = st.button("Save", on_click=save_sm_reference, key="key_save_sm_reference_button")
 
     with col2b:
-        utils.display_right_column_df("subject_maps", st.session_state["last_added_sm_list"], "last added Subject Maps")
+        utils.display_right_column_df("subject_maps", "last added Subject Maps")
 
 
 #_______________________________________________________________________________
@@ -1591,7 +1585,7 @@ with tab3:
                 elif build_template_action_om == "🗑️ Reset template":
                     with col1b:
                         st.markdown(f"""<div class="warning-message">
-                                ⚠️ The current template <b>will be deleted</b>.
+                                ⚠️ The current template <b>will be removed</b>.
                             </div>""", unsafe_allow_html=True)
                     with col1c:
                         st.button("Reset", key="key_reset_om_template_button", on_click=reset_om_template)
@@ -1944,24 +1938,18 @@ with tab3:
                     utils.preview_rule(tm_iri_for_pom, predicate_list, om_rule, o_is_reference=o_is_reference,
                         datatype=datatype_iri, language_tag=language_tag)
 
-    # RFBOOKMARK FIX save constant and reference pom
+    # RIGHT COLUMN: SHOW LAST ADDED POM INFO------------------------------------
     with col2b:
-        utils.display_right_column_df("predicate-object_maps", st.session_state["last_added_pom_list"], "last added Predicate-Object maps")
+        utils.display_right_column_df("predicate-object_maps", "last added Predicate-Object maps")
 
-#________________________________________________
-# MANAGE MAPPING
+#_______________________________________________________________________________
+# PANEL: MANAGE MAPPING
 with tab4:
-    st.write("")
-    st.write("")
+    col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
 
-    col1, col2 = st.columns([2,1.5])
-
-    with col2:
-        col2a,col2b = st.columns([1,2])
-
-    tm_dict = utils.get_tm_dict()
-    # SUCCESS MESSAGE - TriplesMap removed
-    if not tm_dict and st.session_state["tm_deleted_ok_flag"]:  # show message here if "Remove" purple heading is not going to be shown
+    # SUCCESS MESSAGE: TRIPLESMAP REMOVED---------------------------------------
+    # Shows here if "Remove" purple heading is not available
+    if not tm_dict and st.session_state["tm_removed_ok_flag"]:
         with col1:
             col1a, col1b = st.columns([2,1])
         with col1a:
@@ -1971,11 +1959,13 @@ with tab4:
                 ✅ The <b>Triplesmap(s)</b> have been removed.
             </div>""", unsafe_allow_html=True)
             st.write("")
-        st.session_state["tm_deleted_ok_flag"] = False
+        st.session_state["tm_removed_ok_flag"] = False
         time.sleep(utils.get_success_message_time())
         st.rerun()
 
-    # PURPLE HEADING - REMOVE MAP
+    # PURPLE HEADING: REMOVE COMPONENT------------------------------------------
+    # Only shows if there is at least one TriplesMap
+    tm_dict = utils.get_tm_dict()
     if not tm_dict:     # only show option if there are tm/sm/pom that can be removed
         with col1:
             col1a, col1b = st.columns([2,1])
@@ -1987,11 +1977,11 @@ with tab4:
     else:
         with col1:
             st.markdown("""<div class="purple-heading">
-                    🗑️ Remove Map
+                    🗑️ Remove Component
                 </div>""", unsafe_allow_html=True)
             st.write("")
 
-        if st.session_state["tm_deleted_ok_flag"]:  # show message here if "Remove" purple heading is going to be shown
+        if st.session_state["tm_removed_ok_flag"]:  # show message here if "Remove" purple heading is going to be shown
             with col1:
                 col1a, col1b = st.columns([2,1])
             with col1a:
@@ -2001,7 +1991,7 @@ with tab4:
                     ✅ The <b>Triplesmap(s)</b> have been removed.
                 </div>""", unsafe_allow_html=True)
                 st.write("")
-            st.session_state["tm_deleted_ok_flag"] = False
+            st.session_state["tm_removed_ok_flag"] = False
             time.sleep(utils.get_success_message_time())
             st.rerun()
 
@@ -2017,16 +2007,16 @@ with tab4:
             time.sleep(utils.get_success_message_time())
             st.rerun()
 
-        if st.session_state["pom_deleted_ok_flag"]:
+        if st.session_state["pom_removed_ok_flag"]:
             with col1:
                 col1a, col1b = st.columns([2,1])
             with col1a:
                 st.write("")
                 st.markdown(f"""<div class="success-message-flag">
-                    ✅ The <b>Predicate-Object Map(s)</b> have been deleted!
+                    ✅ The <b>Predicate-Object Map(s)</b> have been removed!
                 </div>""", unsafe_allow_html=True)
                 st.write("")
-            st.session_state["pom_deleted_ok_flag"] = False
+            st.session_state["pom_removed_ok_flag"] = False
             time.sleep(utils.get_success_message_time())
             st.rerun()
 
@@ -2044,173 +2034,74 @@ with tab4:
         with col1:
             col1a, col1b = st.columns([1.5,1])
 
-
         with col1b:
             list_to_choose = ["🗺️ TriplesMap"]
             if sm_dict:
                 list_to_choose.append("🏷️ Subject Map")
+            else:
+                st.write("")
             if pom_dict:
                 list_to_choose.append("🔗 Predicate-Object Map")
-            st.write("")
-            map_type_to_remove = st.radio("🖱️ Select an option:*", list_to_choose,
-                label_visibility="collapsed", key="key_map_type_to_remove")
+            else:
+                st.write("")
+            component_type_to_remove = st.radio("🖱️ Select an option:*", list_to_choose,
+                label_visibility="collapsed", key="key_component_type_to_remove")
 
-        if map_type_to_remove == "🗺️ TriplesMap":
-            tm_list = list(tm_dict)
-            if len(tm_list) > 1:
-                tm_list.append("Select all")
-
+        # REMOVE TRIPLESMAPS
+        if component_type_to_remove == "🗺️ TriplesMap":
+            list_to_choose = sorted(tm_dict.keys())
+            if len(list_to_choose) > 1:
+                list_to_choose.insert(0, "Select all")
             with col1a:
-                tm_to_remove_list = st.multiselect("🖱️ Select TriplesMaps:*", reversed(tm_list), key="key_tm_to_remove_list")
-
-
-            if "Select all" not in tm_to_remove_list:
-                sm_dict = utils.get_sm_dict()
-                inner_html = ""
-                max_length = 8
-                if len(tm_to_remove_list) < max_length:
-                    for tm in tm_to_remove_list:
-                        inner_html += f"""<b>🔖 {tm}</b> ("""
-                        tm_iri = tm_dict[tm]
-                        sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RML.subjectMap)), None)
-                        if sm_to_remove_tm:
-                            inner_html += f"""<span style="font-size:0.85em;">Subject Map: {sm_dict[sm_to_remove_tm][0]} | </span>"""
-                        else:
-                            inner_html += f"""<span style="font-size:0.85em;">No Subject Map | </span>"""
-                        pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RML.predicateObjectMap))
-                        if len(pom_to_remove_tm_list) == 1:
-                            inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Map)<br></span>"""
-                        elif pom_to_remove_tm_list:
-                            inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Maps)<br></span>"""
-                        else:
-                            inner_html += f"""<span style="font-size:0.85em;">No Predicate-Object Maps)<br></span>"""
-                else:
-                    for tm in tm_to_remove_list[:max_length]:
-                        inner_html += f"""🔖 <b>{tm}</b> ("""
-                        tm_iri = tm_dict[tm]
-                        sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RML.subjectMap)), None)
-                        if sm_to_remove_tm:
-                            inner_html += f"""<span style="font-size:0.85em;">Subject Map: {sm_dict[sm_to_remove_tm][0]} | </span>"""
-                        else:
-                            inner_html += f"""<span style="font-size:0.85em;">No Subject Map | </span>"""
-                        pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RML.predicateObjectMap))
-                        if len(pom_to_remove_tm_list) == 1:
-                            inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Map)<br></span>"""
-                        elif pom_to_remove_tm_list:
-                            inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Maps)<br></span>"""
-                        else:
-                            inner_html += f"""<span style="font-size:0.85em;">No Predicate-Object Maps)<br></span>"""
-                    inner_html += f"""🔖 ..."""
-
-
-            else:   #Select all option
-                sm_dict = utils.get_sm_dict()
-                inner_html = ""
-                max_length = utils.get_max_length_for_display()[4]
-                if len(tm_dict) < max_length:
-                    for tm in tm_dict:
-                        inner_html += f"""<b>🔖 {tm}</b> ("""
-                        tm_iri = tm_dict[tm]
-                        sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RML.subjectMap)), None)
-                        if sm_to_remove_tm:
-                            inner_html += f"""<span style="font-size:0.85em;">Subject Map: {sm_dict[sm_to_remove_tm][0]} | </span>"""
-                        else:
-                            inner_html += f"""<span style="font-size:0.85em;">No Subject Map | </span>"""
-                        pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RML.predicateObjectMap))
-                        if len(pom_to_remove_tm_list) == 1:
-                            inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Map)<br></span>"""
-                        elif pom_to_remove_tm_list:
-                            inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Maps)<br></span>"""
-                        else:
-                            inner_html += f"""<span style="font-size:0.85em;">No Predicate-Object Maps)<br></span>"""
-                else:
-                    for tm in list(tm_dict)[:max_length]:
-                        inner_html += f"""🔖 <b>{tm}</b> ("""
-                        tm_iri = tm_dict[tm]
-                        sm_to_remove_tm = next((o for o in st.session_state["g_mapping"].objects(tm_iri, RML.subjectMap)), None)
-                        if sm_to_remove_tm:
-                            inner_html += f"""<span style="font-size:0.85em;">Subject Map: {sm_dict[sm_to_remove_tm][0]} | </span>"""
-                        else:
-                            inner_html += f"""<span style="font-size:0.85em;">No Subject Map | </span>"""
-                        pom_to_remove_tm_list = list(st.session_state["g_mapping"].objects(tm_iri, RML.predicateObjectMap))
-                        if len(pom_to_remove_tm_list) == 1:
-                            inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Map)<br></span>"""
-                        elif pom_to_remove_tm_list:
-                            inner_html += f"""<span style="font-size:0.85em;">{len(pom_to_remove_tm_list)} Predicate-Object Maps)<br></span>"""
-                        else:
-                            inner_html += f"""<span style="font-size:0.85em;">No Predicate-Object Maps)<br></span>"""
-                    inner_html += f"""🔖 ..."""
+                tm_to_remove_list = st.multiselect("🖱️ Select TriplesMaps:*", list_to_choose, key="key_tm_to_remove_list")
 
             if tm_to_remove_list:
-                if "Select all" not in tm_to_remove_list:
-                    with col1a:
-                        delete_tm_checkbox = st.checkbox(
-                        "🔒 I am sure I want to delete the TriplesMap(s)",
-                        key="delete_tm_checkbox")
-                    if delete_tm_checkbox:
-                        with col1a:
-                            st.button("Delete", on_click=delete_tm)
-                else:   #if "Select all" selected
-                    with col1b:
+
+                if "Select all" in tm_to_remove_list:
+                    deleting_all_tm_flag = True
+                    tm_to_remove_list = list(tm_dict.keys())
+                    with col1:
+                        remove_tm_checkbox = st.checkbox(
+                        "🔒 I am sure I want to remove all TriplesMaps",
+                        key="remove_tm_checkbox")
+                        if remove_tm_checkbox:
+                            st.button("Remove", on_click=remove_all_tm)
+
+                else:
+                    deleting_all_tm_flag = False
+                    with col1:
+                        remove_tm_checkbox = st.checkbox(
+                        "🔒 I am sure I want to remove the selected TriplesMap(s)",
+                        key="remove_tm_checkbox")
+                        if remove_tm_checkbox:
+                            st.button("Remove", on_click=remove_tm)
+
+                with col1:
+                    if deleting_all_tm_flag:
                         st.markdown(f"""<div class="warning-message">
-                                ⚠️ If you continue, <b>all TriplesMaps will be deleted</b>.
+                                ⚠️ If you continue, <b>all TriplesMaps will be removed</b>.
                                 <small>Make sure you want to go ahead.</small>
                             </div>""", unsafe_allow_html=True)
-                        st.write("")
-                    with col1a:
-                        delete_tm_checkbox = st.checkbox(
-                        "🔒 I am sure I want to delete all TriplesMaps",
-                        key="delete_tm_checkbox")
-                    if delete_tm_checkbox:
-                        with col1a:
-                            st.button("Delete", on_click=delete_all_tm)
+                    utils.display_tm_info_for_removal(tm_to_remove_list)
 
-                if inner_html:
-                    with col1:
-                        st.markdown(f"""<div class="info-message-gray">
-                                {inner_html}
-                            <div>""", unsafe_allow_html=True)
-                        st.write("")
-
-
-        if map_type_to_remove == "🏷️ Subject Map":
+        # REMOVE SUBJECT MAPS
+        if component_type_to_remove == "🏷️ Subject Map":
             tm_w_sm_list = []
             for tm_label, tm_iri in tm_dict.items():
                 if any(st.session_state["g_mapping"].triples((tm_iri, RML.subjectMap, None))):
                     tm_w_sm_list.append(tm_label)
 
             with col1a:
-                tm_w_sm_list_to_choose = list(reversed(tm_w_sm_list))
-                if len(tm_w_sm_list_to_choose) > 1:
-                    tm_w_sm_list_to_choose.insert(0, "Select all")
-                tm_to_unassign_sm_list_input = st.multiselect("🖱️ Select TriplesMaps:*", tm_w_sm_list_to_choose,
+                list_to_choose = sorted(tm_w_sm_list)
+                if len(list_to_choose) > 1:
+                    list_to_choose.insert(0, "Select all")
+                tm_to_unassign_sm_list_input = st.multiselect("🖱️ Select TriplesMaps:*", list_to_choose,
                     key="key_tm_to_unassign_sm")
 
                 if "Select all" in tm_to_unassign_sm_list_input:
                     tm_to_unassign_sm_list = tm_w_sm_list
                 else:
                     tm_to_unassign_sm_list = tm_to_unassign_sm_list_input
-
-
-            # create a single info message
-            max_length = utils.get_max_length_for_display()[4]
-            inner_html = f"""<div style="margin-bottom:1px;">
-                    <small><b>TriplesMap</b> → <b>Subject Map</b></small>
-                </div>"""
-
-            for tm in tm_to_unassign_sm_list[:max_length]:
-                tm_iri = tm_dict[tm]
-                sm_iri = st.session_state["g_mapping"].value(subject=tm_iri, predicate=RML.subjectMap)
-                sm_label_to_unassign = sm_dict[sm_iri][0]
-                inner_html += f"""<div style="margin-bottom:1px;">
-                    <small>🔖 {tm} →  <b>{sm_label_to_unassign}</b></small>
-                </div>"""
-
-            if len(tm_to_unassign_sm_list) > max_length:   # many sm to remove
-                inner_html += f"""<div style="margin-bottom:1px;">
-                    <small>🔖 ... (+{len(tm_to_unassign_sm_list[:max_length])})</small>
-                </div>"""
-
 
             sm_to_completely_remove_list = []
             sm_to_just_unassign_list = []
@@ -2225,21 +2116,18 @@ with tab4:
                 else:
                     sm_to_just_unassign_list.append(sm_label_to_unassign)
 
-
             if "Select all" in tm_to_unassign_sm_list_input:
-                with col1b:
-                    st.markdown(f"""<div class="warning-message">
-                            ⚠️ You are deleting <b>all Subject Maps</b>.
-                            <small>Make sure you want to go ahead.</small>
-                        </div>""", unsafe_allow_html=True)
                 with col1:
                     unassign_all_sm_checkbox = st.checkbox(
                     "🔒 I am sure I want to remove all Subject Map(s)",
                     key="key_unassign_all_sm_checkbox")
-                if unassign_all_sm_checkbox:
-                    st.session_state["sm_to_completely_remove_list"] = sm_to_completely_remove_list
-                    st.session_state["tm_to_unassign_sm_list"] = tm_to_unassign_sm_list
-                    with col1:
+                    st.markdown(f"""<div class="warning-message">
+                            ⚠️ You are deleting <b>all Subject Maps</b>.
+                            <small>Make sure you want to go ahead.</small>
+                        </div>""", unsafe_allow_html=True)
+                    if unassign_all_sm_checkbox:
+                        st.session_state["sm_to_completely_remove_list"] = sm_to_completely_remove_list
+                        st.session_state["tm_to_unassign_sm_list"] = tm_to_unassign_sm_list
                         st.button("Remove", on_click=unassign_sm, key="key_unassign_sm_button")
 
             elif tm_to_unassign_sm_list:
@@ -2253,100 +2141,95 @@ with tab4:
                     with col1:
                         st.button("Remove", on_click=unassign_sm, key="key_unassign_sm_button")
 
-            if tm_to_unassign_sm_list:
-                with col1:
-                    st.markdown(f"""<div class="info-message-gray">
-                            {inner_html}
-                        </div>""", unsafe_allow_html=True)
+            with col1:
+                utils.display_sm_info_for_removal(tm_to_unassign_sm_list)
 
 
-        if map_type_to_remove == "🔗 Predicate-Object Map":
+        # REMOVE PREDICATE-OBJECT MAP
+        if component_type_to_remove == "🔗 Predicate-Object Map":
 
             tm_w_pom_list = []
-            for tm_iri in tm_dict:
+            for tm_label, tm_iri in tm_dict.items():
                 for pom_iri in pom_dict:
-                    if tm_iri in pom_dict[pom_iri] and tm_iri not in tm_w_pom_list:
-                        tm_w_pom_list.append(tm_iri)
+                    if tm_iri in pom_dict[pom_iri] and tm_label not in tm_w_pom_list:
+                        tm_w_pom_list.append(tm_label)
                         continue
 
             with col1a:
-                list_to_choose = list(reversed(tm_w_pom_list))
-                list_to_choose.insert(0, "Select TriplesMap")
-                tm_to_delete_pom_label = st.selectbox("🖱️ Select TriplesMap:*", list_to_choose, key="key_tm_to_delete_pom")
+                list_to_choose = sorted(tm_w_pom_list)
+                if len(list_to_choose) > 1:
+                    list_to_choose.insert(0, "Select TriplesMap")
+                tm_to_remove_pom_label = st.selectbox("🖱️ Select TriplesMap:*", list_to_choose, key="key_tm_to_remove_pom")
 
-            if tm_to_delete_pom_label != "Select TriplesMap":
-                tm_to_delete_pom_iri = tm_dict[tm_to_delete_pom_label]
+            if tm_to_remove_pom_label != "Select TriplesMap":
+                tm_to_remove_pom_iri = tm_dict[tm_to_remove_pom_label]
                 pom_of_selected_tm_list = []
                 for pom_iri in pom_dict:
-                    if pom_dict[pom_iri][0] == tm_to_delete_pom_iri:
+                    if pom_dict[pom_iri][0] == tm_to_remove_pom_iri:
                         pom_of_selected_tm_list.append(pom_iri)
 
                 if pom_of_selected_tm_list:
-
                     with col1a:
-                        list_to_choose = []
+                        dict_to_choose = {}
                         for pom_iri in pom_dict:
-                            if pom_dict[pom_iri][0] == tm_to_delete_pom_iri:
-                                list_to_choose.append(pom_iri)
-                        list_to_choose = sorted(list_to_choose)
+                            if pom_dict[pom_iri][0] == tm_to_remove_pom_iri:
+                                dict_to_choose[utils.get_node_label(pom_iri, short_BNode=False)] = pom_iri
+                        list_to_choose = sorted(dict_to_choose.keys())
                         if len(list_to_choose) > 1:
                             list_to_choose.insert(0, "Select all")
-                        pom_to_delete_iri_list = st.multiselect("🖱️ Select a Predicate-Object Map:*", list_to_choose, key="key_pom_to_delete")
+                        pom_to_remove_label_list = st.multiselect("🖱️ Select Predicate-Object Maps:*", list_to_choose,
+                            key="key_pom_to_remove")
+
+                        if pom_to_remove_label_list:
+                            if "Select all" in pom_to_remove_label_list:
+                                pom_to_remove_iri_list = []
+                                for pom_iri in pom_dict:
+                                    if pom_dict[pom_iri][0] == tm_to_remove_pom_iri:
+                                        pom_to_remove_iri_list.append(pom_iri)
+                                with col1:
+                                    remove_all_pom_checkbox = st.checkbox(
+                                    f"""🔒 I am  sure I want to remove all Predicate-Object Maps""",
+                                    key="key_overwrite_g_mapping_checkbox_new")
+                                    if remove_all_pom_checkbox:
+                                        st.button("Remove", on_click=remove_pom, key="key_remove_all_pom_button")
+                                    st.markdown(f"""<div class="warning-message">
+                                            ⚠️ You are deleting <b>all Predicate-Object Maps ({len(pom_to_remove_iri_list)})</b>
+                                            of the TriplesMap <b>{tm_to_remove_pom_label}</b>.
+                                            <small>Make sure you want to go ahead.</small>
+                                        </div>""", unsafe_allow_html=True)
+
+                            else:
+                                pom_to_remove_iri_list = []
+                                for pom_label in dict_to_choose:
+                                    if pom_label in pom_to_remove_label_list:
+                                        pom_to_remove_iri_list.append(dict_to_choose[pom_label])
+                                with col1:
+                                    remove_pom_checkbox = st.checkbox(
+                                    f"""🔒 I am  sure I want to remove the selected Predicate-Object Map(s)""",
+                                    key="key_overwrite_g_mapping_checkbox_new")
+                                    if remove_pom_checkbox:
+                                        st.button("Remove", on_click=remove_pom, key="key_remove_pom_button")
 
 
-                        if "Select all" in pom_to_delete_iri_list:
-                            pom_to_delete_iri_list = []
-                            for pom_iri in pom_dict:
-                                if pom_dict[pom_iri][0] == tm_to_delete_pom_iri:
-                                    pom_to_delete_iri_list.append(pom_iri)
+            if tm_to_remove_pom_label != "Select TriplesMap":
+                rows = [{"Predicate-Object Map": utils.get_node_label(pom_iri, short_BNode=False),
+                    "Rule": pom_dict[pom_iri][5], "Type": pom_dict[pom_iri][4],
+                    "Predicate(s)": utils.format_list_for_display(pom_dict[pom_iri][1])}
+                    for pom_iri in pom_of_selected_tm_list]
+                df = pd.DataFrame(rows)
+                df = df.sort_values(by=df.columns[0], ascending=True).reset_index(drop=True)
 
-                    if pom_to_delete_iri_list and "Select all" not in pom_to_delete_iri_list:
-                        with col1:
-                            delete_pom_checkbox = st.checkbox(
-                            f"""🔒 I am  sure I want to remove the selected Predicate-Object Map(s)""",
-                            key="key_overwrite_g_mapping_checkbox_new")
-                            if delete_pom_checkbox:
-                                st.button("Delete", on_click=delete_pom, key="key_delete_pom_button")
-
-                    elif pom_to_delete_iri_list and "Select all" in pom_to_delete_iri_list:
-                        with col1:
-                            col1a, col1b = st.columns([1,1])
-                        with col1b:
-                            st.markdown(f"""<div class="warning-message">
-                                    ⚠️ You are deleting <b>all Predicate-Object Maps</b>
-                                    of the TriplesMap {tm_to_delete_pom_label}.
-                                    <small>Make sure you want to go ahead.</small>
-                                </div>""", unsafe_allow_html=True)
-                            st.write("")
-                        with col1a:
-                            delete_all_pom_checkbox = st.checkbox(
-                            f"""🔒 I am  sure I want to remove all Predicate-Object Maps""",
-                            key="key_overwrite_g_mapping_checkbox_new")
-                            if delete_all_pom_checkbox:
-                                st.button("Delete", on_click=delete_pom, key="key_delete_all_pom_button")
-
-
-            if tm_to_delete_pom_label != "Select TriplesMap":
-
-
-                rows = [{"P-O Map": pom_dict[pom_iri][2],
-                        "Predicate": pom_dict[pom_iri][4], "Object Map": pom_dict[pom_iri][5],
-                        "Rule": pom_dict[pom_iri][6], "ID/Constant": pom_dict[pom_iri][8]}
-                        for pom_iri in pom_of_selected_tm_list]
-                pom_of_selected_tm_df = pd.DataFrame(rows)
-
-
-                st.write("")
                 if pom_of_selected_tm_list:
                     with col1:
                         st.write("")
                         st.markdown(f"""<div style='font-size: 14px; color: grey;'>
-                                🔎 Predicate-Object Maps of TriplesMap {tm_to_delete_pom_label}
+                                🔎 Predicate-Object Maps of TriplesMap <b>{tm_to_remove_pom_label}</b> ({len(df)})
                             </div>""", unsafe_allow_html=True)
-                        st.dataframe(pom_of_selected_tm_df, hide_index=True)
-                        st.write("")
+                        st.dataframe(df, hide_index=True)
 
-    #PURPLE HEADING - CLEAN MAPPING
+
+    # SUCCESS MESSAGE: MAPPING CLEANED OK---------------------------------------
+    # Before purple heading, since after cleaning, section will not show
     if st.session_state["g_mapping_cleaned_ok_flag"]:
         with col1:
             col1a, col1b = st.columns([2,1])
@@ -2359,68 +2242,29 @@ with tab4:
         time.sleep(utils.get_success_message_time())
         st.rerun()
 
-    check_g_mapping = utils.check_g_mapping(st.session_state["g_mapping"])
-    if check_g_mapping:
-
+    # RFBOOKMARK
+    # PURPLE HEADING: CLEAN MAPPING---------------------------------------------
+    (g_mapping_complete_flag, inner_html, tm_wo_sm_list, tm_wo_pom_list,
+        pom_wo_om_list, pom_wo_predicate_list) =utils.check_g_mapping()
+    if not g_mapping_complete_flag:
         with col1:
             st.write("_________")
             st.markdown("""<div class="purple-heading">
                     🧹 Clean Mapping
                 </div>""", unsafe_allow_html=True)
 
-        with col1:
-            col1a, col1b = st.columns([2,1])
-
-
-        tm_dict = {}
-        for tm in st.session_state["g_mapping"].subjects(RML.logicalSource, None):
-            tm_label = split_uri(tm)[1]
-            tm_dict[tm_label] = tm
-
-        pom_dict = {}
-        for pom in st.session_state["g_mapping"].subjects(RDF.type, RML.PredicateObjectMap):
-            if isinstance(pom, URIRef):
-                pom_label = split_uri(tm)[1]
-            elif isinstance(pom, BNode):
-                pom_label = "_:" + str(pom)[:7] + "..."
-            else:
-                pom_label = str(pom)
-            pom_dict[pom_label] = pom
-
-        tm_wo_sm_list = []   # list of all tm with assigned sm
-        tm_wo_pom_list = []
-        for tm_label, tm_iri in tm_dict.items():
-            if not any(st.session_state["g_mapping"].triples((tm_iri, RML.subjectMap, None))):
-                tm_wo_sm_list.append(tm_label)
-        for tm_label, tm_iri in tm_dict.items():
-            if not any(st.session_state["g_mapping"].triples((tm_iri, RML.predicateObjectMap, None))):
-                tm_wo_pom_list.append(tm_label)
-
-        pom_wo_om_list = []
-        pom_wo_predicate_list = []
-        for pom_iri in st.session_state["g_mapping"].subjects(RDF.type, RML.PredicateObjectMap):
-            pom_label = utils.get_node_label(pom_iri)
-            if not any(st.session_state["g_mapping"].triples((pom_iri, RML.objectMap, None))):
-                pom_wo_om_list.append(pom_label)
-            if not any(st.session_state["g_mapping"].triples((pom_iri, RML.predicate, None))):
-                pom_wo_predicate_list.append(pom_label)
-
         tm_to_clean_list = list(set(tm_wo_sm_list).union(tm_wo_pom_list))
         pom_to_clean_list = list(set(pom_wo_om_list).union(pom_wo_predicate_list))
 
         with col1:
-            col1a, col1b = st.columns([1.5,1])
-        with col1a:
+            st.write("")
+            st.markdown(f"""<div class="gray-preview-message">
+                    {inner_html}
+                </div>""", unsafe_allow_html=True)
+            st.write("")
             clean_g_mapping_checkbox = st.checkbox(
             f"""🔒 I am sure I want to clean mapping {st.session_state["g_label"]}""",
             key="key_clean_g_mapping_checkbox")
-        if clean_g_mapping_checkbox:
-            with col1a:
-                st.button("Clean", key="key_clean_g_mapping_button", on_click=clean_g_mapping)
 
-            max_length = utils.get_max_length_for_display()[5]
-            inner_html = "⚠️" + check_g_mapping
-            with col1b:
-                st.markdown(f"""<div class="warning-message">
-                        {inner_html}
-                    </div>""", unsafe_allow_html=True)
+            if clean_g_mapping_checkbox:
+                st.button("Clean", key="key_clean_g_mapping_button", on_click=clean_g_mapping)
