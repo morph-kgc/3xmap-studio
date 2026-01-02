@@ -26,33 +26,25 @@ else:
 utils.init_page()
 RML, QL = utils.get_required_ns_dict().values()
 
-# START PAGE_____________________________________________________________________
-
 #____________________________________________________________
 # PANELS OF THE PAGE (tabs)
 tab1, tab2, tab3, tab4 = st.tabs(["Network", "Predefined Searches", "SPARQL", "Preview"])
 
-# ERROR MESSAGE IF NO MAPPING LOADED--------------------------------------------
+# ERROR MESSAGE: NO MAPPING LOADED----------------------------------------------
 col1, col2 = st.columns([2,1])
 if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
     with col1:
         utils.get_missing_element_error_message(mapping=True, different_page=True)
         st.stop()
 
-#________________________________________________
-# NETWORK VISUALISATION
+#_______________________________________________________________________________
+# PANEL: NETWORK VISUALISATION
 with tab1:
-    st.write("")
-    st.write("")
-
-    col1, col2 = st.columns([2,1.5])
-
-    with col2:
-        col2a,col2b = st.columns([1,2])
+    col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
     with col2b:
         utils.get_corner_status_message(mapping_info=True)
 
-    #PURPLE HEADING - PREVIEW
+    # PURPLE HEADING: NETWORK---------------------------------------------------
     with col1:
         st.markdown("""<div class="purple-heading">
                 🕸️ Network Visualisation
@@ -62,13 +54,8 @@ with tab1:
     with col1:
         col1a, col1b = st.columns([2,1])
 
-    color_dict = utils.get_colors_for_network_dict()
-    s_node_color = color_dict["s_node_color"]
-    o_node_color = color_dict["o_node_color"]
-    p_edge_color = color_dict["p_edge_color"]
-    p_edge_label_color = color_dict["p_edge_label_color"]
-    background_color = color_dict["background_color"]
-    legend_font_color = color_dict["legend_font_color"]
+    (s_node_color, p_edge_color, o_node_color, p_edge_label_color,
+        background_color, legend_font_color) = utils.get_colors_for_network()
 
     list_to_choose_tm = []
     for sm in st.session_state["g_mapping"].objects(predicate=RML.subjectMap):
@@ -88,114 +75,32 @@ with tab1:
             with col1b:
                 st.markdown(f"""<div class="error-message">
                     ❌ Mapping <b>{st.session_state["g_label"]}</b> contains no TriplesMaps.
-                    <small>You can add them in the <b>🏗️Build Mapping</b> page.</small>
+                    <small>Add them from the <b>🏗️Build Mapping</b> page.</small>
                 </div>""", unsafe_allow_html=True)
 
-    sm_for_network_list = []
-    for sm in st.session_state["g_mapping"].objects(predicate=RML.subjectMap):
-        for rule in utils.get_rules_for_sm(sm):
-            if rule[3] in tm_for_network_list:
-                sm_for_network_list.append(sm)
-                break
+    network_flag, network_html, legend_flag, legend_html_list = utils.create_g_mapping_network(tm_for_network_list)
 
-    G = nx.DiGraph()
-    legend_dict = {}
-    for sm in sm_for_network_list:
-        for rule in utils.get_rules_for_sm(sm):
-            s, p, o, tm = rule
-
-            s_id, legend_dict = utils.get_unique_node_label(s, "s", legend_dict)
-            p_label, legend_dict = utils.get_unique_node_label(p, "p", legend_dict)
-            o_id, legend_dict = utils.get_unique_node_label(o, "o", legend_dict)
-
-            # Add nodes and edge
-            G.add_node(s_id, label=s_id, color=s_node_color, shape="ellipse")
-            if o_id not in G:
-                G.add_node(o_id, label=o_id, color=o_node_color, shape="ellipse")  # conditional so that if node is also sm it will have s_node_color
-            G.add_edge(s_id, o_id, label=p_label, color=p_edge_color, font={"color": p_edge_label_color})
-
-
-    # Create Pyvis network
-    G_net = Network(height="600px", width="100%", directed=True)
-    G_net.from_nx(G)
-
-    # Optional: improve layout and styling
-    G_net.repulsion(node_distance=200, central_gravity=0.3, spring_length=200, spring_strength=0.05)
-    G_net.set_options("""{
-        "nodes": {"shape": "ellipse", "borderWidth": 0,
-            "font": {"size": 14, "face": "arial", "align": "center",
-              "color": "#ffffff"},
-            "color": {"background": "#87cefa", "border": "#87cefa"}},
-         "edges": {"width": 3, "arrows":
-            {"to": {"enabled": true, "scaleFactor": 0.5}},
-            "color": {"color": "#1e1e1e"},
-            "font": {"size": 10, "align": "middle", "color": "#1e1e1e"},
-            "smooth": false},
-          "physics": {"enabled": true},
-          "interaction": {"hover": true},
-          "layout": {"improvedLayout": true}
-        }""")
-
-    # Render only if needed
-    if sm_for_network_list:
-        # Generate HTML string
-        html = G_net.generate_html()
-
-        # Inject background color
-        html = html.replace('<div id="mynetwork"',
-            f'<div id="mynetwork" style="background-color: {background_color};"')
-
-        # Display in Streamlit
-        with col1:
-            components.html(html, height=600)
-
-        # Create and display legend
-        for letter in ["s", "p", "o"]:
-            legend_flag = False
-            legend_html = "<div style='font-family: sans-serif; font-size: 14px;'>"
-            if letter == "s":
-                legend_html += "<p>🔑 Subject legend</p>"
-                object_color = s_node_color
-            elif letter == "p":
-                legend_html += "<p>🔑 Predicate legend</p>"
-                object_color = p_edge_color
-            elif letter == "o":
-                legend_html += "<p>🔑 Object legend</p>"
-                object_color = o_node_color
-
-            for key, value in legend_dict.items():
-                if key.startswith(letter):
-                    legend_html += ("<div style='display: flex; align-items: flex-start; margin-bottom: 4px;'>"
-                        f"<div style='min-width: 60px; font-weight: bold;'><code>{str(key)}</code></div>"
-                        f"<div style='flex: 1; max-width: 100%; word-break: break-word; white-space: normal; font-size: 12px;'>{str(value)}</div>"
-                        "</div>")
-                    legend_flag = True
-
-            legend_html += "</div>"
-
-            with col2:
-                if legend_flag:
-                    st.markdown(f"""<div style='border-left: 4px solid {object_color}; padding: 0.4em 0.6em;
-                        color: {legend_font_color}; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
-                        margin: 0.5em 0; background-color: {background_color}; border-radius: 4px; box-sizing: border-box;
-                        word-wrap: break-word;'>
-                            {legend_html}
-                        </div>""", unsafe_allow_html=True)
-
-#________________________________________________
-# PREDEFINED SEARCHES
-with tab2:
-    st.write("")
-    st.write("")
-
+    # Display
     col1, col2 = st.columns([2,1.5])
+    if network_flag:
+        with col1:
+            components.html(network_html, height=600)
 
-    with col2:
-        col2a,col2b = st.columns([1,2])
+        if legend_flag:
+            with col2:
+                for legend_html in legend_html_list:
+                    st.markdown(f"""{legend_html}""", unsafe_allow_html=True)
+
+
+# RFBOOKMARK
+#_______________________________________________________________________________
+# PANEL: PREDEFINED SEARCHES
+with tab2:
+    col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
     with col2b:
         utils.get_corner_status_message(mapping_info=True)
 
-    #PURPLE HEADING - ADD NEW TRIPLESMAP
+    #PURPLE HEADING: PREDEFINED SEARCHES----------------------------------------
     with col1:
         st.markdown("""<div class="purple-heading">
                 📌 Predefined Searches
@@ -205,21 +110,22 @@ with tab2:
     with col1:
         col1a, col1b = st.columns([1,2])
 
-    predefined_searches_list = ["Select search", "Rules", "TriplesMaps", "Subject Maps", "Predicate-Object Maps",
-        "Used Classes", "Used Properties", "Incomplete Nodes", "Orphaned Nodes", "All Triples"]
-
     with col1a:
-        selected_predefined_search = st.selectbox("🔍 Select search:*", predefined_searches_list,
+        list_to_choose = ["Select search", "Rules", "TriplesMaps", "Subject Maps", "Predicate-Object Maps",
+            "Used Classes", "Used Properties", "Incomplete Nodes", "Orphaned Nodes", "All Triples"]
+        selected_predefined_search = st.selectbox("🔍 Select search:*", list_to_choose,
             key="key_selected_predefined_search")
 
+    tm_dict = utils.get_tm_dict()
+
+    # RULES
     if selected_predefined_search == "Rules":
         with col1b:
-            tm_dict = utils.get_tm_dict()
-            list_to_choose = list(reversed(list(tm_dict)))
+            list_to_choose = sorted(tm_dict)
             if len(list_to_choose) > 1:
-                selected_tm_for_display_list = st.multiselect("⚙️ Filter by TriplesMaps (opt):", list_to_choose,
+                selected_tm_for_display_list = st.multiselect("📡 Filter by TriplesMaps (opt):", list_to_choose,
                     placeholder="No filter", key="key_selected_tm_for_display_list_1")
-            else:
+            else:    # if only one tm, dont show filter
                 selected_tm_for_display_list = []
 
         with col1:
@@ -259,15 +165,12 @@ with tab2:
                 query += f"ORDER BY ASC(?tm) "
             elif order_clause == "Descending":
                 query += f"ORDER BY DESC(?tm) "
-
             if limit:
                 query += f"LIMIT {limit} "
-
             if offset:
                 query += f"OFFSET {offset}"
 
             results = st.session_state["g_mapping"].query(query)
-
             df_data = []
 
             for row in results:
@@ -302,15 +205,15 @@ with tab2:
                 selected_tm_for_display_list = list(tm_dict) if not selected_tm_for_display_list else selected_tm_for_display_list
                 if tm_label in selected_tm_for_display_list:
                     row_dict = {
-                        "Subject": utils.format_iri_to_prefix_label(subject),
-                        "Predicate": utils.format_iri_to_prefix_label(predicate),
-                        "Object": utils.format_iri_to_prefix_label(object_),
-                        "Datatype": utils.format_iri_to_prefix_label(datatype),
+                        "Subject": utils.get_node_label(subject),
+                        "Predicate": utils.get_node_label(predicate),
+                        "Object": utils.get_node_label(object_),
+                        "Datatype": utils.get_node_label(datatype),
                         "Language tag": language_tag,
-                        "TriplesMap": utils.format_iri_to_prefix_label(tm),
-                        "Subject Map": utils.format_iri_to_prefix_label(sm),
-                        "Predicate-Object Map": utils.format_iri_to_prefix_label(pom),
-                        "Object Map": utils.format_iri_to_prefix_label(om)}
+                        "TriplesMap": utils.get_node_label(tm),
+                        "Subject Map": utils.get_node_label(sm),
+                        "Predicate-Object Map": utils.get_node_label(pom),
+                        "Object Map": utils.get_node_label(om)}
                     df_data.append(row_dict)
 
             # Create DataFrame
@@ -355,9 +258,9 @@ with tab2:
             tm_dict = utils.get_tm_dict()
             list_to_choose = list(reversed(list(tm_dict)))
             if len(list_to_choose) > 1:
-                selected_tm_for_display_list = st.multiselect("️⚙️ Filter by TriplesMaps (optional):", list_to_choose,
+                selected_tm_for_display_list = st.multiselect("️📡 Filter by TriplesMaps (optional):", list_to_choose,
                     placeholder="No filter", key="key_selected_tm_for_display_list_1")
-            else:
+            else:        # if only one tm, dont show filter
                 selected_tm_for_display_list = []
 
         with col1:
@@ -386,10 +289,8 @@ with tab2:
                 query += f"ORDER BY ASC(?tm) "
             elif order_clause == "Descending":
                 query += f"ORDER BY DESC(?tm) "
-
             if limit:
                 query += f"LIMIT {limit} "
-
             if offset:
                 query += f"OFFSET {offset}"
 
@@ -410,11 +311,11 @@ with tab2:
 
                 selected_tm_for_display_list = list(tm_dict) if not selected_tm_for_display_list else selected_tm_for_display_list
                 if tm_label in selected_tm_for_display_list:
-                    row_dict = {"TriplesMap": utils.format_iri_to_prefix_label(tm),
+                    row_dict = {"TriplesMap": utils.get_node_label(tm),
                         "View": sql_query,
                         "Table": table_name,
                         "Source": source,
-                        "Reference Formulation": utils.format_iri_to_prefix_label(reference_formulation),
+                        "Reference Formulation": utils.get_node_label(reference_formulation),
                         "Logical Source": logical_source}
                     df_data.append(row_dict)
 
@@ -506,7 +407,7 @@ with tab2:
                 sm_rule_type = ""
                 sm_rule = ""
             raw_classes = str(row["classes"]) if row["classes"] else ""
-            class_list = [utils.format_iri_to_prefix_label(c) for c in raw_classes.split(",") if c.strip()]
+            class_list = [utils.get_node_label(c) for c in raw_classes.split(",") if c.strip()]
             class_list_to_string = ", ".join(class_list)
             term_type = str(row.termType) if row.termType else ""
             graph = str(row.graph) if row.graph else ""
@@ -516,13 +417,13 @@ with tab2:
 
             selected_tm_for_display_list = list(tm_dict) if not selected_tm_for_display_list else selected_tm_for_display_list
             if tm_label in selected_tm_for_display_list:
-                row_dict = {"Rule": utils.format_iri_to_prefix_label(sm_rule),
+                row_dict = {"Rule": utils.get_node_label(sm_rule),
                     "Type": sm_rule_type,
                     "Class": class_list_to_string,
-                    "Term Type": utils.format_iri_to_prefix_label(term_type),
-                    "TriplesMap": utils.format_iri_to_prefix_label(tm),
-                    "Graph Map": utils.format_iri_to_prefix_label(graph),
-                    "Subject Map": utils.format_iri_to_prefix_label(subject_map)}
+                    "Term Type": utils.get_node_label(term_type),
+                    "TriplesMap": utils.get_node_label(tm),
+                    "Graph Map": utils.get_node_label(graph),
+                    "Subject Map": utils.get_node_label(subject_map)}
                 df_data.append(row_dict)
 
         df = pd.DataFrame(df_data)
@@ -637,15 +538,15 @@ with tab2:
                 all_pom_list = list(utils.get_pom_dict())
                 selected_pom_for_display_list = all_pom_list if not selected_pom_for_display_list else selected_pom_for_display_list
                 if pom in selected_pom_for_display_list:
-                    row_dict = {"Predicate": utils.format_iri_to_prefix_label(predicate),
-                        "Rule": utils.format_iri_to_prefix_label(pom_rule),
+                    row_dict = {"Predicate": utils.get_node_label(predicate),
+                        "Rule": utils.get_node_label(pom_rule),
                         "Type": pom_rule_type,
-                        "TermType": utils.format_iri_to_prefix_label(term_type),
-                        "Datatype": utils.format_iri_to_prefix_label(datatype),
-                        "Language": utils.format_iri_to_prefix_label(language),
-                        "Graph Map": utils.format_iri_to_prefix_label(graph_map),
-                        "Predicate-Object Map": utils.format_iri_to_prefix_label(pom),
-                        "Object Map": utils.format_iri_to_prefix_label(object_map)}
+                        "TermType": utils.get_node_label(term_type),
+                        "Datatype": utils.get_node_label(datatype),
+                        "Language": utils.get_node_label(language),
+                        "Graph Map": utils.get_node_label(graph_map),
+                        "Predicate-Object Map": utils.get_node_label(pom),
+                        "Object Map": utils.get_node_label(object_map)}
 
                     df_data.append(row_dict)
             df = pd.DataFrame(df_data)
@@ -719,9 +620,9 @@ with tab2:
 
             selected_classes_for_display_list = list_to_choose_classes if not selected_classes_for_display_list else selected_classes_for_display_list
             if class_label in selected_classes_for_display_list:
-                df_data.append({"Class": utils.format_iri_to_prefix_label(rdf_class),
-                    "TriplesMap": utils.format_iri_to_prefix_label(tm),
-                    "Subject Map": utils.format_iri_to_prefix_label(sm)})
+                df_data.append({"Class": utils.get_node_label(rdf_class),
+                    "TriplesMap": utils.get_node_label(tm),
+                    "Subject Map": utils.get_node_label(sm)})
 
         df = pd.DataFrame(df_data)
         # Drop columns that are entirely empty (all values are NaN or empty strings)
@@ -795,9 +696,9 @@ with tab2:
             selected_properties_for_display_list = list_to_choose_properties if not selected_properties_for_display_list else selected_properties_for_display_list
             if predicate_label in selected_properties_for_display_list:
                 df_data.append({
-                    "Property": utils.format_iri_to_prefix_label(predicate),
-                    "TriplesMap": utils.format_iri_to_prefix_label(tm),
-                    "Predicate-Object Map": utils.format_iri_to_prefix_label(pom)
+                    "Property": utils.get_node_label(predicate),
+                    "TriplesMap": utils.get_node_label(tm),
+                    "Predicate-Object Map": utils.get_node_label(pom)
                 })
 
         df = pd.DataFrame(df_data)
@@ -862,7 +763,7 @@ with tab2:
 
             for row in results:
                 tm = row.get("tm")
-                tm_label = utils.format_iri_to_prefix_label(tm) if tm else "(missing)"
+                tm_label = utils.get_node_label(tm) if tm else "(missing)"
 
                 has_sm = bool(list(st.session_state["g_mapping"].objects(subject=tm, predicate=RML["subjectMap"])))
                 has_pom = bool(list(st.session_state["g_mapping"].objects(subject=tm, predicate=RML["predicateObjectMap"])))
@@ -1019,12 +920,12 @@ with tab2:
                 term_type = g.value(subject=sm, predicate=RML["termType"])
                 graph_map = g.value(subject=sm, predicate=RML["graphMap"])
 
-                row_dict = {"Subject Map": utils.format_iri_to_prefix_label(sm),
+                row_dict = {"Subject Map": utils.get_node_label(sm),
                     "Rule": str(sm_rule),
                     "Type": str(sm_rule_type),
-                    "Class": utils.format_iri_to_prefix_label(rdf_class),
-                    "Term Type": utils.format_iri_to_prefix_label(term_type),
-                    "Graph Map": utils.format_iri_to_prefix_label(graph_map)}
+                    "Class": utils.get_node_label(rdf_class),
+                    "Term Type": utils.get_node_label(term_type),
+                    "Graph Map": utils.get_node_label(graph_map)}
 
                 df_data.append(row_dict)
 
@@ -1076,8 +977,8 @@ with tab2:
                 pom = row.get("pom") if row.get("pom") else ""
                 predicate = st.session_state["g_mapping"].value(subject=pom, predicate=RML["predicate"])
 
-                row_dict = {"Predicate-Object Map": utils.format_iri_to_prefix_label(pom),
-                    "Predicate": utils.format_iri_to_prefix_label(predicate)}
+                row_dict = {"Predicate-Object Map": utils.get_node_label(pom),
+                    "Predicate": utils.get_node_label(predicate)}
 
                 df_data.append(row_dict)
 
@@ -1156,14 +1057,14 @@ with tab2:
                 parent_tm = g.value(subject=om, predicate=RML["parentTriplesMap"])
                 join_condition = g.value(subject=om, predicate=RML["joinCondition"])
 
-                row_dict = {"Object Map": utils.format_iri_to_prefix_label(om),
-                        "Rule": utils.format_iri_to_prefix_label(om_rule),
+                row_dict = {"Object Map": utils.get_node_label(om),
+                        "Rule": utils.get_node_label(om_rule),
                         "Type": str(om_rule_type),
-                        "Term Type": utils.format_iri_to_prefix_label(term_type),
-                        "Datatype": utils.format_iri_to_prefix_label(datatype),
-                        "Language": utils.format_iri_to_prefix_label(language),
-                        "Parent TriplesMap": utils.format_iri_to_prefix_label(parent_tm),
-                        "Join Condition": utils.format_iri_to_prefix_label(join_condition)}
+                        "Term Type": utils.get_node_label(term_type),
+                        "Datatype": utils.get_node_label(datatype),
+                        "Language": utils.get_node_label(language),
+                        "Parent TriplesMap": utils.get_node_label(parent_tm),
+                        "Join Condition": utils.get_node_label(join_condition)}
 
                 df_data.append(row_dict)
 
@@ -1223,9 +1124,9 @@ with tab2:
                 p_label = utils.get_node_label(p)
                 o_label = utils.get_node_label(o)
 
-                df_data.append({"Subject": utils.format_iri_to_prefix_label(s),
-                    "Predicate": utils.format_iri_to_prefix_label(p),
-                    "Object": utils.format_iri_to_prefix_label(o)})
+                df_data.append({"Subject": utils.get_node_label(s),
+                    "Predicate": utils.get_node_label(p),
+                    "Object": utils.get_node_label(o)})
 
             df = pd.DataFrame(df_data)
             df = df.loc[:, df.apply(lambda col: col.replace('', pd.NA).notna().any())]

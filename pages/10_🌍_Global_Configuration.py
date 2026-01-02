@@ -8,8 +8,6 @@ import time   # for success messages
 import uuid   # to handle uploader keys
 import utils
 
-# from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL, XSD   RFTAG
-
 # Config------------------------------------------------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
     st.set_page_config(page_title="3Xmap Studio", layout="wide",
@@ -1247,15 +1245,15 @@ with tab3:
             st.rerun()
 
         if st.session_state["g_label"] and export_filename:
-            check_g_mapping = utils.check_g_mapping(st.session_state["g_mapping"])
-            if check_g_mapping:
+            (g_mapping_complete_flag, heading_html, inner_html, tm_wo_sm_list, tm_wo_pom_list,
+                pom_wo_om_list, pom_wo_predicate_list) = utils.check_g_mapping(st.session_state["g_mapping"], warning=True)
+            if not g_mapping_complete_flag:
                 max_length = utils.get_max_length_for_display()[5]
-                inner_html = "⚠️" + check_g_mapping
                 with col1:
                     col1a, col1b = st.columns([2,1])
                 with col1a:
                     st.markdown(f"""<div class="warning-message">
-                            {inner_html}
+                            {heading_html + inner_html}
                         </div>""", unsafe_allow_html=True)
 
         # PURPLE HEADING: SAVE SESSION------------------------------------------

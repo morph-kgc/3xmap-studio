@@ -19,6 +19,8 @@ import time
 from urllib.parse import urlparse
 import utils
 import uuid   # to handle uploader keys
+import networkx as nx
+from pyvis.network import Network
 
 from urllib.parse import urlparse, urlunparse
 
@@ -505,6 +507,33 @@ def import_st_aesthetics_dark_mode():
 
     </style>"""
 #______________________________________________________
+
+#_________________________________________________
+# Colors for network display
+# 0. s_node      1. p_edge          2. o_node
+# 3. p_edge_label         4. background          5. legend font
+def get_colors_for_network():
+
+    colors_for_network_list = []
+
+    if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
+        colors_for_network_list.append("#ff7a7a")
+        colors_for_network_list.append("#D3D3D3")
+        colors_for_network_list.append("#7A4A8C")
+        colors_for_network_list.append("#888888")
+        colors_for_network_list.append("#f5f5f5")
+        colors_for_network_list.append("#888888")
+
+    else:
+        colors_for_network_list.append("#7A4A8C")
+        colors_for_network_list.append("#ff7a7a")
+        colors_for_network_list.append("#D3D3D3")
+        colors_for_network_list.append("#222222")
+        colors_for_network_list.append("#222222")
+        colors_for_network_list.append("#888888")
+
+    return colors_for_network_list
+#_________________________________________________
 
 #______________________________________________________
 # Function to get time to display success messages
@@ -1225,7 +1254,7 @@ def is_valid_iri(iri, delimiter_ending=True):
 
 
 
-# PAGE: 🌍 GLOBAL CONFIGURATION ===================================================
+# PAGE: 🌍 GLOBAL CONFIGURATION ================================================
 # PANEL: SELECT MAPPING---------------------------------------------------------
 
 #_______________________________________________________
@@ -1634,7 +1663,7 @@ def is_valid_filename(filename):
 #______________________________________________________
 
 
-# PAGE: ONTOLOGIES==============================================================
+# PAGE: 🧩 ONTOLOGIES===========================================================
 # PANEL: IMPORT ONTOLOGY--------------------------------------------------------
 #______________________________________________________
 # Function to parse an ontology to an initially empty graph
@@ -2841,7 +2870,7 @@ def display_sm_info_for_removal(tm_to_unassign_sm_list):
 
 #______________________________________________________
 # Function to check if mapping is complete
-def check_g_mapping(g=st.session_state["g_mapping"]):
+def check_g_mapping(g, warning=False):
 
     tm_dict = get_tm_dict()
     max_length = utils.get_max_length_for_display()[5]
@@ -2870,15 +2899,20 @@ def check_g_mapping(g=st.session_state["g_mapping"]):
     pom_wo_predicate_list_display = utils.format_list_for_display(pom_wo_predicate_list)
 
     inner_html = ""
+    heading_html = ""
     g_mapping_complete_flag = True
 
     if tm_wo_sm_list or tm_wo_pom_list or pom_wo_om_list or pom_wo_predicate_list_display:
 
         max_length = get_max_length_for_display()[5]
-        if g == st.session_state["g_mapping"]:
-            inner_html += f"""ℹ️ Mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> is incomplete."""
-        else:
-            inner_html += f"""The <b>Mapping</b> is incomplete."""
+        if g == st.session_state["g_mapping"] and not warning:
+            heading_html += f"""ℹ️ Mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> is incomplete."""
+        elif g == st.session_state["g_mapping"] and warning:
+            heading_html += f"""⚠️ Mapping <b>{st.session_state["g_label"]}</b> is incomplete."""
+        elif not warning:
+            heading_html += f"""ℹ️ The <b>Mapping</b> is incomplete."""
+        elif warning:
+            heading_html += f"""⚠️ The <b>Mapping</b> is incomplete."""
 
         if tm_wo_sm_list:
             g_mapping_complete_flag = False
@@ -2928,10 +2962,207 @@ def check_g_mapping(g=st.session_state["g_mapping"]):
                 Predicate-Object Maps</b> without
                 a predicate.</small><br></div>"""
 
-    return g_mapping_complete_flag, inner_html, tm_wo_sm_list, tm_wo_pom_list, pom_wo_om_list, pom_wo_predicate_list
+    return g_mapping_complete_flag, heading_html, inner_html, tm_wo_sm_list, tm_wo_pom_list, pom_wo_om_list, pom_wo_predicate_list
 #_________________________________________________
 
 
+# PAGE: 🔍 EXPLORE MAPPING======================================================
+# PANEL: NETWORK----------------------------------------------------------------
+#_________________________________________________
+# Funtion to get the rule associated to a subject map
+# 0. subject          1. predicate      2. object          3. TriplesMap
+def get_rules_for_sm(sm_iri):
+
+    sm_rules_list = []
+
+    g = st.session_state["g_mapping"]
+
+    for pred in [RML.constant, RML.template, RML.reference]:
+        sm_for_display = g.value(subject=sm_iri, predicate=pred)
+        if sm_for_display:
+            break
+
+    tm = g.value(predicate=RML.subjectMap, object=sm_iri)
+
+    for pom in g.objects(subject=tm, predicate=RML.predicateObjectMap):
+        om = g.value(subject=pom, predicate=RML.objectMap)
+        p_for_display = g.value(subject=pom, predicate=RML.predicate)
+        for pred in [RML.constant, RML.template, RML.reference]:
+            om_for_display = g.value(subject=om, predicate=pred)
+            if om_for_display:
+                break
+
+        sm_for_display = get_node_label(sm_for_display)
+        p_for_display = get_node_label(p_for_display)
+        om_for_display = get_node_label(om_for_display)
+
+        sm_rules_list.append([sm_for_display, p_for_display, om_for_display, get_node_label(tm)])
+
+    return sm_rules_list
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to get the rule associated to a subject map
+# 0. subject          1. predicate      2. object          3. TriplesMap
+def display_g_mapping_network(tm_for_network_list):
+
+    sm_rules_list = []
+
+    g = st.session_state["g_mapping"]
+
+    for pred in [RML.constant, RML.template, RML.reference]:
+        sm_for_display = g.value(subject=sm_iri, predicate=pred)
+        if sm_for_display:
+            break
+
+    tm = g.value(predicate=RML.subjectMap, object=sm_iri)
+
+    for pom in g.objects(subject=tm, predicate=RML.predicateObjectMap):
+        om = g.value(subject=pom, predicate=RML.objectMap)
+        p_for_display = g.value(subject=pom, predicate=RML.predicate)
+        for pred in [RML.constant, RML.template, RML.reference]:
+            om_for_display = g.value(subject=om, predicate=pred)
+            if om_for_display:
+                break
+
+        sm_for_display = get_node_label(sm_for_display)
+        p_for_display = get_node_label(p_for_display)
+        om_for_display = get_node_label(om_for_display)
+
+        sm_rules_list.append([sm_for_display, p_for_display, om_for_display, get_node_label(tm)])
+
+    return sm_rules_list
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to get unique node label for network display
+# Takes the legend dict and updates it
+# constant_string is "s", "p" or "o"
+def get_unique_node_label(complete_node_id, constant_string, legend_dict):
+
+    max_length=utils.get_max_length_for_display()[6]
+
+    # Get proposed unique short label (ex. "s3")
+    i = 1
+    while f"{constant_string}{i}" in legend_dict:
+        i += 1
+    label = f"{constant_string}{i}"
+
+    # Use short label if complete_node_id is too long (avoid duplication)
+    if complete_node_id and len(complete_node_id) > max_length:        # assign label and update legend_dict
+        if complete_node_id not in legend_dict.values():
+            node_id = label
+            legend_dict[node_id] = complete_node_id
+        else:              # look for already existing label
+            for k, v in legend_dict.items():
+                if v == complete_node_id:
+                    node_id = k
+    else:
+        node_id = str(complete_node_id)
+
+    return [node_id, legend_dict]
+#_________________________________________________
+
+#_________________________________________________
+# Function to create network and legend
+def create_g_mapping_network(tm_for_network_list):
+
+    max_length=utils.get_max_length_for_display()[6]
+    (s_node_color, p_edge_color, o_node_color, p_edge_label_color,
+        background_color, legend_font_color) = get_colors_for_network()
+
+    # Get sm list
+    sm_for_network_list = []
+    for sm in st.session_state["g_mapping"].objects(predicate=RML.subjectMap):
+        for rule in utils.get_rules_for_sm(sm):
+            if rule[3] in tm_for_network_list:
+                sm_for_network_list.append(sm)
+                break
+
+    # Create network and legend
+    G = nx.DiGraph()
+    legend_dict = {}
+    for sm in sm_for_network_list:
+        for rule in utils.get_rules_for_sm(sm):
+            s, p, o, tm = rule
+
+            s_id, legend_dict = get_unique_node_label(s, "s", legend_dict)        # get unique label if too long
+            p_label, legend_dict = get_unique_node_label(p, "p", legend_dict)
+            o_id, legend_dict = get_unique_node_label(o, "o", legend_dict)
+
+            G.add_node(s_id, label=s_id, color=s_node_color, shape="ellipse")  # add nodes and edge
+            if o_id not in G:
+                G.add_node(o_id, label=o_id, color=o_node_color, shape="ellipse")  # conditional so that if node is also sm it will have s_node_color
+            G.add_edge(s_id, o_id, label=p_label, color=p_edge_color, font={"color": p_edge_label_color})
+
+    # Create Pyvis network
+    G_net = Network(height="600px", width="100%", directed=True)
+    G_net.from_nx(G)
+
+    # Optional: improve layout and styling
+    G_net.repulsion(node_distance=200, central_gravity=0.3, spring_length=200, spring_strength=0.05)
+    G_net.set_options("""{
+        "nodes": {"shape": "ellipse", "borderWidth": 0,
+            "font": {"size": 14, "face": "arial", "align": "center",
+              "color": "#ffffff"},
+            "color": {"background": "#87cefa", "border": "#87cefa"}},
+         "edges": {"width": 3, "arrows":
+            {"to": {"enabled": true, "scaleFactor": 0.5}},
+            "color": {"color": "#1e1e1e"},
+            "font": {"size": 10, "align": "middle", "color": "#1e1e1e"},
+            "smooth": false},
+          "physics": {"enabled": true},
+          "interaction": {"hover": true},
+          "layout": {"improvedLayout": true}
+        }""")
+
+    # Get network and legend
+    network_flag = False
+    network_html = ""
+    legend_flag = False
+    legend_html = ""
+
+    if sm_for_network_list:
+        network_flag = True
+        network_html = G_net.generate_html()           # generate HTML string
+        network_html = network_html.replace('<div id="mynetwork"',            # inject background color
+            f'<div id="mynetwork" style="background-color: {background_color};"')
+
+        # Create and display legend
+        legend_html_list = []
+        for letter in ["s", "p", "o"]:
+            legend_html = "<div style='font-family: sans-serif; font-size: 14px;'>"
+            if letter == "s":
+                legend_html += "<p>🔑 Subject legend</p>"
+                object_color = s_node_color
+            elif letter == "p":
+                legend_html += "<p>🔑 Predicate legend</p>"
+                object_color = p_edge_color
+            elif letter == "o":
+                legend_html += "<p>🔑 Object legend</p>"
+                object_color = o_node_color
+
+            for key, value in legend_dict.items():
+                if key.startswith(letter):
+                    legend_html += ("<div style='display: flex; align-items: flex-start; margin-bottom: 4px;'>"
+                        f"<div style='min-width: 60px; font-weight: bold;'><code>{str(key)}</code></div>"
+                        f"<div style='flex: 1; max-width: 100%; word-break: break-word; white-space: normal; font-size: 12px;'>{str(value)}</div>"
+                        "</div>")
+                    legend_flag = True
+
+            legend_html += "</div>"
+
+            legend_html = f"""<div style='border-left: 4px solid {object_color}; padding: 0.4em 0.6em;
+                color: {legend_font_color}; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
+                margin: 0.5em 0; background-color: {background_color}; border-radius: 4px; box-sizing: border-box;
+                word-wrap: break-word;'>
+                    {legend_html}
+                </div>"""
+
+            legend_html_list.append(legend_html)
+
+    return network_flag, network_html, legend_flag, legend_html_list
+#__________________________________________________
 
 
 
@@ -3265,37 +3496,7 @@ def display_rules(rule_list):
 
 #_________________________________________________
 
-#_________________________________________________
-# Funtion to get the rule associated to a subject map
-def get_rules_for_sm(sm_iri):
 
-    sm_rules_list = []
-
-    g = st.session_state["g_mapping"]
-
-    for pred in [RML.constant, RML.template, RML.reference]:
-        sm_for_display = g.value(subject=sm_iri, predicate=pred)
-        if sm_for_display:
-            break
-
-    tm = g.value(predicate=RML.subjectMap, object=sm_iri)
-
-    for pom in g.objects(subject=tm, predicate=RML.predicateObjectMap):
-        om = g.value(subject=pom, predicate=RML.objectMap)
-        p_for_display = g.value(subject=pom, predicate=RML.predicate)
-        for pred in [RML.constant, RML.template, RML.reference]:
-            om_for_display = g.value(subject=om, predicate=pred)
-            if om_for_display:
-                break
-
-        sm_for_display = get_node_label(sm_for_display)
-        p_for_display = get_node_label(p_for_display)
-        om_for_display = get_node_label(om_for_display)
-
-        sm_rules_list.append([sm_for_display, p_for_display, om_for_display, get_node_label(tm)])
-
-    return sm_rules_list
-#_________________________________________________
 
 
 
@@ -4019,57 +4220,6 @@ def get_mapping_composition_by_property_donut_chart():
                 <b>No <b style="color:#F63366;">properties</b> in mapping</b.
             </div>""", unsafe_allow_html=True)
         return False
-
-#_________________________________________________
-
-#_________________________________________________
-# Funtion to get unique node label for network display
-# Takes the legend dict and updates it
-# Max length can be modified, default given
-def get_unique_node_label(complete_node_id, constant_string, legend_dict, max_length=utils.get_max_length_for_display()[6]):
-
-    i = 1
-    while f"{constant_string}{i}" in legend_dict:
-        i += 1
-    label = f"{constant_string}{i}"
-
-    if complete_node_id and len(complete_node_id) > max_length:
-        if complete_node_id not in legend_dict.values():
-            node_id = label
-            legend_dict[node_id] = complete_node_id
-        else:
-            for k, v in legend_dict.items():
-                if v == complete_node_id:
-                    node_id = k
-    else:
-        node_id = str(complete_node_id)
-
-    return [node_id, legend_dict]
-#_________________________________________________
-
-#_________________________________________________
-# Colors for STATS dict
-def get_colors_for_network_dict():
-
-    colors_for_network_dict = {}
-
-    if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
-        colors_for_network_dict["o_node_color"] = "#7A4A8C"# "#d8c3f0"
-        colors_for_network_dict["s_node_color"] = "#ff7a7a" #"#ff9999"
-        colors_for_network_dict["p_edge_color"] = "#D3D3D3"
-        colors_for_network_dict["p_edge_label_color"] = "#888888"
-        colors_for_network_dict["background_color"] = "#f5f5f5"
-        colors_for_network_dict["legend_font_color"] = "#888888"
-
-    else:
-        colors_for_network_dict["o_node_color"] = "#7A4A8C"
-        colors_for_network_dict["s_node_color"] = "#ff7a7a"
-        colors_for_network_dict["p_edge_color"] = "#D3D3D3"
-        colors_for_network_dict["p_edge_label_color"] = "#222222"
-        colors_for_network_dict["background_color"] = "#222222"
-        colors_for_network_dict["legend_font_color"] = "#888888"
-
-    return colors_for_network_dict
 
 #_________________________________________________
 
