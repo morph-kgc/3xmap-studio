@@ -1,19 +1,12 @@
-import streamlit as st
-import os
-import utils
 import langcodes
 import pandas as pd
-import pickle
 from rdflib import Graph, URIRef, Literal, Namespace, BNode
 from rdflib.namespace import split_uri
-from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL, XSD
-from sqlalchemy import text
-import time   # for success messages
+from rdflib.namespace import RDF, RDFS
 import re
-import uuid   # to handle uploader keys
-import io
-from io import IOBase
-import sqlglot
+import streamlit as st
+import time
+import utils
 
 # Config-----------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
@@ -762,7 +755,7 @@ with tab2:
 
     # Right column info on sm is given later, since validation messages must appear first
 
-    #PURPLE HEADING - ADD SUBJECT MAP-------------------------------------------
+    # PURPLE HEADING - ADD SUBJECT MAP-------------------------------------------
     with col1:
         st.markdown("""<div class="purple-heading">
                 🧱 Add Subject Map
@@ -2244,8 +2237,8 @@ with tab4:
 
     # RFBOOKMARK
     # PURPLE HEADING: CLEAN MAPPING---------------------------------------------
-    (g_mapping_complete_flag, inner_html, tm_wo_sm_list, tm_wo_pom_list,
-        pom_wo_om_list, pom_wo_predicate_list) =utils.check_g_mapping()
+    (g_mapping_complete_flag, heading_html, inner_html, tm_wo_sm_list, tm_wo_pom_list,
+        pom_wo_om_list, pom_wo_predicate_list) = utils.check_g_mapping(st.session_state["g_mapping"])
     if not g_mapping_complete_flag:
         with col1:
             st.write("_________")
@@ -2257,11 +2250,25 @@ with tab4:
         pom_to_clean_list = list(set(pom_wo_om_list).union(pom_wo_predicate_list))
 
         with col1:
+            col1a, col1b = st.columns([3,1])
+
+
+        with col1b:
+            expand_information_toggle = st.toggle(f"""ℹ️ Expand""",
+            key="key_expand_information_toggle")
+            clean_g_mapping_toggle = st.toggle(f"""🧹 Clean""",
+            key="key_clean_g_mapping_toggle")
+
+        with col1a:
             st.write("")
+            html_to_show = heading_html + inner_html if expand_information_toggle else heading_html
             st.markdown(f"""<div class="gray-preview-message">
-                    {inner_html}
+                    {html_to_show}
                 </div>""", unsafe_allow_html=True)
             st.write("")
+
+
+        if clean_g_mapping_toggle:
             clean_g_mapping_checkbox = st.checkbox(
             f"""🔒 I am sure I want to clean mapping {st.session_state["g_label"]}""",
             key="key_clean_g_mapping_checkbox")
