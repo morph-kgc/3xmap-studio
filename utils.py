@@ -897,7 +897,7 @@ def get_supported_formats(mapping=False, ontology=False, databases=False, tab_da
 
     if mapping:
         allowed_formats = {"turtle": ".ttl",
-            "ntriples": ".nt", "jsonld": ".jsonld"}
+            "ntriples": ".nt"}
 
     elif ontology:
         allowed_formats = {"owl": ".owl", "turtle": ".ttl", "longturtle": ".ttl", "n3": ".n3",

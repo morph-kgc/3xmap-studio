@@ -1,18 +1,9 @@
-import streamlit as st
-import os #for file navigation
-from rdflib import Graph, URIRef, Literal, Namespace, BNode
-import utils
 import pandas as pd
-import pickle
-from rdflib.namespace import split_uri
-from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL, XSD
-import io
-import time   # for success messages
-
-import rdflib, networkx as nx, matplotlib.pyplot as plt
-from pyvis.network import Network
+from rdflib import Graph, URIRef, Namespace
+import streamlit as st
 import streamlit.components.v1 as components
-import networkx as nx
+import time   # for success messages
+import utils
 
 # Config-----------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
@@ -72,10 +63,10 @@ with tab1:
             tm_for_network_list = list_to_choose_tm
 
         if list_to_choose == ["Select all"]:
-            with col1b:
-                st.markdown(f"""<div class="error-message">
-                    ❌ Mapping <b>{st.session_state["g_label"]}</b> contains no TriplesMaps.
-                    <small>Add them from the <b>🏗️Build Mapping</b> page.</small>
+            with col1a:
+                st.markdown(f"""<div class="gray-preview-message">
+                    🔒 Mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> contains <b>no TriplesMaps</b>.
+                    <small>You can add them from the <b>🏗️Build Mapping</b> page.</small>
                 </div>""", unsafe_allow_html=True)
 
     network_flag, network_html, legend_flag, legend_html_list = utils.create_g_mapping_network(tm_for_network_list)
@@ -92,7 +83,6 @@ with tab1:
                     st.markdown(f"""{legend_html}""", unsafe_allow_html=True)
 
 
-# RFBOOKMARK
 #_______________________________________________________________________________
 # PANEL: PREDEFINED SEARCHES
 with tab2:
@@ -519,44 +509,35 @@ with tab3:
 
 
 #RFBOOKMARK
-#________________________________________________
-# PREVIEW
+#_______________________________________________________________________________
+# PANEL: PREVIEW
 with tab4:
-    st.write("")
-    st.write("")
-
-    col1, col2 = st.columns([2,1.5])
-
-    with col2:
-        col2a,col2b = st.columns([1,2])
+    col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
     with col2b:
         utils.get_corner_status_message(mapping_info=True)
 
-    #PURPLE HEADING - PREVIEW
+    # PURPLE HEADING: PREVIEW---------------------------------------------------
     with col1:
         st.markdown("""<div class="purple-heading">
                 🔍 Preview
             </div>""", unsafe_allow_html=True)
         st.write("")
 
+    if st.session_state["mapping_downloaded_ok_flag"]:
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.write("")
+            st.markdown(f"""<div class="success-message-flag">
+                ✅ The mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> has been downloaded!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["mapping_downloaded_ok_flag"] = False
+        time.sleep(utils.get_success_message_time())
+        st.rerun()
+
+
     with col1:
         col1a, col1b = st.columns([2,1])
-
-        if st.session_state["mapping_downloaded_ok_flag"]:
-            with col1:
-                col1a, col1b = st.columns([2,1])
-            with col1a:
-                st.write("")
-                st.markdown(f"""<div class="success-message-flag">
-                    ✅ The mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> has been downloaded!
-                </div>""", unsafe_allow_html=True)
-            st.session_state["mapping_downloaded_ok_flag"] = False
-            time.sleep(utils.get_success_message_time())
-            st.rerun()
-
-
-    list_to_choose = list(utils.get_supported_formats_dict(mapping=True))
-    list_to_choose.remove("jsonld")
 
     with col1a:
         if not "key_export_format_selectbox" in st.session_state:
@@ -566,27 +547,26 @@ with tab4:
             horizontal=True, label_visibility="collapsed", key="key_export_format_selectbox")
         preview_format = format_options_dict[preview_format_display]
 
-    if preview_format != "Select format":
-        serialised_data = st.session_state["g_mapping"].serialize(format=preview_format)
-        max_length = utils.get_max_length_for_display()[9]
-        if len(serialised_data) > max_length:
-            with col1:
-                st.markdown(f"""<div class="info-message-blue">
-                    🐘 <b>Your mapping is quite large</b> ({utils.format_number_for_display(len(st.session_state["g_mapping"]))} triples).
-                    <small>Showing only the first {utils.format_number_for_display(max_length)} characters
-                    (out of {utils.format_number_for_display(len(serialised_data))}) to avoid performance issues.</small>
-                </div>""", unsafe_allow_html=True)
-        st.code(serialised_data[:max_length])
+    serialised_data = st.session_state["g_mapping"].serialize(format=preview_format)
+    max_length = utils.get_max_length_for_display()[9]
+    if len(serialised_data) > max_length:
+        with col1:
+            st.markdown(f"""<div class="info-message-blue">
+                🐘 <b>Your mapping is quite large</b> ({utils.format_number_for_display(len(st.session_state["g_mapping"]))} triples).
+                <small>Showing only the first {utils.format_number_for_display(max_length)} characters
+                (out of {utils.format_number_for_display(len(serialised_data))}) to avoid performance issues.</small>
+            </div>""", unsafe_allow_html=True)
+    st.code(serialised_data[:max_length])
 
-        with col1b:
-            allowed_format_dict = utils.get_supported_formats_dict(mapping=True)
-            extension = allowed_format_dict[preview_format]
-            download_filename = st.session_state["g_label"] + extension
-            st.session_state["mapping_downloaded_ok_flag"] = st.download_button(label="Download", data=serialised_data,
-                file_name=download_filename, mime="text/plain")
+    with col1b:
+        allowed_format_dict = utils.get_supported_formats(mapping=True)
+        extension = allowed_format_dict[preview_format]
+        download_filename = st.session_state["g_label"] + extension
+        st.session_state["mapping_downloaded_ok_flag"] = st.download_button(label="Download", data=serialised_data,
+            file_name=download_filename, mime="text/plain")
 
-        if st.session_state["mapping_downloaded_ok_flag"]:
-            st.rerun()
+    if st.session_state["mapping_downloaded_ok_flag"]:
+        st.rerun()
 
 
 #_______________________________________________________________
