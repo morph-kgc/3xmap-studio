@@ -656,27 +656,24 @@ def format_list_for_display(xlist):
 # Funtion to get label of a node   #RFTAG
 def get_node_label(node, iri_prefix=True, short_BNode=True):
 
-    # URIRef
-    if isinstance(node, URIRef):
-        if iri_prefix:
-            try:
-                prefix, ns, local = st.session_state["g_mapping"].namespace_manager.compute_qname(node)
-                label = prefix + ": " + local
-            except Exception:
-                label = split_uri(node)[1]
-        else:
-            label = split_uri(node)[1]
-
     # BNode
-    elif isinstance(node, BNode):
-        if short_BNode:
-            label = "_:" + str(node)[:7] + "..."
+    if isinstance(node, BNode):
+        label = "_:" + str(node)[:7] + "..." if short_BNode else str(node)
+
+
+    # URIRef or Other (check is valid uri and split, else node)
+    elif node:
+        if is_valid_iri(node, delimiter_ending=False):
+            try:
+                label = st.session_state["g_mapping"].namespace_manager.qname(URIRef(node))
+            except ValueError:
+                label = str(node)
         else:
             label = str(node)
 
-    # Other
     elif node:
-        label = str(node)
+        is_valid_iri_flag = is_valid_iri(node, delimiter_ending=False)
+
 
     # Empty node
     else:
@@ -3121,6 +3118,7 @@ def create_g_mapping_network(tm_for_network_list):
     network_html = ""
     legend_flag = False
     legend_html = ""
+    legend_html_list = []
 
     if sm_for_network_list:
         network_flag = True
@@ -3129,7 +3127,6 @@ def create_g_mapping_network(tm_for_network_list):
             f'<div id="mynetwork" style="background-color: {background_color};"')
 
         # Create and display legend
-        legend_html_list = []
         for letter in ["s", "p", "o"]:
             legend_html = "<div style='font-family: sans-serif; font-size: 14px;'>"
             if letter == "s":
@@ -3165,6 +3162,345 @@ def create_g_mapping_network(tm_for_network_list):
 #__________________________________________________
 
 
+# PANEL: PREDEFINED SEARCHES----------------------------------------------------
+#_________________________________________________
+# Function to display a rule
+def preview_rule_list(s_for_display, p_for_display, o_for_display):
+
+    small_header = """<small><b style="color:#F63366; font-size:10px;margin-top:8px; margin-bottom:8px; display:block;">
+        🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>"""
+
+    inner_html = ""
+    max_length = get_max_length_for_display()[11]
+
+    s_for_display = "" if not s_for_display else s_for_display
+    p_for_display = "" if not p_for_display else p_for_display
+    o_for_display = "" if not o_for_display else o_for_display
+
+    # Remove {} if reference
+    if o_for_display.startswith("{") and o_for_display.endswith("}"):
+        o_for_display = o_for_display[1:-1]
+
+    datatype = ""
+    for object_type in [RML.template, RML.constant, RML.reference]:
+        for s, p, o in st.session_state["g_mapping"].triples((None, object_type, None)):
+            if isinstance(o, Literal) and str(o) == o_for_display:
+                for _, _, o2 in st.session_state["g_mapping"].triples((s, RML.datatype, None)):
+                    datatype = o2
+                    break
+                if datatype:
+                    break
+        if datatype:
+            break
+
+    language_tag = ""
+    for object_type in [RML.template, RML.constant, RML.reference]:
+        for s, p, o in st.session_state["g_mapping"].triples((None, object_type, None)):
+            if isinstance(o, Literal) and str(o) == o_for_display:
+                for _, _, o2 in st.session_state["g_mapping"].triples((s, RML.language, None)):
+                    language_tag = o2
+                    break
+                if language_tag:
+                    break
+        if language_tag:
+            break
+
+    if (None, RML.reference, Literal(s_for_display)) in st.session_state["g_mapping"]:  # reference
+        formatted_s = f"""{{{s_for_display}}}"""
+    else:
+        formatted_s = s_for_display
+    formatted_p = p_for_display
+    if (None, RML.reference, Literal(o_for_display)) in st.session_state["g_mapping"]:  # reference
+        formatted_o = f"""{{{o_for_display}}}"""
+    else:
+        formatted_o = o_for_display
+
+    formatted_o = formatted_o + f"^^{utils.get_node_label(datatype)}" if datatype else formatted_o
+    formatted_o = f"{formatted_o}@{language_tag}" if language_tag else formatted_o
+
+    formatted_s = f"""<small>{formatted_s}</small>""" if len(formatted_s) > max_length else formatted_s
+    formatted_p = f"""<small>{formatted_p}</small>""" if len(formatted_p) > max_length else formatted_p
+    formatted_o = f"""<small>{formatted_o}</small>""" if len(formatted_o) > max_length else formatted_o
+
+    inner_html += f"""<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:0px;">
+            <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                <div style="margin-top:1px; font-size:13px; line-height:1.2;"><b>{formatted_s}</b></div>
+            </div>
+            <div style="flex:0; font-size:18px;">🡆</div>
+            <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                <div style="margin-top:1px; font-size:13px; line-height:1.2;"><b>{formatted_p}</b></div>
+            </div>
+            <div style="flex:0; font-size:18px;">🡆</div>
+            <div style="flex:1; min-width:140px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
+                <div style="margin-top:1px; font-size:13px; line-height:1.2;"><b>{formatted_o}</b></div>
+            </div>
+        </div><br>"""
+
+    return [small_header, inner_html]
+#_________________________________________________
+
+#_________________________________________________
+# Function to get limit/offset/order inputs
+def limit_offset_order(col, list, four_columns=False):
+
+    if not four_columns:
+        with col:
+            col1a, col1b, col1c = st.columns(3)
+    else:
+        with col:
+            col1a, col1b, col1c, col1d = st.columns(4)
+
+    with col1a:
+        limit = st.text_input("🎚️ Limit (opt):", key="key_limit", placeholder="🎚️ Limit",
+            label_visibility="collapsed")
+        limit = "" if not limit.isdigit() else int(limit)
+    with col1b:
+        offset = st.text_input("🎚️ Offset (opt):", key="key_offset", placeholder="🎚️ Offset",
+            label_visibility="collapsed")
+        offset = "" if not offset.isdigit() else int(offset)
+    with col1c:
+        order_clause = st.selectbox("🎚️ Order (opt):", list,
+            key="key_order_clause", label_visibility="collapsed")
+
+    if not four_columns:
+        return limit, offset, order_clause
+
+    else:
+        with col1d:
+            visualisation_option = st.radio("", ["👁️ Visual", "📅 Table"], label_visibility="collapsed",
+                key="key_visualisation_option")
+        return limit, offset, order_clause, visualisation_option
+
+#_________________________________________________
+
+
+#_________________________________________________
+# Function to add {} to references
+def add_braces_to_reference(reference):
+
+    if (None, RML.reference, Literal(reference)) in st.session_state["g_mapping"]:
+        return "{" + f"""{reference}"""  + "}"
+
+    return reference
+#_________________________________________________
+
+#_________________________________________________
+# Function to add datatype or language tag to object
+def add_datatype_or_language_tag(om, object_):
+
+    datatype = ""
+    language_tag = ""
+    for s, p, o in st.session_state["g_mapping"].triples((om, RML.datatype, None)):
+        datatype = o
+        break
+    for s, p, o in st.session_state["g_mapping"].triples((om, RML.language, None)):
+        language_tag = o
+        break
+
+    if language_tag:
+        object_ = utils.get_node_label(object_) + "@" + language_tag
+    if datatype:
+        object_ = utils.get_node_label(object_) + "^^" + utils.get_node_label(datatype)
+
+    return object_
+#_________________________________________________
+
+#________________________________________________
+# Function to create and format Dataframe
+def get_predefined_search_results(selected_predefined_search, order_clause):
+
+    if selected_predefined_search == "Rules":
+        query = """PREFIX rml: <http://w3id.org/rml/>
+
+            SELECT DISTINCT ?tm ?sm ?pom ?om ?subject_value ?predicate ?object_value WHERE {
+              ?tm rml:subjectMap ?sm .
+              ?tm rml:predicateObjectMap ?pom .
+              ?pom rml:predicate ?predicate .
+              ?pom rml:objectMap ?om .
+
+              OPTIONAL { ?sm rml:template ?subject_value . }
+              OPTIONAL { ?sm rml:constant ?subject_value . }
+              OPTIONAL { ?sm rml:reference ?subject_value . }
+
+              OPTIONAL { ?om rml:template ?object_value . }
+              OPTIONAL { ?om rml:constant ?object_value . }
+              OPTIONAL { ?om rml:reference ?object_value . }
+            }"""
+
+        if order_clause == "⮝ Subject":
+            query += f"ORDER BY ASC(?subject_value) "
+        elif order_clause == "⮟ Subject":
+            query += f"ORDER BY DESC(?subject_value) "
+        elif order_clause == "⮝ TriplesMap":
+            query += f"ORDER BY ASC(?tm) "
+        elif order_clause == "⮟ TriplesMap":
+            query += f"ORDER BY DESC(?tm) "
+
+    elif selected_predefined_search == "TriplesMaps":
+        query = """PREFIX rml: <http://w3id.org/rml/>
+            SELECT ?tm ?logicalSource ?source ?referenceFormulation ?iterator ?tableName ?sqlQuery WHERE {
+              ?tm rml:logicalSource ?logicalSource .
+              OPTIONAL { ?logicalSource rml:source ?source }
+              OPTIONAL { ?logicalSource rml:referenceFormulation ?referenceFormulation }
+              OPTIONAL { ?logicalSource rml:iterator ?iterator }
+              OPTIONAL { ?logicalSource rml:tableName ?tableName }
+              OPTIONAL { ?logicalSource rml:query ?sqlQuery }
+            }"""
+
+        if order_clause == "⮝ TriplesMap":
+            query += f"ORDER BY ASC(?tm) "
+        elif order_clause == "⮟ TriplesMap":
+            query += f"ORDER BY DESC(?tm) "
+
+    elif selected_predefined_search == "Subject Maps":
+        query = f"""PREFIX rml: <http://w3id.org/rml/>
+        SELECT ?tm ?subjectMap ?template ?constant ?reference
+               (COALESCE(?template, ?constant, ?reference, "") AS ?rule)
+               ?termType ?graph (GROUP_CONCAT(?class; separator=", ") AS ?classes)
+        WHERE {{
+          ?tm rml:subjectMap ?subjectMap .
+          OPTIONAL {{ ?subjectMap rml:template ?template }}
+          OPTIONAL {{ ?subjectMap rml:constant ?constant }}
+          OPTIONAL {{ ?subjectMap rml:reference ?reference }}
+          OPTIONAL {{ ?subjectMap rml:class ?class }}
+          OPTIONAL {{ ?subjectMap rml:termType ?termType }}
+          OPTIONAL {{ ?subjectMap rml:graph ?graph }}
+        }}
+        GROUP BY ?tm ?subjectMap ?rule ?termType ?graph
+        """
+
+        if order_clause == "⮝ Subject":
+            query += f"ORDER BY ASC(?rule) "
+        elif order_clause == "⮟ Subject":
+            query += f"ORDER BY DESC(?rule) "
+        elif order_clause == "⮝ TriplesMap":
+            query += f"ORDER BY ASC(?tm) "
+        elif order_clause == "⮟ TriplesMap":
+            query += f"ORDER BY DESC(?tm) "
+
+    elif selected_predefined_search == "Predicate-Object Maps":
+        query = f"""PREFIX rml: <http://w3id.org/rml/>
+            SELECT ?tm ?pom ?predicate ?objectMap ?template ?constant ?reference ?termType ?datatype ?language ?graphMap WHERE {{
+              ?tm rml:predicateObjectMap ?pom .
+              OPTIONAL {{ ?pom rml:predicate ?predicate }}
+              OPTIONAL {{ ?pom rml:objectMap ?objectMap }}
+              OPTIONAL {{ ?objectMap rml:template ?template }}
+              OPTIONAL {{ ?objectMap rml:constant ?constant }}
+              OPTIONAL {{ ?objectMap rml:reference ?reference }}
+              OPTIONAL {{ ?objectMap rml:termType ?termType }}
+              OPTIONAL {{ ?objectMap rml:datatype ?datatype }}
+              OPTIONAL {{ ?objectMap rml:language ?language }}
+              OPTIONAL {{ ?objectMap rml:graphMap ?graphMap }}
+              OPTIONAL {{ ?pom rml:constant ?constant }}
+              OPTIONAL {{ ?pom rml:template ?template }}
+              OPTIONAL {{ ?pom rml:reference ?reference }}
+            }}"""
+
+        if order_clause == "⮝ Predicate":
+            query += f"ORDER BY ASC(?predicate) "
+        elif order_clause == "⮟ Predicate":
+            query += f"ORDER BY DESC(?predicate) "
+        elif order_clause == "⮝ TriplesMap":
+            query += f"ORDER BY ASC(?tm) "
+        elif order_clause == "⮟ TriplesMap":
+            query += f"ORDER BY DESC(?tm) "
+
+    elif selected_predefined_search == "Used Classes":
+        query = """PREFIX rml: <http://w3id.org/rml/>
+            SELECT DISTINCT ?tm ?sm ?class WHERE {
+              ?tm rml:subjectMap ?sm .
+              ?sm rml:class ?class .
+            }"""
+
+        if order_clause == "⮝ Class":
+            query += f"ORDER BY ASC(?class) "
+        elif order_clause == "⮟ Class":
+            query += f"ORDER BY DESC(?class) "
+        elif order_clause == "⮝ TriplesMap":
+            query += f"ORDER BY ASC(?tm) "
+        elif order_clause == "⮟ TriplesMap":
+            query += f"ORDER BY DESC(?tm) "
+
+    elif selected_predefined_search == "Used Properties":
+        query = """PREFIX rml: <http://w3id.org/rml/>
+        SELECT DISTINCT ?tm ?pom ?predicate WHERE {
+          ?tm rml:predicateObjectMap ?pom .
+          ?pom rml:predicate ?predicate .
+        }"""
+
+        if order_clause == "⮝ Property":
+            query += f"ORDER BY ASC(?predicate) "
+        elif order_clause == "⮟ Property":
+            query += f"ORDER BY DESC(?predicate) "
+        elif order_clause == "⮝ TriplesMap":
+            query += f"ORDER BY ASC(?tm) "
+        elif order_clause == "⮟ TriplesMap":
+            query += f"ORDER BY DESC(?tm) "
+
+    elif selected_predefined_search == "Incomplete TriplesMaps":
+
+        query = """PREFIX rml: <http://w3id.org/rml/>
+         SELECT DISTINCT ?tm WHERE {
+          {?tm rml:logicalSource ?ls .
+            FILTER NOT EXISTS { ?tm rml:subjectMap ?sm . }
+          }
+          UNION
+          {?tm rml:logicalSource ?ls .
+            FILTER NOT EXISTS { ?tm rml:predicateObjectMap ?pom . }
+          }}"""
+
+        if order_clause == "⮝ TriplesMap":
+            query += f"ORDER BY ASC(?tm) "
+        elif order_clause == "⮟ TriplesMap":
+            query += f"ORDER BY DESC(?tm) "
+
+    elif selected_predefined_search == "All Triples":
+        query = """SELECT ?s ?p ?o WHERE {
+            ?s ?p ?o .}"""
+
+        if order_clause == "⮝ Subject":
+            query += f"ORDER BY ASC(?s) "
+        elif order_clause == "⮟ Subject":
+            query += f"ORDER BY DESC(?s) "
+        elif order_clause == "⮝ Predicate":
+            query += f"ORDER BY ASC(?p) "
+        elif order_clause == "⮟ Predicate":
+            query += f"ORDER BY DESC(?p) "
+        elif order_clause == "⮝ Object":
+            query += f"ORDER BY ASC(?o) "
+        elif order_clause == "⮟ Object":
+            query += f"ORDER BY DESC(?o) "
+
+    return st.session_state["g_mapping"].query(query)
+#_________________________________________________
+
+#_________________________________________________
+# Function to create, format and display Dataframe with query results
+def display_predefined_search_df(df_data, limit, offset, display=True):
+
+    df = pd.DataFrame(df_data)
+    df = df.loc[:, df.apply(lambda col: col.replace('', pd.NA).notna().any())]    # drop empty columns
+    if offset or limit:   # apply offset/limit pagination
+        start = offset if offset else 0
+        end = start + limit if limit else None
+        df = df.iloc[start:end].reset_index(drop=True)
+    elif limit == 0:
+        df = pd.DataFrame(columns=df.columns)
+
+    if display:
+        if not df.empty:
+            st.markdown(f"""<div class="info-message-blue">
+                <b>RESULTS ({len(df)}):</b>
+            </div>""", unsafe_allow_html=True)
+            st.dataframe(df, hide_index=True)
+        else:
+            st.markdown(f"""<div class="warning-message">
+                ⚠️ No results.
+            </div>""", unsafe_allow_html=True)
+
+    else:
+        return df
+#_________________________________________________
 
 
 
@@ -3367,81 +3703,6 @@ def is_valid_url_mapping(mapping_url, show_info):
 
 #_________________________________________________
 
-
-#________________________________________________
-# Function to display a rule
-def preview_rule_list(s_for_display, p_for_display, o_for_display):
-
-    small_header = """<small><b style="color:#F63366; font-size:10px;margin-top:8px; margin-bottom:8px; display:block;">🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small>"""
-
-    inner_html = ""
-    max_length = get_max_length_for_display()[11]
-
-    s_for_display = "" if not s_for_display else s_for_display
-    p_for_display = "" if not p_for_display else p_for_display
-    o_for_display = "" if not o_for_display else o_for_display
-
-    # Remove {} if reference
-    if o_for_display.startswith("{") and o_for_display.endswith("}"):
-        o_for_display = o_for_display[1:-1]
-
-    datatype = ""
-    for object_type in [RML.template, RML.constant, RML.reference]:
-        for s, p, o in st.session_state["g_mapping"].triples((None, object_type, None)):
-            if isinstance(o, Literal) and str(o) == o_for_display:
-                for _, _, o2 in st.session_state["g_mapping"].triples((s, RML.datatype, None)):
-                    datatype = o2
-                    break
-                if datatype:
-                    break
-        if datatype:
-            break
-
-    language_tag = ""
-    for object_type in [RML.template, RML.constant, RML.reference]:
-        for s, p, o in st.session_state["g_mapping"].triples((None, object_type, None)):
-            if isinstance(o, Literal) and str(o) == o_for_display:
-                for _, _, o2 in st.session_state["g_mapping"].triples((s, RML.language, None)):
-                    language_tag = o2
-                    break
-                if language_tag:
-                    break
-        if language_tag:
-            break
-
-    if (None, RML.reference, Literal(s_for_display)) in st.session_state["g_mapping"]:  # reference
-        formatted_s = f"""{{{s_for_display}}}"""
-    else:
-        formatted_s = s_for_display
-    formatted_p = p_for_display
-    if (None, RML.reference, Literal(o_for_display)) in st.session_state["g_mapping"]:  # reference
-        formatted_o = f"""{{{o_for_display}}}"""
-    else:
-        formatted_o = o_for_display
-
-    formatted_o = formatted_o + f"^^{utils.get_node_label(datatype)}" if datatype else formatted_o
-    formatted_o = f"{formatted_o}@{language_tag}" if language_tag else formatted_o
-
-    formatted_s = f"""<small>{formatted_s}</small>""" if len(formatted_s) > max_length else formatted_s
-    formatted_p = f"""<small>{formatted_p}</small>""" if len(formatted_p) > max_length else formatted_p
-    formatted_o = f"""<small>{formatted_o}</small>""" if len(formatted_o) > max_length else formatted_o
-
-    inner_html += f"""<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:0px;">
-            <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                <div style="margin-top:1px; font-size:13px; line-height:1.2;"><b>{formatted_s}</b></div>
-            </div>
-            <div style="flex:0; font-size:18px;">🡆</div>
-            <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                <div style="margin-top:1px; font-size:13px; line-height:1.2;"><b>{formatted_p}</b></div>
-            </div>
-            <div style="flex:0; font-size:18px;">🡆</div>
-            <div style="flex:1; min-width:140px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                <div style="margin-top:1px; font-size:13px; line-height:1.2;"><b><small>{formatted_o}</small></b></div>
-            </div>
-        </div><br>"""
-
-    return [small_header, inner_html]
-#_________________________________________________
 
 #________________________________________________
 # Function to display a rule
