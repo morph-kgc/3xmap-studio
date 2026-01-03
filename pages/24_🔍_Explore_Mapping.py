@@ -466,22 +466,14 @@ with tab2:
             utils.display_predefined_search_df(df_data, limit, offset)
 
 
-
-#RFBOOKMARK
 #_______________________________________________________________________________
 # PANEL: SPARQL
 with tab3:
-    st.write("")
-    st.write("")
-
-    col1, col2 = st.columns([2,1.5])
-
-    with col2:
-        col2a,col2b = st.columns([1,2])
+    col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
     with col2b:
         utils.get_corner_status_message(mapping_info=True)
 
-    #PURPLE HEADING - ADD NEW TRIPLESMAP
+    # PURPLE HEADING: SPARQL----------------------------------------------------
     with col1:
         st.markdown("""<div class="purple-heading">
                 ❔ SPARQL
@@ -490,37 +482,30 @@ with tab3:
 
     with col1:
         col1a, col1b = st.columns([2,1])
-
-
     with col1a:
         query = st.text_area("⌨️ Enter SPARQL query:*")
 
     if query:
         try:
             results = st.session_state["g_mapping"].query(query)
-            # Create and display the DataFrame (build rows dynamically)
             rows = []
             columns = set()
-
             for row in results:
                 row_dict = {}
                 for var in row.labels:
                     value = row[var]
-                    row_dict[str(var)] = str(value) if value else ""
+                    row_dict[str(var)] = utils.get_node_label(value, short_BNode=False) if value else ""
                     columns.add(str(var))
                 rows.append(row_dict)
 
-
-
-            df = pd.DataFrame(rows, columns=sorted(columns))
-            if not df.empty:
-                with col1:
+            with col1:
+                df = pd.DataFrame(rows, columns=sorted(columns))
+                if not df.empty:
                     st.markdown(f"""<div class="info-message-blue">
                         <b>RESULTS ({len(df)}):</b>
                     </div>""", unsafe_allow_html=True)
                     st.dataframe(df, hide_index=True)
-            else:
-                with col1a:
+                else:
                     st.markdown(f"""<div class="warning-message">
                         ⚠️ <b>No results.</b>
                     </div>""", unsafe_allow_html=True)
@@ -533,6 +518,7 @@ with tab3:
                 </div>""", unsafe_allow_html=True)
 
 
+#RFBOOKMARK
 #________________________________________________
 # PREVIEW
 with tab4:
