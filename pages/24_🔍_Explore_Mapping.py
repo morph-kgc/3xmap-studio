@@ -160,7 +160,7 @@ with tab2:
                         s = row.Subject
                         p = row.Predicate
                         o = row.Object
-                        small_header, new_inner_html = utils.preview_rule_list(s, p, o)
+                        small_header, new_inner_html = utils.display_rule(s, p, o)
                         inner_html += new_inner_html
 
                     st.markdown(f"""<div class="info-message-blue">
@@ -363,10 +363,16 @@ with tab2:
             sm = row.sm if hasattr(row, "sm") and row.sm else ""
             rdf_class = row.get("class") if row.get("class") else ""
             class_label = utils.get_node_label(rdf_class)
+            ont_tag = utils.identify_term_ontology(class_label)
+            if not ont_tag:   # External classes (check if custom)
+                if rdf_class in st.session_state["custom_terms_dict"]:
+                    ont_tag = "Custom"
+                else:
+                    ont_tag = "External"
 
             selected_classes_for_display_list = list_to_choose_classes if not selected_classes_for_display_list else selected_classes_for_display_list
             if class_label in selected_classes_for_display_list:
-                df_data.append({"Class": utils.get_node_label(rdf_class),
+                df_data.append({"Class": utils.get_node_label(rdf_class), "Ontology": ont_tag,
                     "TriplesMap": utils.get_node_label(tm),
                     "Subject Map": utils.get_node_label(sm, short_BNode=False)})
 
@@ -385,7 +391,7 @@ with tab2:
 
             list_to_choose_properties = sorted(list(properties_set))
             if len(list_to_choose_properties) > 1:
-                selected_properties_for_display_list = st.multiselect("📡 Filter by Property (optional):", list_to_choose_properties,
+                selected_properties_for_display_list = st.multiselect("🖱️ Select properties to display (optional):", list_to_choose_properties,
                     placeholder="No filter", key="key_selected_properties_for_display_list")
             else:
                 selected_properties_for_display_list = []
@@ -399,10 +405,16 @@ with tab2:
             pom = row.pom if hasattr(row, "pom") and row.pom else ""
             predicate = row.get("predicate") if row.get("predicate") else ""
             predicate_label = utils.get_node_label(predicate)
+            ont_tag = utils.identify_term_ontology(predicate_label)
+            if not ont_tag:   # External properties (check if custom)
+                if predicate in st.session_state["custom_terms_dict"]:
+                    ont_tag = "Custom"
+                else:
+                    ont_tag = "External"
 
             selected_properties_for_display_list = list_to_choose_properties if not selected_properties_for_display_list else selected_properties_for_display_list
             if predicate_label in selected_properties_for_display_list:
-                df_data.append({"Property": utils.get_node_label(predicate),
+                df_data.append({"Property": utils.get_node_label(predicate), "Ontology": ont_tag,
                     "TriplesMap": utils.get_node_label(tm),
                     "Predicate-Object Map": utils.get_node_label(pom, short_BNode=False)})
 
