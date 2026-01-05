@@ -121,7 +121,7 @@ with tab2:
                 key="key_superclass")   #superclass label
 
         if superclass_filter_for_lens_label != "No filter":   # a superclass has been selected (filter)
-            superclass_filter_for_lens = superclass_dict[superclass_filter_for_lens_label] #we get the superclass iri
+            superclass_filter_for_lens = superclass_dict[superclass_filter_for_lens_label] # get the superclass iri
         else:
             superclass_filter_for_lens = None
 
@@ -229,7 +229,7 @@ with tab2:
                     key="key_subject_class")   #class label
 
             if subject_class != "Select class":
-                subject_class_iri = filtered_ontology_used_class_dict[subject_class] # get the superclass iri
+                subject_class_iri = filtered_ontology_used_class_dict[subject_class] # get the class iri
                 rule_list_for_class = []    # get all rules that use the selected class
                 for s in st.session_state["g_mapping"].subjects(RML["class"], URIRef(subject_class_iri)):
                     sm_rule_list = utils.get_rules_for_sm(s)
@@ -467,8 +467,9 @@ with tab4:
             for triple in st.session_state["g_mapping"].triples((None, RML["predicate"], URIRef(prop_iri))):
                 usage_count_dict_properties[prop_label] += 1
 
-        # Joined count dictionary
+        # Joined dictionaries
         usage_count_dict = usage_count_dict_classes | usage_count_dict_properties
+        joined_dict = external_classes_dict | external_properties_dict
 
         # INFO TABLE
         if selected_external_term_search == "ℹ️ Info table":
@@ -480,7 +481,7 @@ with tab4:
                 elif external_terms_type  == "🔗 Properties":
                     list_to_choose = sorted(external_properties_dict)
                 elif external_terms_type  == "No filter":
-                    list_to_choose = sorted(external_classes_dict | external_properties_dict)
+                    list_to_choose = sorted(joined_dict)
                 selected_external_terms = st.multiselect("🖱️ Select terms (opt):", list_to_choose,
                     key="key_selected_external_terms")
 
@@ -489,7 +490,7 @@ with tab4:
             elif not selected_external_terms and external_terms_type == "🔗 Properties":
                 selected_external_terms = list(external_properties_dict)
             elif not selected_external_terms and external_terms_type == "No filter":
-                selected_external_terms = list(external_classes_dict | external_properties_dict)
+                selected_external_terms = list(joined_dict)
 
             rows = []
             for term in selected_external_terms:
@@ -525,5 +526,37 @@ with tab4:
                     list_to_choose = sorted(external_properties_dict)
                 elif external_terms_type  == "No filter":
                     list_to_choose = sorted(external_classes_dict | external_properties_dict)
-                selected_external_terms = st.selectbox("🖱️ Select terms:*", list_to_choose,
+                selected_external_term = st.selectbox("🖱️ Select term:*", list_to_choose,
                     key="key_selected_external_terms")
+
+            selected_external_term_iri = joined_dict[selected_external_term ] # get the term iri
+
+            # Get all rules that use the selected term as a class
+            rule_list_for_class = []    # get all rules that use the selected class
+            for s in st.session_state["g_mapping"].subjects(RML["class"], URIRef(selected_external_term_iri)):
+                sm_rule_list = utils.get_rules_for_sm(s)
+                for rule in sm_rule_list:
+                    rule_list_for_class.append(rule)
+
+            # Get all rules that use the selected term as predicate
+            rule_list_for_property = []
+            for sm in st.session_state["g_mapping"].objects(None, RML["subjectMap"]):
+                sm_rule_list = utils.get_rules_for_sm(sm)
+                for rule in sm_rule_list:
+                    if rule[1] == utils.get_node_label(selected_external_term_iri):
+                        rule_list_for_property.append(rule)
+
+            # Display
+            with col1:
+                if rule_list_for_class:
+                    st.markdown(f"""<div class="info-message-gray">
+                            🏷️ Term used as <b>class</b>:
+                        </div>""", unsafe_allow_html=True)
+                    utils.display_rule_list(rule_list_for_class)
+                if rule_list_for_property:
+                    st.markdown(f"""<div class="info-message-gray">
+                            🔗 Term used as <b>property</b>:
+                        </div>""", unsafe_allow_html=True)
+                    utils.display_rule_list(rule_list_for_property)
+                if not rule_list_for_class and not rule_list_for_property:
+                    utils.display_rule_list(rule_list_for_class)   # No results (should not happen)
