@@ -531,7 +531,9 @@ if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
 #_______________________________________________________________________________
 # PANEL: ADD TRIPLESMAP
 with tab1:
-    col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
+    col1, col2, col2a, col2b = utils.get_panel_layout()
+    with col2b:
+        utils.get_corner_status_message(mapping_info=True)
 
     with col2b:
         utils.display_right_column_df("triplesmaps", "last added TriplesMaps")
@@ -751,7 +753,9 @@ with tab1:
 #_______________________________________________________________________________
 #PANEL: ADD SUBJECT MAP
 with tab2:
-    col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
+    col1, col2, col2a, col2b = utils.get_panel_layout()
+    with col2b:
+        utils.get_corner_status_message(mapping_info=True)
 
     # Right column info on sm is given later, since validation messages must appear first
 
@@ -1304,7 +1308,9 @@ with tab2:
 #_______________________________________________________________________________
 # PANEL: ADD PREDICATE-OBJECT MAP
 with tab3:
-    col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
+    col1, col2, col2a, col2b = utils.get_panel_layout()
+    with col2b:
+        utils.get_corner_status_message(mapping_info=True)
 
     #PURPLE HEADING - ADD TRIPLESMAP
     with col1:
@@ -1936,7 +1942,9 @@ with tab3:
 #_______________________________________________________________________________
 # PANEL: MANAGE MAPPING
 with tab4:
-    col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
+    col1, col2, col2a, col2b = utils.get_panel_layout()
+    with col2b:
+        utils.get_corner_status_message(mapping_info=True)
 
     # SUCCESS MESSAGE: TRIPLESMAP REMOVED---------------------------------------
     # Shows here if "Remove" purple heading is not available

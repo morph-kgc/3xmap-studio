@@ -91,14 +91,17 @@ RML, QL = get_required_ns_dict().values()
 # DEFAULT VARIABLES (CAN BE CUSTOMISED)=========================================
 #________________________________________________________
 # Function to get the name of the used folders (only one argument should be True)
-# Used in 🌍 Global Configuration and 🛢️ Tabular Data pages
-def get_folder_name(saved_sessions=False, data_sources=False):
+# Used in 🌍 Global Configuration, 🛢️ Tabular Data pages and 🔮 Materialise Graph
+def get_folder_name(saved_sessions=False, data_sources=False, temp_materialisation_files=False):
 
     if saved_sessions:
         return "saved_sessions"
 
     elif data_sources:
         return "data_sources"
+
+    elif temp_materialisation_files:
+        return "materialisation_files_temp"
 #________________________________________________________
 
 #_____________________________________________________
@@ -1045,7 +1048,7 @@ def init_session_state_variables():
         # 🔮 MATERIALISE GRAPH
         # TAB1
         st.session_state["mkgc_config"] = configparser.ConfigParser()
-        st.session_state["autoconfig_active_flag"] = False
+        st.session_state["autoconfig_active_flag"] = True
         st.session_state["autoconfig_generated_ok_flag"] = False
         st.session_state["config_file_reset_ok_flag_tab1"] = False
         # TAB2
@@ -4100,7 +4103,7 @@ def get_ontology_term_frequency_bar_plot(g_ont, selected_terms, superfilter=None
         st.plotly_chart(fig, use_container_width=True)
 #_________________________________________________
 
-#________________________________________________
+#_________________________________________________
 # Function to display a rule
 def display_rule_list(rule_list):
 
@@ -4146,7 +4149,7 @@ def display_rule_list(rule_list):
 #_________________________________________________
 
 # PANEL: CLASS USAGE------------------------------------------------------------
-#________________________________________________________
+#_________________________________________________
 # Funtion to get the dictionary of the count of the ontology classes used by the mapping
 def get_ontology_used_classes_count_dict(g_ont):
 
@@ -4158,9 +4161,9 @@ def get_ontology_used_classes_count_dict(g_ont):
             usage_count_dict[class_label] += 1
 
     return dict(usage_count_dict)
-#________________________________________________________
+#_________________________________________________
 
-#________________________________________________________
+#_________________________________________________
 # Funtion to get the dictionary of the ontology classes used by the mapping
 def get_ontology_used_class_dict(g_ont):
 
@@ -4172,12 +4175,12 @@ def get_ontology_used_class_dict(g_ont):
             ontology_used_class_dict[class_label] = class_iri
 
     return ontology_used_class_dict
-#________________________________________________________
+#_________________________________________________
 
-#________________________________________________________
+#_________________________________________________
 # Funtion to get the class dictionaries with superclass filter
 def get_class_dictionaries_filtered_by_superclass(g_ont, superclass_filter=None):
-    # Class dictionaries___________________________
+    # Class dictionaries
     ontology_class_dict = utils.get_ontology_class_dict(g_ont)
     ontology_used_class_dict = utils.get_ontology_used_class_dict(g_ont)
     ontology_used_classes_count_dict = utils.get_ontology_used_classes_count_dict(g_ont)
@@ -4201,17 +4204,54 @@ def get_class_dictionaries_filtered_by_superclass(g_ont, superclass_filter=None)
 
     return [ontology_class_dict, ontology_used_class_dict,
         ontology_used_classes_count_dict, ontology_used_classes_count_by_rules_dict]
-#________________________________________________________
+#_________________________________________________
+
+
+# PAGE: 🔮 MATERIALISE GRAPH====================================================
+# PANEL: CONFIGURATION----------------------------------------------------------
+#_________________________________________________
+# Function to get the Autoconfig file
+def get_autoconfig_file():
+
+    temp_folder_path = get_folder_name(temp_materialisation_files=True)
+
+    # reset config dict
+    st.session_state["mkgc_config"] = configparser.ConfigParser()
+
+    # list to manage data source labels
+    base_label = "DataSource"
+    used_data_source_labels_list = []
+
+    # autoconfig SQL data sources
+    for ds in st.session_state["db_connections_dict"]:
+        i = 1
+        while f"{base_label}{i}" in used_data_source_labels_list:
+            i += 1
+        mkgc_ds_label = f"{base_label}{i}"
+        used_data_source_labels_list.append(mkgc_ds_label)
+        db_url = utils.get_db_url_str(ds)
+        mkgc_mappings_str = str(os.path.join(temp_folder_path, st.session_state["g_label"] + ".ttl"))
+        st.session_state["mkgc_config"][mkgc_ds_label] = {"db_url": db_url,
+            "mappings": mkgc_mappings_str}
+
+    # autoconfig TABULAR data sources
+    for ds_label in st.session_state["ds_files_dict"]:
+        i = 1
+        while f"{base_label}{i}" in used_data_source_labels_list:
+            i += 1
+        mkgc_ds_label = f"{base_label}{i}"
+        used_data_source_labels_list.append(mkgc_ds_label)
+        mkgc_tab_ds_file_path = os.path.join(temp_folder_path, ds_label)
+        mkgc_mappings_str = str(os.path.join(temp_folder_path, st.session_state["g_label"] + ".ttl"))
+        st.session_state["mkgc_config"][mkgc_ds_label] = {"file_path": mkgc_tab_ds_file_path,
+            "mappings": mkgc_mappings_str}
+#_________________________________________________
 
 
 
 
 
 #RFBOOKMARK
-
-
-
-
 #_________________________________________________
 # Funtion to check a mapping loaded from URL is ok
 def is_valid_url_mapping(mapping_url, show_info):
