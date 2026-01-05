@@ -170,14 +170,14 @@ def save_sm_template():   #function to save subject map (template option)
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RML.SubjectMap))
     st.session_state["g_mapping"].add((sm_iri, RML.template, Literal(sm_template)))
     # subject class_____________________
-    ontology_classes_dict = utils.get_ontology_classes_dict(ontology_filter_for_subject_class)
-    custom_classes_dict = utils.get_ontology_classes_dict("custom")
+    ontology_class_dict = utils.get_ontology_class_dict(ontology_filter_for_subject_class)
+    custom_class_dict = utils.get_ontology_class_dict("custom")
     for class_label in subject_class_list:
-        if class_label in ontology_classes_dict:
-            subject_class_iri = ontology_classes_dict[class_label]
-        elif class_label in custom_classes_dict:
-            subject_class_iri = custom_classes_dict[class_label]
-        subject_class_iri = ontology_classes_dict[class_label]
+        if class_label in ontology_class_dict:
+            subject_class_iri = ontology_class_dict[class_label]
+        elif class_label in custom_class_dict:
+            subject_class_iri = custom_class_dict[class_label]
+        subject_class_iri = ontology_class_dict[class_label]
         st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
     # graph map_____________________
     if add_sm_graph_map_option != "Default graph map":
@@ -211,14 +211,14 @@ def save_sm_constant():   #function to save subject map (constant option)
         sm_constant_iri = URIRef(sm_constant)
     st.session_state["g_mapping"].add((sm_iri, RML.constant, sm_constant_iri))
     # subject class_____________________
-    ontology_classes_dict = utils.get_ontology_classes_dict(ontology_filter_for_subject_class)
-    custom_classes_dict = utils.get_ontology_classes_dict("custom")
+    ontology_class_dict = utils.get_ontology_class_dict(ontology_filter_for_subject_class)
+    custom_class_dict = utils.get_ontology_class_dict("custom")
     for class_label in subject_class_list:
-        if class_label in ontology_classes_dict:
-            subject_class_iri = ontology_classes_dict[class_label]
-        elif class_label in custom_classes_dict:
-            subject_class_iri = custom_classes_dict[class_label]
-        subject_class_iri = ontology_classes_dict[class_label]
+        if class_label in ontology_class_dict:
+            subject_class_iri = ontology_class_dict[class_label]
+        elif class_label in custom_class_dict:
+            subject_class_iri = custom_class_dict[class_label]
+        subject_class_iri = ontology_class_dict[class_label]
         st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
     # graph map_____________________
     if add_sm_graph_map_option != "Default graph map":
@@ -243,14 +243,14 @@ def save_sm_reference():   #function to save subject map (reference option)
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RML.SubjectMap))
     st.session_state["g_mapping"].add((sm_iri, RML.reference, Literal(sm_column_name)))
     # subject class_____________________
-    ontology_classes_dict = utils.get_ontology_classes_dict(ontology_filter_for_subject_class)
-    custom_classes_dict = utils.get_ontology_classes_dict("custom")
+    ontology_class_dict = utils.get_ontology_class_dict(ontology_filter_for_subject_class)
+    custom_class_dict = utils.get_ontology_class_dict("custom")
     for class_label in subject_class_list:
-        if class_label in ontology_classes_dict:
-            subject_class_iri = ontology_classes_dict[class_label]
-        elif class_label in custom_classes_dict:
-            subject_class_iri = custom_classes_dict[class_label]
-        subject_class_iri = ontology_classes_dict[class_label]
+        if class_label in ontology_class_dict:
+            subject_class_iri = ontology_class_dict[class_label]
+        elif class_label in custom_class_dict:
+            subject_class_iri = custom_class_dict[class_label]
+        subject_class_iri = ontology_class_dict[class_label]
         st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
     # graph map_____________________
     if add_sm_graph_map_option != "Default graph map":
@@ -1074,17 +1074,15 @@ with tab2:
 
                 # SUBJECT CLASS
                 with col1b:
-
-
-                    ontology_classes_dict = utils.get_ontology_classes_dict(st.session_state["g_ontology"])
-                    custom_classes_dict =  utils.get_ontology_classes_dict("custom")
-                    custom_classes_dict = {}          # dictionary for custom classes
+                    ontology_class_dict = utils.get_ontology_class_dict(st.session_state["g_ontology"])
+                    custom_class_dict =  utils.get_ontology_class_dict("custom")
+                    custom_class_dict = {}          # dictionary for custom classes
                     for k, v in st.session_state["custom_terms_dict"].items():
                         if v == "🏷️ Class":
-                            custom_classes_dict[utils.get_node_label(k)] = k
+                            custom_class_dict[utils.get_node_label(k)] = k
 
                     ontology_filter_list = sorted(st.session_state["g_ontology_components_tag_dict"].values())
-                    if custom_classes_dict:
+                    if custom_class_dict:
                         ontology_filter_list.insert(0, "Custom classes")
 
                     # Filter by ontology
@@ -1108,43 +1106,43 @@ with tab2:
 
                     if ontology_filter_for_subject_class != "Custom classes":
 
-                        ontology_classes_dict = utils.get_ontology_classes_dict(ontology_filter_for_subject_class)   # filtered class dictionary
-                        ontology_superclasses_dict = utils.get_ontology_classes_dict(ontology_filter_for_subject_class, superclass=True)
+                        ontology_class_dict = utils.get_ontology_class_dict(ontology_filter_for_subject_class)   # filtered class dictionary
+                        ontology_superclass_dict = utils.get_ontology_class_dict(ontology_filter_for_subject_class, superclass=True)
 
-                        if ontology_superclasses_dict:   # there exists at least one superclass (show superclass filter)
-                            classes_in_ontology_superclasses_dict = {}
-                            superclass_list = sorted(ontology_superclasses_dict.keys())
+                        if ontology_superclass_dict:   # there exists at least one superclass (show superclass filter)
+                            classes_in_ontology_superclass_dict = {}
+                            superclass_list = sorted(ontology_superclass_dict.keys())
                             superclass_list.insert(0, "No filter")
                             superclass = st.selectbox("📡 Filter by superclass (opt):", superclass_list,
                                 key="key_superclass")   # superclass label
 
                             if superclass != "No filter":   # a superclass has been selected (filter)
-                                classes_in_ontology_superclasses_dict[superclass] = ontology_superclasses_dict[superclass]
-                                superclass = ontology_superclasses_dict[superclass] #we get the superclass iri
+                                classes_in_ontology_superclass_dict[superclass] = ontology_superclass_dict[superclass]
+                                superclass = ontology_superclass_dict[superclass] #we get the superclass iri
                                 for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, superclass)))):
-                                    classes_in_ontology_superclasses_dict[utils.get_node_label(s)] = s
-                                class_list = sorted(classes_in_ontology_superclasses_dict.keys())
+                                    classes_in_ontology_superclass_dict[utils.get_node_label(s)] = s
+                                class_list = sorted(classes_in_ontology_superclass_dict.keys())
                                 subject_class_list = st.multiselect("🏷️️ Select class(es):", class_list,
                                     key="key_subject_class")   # class list (labels)
 
                             else:  #no superclass selected (list all classes)
                                 if ontology_filter_for_subject_class == st.session_state["g_ontology"]:
-                                    class_list = sorted(list(ontology_classes_dict.keys()) + list(custom_classes_dict.keys()))
+                                    class_list = sorted(list(ontology_class_dict.keys()) + list(custom_class_dict.keys()))
                                 else:
-                                    class_list = sorted(ontology_classes_dict.keys())
+                                    class_list = sorted(ontology_class_dict.keys())
                                 subject_class_list = st.multiselect("🏷️️ Select class(es):", class_list,
                                     key="key_subject_class")    # class list (labels)
 
                         else:     #no superclasses exist (no superclass filter)
                             if ontology_filter_for_subject_class == st.session_state["g_ontology"]:
-                                class_list = sorted(list(ontology_classes_dict.keys()) + list(custom_classes_dict.keys()))
+                                class_list = sorted(list(ontology_class_dict.keys()) + list(custom_class_dict.keys()))
                             else:
-                                class_list = sorted(ontology_classes_dict.keys())
+                                class_list = sorted(ontology_class_dict.keys())
                             subject_class_list = st.multiselect("🏷️ Select class(es):", class_list,
                                 key="key_subject_class")    # class list (labels)
 
                     elif ontology_filter_for_subject_class == "Custom classes":
-                        class_list = sorted(custom_classes_dict.keys())
+                        class_list = sorted(custom_class_dict.keys())
                         class_list.insert(0, "Select class")
                         subject_class_list = st.multiselect("🏷️ Select class(es):", class_list,
                             key="key_subject_class")    # class list (labels)
@@ -1216,7 +1214,7 @@ with tab2:
                                 Make sure the values in the referenced column
                                 are valid IRIs.</small><br>"""
 
-                if not custom_classes_dict and not ontology_classes_dict:
+                if not custom_class_dict and not ontology_class_dict:
                     inner_html_warning += """<small>· </b> No classes available</b>
                         (custom not ontology-defined).</small><br>"""
                 elif not subject_class_list:
@@ -1224,7 +1222,7 @@ with tab2:
                 elif len(subject_class_list) > 1:
                     inner_html_warning += """<small>· <b>More than one class</b> selected (allowed).</small><br>"""
                 for class_label in subject_class_list:
-                    if class_label in custom_classes_dict:
+                    if class_label in custom_class_dict:
                         inner_html_warning += """<small>· <b>Custom classes</b> lack ontology alignment.
                              An ontology-driven approach is recommended.</small><br>"""
                         break
@@ -1380,11 +1378,11 @@ with tab3:
                     <b>🅿️ Predicate</b><br>
                 </div>""", unsafe_allow_html=True)
 
-            ontology_properties_dict = utils.get_ontology_properties_dict(st.session_state["g_ontology"])
-            custom_properties_dict =  utils.get_ontology_properties_dict("custom")
+            ontology_property_dict = utils.get_ontology_property_dict(st.session_state["g_ontology"])
+            custom_property_dict =  utils.get_ontology_property_dict("custom")
 
             ontology_filter_list = sorted(st.session_state["g_ontology_components_tag_dict"].values())
-            if custom_properties_dict:
+            if custom_property_dict:
                 ontology_filter_list.insert(0, "Custom properties")
 
             # Filter by ontology
@@ -1411,7 +1409,7 @@ with tab3:
                     col1b, col1c = st.columns(2)
                 ontology_filter_for_predicate = st.session_state["g_ontology"]
 
-            if not ontology_properties_dict and not custom_properties_dict:
+            if not ontology_property_dict and not custom_property_dict:
                 with col1c:
                     st.markdown(f"""<div class="warning-message">
                         ⚠️ <b>No properties</b> have been added. <small> Go to the <b>🧩 Ontologies</b> page
@@ -1420,57 +1418,57 @@ with tab3:
 
             if ontology_filter_for_predicate != "Custom properties":
 
-                ontology_properties_dict = utils.get_ontology_properties_dict(ontology_filter_for_predicate)   # filtered property dictionary
-                ontology_superproperties_dict = utils.get_ontology_properties_dict(ontology_filter_for_predicate, superproperty=True)
+                ontology_property_dict = utils.get_ontology_property_dict(ontology_filter_for_predicate)   # filtered property dictionary
+                ontology_superproperty_dict = utils.get_ontology_property_dict(ontology_filter_for_predicate, superproperty=True)
 
-                if ontology_superproperties_dict:   # there exists at least one superproperty (show superproperty filter)
+                if ontology_superproperty_dict:   # there exists at least one superproperty (show superproperty filter)
                     with col1b:
-                        properties_in_ontology_superproperties_dict = {}
-                        superproperties_list = sorted(ontology_superproperties_dict.keys())
+                        properties_in_ontology_superproperty_dict = {}
+                        superproperties_list = sorted(ontology_superproperty_dict.keys())
                         superproperties_list.insert(0, "No filter")
                         superproperty = st.selectbox("📡 Filter by superproperty (opt):", superproperties_list,
                             key="key_superproperty")   # superproperty label
 
                     if superproperty != "No filter":   # a superproperty has been selected (filter)
-                        properties_in_ontology_superproperties_dict[superproperty] = ontology_superproperties_dict[superproperty]
-                        superproperty = ontology_superproperties_dict[superproperty] #we get the superproperty iri
+                        properties_in_ontology_superproperty_dict[superproperty] = ontology_superproperty_dict[superproperty]
+                        superproperty = ontology_superproperty_dict[superproperty] #we get the superproperty iri
                         for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subPropertyOf, superproperty)))):
-                            properties_in_ontology_superproperties_dict[utils.get_node_label(s)] = s
+                            properties_in_ontology_superproperty_dict[utils.get_node_label(s)] = s
                         with col1c:
-                            list_to_choose = sorted(properties_in_ontology_superproperties_dict.keys())
+                            list_to_choose = sorted(properties_in_ontology_superproperty_dict.keys())
                             predicate_list = st.multiselect("🏷️️ Select predicate(s):*", list_to_choose,
                                 key="key_predicate")    # predicate list (labels)
 
                     else:  #no superproperty selected (list all properties)
                         with col1c:
                             if ontology_filter_for_predicate == st.session_state["g_ontology"]:
-                                list_to_choose = sorted(list(ontology_properties_dict.keys()) + list(custom_properties_dict.keys()))
+                                list_to_choose = sorted(list(ontology_property_dict.keys()) + list(custom_property_dict.keys()))
                             else:
-                                list_to_choose = sorted(ontology_properties_dict.keys())
+                                list_to_choose = sorted(ontology_property_dict.keys())
                             predicate_list = st.multiselect("🏷️️ Select predicate(s):*", list_to_choose,
                                 key="key_predicate")    # predicate list (labels)
 
                 else:     #no superproperties exist (no superproperty filter)
                     with col1b:
                         if ontology_filter_for_predicate == st.session_state["g_ontology"]:
-                            list_to_choose = sorted(list(ontology_properties_dict.keys()) + list(custom_properties_dict.keys()))
+                            list_to_choose = sorted(list(ontology_property_dict.keys()) + list(custom_property_dict.keys()))
                         else:
-                            list_to_choose = sorted(ontology_properties_dict.keys())
+                            list_to_choose = sorted(ontology_property_dict.keys())
                         predicate_list = st.multiselect("🏷️ Select predicate(s):*", list_to_choose,
                             key="key_predicate")    # predicate list (labels)
 
             elif ontology_filter_for_predicate == "Custom properties":
                 with col1b:
-                    list_to_choose = sorted(custom_properties_dict.keys())
+                    list_to_choose = sorted(custom_property_dict.keys())
                     predicate_list = st.multiselect("🏷️ Select predicate(s):*", list_to_choose,
                         key="key_predicate")    # predicate list (labels)
 
             predicate_iri_list = []
             for p in predicate_list:        # get the predicates iris
-                if p in ontology_properties_dict:
-                    predicate_iri_list.append(ontology_properties_dict[p])
-                elif p in custom_classes_dict:
-                    predicate_iri_list.append(custom_properties_dict[p])
+                if p in ontology_property_dict:
+                    predicate_iri_list.append(ontology_property_dict[p])
+                elif p in custom_property_dict:
+                    predicate_iri_list.append(custom_property_dict[p])
 
             # TEMPLATE-VALUED OBJECT MAP
             if om_generation_rule == "Template 📐":
@@ -1767,7 +1765,7 @@ with tab3:
                 inner_html_warning += f"""<small>· TriplesMap <b>{tm_label_for_pom}</b> has no Subject Map.
                     It will be invalid without one.</small><br>"""
 
-            if not ontology_properties_dict and not custom_properties_dict:
+            if not ontology_property_dict and not custom_property_dict:
                 inner_html_error += """<small>· At least one <b>property</b> must be added
                     to allow <b>predicate selection</b>.</small><br>"""
                 pom_complete_flag = False
@@ -1777,7 +1775,7 @@ with tab3:
             elif len(predicate_list) > 1:
                 inner_html_warning += """<small>· <b>More than one predicate</b> selected (allowed).</small><br>"""
             for predicate_label in predicate_list:
-                if predicate_label in custom_properties_dict:
+                if predicate_label in custom_property_dict:
                     inner_html_warning += """<small>· <b>Custom properties</b> lack ontology alignment.
                          An ontology-driven approach is recommended.</small><br>"""
                     break

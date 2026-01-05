@@ -83,7 +83,7 @@ with tab1:
 
     if ds_file:
         try:
-            columns_df = utils.read_tab_file_unsaved(ds_file)
+            columns_df = utils.read_tab_file(ds_file, unsaved=True)
 
             if ds_file.name in st.session_state["ds_files_dict"]:
                 with col1b:
@@ -164,7 +164,7 @@ with tab1:
                         ds_file_path = os.path.join(folder_path, ds_large_filename)
                         ds_file = open(ds_file_path, "rb")
                         try:
-                            columns_df = utils.read_tab_file_unsaved(ds_file)
+                            columns_df = utils.read_tab_file(ds_file, unsaved=True)
 
                             if ds_large_filename in st.session_state["ds_files_dict"]:
                                 with col1b:

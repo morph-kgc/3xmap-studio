@@ -1,18 +1,9 @@
-import streamlit as st
-import os #for file navigation
-from rdflib import Graph, URIRef, Literal, Namespace, BNode
-import utils
 import pandas as pd
-import pickle
-from rdflib.namespace import split_uri
-from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL, XSD
-import io
-import time   # for success messages
-
-import rdflib, networkx as nx, matplotlib.pyplot as plt
-from pyvis.network import Network
+from rdflib import Graph, URIRef, Namespace
+import streamlit as st
 import streamlit.components.v1 as components
-import networkx as nx
+import time   # for success messages
+import utils
 
 # Config-----------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
@@ -72,10 +63,10 @@ with tab1:
             tm_for_network_list = list_to_choose_tm
 
         if list_to_choose == ["Select all"]:
-            with col1b:
-                st.markdown(f"""<div class="error-message">
-                    ❌ Mapping <b>{st.session_state["g_label"]}</b> contains no TriplesMaps.
-                    <small>Add them from the <b>🏗️Build Mapping</b> page.</small>
+            with col1a:
+                st.markdown(f"""<div class="gray-preview-message">
+                    🔒 Mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> contains <b>no TriplesMaps</b>.
+                    <small>You can add them from the <b>🏗️Build Mapping</b> page.</small>
                 </div>""", unsafe_allow_html=True)
 
     network_flag, network_html, legend_flag, legend_html_list = utils.create_g_mapping_network(tm_for_network_list)
@@ -92,7 +83,6 @@ with tab1:
                     st.markdown(f"""{legend_html}""", unsafe_allow_html=True)
 
 
-# RFBOOKMARK
 #_______________________________________________________________________________
 # PANEL: PREDEFINED SEARCHES
 with tab2:
@@ -170,7 +160,7 @@ with tab2:
                         s = row.Subject
                         p = row.Predicate
                         o = row.Object
-                        small_header, new_inner_html = utils.preview_rule_list(s, p, o)
+                        small_header, new_inner_html = utils.display_rule(s, p, o)
                         inner_html += new_inner_html
 
                     st.markdown(f"""<div class="info-message-blue">
@@ -373,10 +363,16 @@ with tab2:
             sm = row.sm if hasattr(row, "sm") and row.sm else ""
             rdf_class = row.get("class") if row.get("class") else ""
             class_label = utils.get_node_label(rdf_class)
+            ont_tag = utils.identify_term_ontology(class_label)
+            if not ont_tag:   # External classes (check if custom)
+                if rdf_class in st.session_state["custom_terms_dict"]:
+                    ont_tag = "Custom"
+                else:
+                    ont_tag = "External"
 
             selected_classes_for_display_list = list_to_choose_classes if not selected_classes_for_display_list else selected_classes_for_display_list
             if class_label in selected_classes_for_display_list:
-                df_data.append({"Class": utils.get_node_label(rdf_class),
+                df_data.append({"Class": utils.get_node_label(rdf_class), "Ontology": ont_tag,
                     "TriplesMap": utils.get_node_label(tm),
                     "Subject Map": utils.get_node_label(sm, short_BNode=False)})
 
@@ -395,7 +391,7 @@ with tab2:
 
             list_to_choose_properties = sorted(list(properties_set))
             if len(list_to_choose_properties) > 1:
-                selected_properties_for_display_list = st.multiselect("📡 Filter by Property (optional):", list_to_choose_properties,
+                selected_properties_for_display_list = st.multiselect("🖱️ Select properties to display (optional):", list_to_choose_properties,
                     placeholder="No filter", key="key_selected_properties_for_display_list")
             else:
                 selected_properties_for_display_list = []
@@ -409,10 +405,16 @@ with tab2:
             pom = row.pom if hasattr(row, "pom") and row.pom else ""
             predicate = row.get("predicate") if row.get("predicate") else ""
             predicate_label = utils.get_node_label(predicate)
+            ont_tag = utils.identify_term_ontology(predicate_label)
+            if not ont_tag:   # External properties (check if custom)
+                if predicate in st.session_state["custom_terms_dict"]:
+                    ont_tag = "Custom"
+                else:
+                    ont_tag = "External"
 
             selected_properties_for_display_list = list_to_choose_properties if not selected_properties_for_display_list else selected_properties_for_display_list
             if predicate_label in selected_properties_for_display_list:
-                df_data.append({"Property": utils.get_node_label(predicate),
+                df_data.append({"Property": utils.get_node_label(predicate), "Ontology": ont_tag,
                     "TriplesMap": utils.get_node_label(tm),
                     "Predicate-Object Map": utils.get_node_label(pom, short_BNode=False)})
 
@@ -466,22 +468,14 @@ with tab2:
             utils.display_predefined_search_df(df_data, limit, offset)
 
 
-
-#RFBOOKMARK
 #_______________________________________________________________________________
 # PANEL: SPARQL
 with tab3:
-    st.write("")
-    st.write("")
-
-    col1, col2 = st.columns([2,1.5])
-
-    with col2:
-        col2a,col2b = st.columns([1,2])
+    col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
     with col2b:
         utils.get_corner_status_message(mapping_info=True)
 
-    #PURPLE HEADING - ADD NEW TRIPLESMAP
+    # PURPLE HEADING: SPARQL----------------------------------------------------
     with col1:
         st.markdown("""<div class="purple-heading">
                 ❔ SPARQL
@@ -490,37 +484,30 @@ with tab3:
 
     with col1:
         col1a, col1b = st.columns([2,1])
-
-
     with col1a:
         query = st.text_area("⌨️ Enter SPARQL query:*")
 
     if query:
         try:
             results = st.session_state["g_mapping"].query(query)
-            # Create and display the DataFrame (build rows dynamically)
             rows = []
             columns = set()
-
             for row in results:
                 row_dict = {}
                 for var in row.labels:
                     value = row[var]
-                    row_dict[str(var)] = str(value) if value else ""
+                    row_dict[str(var)] = utils.get_node_label(value, short_BNode=False) if value else ""
                     columns.add(str(var))
                 rows.append(row_dict)
 
-
-
-            df = pd.DataFrame(rows, columns=sorted(columns))
-            if not df.empty:
-                with col1:
+            with col1:
+                df = pd.DataFrame(rows, columns=sorted(columns))
+                if not df.empty:
                     st.markdown(f"""<div class="info-message-blue">
                         <b>RESULTS ({len(df)}):</b>
                     </div>""", unsafe_allow_html=True)
                     st.dataframe(df, hide_index=True)
-            else:
-                with col1a:
+                else:
                     st.markdown(f"""<div class="warning-message">
                         ⚠️ <b>No results.</b>
                     </div>""", unsafe_allow_html=True)
@@ -533,44 +520,36 @@ with tab3:
                 </div>""", unsafe_allow_html=True)
 
 
-#________________________________________________
-# PREVIEW
+#RFBOOKMARK
+#_______________________________________________________________________________
+# PANEL: PREVIEW
 with tab4:
-    st.write("")
-    st.write("")
-
-    col1, col2 = st.columns([2,1.5])
-
-    with col2:
-        col2a,col2b = st.columns([1,2])
+    col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
     with col2b:
         utils.get_corner_status_message(mapping_info=True)
 
-    #PURPLE HEADING - PREVIEW
+    # PURPLE HEADING: PREVIEW---------------------------------------------------
     with col1:
         st.markdown("""<div class="purple-heading">
                 🔍 Preview
             </div>""", unsafe_allow_html=True)
         st.write("")
 
+    if st.session_state["mapping_downloaded_ok_flag"]:
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.write("")
+            st.markdown(f"""<div class="success-message-flag">
+                ✅ The mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> has been downloaded!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["mapping_downloaded_ok_flag"] = False
+        time.sleep(utils.get_success_message_time())
+        st.rerun()
+
+
     with col1:
         col1a, col1b = st.columns([2,1])
-
-        if st.session_state["mapping_downloaded_ok_flag"]:
-            with col1:
-                col1a, col1b = st.columns([2,1])
-            with col1a:
-                st.write("")
-                st.markdown(f"""<div class="success-message-flag">
-                    ✅ The mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> has been downloaded!
-                </div>""", unsafe_allow_html=True)
-            st.session_state["mapping_downloaded_ok_flag"] = False
-            time.sleep(utils.get_success_message_time())
-            st.rerun()
-
-
-    list_to_choose = list(utils.get_supported_formats_dict(mapping=True))
-    list_to_choose.remove("jsonld")
 
     with col1a:
         if not "key_export_format_selectbox" in st.session_state:
@@ -580,27 +559,26 @@ with tab4:
             horizontal=True, label_visibility="collapsed", key="key_export_format_selectbox")
         preview_format = format_options_dict[preview_format_display]
 
-    if preview_format != "Select format":
-        serialised_data = st.session_state["g_mapping"].serialize(format=preview_format)
-        max_length = utils.get_max_length_for_display()[9]
-        if len(serialised_data) > max_length:
-            with col1:
-                st.markdown(f"""<div class="info-message-blue">
-                    🐘 <b>Your mapping is quite large</b> ({utils.format_number_for_display(len(st.session_state["g_mapping"]))} triples).
-                    <small>Showing only the first {utils.format_number_for_display(max_length)} characters
-                    (out of {utils.format_number_for_display(len(serialised_data))}) to avoid performance issues.</small>
-                </div>""", unsafe_allow_html=True)
-        st.code(serialised_data[:max_length])
+    serialised_data = st.session_state["g_mapping"].serialize(format=preview_format)
+    max_length = utils.get_max_length_for_display()[9]
+    if len(serialised_data) > max_length:
+        with col1:
+            st.markdown(f"""<div class="info-message-blue">
+                🐘 <b>Your mapping is quite large</b> ({utils.format_number_for_display(len(st.session_state["g_mapping"]))} triples).
+                <small>Showing only the first {utils.format_number_for_display(max_length)} characters
+                (out of {utils.format_number_for_display(len(serialised_data))}) to avoid performance issues.</small>
+            </div>""", unsafe_allow_html=True)
+    st.code(serialised_data[:max_length])
 
-        with col1b:
-            allowed_format_dict = utils.get_supported_formats_dict(mapping=True)
-            extension = allowed_format_dict[preview_format]
-            download_filename = st.session_state["g_label"] + extension
-            st.session_state["mapping_downloaded_ok_flag"] = st.download_button(label="Download", data=serialised_data,
-                file_name=download_filename, mime="text/plain")
+    with col1b:
+        allowed_format_dict = utils.get_supported_formats(mapping=True)
+        extension = allowed_format_dict[preview_format]
+        download_filename = st.session_state["g_label"] + extension
+        st.session_state["mapping_downloaded_ok_flag"] = st.download_button(label="Download", data=serialised_data,
+            file_name=download_filename, mime="text/plain")
 
-        if st.session_state["mapping_downloaded_ok_flag"]:
-            st.rerun()
+    if st.session_state["mapping_downloaded_ok_flag"]:
+        st.rerun()
 
 
 #_______________________________________________________________
