@@ -472,7 +472,7 @@ with tab1:
         with col1:
             col1a, col1b = st.columns([2,1])
 
-        everything_ok_flag, inner_html_success, inner_html_error, inner_html_info = utils.check_issues_for_materialisation()
+        everything_ok_flag, inner_html_success, inner_html_error, info_table_html = utils.check_issues_for_materialisation()
         if everything_ok_flag:   # IF EVERYTHING IS OK
             with col1a:
                 if st.session_state["autoconfig_active_flag"]:
@@ -1196,23 +1196,32 @@ with tab2:
             </div>""", unsafe_allow_html=True)
 
     else:
-        everything_ok_flag, inner_html_success, inner_html_error, inner_html_info = utils.check_issues_for_materialisation()
-        with col1a:
+        everything_ok_flag, inner_html_success, inner_html_error, info_table_html = utils.check_issues_for_materialisation()
+        with col1:
             messages = []
             if inner_html_error:
-                messages.append(f"""❌ <b>Potential materialisation error sources:</b><br>
-                <div style='margin-left: 1.5em;'>{inner_html_error}</div>""")
+                messages.append(f"""⚠️ <b>Potential materialisation error sources:</b><br>
+                <div style='margin-left: 1.3em;'><small>{inner_html_error}</small></div>""")
             if inner_html_success:
                 messages.append(f"""✔️ <b>Good prospects:</b><br>
-                <div style='margin-left: 1.5em;'>{inner_html_success}</div>""")
+                <div style='margin-left: 1.3em;'><small>{inner_html_success}</small></div>""")
 
             separator = "<hr style='border:0; border-top:1px solid #999; margin:10px 0;'>"
             final_message = separator.join(messages)
             if final_message:
-                st.markdown(f"""<div class="gray-preview-message" style="font-size:13px; line-height:1.2;">
+                st.write("")
+                st.markdown(f"""<div class="gray-preview-message" style="font-size:13px; line-height:1.5;">
                         {final_message}
                     </div>""", unsafe_allow_html=True)
                 st.write("")
-                st.write("")
+
+
+        # Info table
+        with col1:
+            st.markdown(f"""<div class="gray-preview-message" style="font-size:13px; line-height:1.2;">
+                {info_table_html}
+                </div>
+            """, unsafe_allow_html=True)
+
 
         # RFBOOKMARK

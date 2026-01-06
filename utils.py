@@ -4302,7 +4302,6 @@ def check_issues_for_materialisation():
     g_mapping_ok_flag = True
     inner_html_success = ""
     inner_html_error = ""
-    inner_html_info = ""
 
     # Check if config file is empty
     config_string = io.StringIO()
@@ -4330,12 +4329,13 @@ def check_issues_for_materialisation():
         if st.session_state["g_label"]:
             g_mapping_complete_flag, heading_html, inner_html, tm_wo_sm_list, tm_wo_pom_list, pom_wo_om_list, pom_wo_predicate_list = utils.check_g_mapping(st.session_state["g_mapping"])
             if not g_mapping_complete_flag:
-                inner_html_error += f"· Mapping <b>{st.session_state["g_label"]}</b> is incomplete:" + inner_html
+                inner_html_error += f"""· Mapping <b>{st.session_state["g_label"]}</b> is incomplete
+                    <small>(<b> 🧹 clean below</b>).</small><br>"""
                 everything_ok_flag = False
                 g_mapping_ok_flag = False
             else:
                 inner_html_success += f"""· Mapping <b>{st.session_state["g_label"]}</b>
-                    complete.<br>"""
+                    is complete.<br>"""
 
     # Check links to additional mappings from urls (in case they broke after importing - unlikely)
     mkgc_not_working_url_mappings_list = []
@@ -4352,14 +4352,10 @@ def check_issues_for_materialisation():
     if st.session_state["g_label"] in mkgc_used_additional_mapping_list:
         mkgc_used_additional_mapping_list.remove(st.session_state["g_label"])
     if mkgc_used_additional_mapping_list and not mkgc_not_working_url_mappings_list:
-        inner_html_success += f"""· <b>Additional mappings</b> are valid:<br>
-            <div style="margin-left: 20px"><b><small>
-            {utils.format_list_for_display(mkgc_used_additional_mapping_list)}</small></b><br></div>"""
+        inner_html_success += f"""· All <b>additional mappings</b> ({len(mkgc_used_additional_mapping_list)}) are valid.<br>"""
     elif mkgc_used_additional_mapping_list:
         everything_ok_flag = False
-        inner_html_error += f"""· URL to <b>additional mapping(s)</b> not working:<br>
-            <div style="margin-left: 20px"><b><small>
-            {utils.format_list_for_display(mkgc_not_working_url_mappings_list)}</small><br></div>"""
+        inner_html_error += f"""· Some URL to <b>additional mappings</b> ({len(mkgc_not_working_url_mappings_list)}) not working.<br>"""
 
     # Check at least a data source is included
     if not mkgc_used_db_conn_list and not mkgc_used_tab_ds_list:
@@ -4376,21 +4372,16 @@ def check_issues_for_materialisation():
         except Exception as e:
             not_working_db_conn_list.append(connection_string)
     if not not_working_db_conn_list and mkgc_used_db_conn_list:
-        censored_mkgc_used_db_conn_list = [censor_url_str(conn) for conn in mkgc_used_db_conn_list]
-        formatted_list = "<br>".join(censored_mkgc_used_db_conn_list)
-        inner_html_success += f"""· All <b>connections to databases</b> of the Config file are working:<br>
-            <div style="margin-left: 20px"><small><b>{formatted_list}</b></small><br></div>"""
+        inner_html_success += f"""· All <b>connections to databases</b> ({len(mkgc_used_db_conn_list)}) of the Config file are working.<br>"""
     elif not_working_db_conn_list:
         everything_ok_flag = False
-        censored_not_working_db_conn_list = [utils.censor_url_str(conn) for conn in not_working_db_conn_list]
         if len(not_working_db_conn_list) == 1:
-            inner_html_error += f"""· A <b>connection to database</b> of the Config file is not working:<br>
-                <div style="margin-left: 20px"><small><b>{utils.format_list_for_display(censored_not_working_db_conn_list)}
-                </b></small><br></div>"""
+            inner_html_error += f"""· A <b>connection to database</b> of the Config file is not working
+                <small>(go to <b>📊 Databases</b> page).</small><br>"""
         else:
-            inner_html_error += f"""· Several <b>connections to databases</b> of the Config file are not working:<br>
-                <div style="margin-left: 20px"><small><b>
-                {utils.format_list_for_display(censored_not_working_db_conn_list)}</b></small><br></div>"""
+            inner_html_error += f"""· Several <b>connections to databases</b> ({len(not_working_db_conn_list)})
+                of the Config file are not working
+                <small>(go to <b>📊 Databases</b> page).</small><br>"""
 
     # Check all tabular sources are loaded
     not_loaded_ds_list = []
@@ -4399,21 +4390,17 @@ def check_issues_for_materialisation():
             not_loaded_ds_list.append(ds_filename)
 
     if not not_loaded_ds_list and mkgc_used_tab_ds_list:
-        inner_html_success += f"""· All <b>tabular data sources</b> of the Config file are loaded:<br>
-            <div style="margin-left: 20px"><small>
-            <b>{utils.format_list_for_display(mkgc_used_tab_ds_list)}</b></small><br></div>"""
+        inner_html_success += f"""· All <b>tabular data sources</b> ({len((mkgc_used_tab_ds_list))})
+            of the Config file are loaded.<br>"""
     elif mkgc_used_tab_ds_list:
         everything_ok_flag = False
-        with col1a:
-            if len(not_loaded_ds_list) == 1:
-                inner_html_error += f"""· A <b>tabular data source</b> of the Config file is not loaded:
-                    <div style="margin-left: 20px"><b><small>
-                    {utils.format_list_for_display(not_loaded_ds_list)}</b></small><br></div>"""
-            else:
-                inner_html_error += f"""· Several <b>tabular data sources</b> of the Config file are not loaded:
-                    <div style="margin-left: 20px"><small><b>
-                    {utils.format_list_for_display(not_loaded_ds_list)}</b></small>
-                    <br></div>"""
+        if len(not_loaded_ds_list) == 1:
+            inner_html_error += f"""· A <b>tabular data source</b> of the Config file is not loaded
+                <small>(go to <b>🛢️ Tabular Data</b> page).</small><br>"""
+        else:
+            inner_html_error += f"""· Several <b>tabular data sources</b> ({len(not_loaded_ds_list)})
+                of the Config file are not loaded
+                <small>(go to <b>🛢️ Tabular Data</b> page).</small><br>"""
 
 
     # Check if there are explicitely declared data sources in any mapping that are not declared in the Config file
@@ -4430,48 +4417,74 @@ def check_issues_for_materialisation():
             if ds not in mkgc_used_db_conn_list and ds not in mkgc_used_tab_ds_list and ds not in missing_explicit_ds_list_additional_mappings:
                 missing_explicit_ds_list_additional_mappings.append(ds)
 
-    st.write("HERE", missing_explicit_ds_list_g_mapping)
-    st.write("HERE", missing_explicit_ds_list_additional_mappings)
-
     if missing_explicit_ds_list_g_mapping:
         everything_ok_flag = False
-        censored_missing_explicit_ds_list_g_mapping = [utils.censor_url_str(ds) for ds in missing_explicit_ds_list_g_mapping]
         if len(missing_explicit_ds_list_g_mapping) == 1:
             inner_html_error += f"""· A <b>data source</b> is explicitely declared in mapping <b>{st.session_state["g_label"]}</b>
-                but not in the Config file:<br>
-                <div style="margin-left: 20px"><small><b>{utils.format_list_for_display(censored_missing_explicit_ds_list_g_mapping)}
-                </b></small><br></div>"""
+                <small>but not in the Config file.</small><br>"""
         else:
-            inner_html_error += f"""· Several <b>data sources</b> are explicitely declared in mapping <b>{st.session_state["g_label"]}</b>
-                but not in the Config file:<br>
-                <div style="margin-left: 20px"><small><b>{utils.format_list_for_display(censored_missing_explicit_ds_list_g_mapping)}
-                </b></small><br></div>"""
+            inner_html_error += f"""· Several <b>data sources</b> ({len(_missing_explicit_ds_list_g_mapping)})
+                are explicitely declared in mapping <b>{st.session_state["g_label"]}</b>
+                <small>but not in the Config file.</small><br>"""
 
     if missing_explicit_ds_list_additional_mappings:
         everything_ok_flag = False
         censored_missing_explicit_ds_list_additional_mappings = [utils.censor_url_str(ds) for ds in missing_explicit_ds_list_additional_mappings]
         if len(missing_explicit_ds_list_additional_mappings) == 1:
-            inner_html_error += f"""· A <b>data source</b> is explicitely declared in mapping <b>additional mapping(s)</b>
-                but not in the Config file:<br>
-                <div style="margin-left: 20px"><small><b>{utils.format_list_for_display(censored_missing_explicit_ds_list_additional_mappings)}
-                </b></small><br></div>"""
+            inner_html_error += f"""· A <b>data source</b> is explicitely declared in the <b>additional mapping(s)</b>
+                <small>but not in the Config file.</small><br>"""
         else:
-            inner_html_error += f"""· Several <b>data sources</b> are explicitely declared in the <b>additional mapping(s)</b>
-                but not in the Config file:<br>
-                <div style="margin-left: 20px"><small><b>{utils.format_list_for_display(censored_missing_explicit_ds_list_additional_mappingsg)}
-                </b></small><br></div>"""
+            inner_html_error += f"""· Several <b>data sources</b> ({len(missing_explicit_ds_list_additional_mappings)})
+                are explicitely declared in the <b>additional mapping(s)</b>
+                <small>but not in the Config file.</small><br>"""
 
-    if st.session_state["g_label"] and not g_mapping_ok_flag:
-        inner_html_info += f"""ℹ️ You can fix mapping <b>{st.session_state["g_label"]}</b>
-                in the <b>🏗️ Build Mapping</b> page.<br>"""
-    if not_working_db_conn_list:
-        inner_html_info += f"""ℹ️ Check the connections to databases in the
-                <b>📊 Databases</b> page.<br>"""
-    if not_loaded_ds_list:
-        inner_html_info += f"""ℹ️ Load the tabular data sources from the
-                <b>🛢️ Tabular Data</b> page."""
+    # Ds expicitely used by additional mappings
+    data_sources_list = mkgc_used_db_conn_list + mkgc_used_tab_ds_list
+    explicit_ds_g_mapping = get_all_explicit_datasources(st.session_state["g_mapping"])
+    explicit_ds_additional_mappings = []
+    for additional_mapping_label in mkgc_used_additional_mapping_list:
+        explicit_ds = get_all_explicit_datasources(st.session_state["mkgc_g_mappings_dict"][additional_mapping_label])
+        for ds in explicit_ds:
+            if ds not in explicit_ds_additional_mappings:
+                explicit_ds_additional_mappings.append(ds)
 
-    return everything_ok_flag, inner_html_success, inner_html_error, inner_html_info
+    # Build INFO TABLE
+    info_table_html = """<b style="display:block; margin-bottom:10px;">ℹ️ INFO TABLE</b><small><table>"""
+
+    if mkgc_used_db_conn_list:
+        info_table_html += f"""<thead><tr>
+                                        <th>📊 Databases</th>
+                                        <td>{format_list_for_display(mkgc_used_db_conn_list)}</td>
+                                    </tr></thead><tbody>"""
+
+    if mkgc_used_tab_ds_list:
+        info_table_html += f"""<thead><tr>
+                                        <th>🛢️ Tabular data sources</th>
+                                        <td>{format_list_for_display(mkgc_used_tab_ds_list)}</td>
+                                    </tr></thead><tbody>"""
+
+    if mkgc_used_additional_mapping_list:
+        info_table_html += f"""<thead><tr>
+                                        <th>🗺️ Additional Mappings</th>
+                                        <td>{format_list_for_display(mkgc_used_additional_mapping_list)}</td>
+                                    </tr></thead><tbody>"""
+
+    if explicit_ds_g_mapping:
+        info_table_html += f"""<thead><tr>
+                                        <th>📌 Explicit data sources (mapping {st.session_state["g_label"]})</th>
+                                        <td>{format_list_for_display(explicit_ds_g_mapping)}</td>
+                                    </tr></thead><tbody>"""
+
+    if explicit_ds_additional_mappings:
+        info_table_html += f"""<thead><tr>
+                                        <th>📌 Explicit data sources (additional mappings)</th>
+                                        <td>{format_list_for_display(explicit_ds_additional_mappings)}</td>
+                                    </tr></thead><tbody>"""
+
+    info_table_html += "</table></small>"
+
+    # Return everything
+    return everything_ok_flag, inner_html_success, inner_html_error, info_table_html
 #_________________________________________________
 
 #_________________________________________________
