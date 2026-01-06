@@ -145,9 +145,9 @@ with tab2:
                     "Predicate": utils.get_node_label(predicate),
                     "Object": utils.get_node_label(object_),
                     "TriplesMap": utils.get_node_label(tm),
-                    "Subject Map": utils.get_node_label(sm, short_BNode=False),
-                    "Predicate-Object Map": utils.get_node_label(pom, short_BNode=False),
-                    "Object Map": utils.get_node_label(om, short_BNode=False)}
+                    "Subject Map": utils.get_node_label(sm),
+                    "Predicate-Object Map": utils.get_node_label(pom),
+                    "Object Map": utils.get_node_label(om)}
                 df_data.append(row_dict)
 
         # Display
@@ -209,7 +209,7 @@ with tab2:
                     "Table": table_name,
                     "Source": source,
                     "Reference Formulation": utils.get_node_label(reference_formulation),
-                    "Logical Source": utils.get_node_label(logical_source, short_BNode=False)}
+                    "Logical Source": utils.get_node_label(logical_source)}
                 df_data.append(row_dict)
 
         # Display
@@ -267,7 +267,7 @@ with tab2:
                     "Term Type": utils.get_node_label(term_type),
                     "TriplesMap": utils.get_node_label(tm),
                     "Graph Map": utils.get_node_label(graph),
-                    "Subject Map": utils.get_node_label(subject_map, short_BNode=False)}
+                    "Subject Map": utils.get_node_label(subject_map)}
                 df_data.append(row_dict)
 
         # Display
@@ -329,8 +329,8 @@ with tab2:
                     "TermType": utils.get_node_label(term_type),
                     "Graph Map": utils.get_node_label(graph_map),
                     "TriplesMap": utils.get_node_label(tm),
-                    "Predicate-Object Map": utils.get_node_label(pom, short_BNode=False),
-                    "Object Map": utils.get_node_label(object_map, short_BNode=False)}
+                    "Predicate-Object Map": utils.get_node_label(pom),
+                    "Object Map": utils.get_node_label(object_map)}
 
                 df_data.append(row_dict)
 
@@ -374,7 +374,7 @@ with tab2:
             if class_label in selected_classes_for_display_list:
                 df_data.append({"Class": utils.get_node_label(rdf_class), "Ontology": ont_tag,
                     "TriplesMap": utils.get_node_label(tm),
-                    "Subject Map": utils.get_node_label(sm, short_BNode=False)})
+                    "Subject Map": utils.get_node_label(sm)})
 
         # Display
         with col1:
@@ -416,7 +416,7 @@ with tab2:
             if predicate_label in selected_properties_for_display_list:
                 df_data.append({"Property": utils.get_node_label(predicate), "Ontology": ont_tag,
                     "TriplesMap": utils.get_node_label(tm),
-                    "Predicate-Object Map": utils.get_node_label(pom, short_BNode=False)})
+                    "Predicate-Object Map": utils.get_node_label(pom)})
 
         # Display
         with col1:
@@ -459,9 +459,9 @@ with tab2:
             p_label = utils.get_node_label(p)
             o_label = utils.get_node_label(o)
 
-            df_data.append({"Subject": utils.get_node_label(s, short_BNode=False),
-                "Predicate": utils.get_node_label(p, short_BNode=False),
-                "Object": utils.get_node_label(o, short_BNode=False)})
+            df_data.append({"Subject": utils.get_node_label(s),
+                "Predicate": utils.get_node_label(p),
+                "Object": utils.get_node_label(o)})
 
         # Display
         with col1:
@@ -496,7 +496,7 @@ with tab3:
                 row_dict = {}
                 for var in row.labels:
                     value = row[var]
-                    row_dict[str(var)] = utils.get_node_label(value, short_BNode=False) if value else ""
+                    row_dict[str(var)] = utils.get_node_label(value) if value else ""
                     columns.add(str(var))
                 rows.append(row_dict)
 

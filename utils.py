@@ -679,12 +679,11 @@ def format_list_for_display(xlist):
 
 #______________________________________________________
 # Funtion to get label of a node   #RFTAG
-def get_node_label(node, iri_prefix=True, short_BNode=True):
+def get_node_label(node, iri_prefix=True, short_BNode=False):
 
     # BNode
     if isinstance(node, BNode):
         label = "_:" + str(node)[:7] + "..." if short_BNode else str(node)
-
 
     # URIRef or Other (check is valid uri and split, else node)
     elif node:
@@ -707,19 +706,6 @@ def get_node_label(node, iri_prefix=True, short_BNode=True):
     return label
 #______________________________________________________
 
-# #______________________________________________________
-# # Funtion to format iri to prefix:label
-# def get_node_label(node):
-#
-#     if isinstance(node, BNode):
-#         return get_node_label(node)
-#
-#     try:
-#         prefix, ns, local = st.session_state["g_mapping"].namespace_manager.compute_qname(node)
-#         return prefix + ": " + local
-#     except Exception:
-#         return get_node_label(node)
-# #______________________________________________________
 
 #______________________________________________________
 # Funtion to format number
@@ -855,8 +841,8 @@ def display_right_column_df(info, text, complete=True, display=True):
     elif info == "subject_maps":
         session_state_dict = st.session_state["last_added_sm_list"]
         sm_dict = get_sm_dict()
-        rows = [{"Triplesmap": triples_map, "Subject Map": sm_dict[subject_map][0],
-            "Rule": sm_dict[subject_map][2], "Type": sm_dict[subject_map][1]}
+        rows = [{"Triplesmap": triples_map, "Rule": sm_dict[subject_map][2],
+            "Type": sm_dict[subject_map][1], "Subject Map": sm_dict[subject_map][0],}
             for subject_map, triples_map in st.session_state["last_added_sm_list"]
             if subject_map in sm_dict]
 
@@ -2818,7 +2804,7 @@ def get_sm_dict():
 
         if sm_iri:
 
-            sm_label = get_node_label(sm_iri)
+            sm_label = get_node_label(sm_iri, short_BNode=True)
 
             if template:
                 sm_type = "template"

@@ -34,7 +34,8 @@ temp_folder_path = utils.get_folder_name(temp_materialisation_files=True)
 # Define on_click functions--------------------------------------------
 # TAB1
 def autoconfig():
-    # reset config dict____________________________
+    # reset config dict and additional mappings___________________
+    st.session_state["mkgc_g_mappings_dict"] = {}
     st.session_state["mkgc_config"] = configparser.ConfigParser()
     # list to manage data source labels_______________
     base_label = "DataSource"
@@ -510,7 +511,7 @@ with tab1:
                         <small>Go to the 🕵️<b>Check Issues</b> pannel for more information.</small>
                     </div>""", unsafe_allow_html=True)
 
-            if at_least_one_ds_in_config_file_flag:
+            if not st.session_state["autoconfig_active_flag"] and at_least_one_ds_in_config_file_flag:
                 with col1:
                     st.write("_______")
 

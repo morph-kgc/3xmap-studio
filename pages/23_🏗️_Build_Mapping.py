@@ -2173,7 +2173,7 @@ with tab4:
                         dict_to_choose = {}
                         for pom_iri in pom_dict:
                             if pom_dict[pom_iri][0] == tm_to_remove_pom_iri:
-                                dict_to_choose[utils.get_node_label(pom_iri, short_BNode=False)] = pom_iri
+                                dict_to_choose[utils.get_node_label(pom_iri)] = pom_iri
                         list_to_choose = sorted(dict_to_choose.keys())
                         if len(list_to_choose) > 1:
                             list_to_choose.insert(0, "Select all")
@@ -2212,7 +2212,7 @@ with tab4:
 
 
             if tm_to_remove_pom_label != "Select TriplesMap":
-                rows = [{"Predicate-Object Map": utils.get_node_label(pom_iri, short_BNode=False),
+                rows = [{"Predicate-Object Map": utils.get_node_label(pom_iri),
                     "Rule": pom_dict[pom_iri][5], "Type": pom_dict[pom_iri][4],
                     "Predicate(s)": utils.format_list_for_display(pom_dict[pom_iri][1])}
                     for pom_iri in pom_of_selected_tm_list]
