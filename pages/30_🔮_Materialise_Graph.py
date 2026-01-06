@@ -334,6 +334,39 @@ tab1, tab2 = st.tabs(["Materialise", "Check issues"])
 # PANEL: AUTOCONFIG
 with tab1:
     col1, col2, col2a, col2b = utils.get_panel_layout()
+
+    # RIGHT COLUMN SUCCESS MESSAGES---------------------------------------------
+    if st.session_state["autoconfig_generated_ok_flag"]:
+        with col2b:
+            st.write("")
+            st.markdown(f"""<div class="success-message-flag">
+                ✅ The <b>Config file</b> has been auto-generated!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["autoconfig_generated_ok_flag"] = False
+        time.sleep(utils.get_success_message_time())
+        st.rerun()
+
+    if st.session_state["manual_config_enabled_ok_flag"]:
+        with col2b:
+            st.write("")
+            st.markdown(f"""<div class="success-message-flag">
+                ✅ <b>Manual configuration</b> has been enabled!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["manual_config_enabled_ok_flag"] = False
+        time.sleep(utils.get_success_message_time())
+        st.rerun()
+
+    if st.session_state["config_file_reset_ok"]:
+        with col2b:
+            st.write("")
+            st.markdown(f"""<div class="success-message-flag">
+                ✅ The <b>Config file</b> has been reset!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["config_file_reset_ok"] = False
+        time.sleep(utils.get_success_message_time())
+        st.rerun()
+
+
     with col2b:
         utils.get_corner_status_message(mapping_info=True)
 
@@ -405,50 +438,14 @@ with tab1:
             if enable_manual_configuration_checkbox:
                 st.button("Enable", key="key_enable_manual_config_button", on_click=enable_manual_config)
 
-    # SUCCESS MESSAGES: AUTOCONFIG/MANUAL OPTIONS ENABLED-----------------------
-    if st.session_state["autoconfig_generated_ok_flag"]:
-        with col1:
-            col1a, col1b = st.columns([2,1])
-        with col1a:
-            st.write("")
-            st.markdown(f"""<div class="success-message-flag">
-                ✅ The <b>Config file</b> has been auto-generated!
-            </div>""", unsafe_allow_html=True)
-        st.session_state["autoconfig_generated_ok_flag"] = False
-        time.sleep(utils.get_success_message_time())
-        st.rerun()
+    # Check if there is at least one data source in Config file (used later)
+    at_least_one_ds_in_config_file_flag = False
+    for section in st.session_state["mkgc_config"].sections():
+        if section != "CONFIGURATION" and section != "DEFAULT":
+            at_least_one_ds_in_config_file_flag = True
+            break
 
-    if st.session_state["manual_config_enabled_ok_flag"]:
-        with col1:
-            col1a, col1b = st.columns([2,1])
-        with col1a:
-            st.write("")
-            st.markdown(f"""<div class="success-message-flag">
-                ✅ <b>Manual configuration</b> has been enabled!
-            </div>""", unsafe_allow_html=True)
-        st.session_state["manual_config_enabled_ok_flag"] = False
-        time.sleep(utils.get_success_message_time())
-        st.rerun()
-
-    if st.session_state["config_file_reset_ok"]:
-        with col1:
-            col1a, col1b = st.columns([2,1])
-        with col1a:
-            st.write("")
-            st.markdown(f"""<div class="success-message-flag">
-                ✅ The <b>Config file</b> has been reset!
-            </div>""", unsafe_allow_html=True)
-        st.session_state["config_file_reset_ok"] = False
-        time.sleep(utils.get_success_message_time())
-        st.rerun()
-
-    # PURPLE HEADING: AUTOMATIC CONFIGURATION-----------------------------------
-    with col1:
-        st.markdown("""<div class="purple-heading">
-                🔮 Materialise
-            </div>""", unsafe_allow_html=True)
-        st.write("")
-
+    # SUCCESS MESSAGES----------------------------------------------------------
     if st.session_state["graph_materialised_ok_flag"] == "error":
         with col1:
             col1a, col1b = st.columns([2,1])
@@ -475,37 +472,55 @@ with tab1:
 
     # MAPPING NOT MATERIALISED YET
     if not st.session_state["materialised_g_mapping"]:
-        # AUTOCONFIG MODE ACTIVE (AUTOGENERATE THE CONFIG FILE)
-        if st.session_state["autoconfig_active_flag"]:
-            utils.get_autoconfig_file()
 
-        with col1:
-            col1a, col1b = st.columns([2,1])
+        if at_least_one_ds_in_config_file_flag:
+            # PURPLE HEADING: MATERIALISE-------------------------------------------
+            with col1:
+                st.markdown("""<div class="purple-heading">
+                        🔮 Materialise
+                    </div>""", unsafe_allow_html=True)
+                st.write("")
 
-        with col1a:
+            # AUTOCONFIG MODE ACTIVE (AUTOGENERATE THE CONFIG FILE)
             if st.session_state["autoconfig_active_flag"]:
-                st.markdown(f"""<div class="gray-preview-message">
-                    🤖 The <b>Config file</b> has been <b>automatically generated</b>.
-                    <small> <b>Manual configuration</b> can be enabled.</small>
-                </div>""", unsafe_allow_html=True)
-            else:
-                st.markdown(f"""<div class="gray-preview-message">
-                    ✏️ The <b>Config file</b> has been <b>manually built</b>.<br>
-                </div>""", unsafe_allow_html=True)
+                utils.get_autoconfig_file()
 
-            st.write("")
-            st.button("Materialise", key="key_materialise_graph_button", on_click=materialise_graph)
+            with col1:
+                col1a, col1b = st.columns([2,1])
 
-        everything_ok_flag = utils.check_issues_for_materialisation()[0]
-        if not everything_ok_flag:
-            with col1b:
-                st.markdown(f"""<div class="warning-message">
-                    ⚠️ <b>Potential error sources</b> detected for materialisation.
-                    <small>Go to the 🕵️<b>Check Issues</b> pannel for more information.</small>
-                </div>""", unsafe_allow_html=True)
+            with col1a:
+                if st.session_state["autoconfig_active_flag"]:
+                    st.markdown(f"""<div class="gray-preview-message">
+                        🤖 The <b>Config file</b> has been <b>automatically generated</b>.
+                        <small> <b>Manual configuration</b> can be enabled.</small>
+                    </div>""", unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""<div class="gray-preview-message">
+                        ✏️ The <b>Config file</b> has been <b>manually built</b>.<br>
+                    </div>""", unsafe_allow_html=True)
 
-    # MAPPING READY FOR DOWNLOAD
+                st.write("")
+                st.button("Materialise", key="key_materialise_graph_button", on_click=materialise_graph)
+
+            everything_ok_flag = utils.check_issues_for_materialisation()[0]
+            if not everything_ok_flag:
+                with col1b:
+                    st.markdown(f"""<div class="warning-message">
+                        ⚠️ <b>Potential error sources</b> detected for materialisation.
+                        <small>Go to the 🕵️<b>Check Issues</b> pannel for more information.</small>
+                    </div>""", unsafe_allow_html=True)
+
+            if at_least_one_ds_in_config_file_flag:
+                with col1:
+                    st.write("_______")
+
     elif not st.session_state["error_during_materialisation_flag"]:
+        # PURPLE HEADING: EXPORT GRAPH------------------------------------------
+        with col1:
+            st.markdown("""<div class="purple-heading">
+                    📤 Export graph
+                </div>""", unsafe_allow_html=True)
+            st.write("")
         with col1:
             col1a, col1b = st.columns([1,2])
         with col1a:
@@ -539,7 +554,7 @@ with tab1:
 
                 with col1a:
                     st.write("")
-                    st.download_button(label="Download",
+                    st.download_button(label="Export",
                         data=st.session_state["materialised_g_mapping_file"],
                         file_name=download_filename_complete,
                         mime=mime_option)
@@ -572,7 +587,6 @@ with tab1:
     if not st.session_state["autoconfig_active_flag"] and not st.session_state["materialised_g_mapping"]:
         # PURPLE HEADING: CONFIGURE DATA SOURCE-----------------------------
         with col1:
-            st.write("______")
             st.markdown("""<div class="purple-heading">
                     📊 Configure Data Source
                 </div>""", unsafe_allow_html=True)
