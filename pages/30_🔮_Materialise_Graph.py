@@ -73,7 +73,7 @@ def reset_config_file():
     st.session_state["materialised_g_mapping"] = Graph()
     st.session_state["autoconfig_active_flag"] = False
     # store information_________________________
-    st.session_state["config_file_reset_ok_flag_tab1"] = True
+    st.session_state["config_file_reset_ok"] = True
 
 # TAB2
 def enable_manual_config():
@@ -218,6 +218,7 @@ def remove_additional_mapping_for_mkgc():
 def back_to_materialisation():
     # store information________________________
     st.session_state["materialised_g_mapping"] = False
+    st.session_state["error_during_materialisation_flag"] = False
 
 def materialise_graph():
     # Get info________________________________________
@@ -305,6 +306,25 @@ def materialise_graph():
             if os.path.isfile(file_path):
                 os.remove(file_path)
         os.rmdir(temp_folder_path)      # remove the empty folder
+
+def clean_g_mapping():
+    # remove triples and store information____________________________
+    for tm in tm_to_clean_list:
+        utils.remove_triplesmap(tm)      # remove the tm
+    # remove predicate-object maps
+    for pom_iri in pom_to_clean_list:
+        om_to_remove = st.session_state["g_mapping"].value(subject=pom_iri, predicate=RML.objectMap)
+        st.session_state["g_mapping"].remove((pom_iri, None, None))
+        st.session_state["g_mapping"].remove((None, None, pom_iri))
+        st.session_state["g_mapping"].remove((om_to_remove, None, None))
+    # store information__________________
+    st.session_state["last_added_sm_list"] = [pair for pair in st.session_state["last_added_sm_list"]
+        if pair[1] in utils.get_tm_dict()]
+    st.session_state["last_added_pom_list"] = [pair for pair in st.session_state["last_added_pom_list"]
+        if pair[1] in utils.get_tm_dict()]
+    st.session_state["last_added_pom_list"] = [pair for pair in st.session_state["last_added_pom_list"]
+        if pair[0] not in pom_to_remove_iri_list]
+    st.session_state["g_mapping_cleaned_ok_flag"] = True
 
 #_______________________________________________________________________________
 # PANELS OF THE PAGE (tabs)
@@ -410,7 +430,7 @@ with tab1:
         time.sleep(utils.get_success_message_time())
         st.rerun()
 
-    if st.session_state["config_file_reset_ok_flag_tab1"]:
+    if st.session_state["config_file_reset_ok"]:
         with col1:
             col1a, col1b = st.columns([2,1])
         with col1a:
@@ -418,7 +438,7 @@ with tab1:
             st.markdown(f"""<div class="success-message-flag">
                 ✅ The <b>Config file</b> has been reset!
             </div>""", unsafe_allow_html=True)
-        st.session_state["config_file_reset_ok_flag_tab1"] = False
+        st.session_state["config_file_reset_ok"] = False
         time.sleep(utils.get_success_message_time())
         st.rerun()
 
@@ -494,7 +514,8 @@ with tab1:
             download_format = st.selectbox("🖱️ Select format:*", download_format_list, key="key_download_format_selectbox")
         with col1b:
             download_extension = download_extension_dict[download_format]
-            download_filename = st.text_input("⌨️ Enter filename (without extension):*", key="key_download_filename_selectbox")
+            download_filename = st.text_input("⌨️ Enter filename (without extension):", key="key_download_filename_selectbox",
+                value="materialised_graph")
 
             if "." in download_filename:
                 st.markdown(f"""<div class="warning-message">
@@ -1188,6 +1209,18 @@ with tab2:
                 🕵️ Check issues
             </div>""", unsafe_allow_html=True)
 
+    if st.session_state["g_mapping_cleaned_ok_flag"]:
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.write("")
+            st.markdown(f"""<div class="success-message-flag">
+                ✅ The mapping <b>{st.session_state["g_label"]}</b> has been cleaned.
+            </div>""", unsafe_allow_html=True)
+        st.session_state["g_mapping_cleaned_ok_flag"]  = False
+        time.sleep(utils.get_success_message_time())
+        st.rerun()
+
     with col1:
         col1a, col1b = st.columns([2,1])
 
@@ -1225,6 +1258,33 @@ with tab2:
                 {info_table_html}
                 </div>
             """, unsafe_allow_html=True)
+
+        # CLEAN MAPPING
+    (g_mapping_complete_flag, heading_html, inner_html, tm_wo_sm_list, tm_wo_pom_list,
+        pom_wo_om_list, pom_wo_predicate_list) = utils.check_g_mapping(st.session_state["g_mapping"])
+
+    if not g_mapping_complete_flag:
+        tm_to_clean_list = list(set(tm_wo_sm_list).union(tm_wo_pom_list))
+        pom_to_clean_list = list(set(pom_wo_om_list).union(pom_wo_predicate_list))
+
+        with col1:
+            col1a, col1b = st.columns([3,1])
+
+
+        with col1a:
+            st.write("")
+            st.markdown(f"""<div class="gray-preview-message" style="font-size:13px; line-height:1.3;">
+                    {heading_html + inner_html}
+                </div>""", unsafe_allow_html=True)
+            st.write("")
+
+
+        clean_g_mapping_checkbox = st.checkbox(
+        f"""🧹 Clean mapping {st.session_state["g_label"]}""",
+        key="key_clean_g_mapping_checkbox")
+
+        if clean_g_mapping_checkbox:
+            st.button("Clean", key="key_clean_g_mapping_button", on_click=clean_g_mapping)
 
 
         # RFBOOKMARK

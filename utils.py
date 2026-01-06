@@ -1051,7 +1051,7 @@ def init_session_state_variables():
         st.session_state["mkgc_config"] = configparser.ConfigParser()
         st.session_state["autoconfig_active_flag"] = True
         st.session_state["autoconfig_generated_ok_flag"] = False
-        st.session_state["config_file_reset_ok_flag_tab1"] = False
+        st.session_state["config_file_reset_ok"] = False
         # TAB2
         st.session_state["mkgc_g_mappings_dict"] = {}
         st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
@@ -1063,7 +1063,6 @@ def init_session_state_variables():
         st.session_state["additional_mapping_added_ok_flag"] = False
         st.session_state["additional_mapping_for_mkgcgc_saved_ok_flag"] = False
         st.session_state["additional_mapping_removed_ok_flag"] = False
-        st.session_state["config_file_reset_ok_flag_tab2"] = False
         # TAB3
         st.session_state["materialised_g_mapping_file"] = None
         st.session_state["materialised_g_mapping"] = Graph()
