@@ -1294,7 +1294,7 @@ def format_suggested_mapping_label(label):
 
 #_______________________________________________________
 # Function to import mapping from link
-def load_mapping_from_link(url):
+def load_mapping_from_link(url, display=True):
 
     g = Graph()
 
@@ -1303,10 +1303,11 @@ def load_mapping_from_link(url):
         return g
 
     except:
-        st.markdown(f"""<div class="error-message">
-            ❌ Failed to parse <b>mapping</b>.
-            <small>Please check your URL and your mapping.</small>
-        </div>""", unsafe_allow_html=True)
+        if display:
+            st.markdown(f"""<div class="error-message">
+                ❌ Failed to parse <b>mapping</b>.
+                <small>Please check your URL and/or your mapping.</small>
+            </div>""", unsafe_allow_html=True)
         return None
 #_____________________________________________________
 
@@ -1635,9 +1636,9 @@ def retrieve_session_state(project_state_list):
 
 #_________________________________________________
 #Funtion to check whether a filename is valid
-def is_valid_filename(filename):
+def is_valid_filename(filename, extension=False):
 
-    excluded_characters = r"[\\/:*?\"<>| ]"
+    excluded_characters = r"[\\/:*?\"<>|]"
     windows_reserved_names = ["CON", "PRN", "AUX", "NUL",
         "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
         "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"]
@@ -1650,8 +1651,16 @@ def is_valid_filename(filename):
         </div>""", unsafe_allow_html=True)
         return False
 
-    # no dot
-    elif "." in filename:
+    # no spaces
+    elif re.search(r"\s", filename):
+        st.markdown(f"""<div class="error-message">
+                ❌ <b>Invalid filename</b>.
+                <small> Make sure it does not contain any <b>spaces</b>.</b>
+            </div>""", unsafe_allow_html=True)
+        return False
+
+    # no extension allowed (if extension=False)
+    elif os.path.splitext(filename)[1] and not extension:
         st.markdown(f"""<div class="error-message">
                 ❌ The filename seems to include an <b>extension</b>.
                 <small> Please remove it.</b>
@@ -4208,21 +4217,22 @@ def get_class_dictionaries_filtered_by_superclass(g_ont, superclass_filter=None)
 
 
 # PAGE: 🔮 MATERIALISE GRAPH====================================================
-# PANEL: CONFIGURATION----------------------------------------------------------
+# PANEL: MATERIALISE------------------------------------------------------------
 #_________________________________________________
 # Function to get the Autoconfig file
 def get_autoconfig_file():
 
+    # Temporal folder
     temp_folder_path = get_folder_name(temp_materialisation_files=True)
 
-    # reset config dict
+    # Reset config dict
     st.session_state["mkgc_config"] = configparser.ConfigParser()
 
-    # list to manage data source labels
+    # List to manage data source labels
     base_label = "DataSource"
     used_data_source_labels_list = []
 
-    # autoconfig SQL data sources
+    # Autoconfig SQL data sources
     for ds in st.session_state["db_connections_dict"]:
         i = 1
         while f"{base_label}{i}" in used_data_source_labels_list:
@@ -4234,7 +4244,7 @@ def get_autoconfig_file():
         st.session_state["mkgc_config"][mkgc_ds_label] = {"db_url": db_url,
             "mappings": mkgc_mappings_str}
 
-    # autoconfig TABULAR data sources
+    # Autoconfig TABULAR data sources
     for ds_label in st.session_state["ds_files_dict"]:
         i = 1
         while f"{base_label}{i}" in used_data_source_labels_list:
@@ -4247,8 +4257,170 @@ def get_autoconfig_file():
             "mappings": mkgc_mappings_str}
 #_________________________________________________
 
+#_________________________________________________
+# Funtion to get list of all used mappings
+def get_all_mappings_used_for_materialisation():
+
+    mkgc_used_mapping_list = []
+    for section in st.session_state["mkgc_config"].sections():
+        if section != "CONFIGURATION" and section != "DEFAULT":
+            mapping_path_list_string = st.session_state["mkgc_config"].get(section, "mappings", fallback="")
+            if mapping_path_list_string:
+                for mapping_path in mapping_path_list_string.split(","):
+                    mapping_path = mapping_path.strip()
+                    g_label = next((key for key, value in st.session_state["mkgc_g_mappings_dict"].items()
+                        if value == mapping_path), os.path.splitext(os.path.basename(mapping_path))[0])
+                    if g_label not in mkgc_used_mapping_list:   # only save if not duplicated
+                        mkgc_used_mapping_list.append(g_label)
+
+    return mkgc_used_mapping_list
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to get list of all used tabular data sources
+def get_all_tab_ds_used_for_materialisation():
+
+    mkgc_used_tab_ds_list = []
+    for section in st.session_state["mkgc_config"].sections():
+        if section != "CONFIGURATION" and section != "DEFAULT":
+            file_path = st.session_state["mkgc_config"].get(section, "file_path", fallback="")
+            if file_path:
+                filename = os.path.basename(file_path)
+                if filename not in mkgc_used_tab_ds_list:
+                    mkgc_used_tab_ds_list.append(filename)
+
+    return mkgc_used_tab_ds_list
+#_________________________________________________
+
+#_________________________________________________
+# Function to check everything is ready for materialisation
+def check_issues_for_materialisation():
+
+    # Initialise variables
+    everything_ok_flag = True
+    g_mapping_ok_flag = True
+    inner_html_success = ""
+    inner_html_error = ""
+    inner_html_info = ""
+
+    # Check if config file is empty
+
+    # List of all used mappings
+    mkgc_used_mapping_list = get_all_mappings_used_for_materialisation()
+
+    # List of all used sql databases
+    mkgc_used_db_conn_list = []
+    for section in st.session_state["mkgc_config"].sections():
+        if section != "CONFIGURATION" and section != "DEFAULT":
+            used_db_url = st.session_state["mkgc_config"].get(section, "db_url", fallback="")
+            if used_db_url and used_db_url not in mkgc_used_db_conn_list:
+                mkgc_used_db_conn_list.append(used_db_url)
+
+    # List of all used tabular data sources
+    mkgc_used_tab_ds_list = get_all_tab_ds_used_for_materialisation()
+
+    # Check g_mapping if used (additional mappings checked before adding)
+    if st.session_state["g_label"] in mkgc_used_mapping_list:
+        if st.session_state["g_label"]:
+            g_mapping_complete_flag, heading_html, inner_html, tm_wo_sm_list, tm_wo_pom_list, pom_wo_om_list, pom_wo_predicate_list = utils.check_g_mapping(st.session_state["g_mapping"])
+            if not g_mapping_complete_flag:
+                inner_html_error += f"❌ Mapping <b>{st.session_state["g_label"]}</b> is incomplete:" + inner_html
+                everything_ok_flag = False
+                g_mapping_ok_flag = False
+            else:
+                inner_html_success += f"""✔️ Mapping <b>{st.session_state["g_label"]}</b>
+                    complete.<br>"""
+
+    # Check links to additional mappings from urls (in case they broke after importing - unlikely)
+    mkgc_not_working_url_mappings_list = []
+    for section in st.session_state["mkgc_config"].sections():
+        if section != "CONFIGURATION" and section != "DEFAULT":
+            mapping_path_list_string = st.session_state["mkgc_config"].get(section, "mappings", fallback="")
+            if mapping_path_list_string:
+                for mapping_path in mapping_path_list_string.split(","):
+                    if mapping_path in st.session_state["mkgc_g_mappings_dict"].values(): # these are the URL additional mappings
+                        if not utils.load_mapping_from_url(mapping_path, display=False):
+                            mkgc_not_working_url_mappings_list.append(mapping_path)
 
 
+    mkgc_used_additional_mapping_list = mkgc_used_mapping_list.copy()
+    if st.session_state["g_label"] in mkgc_used_additional_mapping_list:
+        mkgc_used_additional_mapping_list.remove(st.session_state["g_label"])
+    if mkgc_used_additional_mapping_list and not mkgc_not_working_url_mappings_list:
+        inner_html_success += f"""✔️ <b>Additional mappings</b> are valid:<br>
+            <div style="margin-left: 20px"><b><small>
+            {utils.format_list_for_display(mkgc_used_additional_mapping_list)}</small><br></div>"""
+    elif mkgc_used_additional_mapping_list:
+        everything_ok_flag = False
+        inner_html_error += f"""❌ URL to <b>additional mapping/s</b> not working:<br>
+            <div style="margin-left: 20px"><b><small>
+            {utils.format_list_for_display(mkgc_not_working_url_mappings_list)}</small><br></div>"""
+
+    # Check at least a data source is included
+    if not mkgc_used_db_conn_list and not mkgc_used_tab_ds_list:
+        everything_ok_flag = False
+        inner_html_error += f"""❌ The <b>Config file</b> must contain at least one <b>data source</b>.<br>"""
+
+    # Check connections to db if used
+    not_working_db_conn_list = []
+    for connection_string in mkgc_used_db_conn_list:
+        timeout = 3
+        try:
+            engine = create_engine(connection_string, connect_args={"connect_timeout": timeout})
+            conn = engine.connect()
+        except Exception as e:
+            not_working_db_conn_list.append(connection_string)
+    if not not_working_db_conn_list and mkgc_used_db_conn_list:
+        formatted_list = "<br>".join(mkgc_used_db_conn_list)
+        inner_html_success += f"""✔️ All <b>connections to databases</b> are working:<br>
+            <div style="margin-left: 20px"><small><b>{formatted_list}</b></small><br></div>"""
+    elif not_working_db_conn_list:
+        everything_ok_flag = False
+        censored_not_working_db_conn_list = [utils.censor_url_str(conn) for conn in not_working_db_conn_list]
+        if len(not_working_db_conn_list) == 1:
+            inner_html_error += f"""❌ A <b>connection to database</b> is not working:<br>
+                <div style="margin-left: 20px"><small><b>{utils.format_list_for_display(censored_not_working_db_conn_list)}
+                </b></small><br></div>"""
+        else:
+            inner_html_error += f"""❌ Several <b>connections to databases</b> are not working:<br>
+                <div style="margin-left: 20px"><small><b>
+                {utils.format_list_for_display(censored_not_working_db_conn_list)}</b></small><br></div>"""
+
+    # Check all tabular sources are loaded
+    not_loaded_ds_list = []
+    for ds_filename in mkgc_used_tab_ds_list:
+        if not ds_filename in st.session_state["ds_files_dict"]:
+            not_loaded_ds_list.append(ds_filename)
+
+    if not not_loaded_ds_list and mkgc_used_tab_ds_list:
+        inner_html_success += f"""✔️ All <b>tabular data sources</b> are loaded:<br>
+            <div style="margin-left: 20px"><small>
+            <b>{utils.format_list_for_display(mkgc_used_tab_ds_list)}</b></small><br></div>"""
+    elif mkgc_used_tab_ds_list:
+        everything_ok_flag = False
+        with col1a:
+            if len(not_loaded_ds_list) == 1:
+                inner_html_error += f"""❌ A <b>tabular data source</b> is not loaded:
+                    <div style="margin-left: 20px"><b><small>
+                    {utils.format_list_for_display(not_loaded_ds_list)}</b></small><br></div>"""
+            else:
+                inner_html_error += f"""❌ Several <b>tabular data sources</b> are not loaded:
+                    <div style="margin-left: 20px"><small><b>
+                    {utils.format_list_for_display(not_loaded_ds_list)}</b></small>
+                    <br></div>"""
+
+    if st.session_state["g_label"] and not g_mapping_ok_flag:
+        inner_html_info += f"""ℹ️ You can fix mapping <b>{st.session_state["g_label"]}</b>
+                in the <b>🏗️ Build Mapping</b> page.<br>"""
+    if not_working_db_conn_list:
+        inner_html_info += f"""ℹ️ Check the connections to databases in the
+                <b>📊 Databases</b> page.<br>"""
+    if not_loaded_ds_list:
+        inner_html_info += f"""ℹ️ Load the tabular data sources from the
+                <b>🛢️ Tabular Data</b> page."""
+
+    return everything_ok_flag, inner_html_success, inner_html_error, inner_html_info
+#_________________________________________________
 
 
 #RFBOOKMARK
