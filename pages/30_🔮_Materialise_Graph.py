@@ -65,7 +65,7 @@ def autoconfig():
     st.session_state["autoconfig_active_flag"] = True
     st.session_state["autoconfig_generated_ok_flag"] = True
 
-def reset_config_file_tab1():
+def reset_config_file():
     # reset variables__________________________
     st.session_state["mkgc_config"] = configparser.ConfigParser()
     st.session_state["mkgc_g_mappings_dict"] = {}
@@ -74,16 +74,6 @@ def reset_config_file_tab1():
     st.session_state["autoconfig_active_flag"] = False
     # store information_________________________
     st.session_state["config_file_reset_ok_flag_tab1"] = True
-
-def reset_config_file_tab2():
-    # reset variables__________________________
-    st.session_state["mkgc_config"] = configparser.ConfigParser()
-    st.session_state["mkgc_g_mappings_dict"] = {}
-    st.session_state["materialised_g_mapping_file"] = None
-    st.session_state["materialised_g_mapping"] = Graph()
-    st.session_state["autoconfig_active_flag"] = False
-    # store information_________________________
-    st.session_state["config_file_reset_ok_flag_tab2"] = True
 
 # TAB2
 def enable_manual_config():
@@ -228,7 +218,6 @@ def remove_additional_mapping_for_mkgc():
 def back_to_materialisation():
     # store information________________________
     st.session_state["materialised_g_mapping"] = False
-    st.session_state["autoconfig_active_flag"] = True
 
 def materialise_graph():
     # Get info________________________________________
@@ -307,7 +296,9 @@ def materialise_graph():
         st.session_state["graph_materialised_ok_flag"] = True
 
     except Exception as e:
-        st.session_state["graph_materialised_ok_flag"] = ["error", e]
+        st.session_state["graph_materialised_ok_flag"] = "error"
+        st.session_state["error_during_materialisation_flag"] = [True, e]
+        st.session_state["materialised_g_mapping"] = True
         # delete temporal folder____________________________________
         for filename in os.listdir(temp_folder_path):       # delete all files inside the folder
             file_path = os.path.join(temp_folder_path, filename)
@@ -358,6 +349,19 @@ with tab1:
         # MANUAL CONFIG ACTIVE
         if not st.session_state["autoconfig_active_flag"] and not st.session_state["materialised_g_mapping"]:
             with col2b:
+                config_string = io.StringIO()
+                st.session_state["mkgc_config"].write(config_string)
+                if config_string.getvalue() != "":
+                    reset_config_file_checkbox = st.checkbox("🔄 Reset Config file",
+                        key="key_reset_config_file_checkbox")
+                    if reset_config_file_checkbox:
+                        st.markdown(f"""<div class="warning-message">
+                            ⚠️ If you continue, the <b>Config file</b> will be cleared
+                            and any configuration will be lost.
+                            <small>Make sure you want to go ahead.</small>
+                        </div>""", unsafe_allow_html=True)
+                        st.button("Reset", key="key_reset_config_file_button", on_click=reset_config_file)
+
                 back_to_autoconfig_checkbox = st.checkbox("🤖 Back to Autoconfig",
                     key="key_back_to_autoconfig_checkbox")
                 if back_to_autoconfig_checkbox:
@@ -376,35 +380,10 @@ with tab1:
 
         # AUTOCONFIG ACTIVE
         elif st.session_state["autoconfig_active_flag"] and not st.session_state["materialised_g_mapping"]:
-            st.button("Manual configuration", key="key_enable_manual_config_button", on_click=enable_manual_config)
-            #
-            # st.write("")
-            # reset_config_file_checkbox = st.checkbox("🔄 Reset Config file",
-            #     key="key_reset_config_file_tab_1_checkbox")
-            #
-            # if reset_config_file_checkbox:
-            #     st.button("Reset", key="key_reset_config_file_tab1_button", on_click=reset_config_file_tab1)
-            #     st.markdown(f"""<div class="warning-message">
-            #         ⚠️ If you continue, the <b>Config file</b> will be cleared
-            #         and any configuration will be lost.
-            #         <small>Make sure you want to go ahead.</small>
-            #     </div>""", unsafe_allow_html=True)
-
-
-
-    # if st.session_state["config_file_reset_ok_flag_tab1"]:
-    #     with col1:
-    #         col1a, col1b = st.columns([2,1])
-    #     with col1a:
-    #         st.write("")
-    #         st.markdown(f"""<div class="success-message-flag">
-    #             ✅ The <b>Config file</b> has been reset!
-    #         </div>""", unsafe_allow_html=True)
-    #     st.session_state["config_file_reset_ok_flag_tab1"] = False
-    #     time.sleep(utils.get_success_message_time())
-    #     st.rerun()
-
-
+            enable_manual_configuration_checkbox = st.checkbox("✏️ Enable manual configuration",
+                key="key_enable_manual_configuration_checkbox")
+            if enable_manual_configuration_checkbox:
+                st.button("Enable", key="key_enable_manual_config_button", on_click=enable_manual_config)
 
     # SUCCESS MESSAGES: AUTOCONFIG/MANUAL OPTIONS ENABLED-----------------------
     if st.session_state["autoconfig_generated_ok_flag"]:
@@ -431,6 +410,18 @@ with tab1:
         time.sleep(utils.get_success_message_time())
         st.rerun()
 
+    if st.session_state["config_file_reset_ok_flag_tab1"]:
+        with col1:
+            col1a, col1b = st.columns([2,1])
+        with col1a:
+            st.write("")
+            st.markdown(f"""<div class="success-message-flag">
+                ✅ The <b>Config file</b> has been reset!
+            </div>""", unsafe_allow_html=True)
+        st.session_state["config_file_reset_ok_flag_tab1"] = False
+        time.sleep(utils.get_success_message_time())
+        st.rerun()
+
     # PURPLE HEADING: AUTOMATIC CONFIGURATION-----------------------------------
     with col1:
         st.markdown("""<div class="purple-heading">
@@ -438,17 +429,16 @@ with tab1:
             </div>""", unsafe_allow_html=True)
         st.write("")
 
-    if isinstance(st.session_state["graph_materialised_ok_flag"], list):
+    if st.session_state["graph_materialised_ok_flag"] == "error":
         with col1:
             col1a, col1b = st.columns([2,1])
         with col1a:
             st.write("")
             st.markdown(f"""<div class="error-message">
                 ❌ <b>Error during materialisation.</b>
-                <small><b>Full error: {st.session_state["graph_materialised_ok_flag"][1]}</b></small>
             </div>""", unsafe_allow_html=True)
         st.session_state["graph_materialised_ok_flag"] = False
-        time.sleep(utils.get_success_message_time()+5)
+        time.sleep(utils.get_success_message_time())
         st.rerun()
 
     if st.session_state["graph_materialised_ok_flag"]:
@@ -472,31 +462,30 @@ with tab1:
         with col1:
             col1a, col1b = st.columns([2,1])
 
-        everything_ok_flag, inner_html_success, inner_html_error, info_table_html = utils.check_issues_for_materialisation()
-        if everything_ok_flag:   # IF EVERYTHING IS OK
-            with col1a:
-                if st.session_state["autoconfig_active_flag"]:
-                    st.markdown(f"""<div class="gray-preview-message">
-                        🔒 The <b>Config file</b> has been <b>automatically generated</b>.
-                        <small> <b>Manual configuration</b> can be enabled.</small>
-                    </div>""", unsafe_allow_html=True)
-                else:
-                    st.markdown(f"""<div class="gray-preview-message">
-                        🔒 The <b>Config file</b> has been <b>manually built</b>.<br>
-                    </div>""", unsafe_allow_html=True)
-
-                st.write("")
-                st.button("Materialise", key="key_materialise_graph_button", on_click=materialise_graph)
-
-        else:
-            with col1a:
-                st.markdown(f"""<div class="error-message">
-                    ❌ <b> Materialisation not available. </b>
-                    <small>Go to the <b>Check Issues</b> pannel for more information.</small>
+        with col1a:
+            if st.session_state["autoconfig_active_flag"]:
+                st.markdown(f"""<div class="gray-preview-message">
+                    🤖 The <b>Config file</b> has been <b>automatically generated</b>.
+                    <small> <b>Manual configuration</b> can be enabled.</small>
+                </div>""", unsafe_allow_html=True)
+            else:
+                st.markdown(f"""<div class="gray-preview-message">
+                    ✏️ The <b>Config file</b> has been <b>manually built</b>.<br>
                 </div>""", unsafe_allow_html=True)
 
-    # MAPPING READY FOR DOWNLOAD   RFBOOKMARK
-    else:
+            st.write("")
+            st.button("Materialise", key="key_materialise_graph_button", on_click=materialise_graph)
+
+        everything_ok_flag = utils.check_issues_for_materialisation()[0]
+        if not everything_ok_flag:
+            with col1b:
+                st.markdown(f"""<div class="warning-message">
+                    ⚠️ <b>Potential error sources</b> detected for materialisation.
+                    <small>Go to the 🕵️<b>Check Issues</b> pannel for more information.</small>
+                </div>""", unsafe_allow_html=True)
+
+    # MAPPING READY FOR DOWNLOAD
+    elif not st.session_state["error_during_materialisation_flag"]:
         with col1:
             col1a, col1b = st.columns([1,2])
         with col1a:
@@ -543,6 +532,20 @@ with tab1:
                 st.markdown(f"""<div class="info-message-blue">
                         ℹ️ Graph materialised with <b>{len(st.session_state["materialised_g_mapping"])} triples</b>.
                     </div>""", unsafe_allow_html=True)
+
+    # ERROR DURING MATERIALISATION
+    elif st.session_state["error_during_materialisation_flag"]:
+        with col1:
+            st.markdown(f"""<div class="error-message">
+                    ❌ <b> Error during materialisation. </b>
+                    <small><i><b>Full error:</b> {st.session_state["error_during_materialisation_flag"][1]}.</i></small>
+                </div>""", unsafe_allow_html=True)
+            st.write("")
+            back_to_materialisation_checkbox = st.checkbox("🔄 Back to materialisation",
+                key="key_back_to_materialisation_checkbox")
+            if back_to_materialisation_checkbox:
+                st.button("Back", key="key_back_to_materialisation_button", on_click=back_to_materialisation)
+
 
     # MANUAL MODE ACTIVE (SHOW SECTIONS TO BUILD THE CONFIG FILE)
     if not st.session_state["autoconfig_active_flag"] and not st.session_state["materialised_g_mapping"]:

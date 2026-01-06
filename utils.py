@@ -1068,6 +1068,7 @@ def init_session_state_variables():
         st.session_state["materialised_g_mapping_file"] = None
         st.session_state["materialised_g_mapping"] = Graph()
         st.session_state["graph_materialised_ok_flag"] = False
+        st.session_state["error_during_materialisation_flag"] = False
 
 #______________________________________________________
 
@@ -4451,16 +4452,43 @@ def check_issues_for_materialisation():
     # Build INFO TABLE
     info_table_html = """<b style="display:block; margin-bottom:10px;">ℹ️ INFO TABLE</b><small><table>"""
 
-    if mkgc_used_db_conn_list:
+    if mkgc_used_db_conn_list and not not_working_db_conn_list:
+        censored_mkgc_used_db_conn_list = [censor_url_str(conn) for conn in mkgc_used_db_conn_list]
         info_table_html += f"""<thead><tr>
                                         <th>📊 Databases</th>
                                         <td>{format_list_for_display(mkgc_used_db_conn_list)}</td>
                                     </tr></thead><tbody>"""
 
-    if mkgc_used_tab_ds_list:
+    if not_working_db_conn_list:
+        working_db_conn_list = [conn for conn in mkgc_used_db_conn_list if conn not in not_working_db_conn_list]
+        censored_working_db_conn_list = [censor_url_str(conn) for conn in working_db_conn_list]
+        censored_not_working_db_conn_list = [censor_url_str(conn) for conn in not_working_db_conn_list]
+        if working_db_conn_list:
+            info_table_html += f"""<thead><tr>
+                                            <th>📊 Databases (working)</th>
+                                            <td>{format_list_for_display(censored_working_db_conn_list)}</td>
+                                        </tr></thead><tbody>"""
+        info_table_html += f"""<thead><tr>
+                                        <th>📊 Databases (not working)</th>
+                                        <td>{format_list_for_display(censored_not_working_db_conn_list)}</td>
+                                    </tr></thead><tbody>"""
+
+    if mkgc_used_tab_ds_list and not not_loaded_ds_list:
         info_table_html += f"""<thead><tr>
                                         <th>🛢️ Tabular data sources</th>
                                         <td>{format_list_for_display(mkgc_used_tab_ds_list)}</td>
+                                    </tr></thead><tbody>"""
+
+    if not_loaded_ds_list:
+        loaded_ds_list = [ds for ds in mkgc_used_tab_ds_list if ds not in not_loaded_ds_list]
+        if loaded_ds_list:
+            info_table_html += f"""<thead><tr>
+                                            <th>🛢️ Tabular data sources (not loaded)</th>
+                                            <td>{format_list_for_display(loaded_ds_list)}</td>
+                                        </tr></thead><tbody>"""
+        info_table_html += f"""<thead><tr>
+                                        <th>🛢️ Tabular data sources (not loaded)</th>
+                                        <td>{format_list_for_display(not_loaded_ds_list)}</td>
                                     </tr></thead><tbody>"""
 
     if mkgc_used_additional_mapping_list:
