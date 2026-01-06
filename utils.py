@@ -1,10 +1,14 @@
 import base64
+from collections import defaultdict
 import configparser
 import io
+import networkx as nx
 import os
 import pandas as pd
 from PIL import Image   # for logo rendering
+import plotly.express as px
 from pymongo import MongoClient
+from pyvis.network import Network
 import rdflib
 from rdflib import BNode, Graph, Literal, Namespace, URIRef
 from rdflib.namespace import split_uri
@@ -13,24 +17,13 @@ import re
 import requests
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import OperationalError, ArgumentError
+import sqlglot
 import streamlit as st
 from streamlit_js_eval import streamlit_js_eval
-import time
-from urllib.parse import urlparse
-import utils
-import uuid   # to handle uploader keys
-import networkx as nx
-from pyvis.network import Network
 from streamlit.runtime.uploaded_file_manager import UploadedFile
-
 from urllib.parse import urlparse, urlunparse
-
-
-
-from collections import defaultdict
-import plotly.express as px
-import sqlglot
-
+import utils
+import uuid
 
 
 # REQUIRED NS===================================================================
@@ -1038,7 +1031,6 @@ def init_session_state_variables():
         st.session_state["autoconfig_active_flag"] = True
         st.session_state["autoconfig_generated_ok_flag"] = False
         st.session_state["config_file_reset_ok"] = False
-        # TAB2
         st.session_state["mkgc_g_mappings_dict"] = {}
         st.session_state["key_mapping_uploader"] = str(uuid.uuid4())
         st.session_state["manual_config_enabled_ok_flag"] = False
@@ -1047,13 +1039,13 @@ def init_session_state_variables():
         st.session_state["configuration_for_mkgcgc_saved_ok_flag"] = False
         st.session_state["configuration_for_mkgcgc_removed_ok_flag"] = False
         st.session_state["additional_mapping_added_ok_flag"] = False
-        st.session_state["additional_mapping_for_mkgcgc_saved_ok_flag"] = False
         st.session_state["additional_mapping_removed_ok_flag"] = False
-        # TAB3
         st.session_state["materialised_g_mapping_file"] = None
         st.session_state["materialised_g_mapping"] = Graph()
         st.session_state["graph_materialised_ok_flag"] = False
         st.session_state["error_during_materialisation_flag"] = False
+        # TAB2
+        st.session_state["g_mapping_cleaned_ok_flag"]
 
 #______________________________________________________
 

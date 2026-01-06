@@ -193,7 +193,8 @@ with tab2:
 
 
             df = pd.DataFrame(rows)
-            df = df.sort_values(by="#Rules", ascending=False)
+            if not df.empty:
+                df = df.sort_values(by="#Rules", ascending=False)
             with col1:
                 if not df.empty:
                     st.markdown(f"""<div class="info-message-blue">
@@ -361,7 +362,8 @@ with tab3:
                     "#Rules": count, "Ontology": ont_tag})
 
             df = pd.DataFrame(rows)
-            df = df.sort_values(by="#Rules", ascending=False)
+            if not df.empty:
+                df = df.sort_values(by="#Rules", ascending=False)
             with col1:
                 if not df.empty:
                     st.markdown(f"""<div class="info-message-blue">
@@ -498,7 +500,8 @@ with tab4:
                 rows.append({"Term": term, "Type": type, "#Rules": count, "Origin": origin})
 
             df = pd.DataFrame(rows)
-            df = df.sort_values(by="#Rules", ascending=False)
+            if not df.empty:
+                df = df.sort_values(by="#Rules", ascending=False)
             with col1:
                 if not df.empty:
                     st.markdown(f"""<div class="info-message-blue">

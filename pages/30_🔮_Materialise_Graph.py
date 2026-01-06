@@ -1,20 +1,14 @@
-import streamlit as st
-import os #for file navigation
-import rdflib
-from rdflib import Graph, URIRef, Literal, Namespace, BNode
-import utils
-import pandas as pd
-import pickle
-from rdflib.namespace import split_uri
-import re
 import configparser
 import io
-import time
-import uuid   # to handle uploader keys
-import requests
 from morph_kgc import materialize
-from sqlalchemy import create_engine
+import os #for file navigation
+from rdflib import Graph
+import re
+import streamlit as st
 from streamlit.runtime.uploaded_file_manager import UploadedFile
+import time
+import utils
+import uuid
 
 # Config-----------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
@@ -33,6 +27,16 @@ temp_folder_path = utils.get_folder_name(temp_materialisation_files=True)
 
 # Define on_click functions--------------------------------------------
 # TAB1
+def reset_config_file():
+    # reset variables__________________________
+    st.session_state["mkgc_config"] = configparser.ConfigParser()
+    st.session_state["mkgc_g_mappings_dict"] = {}
+    st.session_state["materialised_g_mapping_file"] = None
+    st.session_state["materialised_g_mapping"] = Graph()
+    st.session_state["autoconfig_active_flag"] = False
+    # store information_________________________
+    st.session_state["config_file_reset_ok"] = True
+
 def autoconfig():
     # reset config dict and additional mappings___________________
     st.session_state["mkgc_g_mappings_dict"] = {}
@@ -66,23 +70,104 @@ def autoconfig():
     st.session_state["autoconfig_active_flag"] = True
     st.session_state["autoconfig_generated_ok_flag"] = True
 
-def reset_config_file():
-    # reset variables__________________________
-    st.session_state["mkgc_config"] = configparser.ConfigParser()
-    st.session_state["mkgc_g_mappings_dict"] = {}
-    st.session_state["materialised_g_mapping_file"] = None
-    st.session_state["materialised_g_mapping"] = Graph()
-    st.session_state["autoconfig_active_flag"] = False
-    # store information_________________________
-    st.session_state["config_file_reset_ok"] = True
-
-# TAB2
 def enable_manual_config():
     # reset config dict
     st.session_state["mkgc_config"] = configparser.ConfigParser()
     # store information________________________
     st.session_state["autoconfig_active_flag"] = False
     st.session_state["manual_config_enabled_ok_flag"] = True
+
+def materialise_graph():
+    # Get info________________________________________
+    mkgc_used_mapping_list = utils.get_all_mappings_used_for_materialisation()
+    mkgc_used_tab_ds_list = utils.get_all_tab_ds_used_for_materialisation()
+
+    # empty folder if it exists or create if it does not______________
+    if os.path.exists(temp_folder_path):
+        for filename in os.listdir(temp_folder_path):
+            file_path = os.path.join(temp_folder_path, filename)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)  # delete file or link
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)  # delete subfolder
+            except Exception as e:
+                st.write(f"⚠️ Failed to delete {file_path}: {e}")
+    else:
+        os.makedirs(temp_folder_path)  # Create folder if it doesn't exist
+
+    # download g_mapping if used___________________________________________
+    if st.session_state["g_label"] in mkgc_used_mapping_list:
+        # Download g_mapping to file
+        mapping_content = st.session_state["g_mapping"]
+        mapping_content_str = mapping_content.serialize(format="turtle")
+        filename = st.session_state["g_label"] + ".ttl"
+
+        file_path = os.path.join(temp_folder_path, filename)
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(mapping_content_str)
+
+    # download additional mappings to file if used (only for files, not URL mappings)________________
+    for g_label in mkgc_used_mapping_list:
+        if g_label != st.session_state["g_label"]:
+            g_mapping_file = st.session_state["mkgc_g_mappings_dict"][g_label]
+            if isinstance(g_mapping_file, UploadedFile):
+                ext = os.path.splitext(g_mapping_file.name)[1]
+                filename = g_label + ext
+                file_path = os.path.join(temp_folder_path, filename)
+                with open(file_path, "wb") as f:
+                    f.write(g_mapping_file.getvalue())  # write file content as bytes
+
+    # download used tabular data sources___________________________________
+    for ds_filename in mkgc_used_tab_ds_list:
+        ds_file = st.session_state["ds_files_dict"][ds_filename]
+
+        if hasattr(ds_file, "getvalue"):  # large files (elephant upload) - BytesIO or similar
+            file_bytes = ds_file.getvalue()
+        elif hasattr(ds_file, "read"):  # uploaded file object
+            ds_file.seek(0)
+            file_bytes = ds_file.read()
+
+        file_path = os.path.join(temp_folder_path, ds_filename)  # write to temp folder
+        with open(file_path, "wb") as f:
+            f.write(file_bytes)
+
+    # write config to a file____________________________________________________
+    config_path = os.path.join(os.getcwd(), temp_folder_path, "mkgc_config.ini")
+    with open(config_path, "w", encoding="utf-8") as f:
+        st.session_state["mkgc_config"].write(f)
+
+    # run Morph-KGC with the config file path to materialise_______________________
+    try:
+        st.session_state["materialised_g_mapping"] = materialize(config_path)
+        st.session_state["materialised_g_mapping_file"] = io.BytesIO()
+        st.session_state["materialised_g_mapping"].serialize(destination=st.session_state["materialised_g_mapping_file"], format="turtle")  # or "xml", "nt", "json-ld"
+        st.session_state["materialised_g_mapping_file"].seek(0)  # rewind to the beginning
+        # delete temporal folder___________________________________________________
+        for filename in os.listdir(temp_folder_path):       # delete all files inside the folder
+            file_path = os.path.join(temp_folder_path, filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+        os.rmdir(temp_folder_path)      # remove the empty folder
+
+        # store information________________________________________________________
+        st.session_state["graph_materialised_ok_flag"] = True
+
+    except Exception as e:
+        st.session_state["graph_materialised_ok_flag"] = "error"
+        st.session_state["error_during_materialisation_flag"] = [True, e]
+        st.session_state["materialised_g_mapping"] = True
+        # delete temporal folder____________________________________
+        for filename in os.listdir(temp_folder_path):       # delete all files inside the folder
+            file_path = os.path.join(temp_folder_path, filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+        os.rmdir(temp_folder_path)      # remove the empty folder
+
+def back_to_materialisation():
+    # store information________________________
+    st.session_state["materialised_g_mapping"] = False
+    st.session_state["error_during_materialisation_flag"] = False
 
 def save_sql_ds_for_mkgc():
     # add to config dict___________________
@@ -215,99 +300,7 @@ def remove_additional_mapping_for_mkgc():
     # reset fields_______________________________
     st.session_state["key_additional_mapping_source_option"] = "📁 File"
 
-# TAB3
-def back_to_materialisation():
-    # store information________________________
-    st.session_state["materialised_g_mapping"] = False
-    st.session_state["error_during_materialisation_flag"] = False
-
-def materialise_graph():
-    # Get info________________________________________
-    mkgc_used_mapping_list = utils.get_all_mappings_used_for_materialisation()
-    mkgc_used_tab_ds_list = utils.get_all_tab_ds_used_for_materialisation()
-
-    # empty folder if it exists or create if it does not______________
-    if os.path.exists(temp_folder_path):
-        for filename in os.listdir(temp_folder_path):
-            file_path = os.path.join(temp_folder_path, filename)
-            try:
-                if os.path.isfile(file_path) or os.path.islink(file_path):
-                    os.unlink(file_path)  # delete file or link
-                elif os.path.isdir(file_path):
-                    shutil.rmtree(file_path)  # delete subfolder
-            except Exception as e:
-                st.write(f"⚠️ Failed to delete {file_path}: {e}")
-    else:
-        os.makedirs(temp_folder_path)  # Create folder if it doesn't exist
-
-    # download g_mapping if used___________________________________________
-    if st.session_state["g_label"] in mkgc_used_mapping_list:
-        # Download g_mapping to file
-        mapping_content = st.session_state["g_mapping"]
-        mapping_content_str = mapping_content.serialize(format="turtle")
-        filename = st.session_state["g_label"] + ".ttl"
-
-        file_path = os.path.join(temp_folder_path, filename)
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(mapping_content_str)
-
-    # download additional mappings to file if used (only for files, not URL mappings)________________
-    for g_label in mkgc_used_mapping_list:
-        if g_label != st.session_state["g_label"]:
-            g_mapping_file = st.session_state["mkgc_g_mappings_dict"][g_label]
-            if isinstance(g_mapping_file, UploadedFile):
-                ext = os.path.splitext(g_mapping_file.name)[1]
-                filename = g_label + ext
-                file_path = os.path.join(temp_folder_path, filename)
-                with open(file_path, "wb") as f:
-                    f.write(g_mapping_file.getvalue())  # write file content as bytes
-
-    # download used tabular data sources___________________________________
-    for ds_filename in mkgc_used_tab_ds_list:
-        ds_file = st.session_state["ds_files_dict"][ds_filename]
-
-        if hasattr(ds_file, "getvalue"):  # large files (elephant upload) - BytesIO or similar
-            file_bytes = ds_file.getvalue()
-        elif hasattr(ds_file, "read"):  # uploaded file object
-            ds_file.seek(0)
-            file_bytes = ds_file.read()
-
-        file_path = os.path.join(temp_folder_path, ds_filename)  # write to temp folder
-        with open(file_path, "wb") as f:
-            f.write(file_bytes)
-
-    # write config to a file____________________________________________________
-    config_path = os.path.join(os.getcwd(), temp_folder_path, "mkgc_config.ini")
-    with open(config_path, "w", encoding="utf-8") as f:
-        st.session_state["mkgc_config"].write(f)
-
-    # run Morph-KGC with the config file path to materialise_______________________
-    try:
-        st.session_state["materialised_g_mapping"] = materialize(config_path)
-        st.session_state["materialised_g_mapping_file"] = io.BytesIO()
-        st.session_state["materialised_g_mapping"].serialize(destination=st.session_state["materialised_g_mapping_file"], format="turtle")  # or "xml", "nt", "json-ld"
-        st.session_state["materialised_g_mapping_file"].seek(0)  # rewind to the beginning
-        # delete temporal folder___________________________________________________
-        for filename in os.listdir(temp_folder_path):       # delete all files inside the folder
-            file_path = os.path.join(temp_folder_path, filename)
-            if os.path.isfile(file_path):
-                os.remove(file_path)
-        os.rmdir(temp_folder_path)      # remove the empty folder
-
-        # store information________________________________________________________
-        st.session_state["graph_materialised_ok_flag"] = True
-
-    except Exception as e:
-        st.session_state["graph_materialised_ok_flag"] = "error"
-        st.session_state["error_during_materialisation_flag"] = [True, e]
-        st.session_state["materialised_g_mapping"] = True
-        # delete temporal folder____________________________________
-        for filename in os.listdir(temp_folder_path):       # delete all files inside the folder
-            file_path = os.path.join(temp_folder_path, filename)
-            if os.path.isfile(file_path):
-                os.remove(file_path)
-        os.rmdir(temp_folder_path)      # remove the empty folder
-
+# TAB2
 def clean_g_mapping():
     # remove triples and store information____________________________
     for tm in tm_to_clean_list:
@@ -332,7 +325,7 @@ def clean_g_mapping():
 tab1, tab2 = st.tabs(["Materialise", "Check issues"])
 
 #_______________________________________________________________________________
-# PANEL: AUTOCONFIG
+# PANEL: MATERIALISE
 with tab1:
     col1, col2, col2a, col2b = utils.get_panel_layout()
 
@@ -383,6 +376,10 @@ with tab1:
             </div>""", unsafe_allow_html=True)
         st.stop()
 
+    # AUTOGENERATE THE CONFIG FILE (if auto mode active)------------------------
+    if st.session_state["autoconfig_active_flag"]:
+        utils.get_autoconfig_file()
+
     # RIGHT COLUMN: CONFIG FILE CONTENT-----------------------------------------
     with col2b:
         config_string = io.StringIO()
@@ -392,13 +389,10 @@ with tab1:
                 st.markdown(f"```ini\n{config_string.getvalue()}# Autogenerated\n```")
             else:
                 st.markdown(f"```ini\n{config_string.getvalue()}\n```")
-            # st.markdown(f"""<div class="info-message-gray">
-            #     ⏳ When ready, go to the <b>Materialise</b> pannel.
-            # </div>""", unsafe_allow_html=True)
         else:
             st.markdown(f"```ini\n# Config file empty\n```")
 
-    # RIGHT COLUMN: OPTION TO CHANGE TO AUTO/MANUAL-----------------------------
+    # RIGHT COLUMN: OPTIONS TO CHANGE TO AUTO/MANUAL AND RESET------------------
     with col2b:
         # MANUAL CONFIG ACTIVE
         if not st.session_state["autoconfig_active_flag"] and not st.session_state["materialised_g_mapping"]:
@@ -471,20 +465,15 @@ with tab1:
         time.sleep(utils.get_success_message_time())
         st.rerun()
 
-    # MAPPING NOT MATERIALISED YET
+    # PURPLE HEADING: MATERIALISE-----------------------------------------------
+    # If mapping not materialised yet and at least one ds in Config file
     if not st.session_state["materialised_g_mapping"]:
-
         if at_least_one_ds_in_config_file_flag:
-            # PURPLE HEADING: MATERIALISE-------------------------------------------
             with col1:
                 st.markdown("""<div class="purple-heading">
                         🔮 Materialise
                     </div>""", unsafe_allow_html=True)
                 st.write("")
-
-            # AUTOCONFIG MODE ACTIVE (AUTOGENERATE THE CONFIG FILE)
-            if st.session_state["autoconfig_active_flag"]:
-                utils.get_autoconfig_file()
 
             with col1:
                 col1a, col1b = st.columns([2,1])
@@ -515,8 +504,9 @@ with tab1:
                 with col1:
                     st.write("_______")
 
+    # PURPLE HEADING: EXPORT GRAPH----------------------------------------------
+    # If graph materialised ok (no errors)
     elif not st.session_state["error_during_materialisation_flag"]:
-        # PURPLE HEADING: EXPORT GRAPH------------------------------------------
         with col1:
             st.markdown("""<div class="purple-heading">
                     📤 Export graph
@@ -570,8 +560,16 @@ with tab1:
                         ℹ️ Graph materialised with <b>{len(st.session_state["materialised_g_mapping"])} triples</b>.
                     </div>""", unsafe_allow_html=True)
 
-    # ERROR DURING MATERIALISATION
+    # PURPLE HEADING: MATERIALISATION ERROR-------------------------------------
+    # If error raised during materialisation
     elif st.session_state["error_during_materialisation_flag"]:
+
+        with col1:
+            st.markdown("""<div class="purple-heading">
+                    🛑 Materialisation Error
+                </div>""", unsafe_allow_html=True)
+            st.write("")
+
         with col1:
             st.markdown(f"""<div class="error-message">
                     ❌ <b> Error during materialisation. </b>
@@ -586,7 +584,7 @@ with tab1:
 
     # MANUAL MODE ACTIVE (SHOW SECTIONS TO BUILD THE CONFIG FILE)
     if not st.session_state["autoconfig_active_flag"] and not st.session_state["materialised_g_mapping"]:
-        # PURPLE HEADING: CONFIGURE DATA SOURCE-----------------------------
+        # PURPLE HEADING: CONFIGURE DATA SOURCE---------------------------------
         with col1:
             st.markdown("""<div class="purple-heading">
                     📊 Configure Data Source
@@ -740,43 +738,6 @@ with tab1:
                         if mkgc_tab_ds_file != "Select data source" and mkgc_mappings_list:
                             with col1a:
                                 st.button("Save", key="save_tab_ds_for_mkgcgc_button", on_click=save_tab_ds_for_mkgc)
-
-                        # # Select mappings (g_mapping default if exists)
-                        # with col1b:
-                        #     mkgc_g_mapping_dict_complete = st.session_state["mkgc_g_mappings_dict"].copy()
-                        #     if st.session_state["g_label"]:
-                        #         mkgc_g_mapping_dict_complete[st.session_state["g_label"]] = st.session_state["g_mapping"]
-                        #     list_to_choose = sorted(st.session_state["mkgc_g_mappings_dict"].keys())
-                        #     if st.session_state["g_label"]:
-                        #         list_to_choose.insert(0, st.session_state["g_label"])
-                        #     if len(list_to_choose) > 1:
-                        #         list_to_choose.insert(0, "Select all")
-                        #     if st.session_state["g_label"]:
-                        #         mkgc_mappings_list_for_tab = st.multiselect("🖱️ Select mappings:*", list_to_choose,
-                        #             default=[st.session_state["g_label"]], key="key_mkgc_mappings")
-                        #     else:
-                        #         mkgc_mappings_list_for_tab = st.multiselect("🖱️ Select mappings:*", list_to_choose,
-                        #             key="key_mkgc_mappings")
-                        #
-                        #     if not mkgc_g_mapping_dict_complete:
-                        #         with col1:
-                        #             st.markdown(f"""<div class="error-message">
-                        #                 ❌ <b> No mappings available.</b>
-                        #                 <small>You can <b>🏗️ Build a Mapping</b> using this application
-                        #                 and/or include <b><small>➕</small> Additional Mappings</b> below.</small>
-                        #             </div>""", unsafe_allow_html=True)
-                        #
-                        # # Get mapping paths in temp folder
-                        # mkgc_mappings_paths_list_for_tab = []
-                        # for mapping_label in mkgc_mappings_list_for_tab:
-                        #     if mapping_label == st.session_state["g_label"]:
-                        #         mkgc_mappings_paths_list_for_tab.append(os.path.join(temp_folder_path, mapping_label + ".ttl"))
-                        #     elif isinstance(st.session_state["mkgc_g_mappings_dict"][mapping_label], UploadedFile):
-                        #         mkgc_mappings_paths_list_for_tab.append(os.path.join(temp_folder_path, mapping_label + ".ttl"))
-                        #     else:
-                        #         mkgc_mappings_paths_list_for_tab.append(st.session_state["mkgc_g_mappings_dict"][mapping_label])
-                        # mkgc_mappings_str_for_tab = ",".join(mkgc_mappings_paths_list_for_tab)   # join into a comma-separated string for the config
-
 
         # REMOVE DATA SOURCE (SQL OR TABULAR)
         if mkgc_ds_type == "🗑️ Remove":
@@ -1212,13 +1173,10 @@ with tab2:
                 st.markdown(f"```ini\n{config_string.getvalue()}# Autogenerated\n```")
             else:
                 st.markdown(f"```ini\n{config_string.getvalue()}\n```")
-            # st.markdown(f"""<div class="info-message-gray">
-            #     ⏳ When ready, go to the <b>Materialise</b> pannel.
-            # </div>""", unsafe_allow_html=True)
         else:
             st.markdown(f"```ini\n# Config file empty\n```")
 
-    # PURPLE HEADING: CHECK ISSUES
+    # PURPLE HEADING: CHECK ISSUES----------------------------------------------
     with col1:
         st.markdown("""<div class="purple-heading">
                 🕵️ Check issues
@@ -1236,16 +1194,17 @@ with tab2:
         time.sleep(utils.get_success_message_time())
         st.rerun()
 
-    with col1:
-        col1a, col1b = st.columns([2,1])
-
+    # CONFIG FILE EMPTY
     if config_string.getvalue() == "":
+        with col1:
+            col1a, col1b = st.columns([2,1])
         with col1a:
             st.markdown(f"""<div class="error-message">
                 ❌ <b>Config file is empty</b>.<small> You can auto-generate it
                 or manually build it in the <b>Materialise</b> panel.</small>
             </div>""", unsafe_allow_html=True)
 
+    # WARNING/SUCCESS MESSAGES
     else:
         everything_ok_flag, inner_html_success, inner_html_error, info_table_html = utils.check_issues_for_materialisation()
         with col1:
@@ -1266,8 +1225,7 @@ with tab2:
                     </div>""", unsafe_allow_html=True)
                 st.write("")
 
-
-        # Info table
+        # SHOW INFO TABLE
         with col1:
             st.markdown(f"""<div class="gray-preview-message" style="font-size:13px; line-height:1.2;">
                 {info_table_html}
@@ -1275,31 +1233,26 @@ with tab2:
             """, unsafe_allow_html=True)
 
         # CLEAN MAPPING
-    (g_mapping_complete_flag, heading_html, inner_html, tm_wo_sm_list, tm_wo_pom_list,
-        pom_wo_om_list, pom_wo_predicate_list) = utils.check_g_mapping(st.session_state["g_mapping"])
+        (g_mapping_complete_flag, heading_html, inner_html, tm_wo_sm_list, tm_wo_pom_list,
+            pom_wo_om_list, pom_wo_predicate_list) = utils.check_g_mapping(st.session_state["g_mapping"])
 
-    if not g_mapping_complete_flag:
-        tm_to_clean_list = list(set(tm_wo_sm_list).union(tm_wo_pom_list))
-        pom_to_clean_list = list(set(pom_wo_om_list).union(pom_wo_predicate_list))
+        if not g_mapping_complete_flag:
+            tm_to_clean_list = list(set(tm_wo_sm_list).union(tm_wo_pom_list))
+            pom_to_clean_list = list(set(pom_wo_om_list).union(pom_wo_predicate_list))
 
-        with col1:
-            col1a, col1b = st.columns([3,1])
+            with col1:
+                col1a, col1b = st.columns([3,1])
 
+            with col1a:
+                st.write("")
+                st.markdown(f"""<div class="gray-preview-message" style="font-size:13px; line-height:1.3;">
+                        {heading_html + inner_html}
+                    </div>""", unsafe_allow_html=True)
+                st.write("")
 
-        with col1a:
-            st.write("")
-            st.markdown(f"""<div class="gray-preview-message" style="font-size:13px; line-height:1.3;">
-                    {heading_html + inner_html}
-                </div>""", unsafe_allow_html=True)
-            st.write("")
+            clean_g_mapping_checkbox = st.checkbox(
+            f"""🧹 Clean mapping {st.session_state["g_label"]}""",
+            key="key_clean_g_mapping_checkbox")
 
-
-        clean_g_mapping_checkbox = st.checkbox(
-        f"""🧹 Clean mapping {st.session_state["g_label"]}""",
-        key="key_clean_g_mapping_checkbox")
-
-        if clean_g_mapping_checkbox:
-            st.button("Clean", key="key_clean_g_mapping_button", on_click=clean_g_mapping)
-
-
-        # RFBOOKMARK
+            if clean_g_mapping_checkbox:
+                st.button("Clean", key="key_clean_g_mapping_button", on_click=clean_g_mapping)
