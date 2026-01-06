@@ -1,13 +1,8 @@
-import streamlit as st
-import os #for file navigation
-from rdflib import Graph, URIRef, Literal, Namespace, BNode
-import utils
-import pandas as pd
-import pickle
-from rdflib.namespace import split_uri
-from rdflib.namespace import RDF, RDFS, DC, DCTERMS, OWL, XSD
-import plotly.express as px
 from collections import defaultdict
+import pandas as pd
+from rdflib import URIRef
+import streamlit as st
+import utils
 
 # Config-----------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
@@ -198,7 +193,8 @@ with tab2:
 
 
             df = pd.DataFrame(rows)
-            df = df.sort_values(by="#Rules", ascending=False)
+            if not df.empty:
+                df = df.sort_values(by="#Rules", ascending=False)
             with col1:
                 if not df.empty:
                     st.markdown(f"""<div class="info-message-blue">
@@ -366,7 +362,8 @@ with tab3:
                     "#Rules": count, "Ontology": ont_tag})
 
             df = pd.DataFrame(rows)
-            df = df.sort_values(by="#Rules", ascending=False)
+            if not df.empty:
+                df = df.sort_values(by="#Rules", ascending=False)
             with col1:
                 if not df.empty:
                     st.markdown(f"""<div class="info-message-blue">
@@ -503,7 +500,8 @@ with tab4:
                 rows.append({"Term": term, "Type": type, "#Rules": count, "Origin": origin})
 
             df = pd.DataFrame(rows)
-            df = df.sort_values(by="#Rules", ascending=False)
+            if not df.empty:
+                df = df.sort_values(by="#Rules", ascending=False)
             with col1:
                 if not df.empty:
                     st.markdown(f"""<div class="info-message-blue">
@@ -515,7 +513,6 @@ with tab4:
                         ⚠️ No results.
                     </div>""", unsafe_allow_html=True)
 
-        # RFBOOKMARK
         # RULES
         if selected_external_term_search == "📐Rules":
             # Select external term

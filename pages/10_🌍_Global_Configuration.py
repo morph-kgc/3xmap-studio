@@ -379,7 +379,7 @@ with tab1:
     elif import_mapping_selected_option == "📁 File":
 
         with col1a:
-            mapping_format_list = list(utils.get_supported_formats(mapping=True).values())
+            mapping_format_list = sorted(utils.get_supported_formats(mapping=True).values())
             selected_mapping_input = st.file_uploader(f"""🖱️
             Upload mapping file:*""", type=mapping_format_list, key=st.session_state["key_mapping_uploader"])
 

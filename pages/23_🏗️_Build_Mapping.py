@@ -531,7 +531,9 @@ if "g_mapping" not in st.session_state or not st.session_state["g_label"]:
 #_______________________________________________________________________________
 # PANEL: ADD TRIPLESMAP
 with tab1:
-    col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
+    col1, col2, col2a, col2b = utils.get_panel_layout()
+    with col2b:
+        utils.get_corner_status_message(mapping_info=True)
 
     with col2b:
         utils.display_right_column_df("triplesmaps", "last added TriplesMaps")
@@ -564,7 +566,8 @@ with tab1:
         valid_tm_label = utils.is_valid_label(tm_label, hard=True)
 
     tm_dict = utils.get_tm_dict()
-    if tm_label in tm_dict:
+    tm_label_list = [split_uri(tm_iri)[1] for tm_label, tm_iri in tm_dict.items()]
+    if tm_label in tm_label_list:
         valid_tm_label = False
         with col1a:
             st.markdown(f"""<div class="error-message">
@@ -751,7 +754,9 @@ with tab1:
 #_______________________________________________________________________________
 #PANEL: ADD SUBJECT MAP
 with tab2:
-    col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
+    col1, col2, col2a, col2b = utils.get_panel_layout()
+    with col2b:
+        utils.get_corner_status_message(mapping_info=True)
 
     # Right column info on sm is given later, since validation messages must appear first
 
@@ -1304,7 +1309,9 @@ with tab2:
 #_______________________________________________________________________________
 # PANEL: ADD PREDICATE-OBJECT MAP
 with tab3:
-    col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
+    col1, col2, col2a, col2b = utils.get_panel_layout()
+    with col2b:
+        utils.get_corner_status_message(mapping_info=True)
 
     #PURPLE HEADING - ADD TRIPLESMAP
     with col1:
@@ -1936,7 +1943,9 @@ with tab3:
 #_______________________________________________________________________________
 # PANEL: MANAGE MAPPING
 with tab4:
-    col1, col2, col2a, col2b = utils.get_panel_layout(narrow=True)
+    col1, col2, col2a, col2b = utils.get_panel_layout()
+    with col2b:
+        utils.get_corner_status_message(mapping_info=True)
 
     # SUCCESS MESSAGE: TRIPLESMAP REMOVED---------------------------------------
     # Shows here if "Remove" purple heading is not available
@@ -2164,7 +2173,7 @@ with tab4:
                         dict_to_choose = {}
                         for pom_iri in pom_dict:
                             if pom_dict[pom_iri][0] == tm_to_remove_pom_iri:
-                                dict_to_choose[utils.get_node_label(pom_iri, short_BNode=False)] = pom_iri
+                                dict_to_choose[utils.get_node_label(pom_iri)] = pom_iri
                         list_to_choose = sorted(dict_to_choose.keys())
                         if len(list_to_choose) > 1:
                             list_to_choose.insert(0, "Select all")
@@ -2203,7 +2212,7 @@ with tab4:
 
 
             if tm_to_remove_pom_label != "Select TriplesMap":
-                rows = [{"Predicate-Object Map": utils.get_node_label(pom_iri, short_BNode=False),
+                rows = [{"Predicate-Object Map": utils.get_node_label(pom_iri),
                     "Rule": pom_dict[pom_iri][5], "Type": pom_dict[pom_iri][4],
                     "Predicate(s)": utils.format_list_for_display(pom_dict[pom_iri][1])}
                     for pom_iri in pom_of_selected_tm_list]
