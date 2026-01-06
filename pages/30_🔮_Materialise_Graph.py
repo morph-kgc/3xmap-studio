@@ -225,6 +225,11 @@ def remove_additional_mapping_for_mkgc():
     st.session_state["key_additional_mapping_source_option"] = "📁 File"
 
 # TAB3
+def back_to_materialisation():
+    # store information________________________
+    st.session_state["materialised_g_mapping"] = False
+    st.session_state["autoconfig_active_flag"] = True
+
 def materialise_graph():
     # Get info________________________________________
     mkgc_used_mapping_list = utils.get_all_mappings_used_for_materialisation()
@@ -351,7 +356,7 @@ with tab1:
     # RIGHT COLUMN: OPTION TO CHANGE TO AUTO/MANUAL-----------------------------
     with col2b:
         # MANUAL CONFIG ACTIVE
-        if not st.session_state["autoconfig_active_flag"]:
+        if not st.session_state["autoconfig_active_flag"] and not st.session_state["materialised_g_mapping"]:
             with col2b:
                 back_to_autoconfig_checkbox = st.checkbox("🤖 Back to Autoconfig",
                     key="key_back_to_autoconfig_checkbox")
@@ -370,7 +375,7 @@ with tab1:
                         st.button("AutoConfig", key="key_autoconfig_button", on_click=autoconfig)
 
         # AUTOCONFIG ACTIVE
-        else:
+        elif st.session_state["autoconfig_active_flag"] and not st.session_state["materialised_g_mapping"]:
             st.button("Manual configuration", key="key_enable_manual_config_button", on_click=enable_manual_config)
             #
             # st.write("")
@@ -458,56 +463,47 @@ with tab1:
         time.sleep(utils.get_success_message_time())
         st.rerun()
 
+    # MAPPING NOT MATERIALISED YET
+    if not st.session_state["materialised_g_mapping"]:
+        # AUTOCONFIG MODE ACTIVE (AUTOGENERATE THE CONFIG FILE)
+        if st.session_state["autoconfig_active_flag"]:
+            utils.get_autoconfig_file()
 
-    # AUTOCONFIG MODE ACTIVE (AUTOGENERATE THE CONFIG FILE)
-    if st.session_state["autoconfig_active_flag"]:
-        utils.get_autoconfig_file()
+        with col1:
+            col1a, col1b = st.columns([2,1])
 
-    with col1:
-        col1a, col1b = st.columns([2,1])
+        everything_ok_flag, inner_html_success, inner_html_error, inner_html_info = utils.check_issues_for_materialisation()
+        if everything_ok_flag:   # IF EVERYTHING IS OK
+            with col1a:
+                if st.session_state["autoconfig_active_flag"]:
+                    st.markdown(f"""<div class="gray-preview-message">
+                        🔒 The <b>Config file</b> has been <b>automatically generated</b>.
+                        <small> <b>Manual configuration</b> can be enabled.</small>
+                    </div>""", unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""<div class="gray-preview-message">
+                        🔒 The <b>Config file</b> has been <b>manually built</b>.<br>
+                    </div>""", unsafe_allow_html=True)
 
-    if st.session_state["materialised_g_mapping"]:
+                st.write("")
+                st.button("Materialise", key="key_materialise_graph_button", on_click=materialise_graph)
 
-        with col1a:
-            st.markdown("""
-            <div style="font-size:13px; font-weight:500; margin-top:10px; margin-bottom:6px; border-top:0.5px solid #ccc; padding-bottom:4px;">
-                <b>🔮 Materialise</b><br>
-            </div>""", unsafe_allow_html=True)
-    everything_ok_flag, inner_html_success, inner_html_error, inner_html_info = utils.check_issues_for_materialisation()
-    if everything_ok_flag:   # IF EVERYTHING IS OK
-        with col1a:
-            if st.session_state["autoconfig_active_flag"]:
-                st.markdown(f"""<div class="gray-preview-message">
-                    🔒 The <b>Config file</b> has been <b>automatically generated</b>.<br>
-                    <small> <b>Manual configuration</b> can be enabled.</small>
+        else:
+            with col1a:
+                st.markdown(f"""<div class="error-message">
+                    ❌ <b> Materialisation not available. </b>
+                    <small>Go to the <b>Check Issues</b> pannel for more information.</small>
                 </div>""", unsafe_allow_html=True)
-            else:
-                st.markdown(f"""<div class="gray-preview-message">
-                    🔒 The <b>Config file</b> has been <b>manually built</b>.<br>
-                </div>""", unsafe_allow_html=True)
 
-            st.write("")
-            st.button("Materialise", key="key_materialise_graph_button", on_click=materialise_graph)
-
+    # MAPPING READY FOR DOWNLOAD   RFBOOKMARK
     else:
+        with col1:
+            col1a, col1b = st.columns([1,2])
         with col1a:
-            st.markdown(f"""<div class="error-message">
-                ❌ <b> Materialisation not available. </b>
-                <small>Go to the <b>Check Issues</b> pannel for more information.</small>
-            </div>""", unsafe_allow_html=True)
-
-    # MATERIALISATION OK (DOWNLOAD FILE)   RFBOOKMARK
-    if st.session_state["materialised_g_mapping"]:
-
-        with col1b:
-            st.markdown("""
-            <div style="font-size:13px; font-weight:500; margin-top:10px; margin-bottom:6px; border-top:0.5px solid #ccc; padding-bottom:4px;">
-                <b>💾 Download</b><br>
-            </div>""", unsafe_allow_html=True)
-
             download_extension_dict = utils.get_supported_formats(mapping=True)
             download_format_list = list(download_extension_dict)
             download_format = st.selectbox("🖱️ Select format:*", download_format_list, key="key_download_format_selectbox")
+        with col1b:
             download_extension = download_extension_dict[download_format]
             download_filename = st.text_input("⌨️ Enter filename (without extension):*", key="key_download_filename_selectbox")
 
@@ -517,6 +513,8 @@ with tab1:
                         seems to include an extension.
                     </div>""", unsafe_allow_html=True)
 
+        with col1:
+            col1a, col1b = st.columns([2,1])
 
             if download_filename:
                 download_filename_complete = download_filename + download_extension if download_filename else ""
@@ -529,18 +527,25 @@ with tab1:
                 elif download_format == "jsonld":
                     mime_option = "application/ld+json"
 
-                st.write("")
-                st.download_button(label="Download",
-                    data=st.session_state["materialised_g_mapping_file"],
-                    file_name=download_filename_complete,
-                    mime=mime_option)
+                with col1a:
+                    st.write("")
+                    st.download_button(label="Download",
+                        data=st.session_state["materialised_g_mapping_file"],
+                        file_name=download_filename_complete,
+                        mime=mime_option)
 
-            st.markdown(f"""<div class="info-message-blue">
-                    ℹ️ Graph materialised with <b>{len(st.session_state["materialised_g_mapping"])} triples</b>.
-                </div>""", unsafe_allow_html=True)
+            with col1a:
+                back_to_materialisation_checkbox = st.checkbox("🔄 Back to materialisation", key="key_back_to_materialisation_checkbox")
+                if back_to_materialisation_checkbox:
+                    st.button("Back", key="key_back_to_materialisation_button", on_click=back_to_materialisation)
+
+            with col1b:
+                st.markdown(f"""<div class="info-message-blue">
+                        ℹ️ Graph materialised with <b>{len(st.session_state["materialised_g_mapping"])} triples</b>.
+                    </div>""", unsafe_allow_html=True)
 
     # MANUAL MODE ACTIVE (SHOW SECTIONS TO BUILD THE CONFIG FILE)
-    if not st.session_state["autoconfig_active_flag"]:
+    if not st.session_state["autoconfig_active_flag"] and not st.session_state["materialised_g_mapping"]:
         # PURPLE HEADING: CONFIGURE DATA SOURCE-----------------------------
         with col1:
             st.write("______")
