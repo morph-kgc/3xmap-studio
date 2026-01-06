@@ -1197,20 +1197,22 @@ with tab2:
 
     else:
         everything_ok_flag, inner_html_success, inner_html_error, inner_html_info = utils.check_issues_for_materialisation()
-
         with col1a:
-            if inner_html_success:
-                st.markdown(f"""<div class="success-message">
-                        {inner_html_success}
-                    </div>""", unsafe_allow_html=True)
+            messages = []
             if inner_html_error:
-                st.markdown(f"""<div class="error-message">
-                        {inner_html_error}
+                messages.append(f"""❌ <b>Potential materialisation error sources:</b><br>
+                <div style='margin-left: 1.5em;'>{inner_html_error}</div>""")
+            if inner_html_success:
+                messages.append(f"""✔️ <b>Good prospects:</b><br>
+                <div style='margin-left: 1.5em;'>{inner_html_success}</div>""")
+
+            separator = "<hr style='border:0; border-top:1px solid #999; margin:10px 0;'>"
+            final_message = separator.join(messages)
+            if final_message:
+                st.markdown(f"""<div class="gray-preview-message" style="font-size:13px; line-height:1.2;">
+                        {final_message}
                     </div>""", unsafe_allow_html=True)
-        with col1b:
-            if inner_html_info:
-                st.markdown(f"""<div class="info-message-blue">
-                        <small>{inner_html_info}</small>
-                    </div>""", unsafe_allow_html=True)
+                st.write("")
+                st.write("")
 
         # RFBOOKMARK

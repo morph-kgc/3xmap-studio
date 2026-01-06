@@ -21,6 +21,7 @@ import utils
 import uuid   # to handle uploader keys
 import networkx as nx
 from pyvis.network import Network
+from streamlit.runtime.uploaded_file_manager import UploadedFile
 
 from urllib.parse import urlparse, urlunparse
 
@@ -4304,6 +4305,11 @@ def check_issues_for_materialisation():
     inner_html_info = ""
 
     # Check if config file is empty
+    config_string = io.StringIO()
+    st.session_state["mkgc_config"].write(config_string)
+    if config_string.getvalue() == "":
+        everything_ok_flag = False
+        inner_html_error += f"""· The Config file is empty.<br>"""
 
     # List of all used mappings
     mkgc_used_mapping_list = get_all_mappings_used_for_materialisation()
@@ -4324,11 +4330,11 @@ def check_issues_for_materialisation():
         if st.session_state["g_label"]:
             g_mapping_complete_flag, heading_html, inner_html, tm_wo_sm_list, tm_wo_pom_list, pom_wo_om_list, pom_wo_predicate_list = utils.check_g_mapping(st.session_state["g_mapping"])
             if not g_mapping_complete_flag:
-                inner_html_error += f"❌ Mapping <b>{st.session_state["g_label"]}</b> is incomplete:" + inner_html
+                inner_html_error += f"· Mapping <b>{st.session_state["g_label"]}</b> is incomplete:" + inner_html
                 everything_ok_flag = False
                 g_mapping_ok_flag = False
             else:
-                inner_html_success += f"""✔️ Mapping <b>{st.session_state["g_label"]}</b>
+                inner_html_success += f"""· Mapping <b>{st.session_state["g_label"]}</b>
                     complete.<br>"""
 
     # Check links to additional mappings from urls (in case they broke after importing - unlikely)
@@ -4339,27 +4345,26 @@ def check_issues_for_materialisation():
             if mapping_path_list_string:
                 for mapping_path in mapping_path_list_string.split(","):
                     if mapping_path in st.session_state["mkgc_g_mappings_dict"].values(): # these are the URL additional mappings
-                        if not utils.load_mapping_from_url(mapping_path, display=False):
+                        if not utils.load_mapping_from_link(mapping_path, display=False):
                             mkgc_not_working_url_mappings_list.append(mapping_path)
-
 
     mkgc_used_additional_mapping_list = mkgc_used_mapping_list.copy()
     if st.session_state["g_label"] in mkgc_used_additional_mapping_list:
         mkgc_used_additional_mapping_list.remove(st.session_state["g_label"])
     if mkgc_used_additional_mapping_list and not mkgc_not_working_url_mappings_list:
-        inner_html_success += f"""✔️ <b>Additional mappings</b> are valid:<br>
+        inner_html_success += f"""· <b>Additional mappings</b> are valid:<br>
             <div style="margin-left: 20px"><b><small>
-            {utils.format_list_for_display(mkgc_used_additional_mapping_list)}</small><br></div>"""
+            {utils.format_list_for_display(mkgc_used_additional_mapping_list)}</small></b><br></div>"""
     elif mkgc_used_additional_mapping_list:
         everything_ok_flag = False
-        inner_html_error += f"""❌ URL to <b>additional mapping/s</b> not working:<br>
+        inner_html_error += f"""· URL to <b>additional mapping(s)</b> not working:<br>
             <div style="margin-left: 20px"><b><small>
             {utils.format_list_for_display(mkgc_not_working_url_mappings_list)}</small><br></div>"""
 
     # Check at least a data source is included
     if not mkgc_used_db_conn_list and not mkgc_used_tab_ds_list:
         everything_ok_flag = False
-        inner_html_error += f"""❌ The <b>Config file</b> must contain at least one <b>data source</b>.<br>"""
+        inner_html_error += f"""· The <b>Config file</b> must contain at least one <b>data source</b>.<br>"""
 
     # Check connections to db if used
     not_working_db_conn_list = []
@@ -4371,18 +4376,19 @@ def check_issues_for_materialisation():
         except Exception as e:
             not_working_db_conn_list.append(connection_string)
     if not not_working_db_conn_list and mkgc_used_db_conn_list:
-        formatted_list = "<br>".join(mkgc_used_db_conn_list)
-        inner_html_success += f"""✔️ All <b>connections to databases</b> are working:<br>
+        censored_mkgc_used_db_conn_list = [censor_url_str(conn) for conn in mkgc_used_db_conn_list]
+        formatted_list = "<br>".join(censored_mkgc_used_db_conn_list)
+        inner_html_success += f"""· All <b>connections to databases</b> of the Config file are working:<br>
             <div style="margin-left: 20px"><small><b>{formatted_list}</b></small><br></div>"""
     elif not_working_db_conn_list:
         everything_ok_flag = False
         censored_not_working_db_conn_list = [utils.censor_url_str(conn) for conn in not_working_db_conn_list]
         if len(not_working_db_conn_list) == 1:
-            inner_html_error += f"""❌ A <b>connection to database</b> is not working:<br>
+            inner_html_error += f"""· A <b>connection to database</b> of the Config file is not working:<br>
                 <div style="margin-left: 20px"><small><b>{utils.format_list_for_display(censored_not_working_db_conn_list)}
                 </b></small><br></div>"""
         else:
-            inner_html_error += f"""❌ Several <b>connections to databases</b> are not working:<br>
+            inner_html_error += f"""· Several <b>connections to databases</b> of the Config file are not working:<br>
                 <div style="margin-left: 20px"><small><b>
                 {utils.format_list_for_display(censored_not_working_db_conn_list)}</b></small><br></div>"""
 
@@ -4393,21 +4399,67 @@ def check_issues_for_materialisation():
             not_loaded_ds_list.append(ds_filename)
 
     if not not_loaded_ds_list and mkgc_used_tab_ds_list:
-        inner_html_success += f"""✔️ All <b>tabular data sources</b> are loaded:<br>
+        inner_html_success += f"""· All <b>tabular data sources</b> of the Config file are loaded:<br>
             <div style="margin-left: 20px"><small>
             <b>{utils.format_list_for_display(mkgc_used_tab_ds_list)}</b></small><br></div>"""
     elif mkgc_used_tab_ds_list:
         everything_ok_flag = False
         with col1a:
             if len(not_loaded_ds_list) == 1:
-                inner_html_error += f"""❌ A <b>tabular data source</b> is not loaded:
+                inner_html_error += f"""· A <b>tabular data source</b> of the Config file is not loaded:
                     <div style="margin-left: 20px"><b><small>
                     {utils.format_list_for_display(not_loaded_ds_list)}</b></small><br></div>"""
             else:
-                inner_html_error += f"""❌ Several <b>tabular data sources</b> are not loaded:
+                inner_html_error += f"""· Several <b>tabular data sources</b> of the Config file are not loaded:
                     <div style="margin-left: 20px"><small><b>
                     {utils.format_list_for_display(not_loaded_ds_list)}</b></small>
                     <br></div>"""
+
+
+    # Check if there are explicitely declared data sources in any mapping that are not declared in the Config file
+    missing_explicit_ds_list_g_mapping = []
+    explicit_ds = get_all_explicit_datasources(st.session_state["g_mapping"])
+    for ds in explicit_ds:
+        if ds not in mkgc_used_db_conn_list and ds not in mkgc_used_tab_ds_list and ds not in missing_explicit_ds_list_g_mapping:
+            missing_explicit_ds_list_g_mapping.append(ds)
+
+    missing_explicit_ds_list_additional_mappings = []
+    for additional_mapping_label in mkgc_used_additional_mapping_list:
+        explicit_ds = get_all_explicit_datasources(st.session_state["mkgc_g_mappings_dict"][additional_mapping_label])
+        for ds in explicit_ds:
+            if ds not in mkgc_used_db_conn_list and ds not in mkgc_used_tab_ds_list and ds not in missing_explicit_ds_list_additional_mappings:
+                missing_explicit_ds_list_additional_mappings.append(ds)
+
+    st.write("HERE", missing_explicit_ds_list_g_mapping)
+    st.write("HERE", missing_explicit_ds_list_additional_mappings)
+
+    if missing_explicit_ds_list_g_mapping:
+        everything_ok_flag = False
+        censored_missing_explicit_ds_list_g_mapping = [utils.censor_url_str(ds) for ds in missing_explicit_ds_list_g_mapping]
+        if len(missing_explicit_ds_list_g_mapping) == 1:
+            inner_html_error += f"""· A <b>data source</b> is explicitely declared in mapping <b>{st.session_state["g_label"]}</b>
+                but not in the Config file:<br>
+                <div style="margin-left: 20px"><small><b>{utils.format_list_for_display(censored_missing_explicit_ds_list_g_mapping)}
+                </b></small><br></div>"""
+        else:
+            inner_html_error += f"""· Several <b>data sources</b> are explicitely declared in mapping <b>{st.session_state["g_label"]}</b>
+                but not in the Config file:<br>
+                <div style="margin-left: 20px"><small><b>{utils.format_list_for_display(censored_missing_explicit_ds_list_g_mapping)}
+                </b></small><br></div>"""
+
+    if missing_explicit_ds_list_additional_mappings:
+        everything_ok_flag = False
+        censored_missing_explicit_ds_list_additional_mappings = [utils.censor_url_str(ds) for ds in missing_explicit_ds_list_additional_mappings]
+        if len(missing_explicit_ds_list_additional_mappings) == 1:
+            inner_html_error += f"""· A <b>data source</b> is explicitely declared in mapping <b>additional mapping(s)</b>
+                but not in the Config file:<br>
+                <div style="margin-left: 20px"><small><b>{utils.format_list_for_display(censored_missing_explicit_ds_list_additional_mappings)}
+                </b></small><br></div>"""
+        else:
+            inner_html_error += f"""· Several <b>data sources</b> are explicitely declared in the <b>additional mapping(s)</b>
+                but not in the Config file:<br>
+                <div style="margin-left: 20px"><small><b>{utils.format_list_for_display(censored_missing_explicit_ds_list_additional_mappingsg)}
+                </b></small><br></div>"""
 
     if st.session_state["g_label"] and not g_mapping_ok_flag:
         inner_html_info += f"""ℹ️ You can fix mapping <b>{st.session_state["g_label"]}</b>
@@ -4422,261 +4474,24 @@ def check_issues_for_materialisation():
     return everything_ok_flag, inner_html_success, inner_html_error, inner_html_info
 #_________________________________________________
 
-
-#RFBOOKMARK
 #_________________________________________________
-# Funtion to check a mapping loaded from URL is ok
-def is_valid_url_mapping(mapping_url, show_info):
-    mapping_url_ok_flag = True
+# Function to get all data sources used in the mappings
+def get_all_explicit_datasources(g_item):
 
-    try:
-        # Fetch content
-        response = requests.get(mapping_url)
-        response.raise_for_status()
-        url_mapping = response.text
+    if isinstance(g_item, Graph):
+        g = g_item
+    elif isinstance(g_item, str):
+        g = Graph()
+        g.parse(g_item, format="turtle")
+    elif isinstance(g_item, UploadedFile):
+        g = Graph()
+        g.parse(data=g_item.getvalue().decode("utf-8"), format="turtle")
+    else:
+        return []
 
-        # Check extension
-        if mapping_url.endswith((".ttl", ".rml.ttl", ".r2rml.ttl", ".fnml.ttl", ".rml-star.ttl")):
-            # Step 3a: Parse as RDF
-            g = rdflib.Graph()
-            g.parse(data=url_mapping, format="turtle")
+    sources = set()
+    for s, p, o in g.triples((None, RML.source, None)):
+        sources.add(str(o))
 
-            # Look for RML/R2RML predicates
-            rml_predicates = [
-                rdflib.URIRef("http://semweb.mmlab.be/ns/rml#logicalSource"),
-                rdflib.URIRef("http://www.w3.org/ns/r2rml#subjectMap"),
-                rdflib.URIRef("http://www.w3.org/ns/r2rml#predicateObjectMap")]
-
-            found = any(p in [pred for _, pred, _ in g] for p in rml_predicates)
-
-            if not found:
-                if show_info:
-                    st.markdown(f"""<div class="error-message">
-                            ❌ Link working, but <b>no RML structure found</b>.
-                            <small>Please check your mapping content.</small>
-                        </div>""", unsafe_allow_html=True)
-                mapping_url_ok_flag = False
-
-        elif url.endswith((".yaml", ".yml")):
-            # Parse as YAML
-            data = yaml.safe_load(url_mapping)
-
-            # Check for YARRRML structure
-            if not "mappings" in data and isinstance(data["mappings"], dict):
-                if show_info:
-                    st.markdown(f"""<div class="error-message">
-                            ❌ Link working, but <b>no YARRRML structure found</b>.
-                            <small>Please check your mapping content.</small>
-                        </div>""", unsafe_allow_html=True)
-                mapping_url_ok_flag = False
-
-        else:
-            if show_info:
-                st.markdown(f"""<div class="error-message">
-                    ❌ <b>Extension is not valid</b>.
-                </div>""", unsafe_allow_html=True)
-            mapping_url_ok_flag = False
-
-    except Exception as e:
-        if show_info:
-            st.markdown(f"""<div class="error-message">
-                ❌ <b>Validation failed.</b>
-                <small><i><b>Full error:</b> {e}</i></small>
-            </div>""", unsafe_allow_html=True)
-        mapping_url_ok_flag = False
-
-    return mapping_url_ok_flag
-
+    return list(sources)
 #_________________________________________________
-
-
-
-# #______________________________________________________
-# # Function get the column list of the data source of a tm
-# def get_column_list(tm_iri):
-#
-#     ls_iri = next(st.session_state["g_mapping"].objects(tm_iri, RML.logicalSource), None)
-#     ds = str(next(st.session_state["g_mapping"].objects(ls_iri, RML.source), None))
-#     reference_formulation = next(st.session_state["g_mapping"].objects(ls_iri, QL.referenceFormulation), None)
-#     query_as_ds = next(st.session_state["g_mapping"].objects(ls_iri, RML.query), None)
-#     table_name_as_ds = next(st.session_state["g_mapping"].objects(ls_iri, RML.tableName), None)
-#
-#     jdbc_dict = {}
-#     for conn in st.session_state["db_connections_dict"]:
-#         [engine, host, port, database, user, password] = st.session_state["db_connections_dict"][conn]
-#         if engine == "Oracle":
-#             jdbc_str = f"jdbc:oracle:thin:@{host}:{port}:{database}"
-#             jdbc_dict[conn] = jdbc_str
-#         elif engine == "SQL Server":
-#             jdbc_str = f"jdbc:sqlserver://{host}:{port};databaseName={database}"
-#             jdbc_dict[conn] = jdbc_str
-#         elif engine == "PostgreSQL":
-#             jdbc_str = f"jdbc:postgresql://{host}:{port}/{database}"
-#             jdbc_dict[conn] = jdbc_str
-#         elif engine == "MySQL":
-#             jdbc_str = f"jdbc:mysql://{host}:{port}/{database}"
-#             jdbc_dict[conn] = jdbc_str
-#         elif engine =="MariaDB":
-#             jdbc_str = f"jdbc:mariadb://{host}:{port}/{database}"
-#             jdbc_dict[conn] = jdbc_str
-#
-#     if ds in st.session_state["ds_files_dict"]:   # saved non-sql data source
-#
-#         df = utils.read_tab_file(ds)
-#         column_list = df.columns.tolist()
-#
-#
-#     elif ds in jdbc_dict.values():        # saved sql data source
-#
-#         for i_conn, i_jdbc_str in jdbc_dict.items():
-#             if  i_jdbc_str == ds:
-#                 [engine, host, port, i_database, user, password] = st.session_state["db_connections_dict"][conn]
-#                 conn_label = i_conn
-#                 jdbc_str = i_jdbc_str
-#                 database = i_database
-#                 break
-#
-#
-#         if query_as_ds:
-#             try:
-#                 conn = utils.make_connection_to_db(conn_label)
-#                 cur = conn.cursor()
-#                 cur.execute(query_as_ds)
-#                 column_list = [description[0] for description in cur.description]
-#                 conn.close() # optional: close immediately or keep open for queries
-#
-#             except:
-#                 column_list = []
-#
-#         elif table_name_as_ds:
-#             try:
-#                 conn = utils.make_connection_to_db(conn_label)
-#                 cur = conn.cursor()
-#                 cur.execute(f"SELECT * FROM {table_name_as_ds} LIMIT 0")
-#                 column_list = [desc[0] for desc in cur.description]
-#                 conn.close()
-#
-#
-#             except:
-#                 column_list = []
-#
-#         else:
-#             column_list = []
-#
-#     elif query_as_ds:    # try to look for the columns in the query
-#         parsed = sqlglot.parse_one(query_as_ds)
-#         column_list = [str(col) for col in parsed.find_all(sqlglot.expressions.Column)]
-#
-#
-#     else:                                                           # data source not saved
-#         column_list = []
-#
-#     return column_list
-# #________________________________________________________
-
-
-#
-# #_________________________________________________
-# # Funtion to get the used classes metric
-# def get_average_class_frequency_metric(g_ont, superclass_filter=None, type="used_classes"):
-#
-#     # Filtered class dictionaries___________________________
-#     ontology_class_dict = get_class_dictionaries_filtered_by_superclass(g_ont, superclass_filter=superclass_filter)[0]
-#     ontology_used_class_dict = get_class_dictionaries_filtered_by_superclass(g_ont, superclass_filter=superclass_filter)[1]
-#     ontology_used_classes_count_by_rules_dict = get_class_dictionaries_filtered_by_superclass(g_ont, superclass_filter=superclass_filter)[3]
-#
-#     number_of_rules = sum(ontology_used_classes_count_by_rules_dict.values())
-#     number_of_used_classes = len(ontology_used_class_dict)
-#     number_of_classes = len(ontology_class_dict)
-#
-#     if type == "used_classes":
-#         average_class_use = number_of_rules/number_of_used_classes if number_of_used_classes != 0 else 0
-#     if type == "all_classes":
-#         average_class_use = number_of_rules/number_of_classes if number_of_classes != 0 else 0
-#
-#     st.markdown("""<style>[data-testid="stMetricDelta"] svg {
-#             display: none;
-#         }</style>""", unsafe_allow_html=True)
-#     if type == "used_classes":
-#         st.metric(label="Average freq.", value=f"{format_number_for_display(average_class_use)}",
-#             delta=f"(over used classes)", delta_color="off")
-#     if type == "all_classes":
-#         st.metric(label="Average freq.", value=f"{format_number_for_display(average_class_use)}",
-#             delta=f"(over all classes)", delta_color="off")
-# #_________________________________________________
-
-
-# #_________________________________________________
-# #Function to display database table
-# def display_db_table(table, conn_label):
-#
-#     conn, connection_ok_flag = check_conn_status(conn_label)
-#
-#     if connection_ok_flag:
-#
-#         cur.execute(f"SELECT * FROM {selected_db_table}")
-#         rows = cur.fetchall()
-#         if engine == "SQL Server":
-#             rows = [tuple(row) for row in rows]   # rows are of type <class 'pyodbc.Row'> -> convert to tuple
-#         columns = [desc[0] for desc in cur.description]
-#
-#         df = pd.DataFrame(rows, columns=columns)
-#
-#         max_rows = utils.get_max_length_for_display()[2]
-#         max_cols = utils.get_max_length_for_display()[3]
-#
-#         limited_df = df.iloc[:, :max_cols]   # limit number of columns
-#
-#         # Slice rows if needed
-#         if len(df) > max_rows and df.shape[1] > max_cols:
-#             st.markdown(f"""<div class="warning-message">
-#                 ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)})
-#                 and the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
-#             </div>""", unsafe_allow_html=True)
-#             st.write("")
-#         elif len(df) > max_rows:
-#             st.markdown(f"""<div class="warning-message">
-#                 ⚠️ Showing the <b>first {max_rows} rows</b> (out of {len(df)}).
-#             </div>""", unsafe_allow_html=True)
-#             st.write("")
-#         elif df.shape[1] > max_cols:
-#             st.markdown(f"""<div class="warning-message">
-#                 ⚠️ Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).
-#             </div>""", unsafe_allow_html=True)
-#             st.write("")
-#
-#         table_len = f"{len(df)} rows" if len(df) != 1 else f"{len(df)} row"
-#         st.markdown(f"""<div class="info-message-blue">
-#                 🖼️ <b style="color:#F63366;"> Table ({table_len}):</b>
-#                 <small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-#                 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-#                 <b>({selected_db_table})</b></small>
-#             </div></div>""", unsafe_allow_html=True)
-#         st.dataframe(limited_df.head(max_rows), hide_index=True)
-#
-#
-#         cur.close()
-#         conn.close()
-#
-#     return connection_ok_flag
-# #_________________________________________________
-
-
-
-
-
-# st.markdown(f"""<div class="gray-preview-message">
-#         <img src="https://img.icons8.com/ios-filled/50/000000/flow-chart.png" alt="mapping icon"
-#         style="vertical-align:middle; margin-right:8px; height:20px;">
-#         You are working with mapping
-#         <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
-#         <ul style="font-size:0.75rem; margin:6px 0 0 15px; padding-left:10px;">
-#             <li>Mapping was loaded from file <b>{st.session_state["g_mapping_source_cache"][1]}</b></li>
-#             <li>When loaded, mapping had <b>{st.session_state["original_g_size_cache"]} TriplesMaps</b></li>
-#             <li>Now mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps<b/></li>
-#         </ul></div>""", unsafe_allow_html=True)
-
-
-#F63366 Streamlit salmon
-#f26a7e Streamlit salmon less saturated
-#ff7a7a lighter streamlit salmon
