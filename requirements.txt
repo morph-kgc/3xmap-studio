@@ -22,7 +22,7 @@ sqlglot
 streamlit
 streamlit-js-eval
 xlrd
-
+langcodes
 
 
 
