@@ -330,13 +330,12 @@ def import_st_aesthetics():
         padding-bottom: 4px;}
 
     /* VERY SMALL INFO */
-    .very-small-info {text-align: right; font-size: 10.5px; color: #003366;
+    .very-small-info {text-align: right; font-size: 10.5px;
         margin-top: -10px;}
 
-    /* VERY SMALL INFO 2 */
-    .very-small-info-2 {font-size: 10.5px;
+    /* VERY SMALL INFO TOP */
+    .very-small-info-top {font-size: 10.5px;
         margin-bottom: -10px;}
-
 
     </style>"""
 #_______________________________________________________
@@ -504,8 +503,12 @@ def import_st_aesthetics_dark_mode():
         padding-bottom: 4px;}
 
     /* VERY SMALL INFO */
-    .very-small-info {text-align: right; font-size: 10.5px; color: #dceeff;
+    .very-small-info {font-size: 10.5px;
         margin-top: -10px;}
+
+    /* VERY SMALL INFO TOP*/
+    .very-small-info-top {font-size: 10.5px;
+        margin-bottom: -10px;}
 
     </style>"""
 #______________________________________________________
@@ -2452,7 +2455,9 @@ def get_db_table_df(conn_label, table):
 #______________________________________________________
 # Function get the column list of the data source of a tm
 # It also gives warning and info messages
-def get_column_list_and_give_info(tm_label):
+def get_column_list_and_give_info(tm_label, template=False):
+
+    term = "reference" if not template else "template placeholder"
 
     # Get required info
     tm_iri, ls_iri, ds = get_tm_info(tm_label)
@@ -2500,17 +2505,17 @@ def get_column_list_and_give_info(tm_label):
                 if not column_list:
                     inner_html = f"""⚠️ <b>No references found</b>.
                     <small>Check data source in the <b>📊 Databases</b> page.
-                    <b>Manual reference entry is discouraged.</b></small>"""
+                    <b>Manual {term} entry is discouraged.</b></small>"""
 
             except Exception as e:
                 inner_html = f"""⚠️ Connection to database <b>{selected_conn_label}</b> failed
                     <small>(check it in the <b>📊 Databases</b> page).
-                    Manual reference entry is discouraged.</small>"""
+                    Manual {term} entry is discouraged.</small>"""
 
         else:
             inner_html = f"""⚠️ <b>Column detection not possible:</b>
                 Missing <code>RML.query</code> or <code>RML.tableName</code> in mapping.
-                <small>Manual reference entry is discouraged.</small>"""
+                <small>Manual {term} entry is discouraged.</small>"""
 
     # Data source is a view but connection is not saved (try to find the columns in the view)
     elif view_as_ds:
