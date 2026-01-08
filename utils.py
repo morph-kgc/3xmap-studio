@@ -2468,6 +2468,7 @@ def get_column_list_and_give_info(tm_label, template=False):
     # Initialise variables
     inner_html = ""
     column_list = []
+    ds_available_flag = True
 
     # Check whether the data source is a saved database
     selected_conn_label = ""
@@ -2488,7 +2489,6 @@ def get_column_list_and_give_info(tm_label, template=False):
         database = st.session_state["db_connections_dict"][selected_conn_label][3]
         ds_for_display = f"""📊 <b>{selected_conn_label}</b>"""
 
-
         if view_as_ds or table_name_as_ds:
             try:
                 conn = utils.make_connection_to_db(selected_conn_label)
@@ -2501,17 +2501,17 @@ def get_column_list_and_give_info(tm_label, template=False):
                         db = conn[database]
                         collection = db[table_name_as_ds]
                         result = collection.find_one()
-                column_list = list(result.keys())
+                column_list = list(result.keys()) if result is not None else []
                 if not column_list:
-                    inner_html = f"""⚠️ <b>No references found</b>.
-                    <small>Check data source in the <b>📊 Databases</b> page.
-                    <b>Manual {term} entry is discouraged.</b></small>"""
+                    inner_html = f"""⚠️ <b>Data source is empty</b>
+                    <small>Check it in the <b>📊 Databases</b> page.
+                    Manual {term} entry is discouraged.</small>"""
 
             except Exception as e:
                 inner_html = f"""⚠️ Connection to database <b>{selected_conn_label}</b> failed
                     <small>(check it in the <b>📊 Databases</b> page).
-                    Manual {term} entry is discouraged.</small>"""
-
+                    Manual {term} entry is discouraged.{e}{table_name_as_ds}</small>"""
+                ds_available_flag = False
         else:
             inner_html = f"""⚠️ <b>Column detection not possible:</b>
                 Missing <code>RML.query</code> or <code>RML.tableName</code> in mapping.
@@ -2538,15 +2538,43 @@ def get_column_list_and_give_info(tm_label, template=False):
                 <small>Connect via <b>📊 Databases</b> page to enable column detection.
                 Manual {term} entry is discouraged.</small>"""
             ds_for_display = f"""📊 <b>{ds}</b>"""
+            ds_available_flag = False
 
         else:
             inner_html = f"""⚠️ <b>{ds}</b> is unavailable.
                 <small>Add the data source via the <b>📊 Databases</b> or <b>🛢️ Tabular Data</b> pages to enable column detection.
                 Manual {term} entry is discouraged.</small>"""
+            ds_available_flag = False
         ds_for_display = f"""<b>{ds}</b>"""
 
-    return [column_list, inner_html, ds_for_display]
+    return [column_list, inner_html, ds_for_display, ds_available_flag]
 #______________________________________________________
+
+#______________________________________________________
+# Function get very small info message on data sources when building mapping
+def get_very_small_ds_info(column_list, inner_html, ds_for_display, ds_available_flag):
+    if not column_list:   #data source is not available (load)
+        if not ds_available_flag:
+            text = f"""🚫Data source not available (<b>{ds_for_display}</b>)""" if ds_for_display else f"""🚫Data source not available"""
+            st.markdown(f"""<div class="very-small-info">
+                {text}
+            </div>""", unsafe_allow_html=True)
+        else:
+            text = f"""🚫Data source not available (<b>{ds_for_display}</b>)""" if ds_for_display else f"""🚫Data source not available"""
+            st.markdown(f"""<div class="very-small-info">
+                Data source: <b>{ds_for_display}</b>
+            </div>""", unsafe_allow_html=True)
+
+    else:
+        if ds_for_display:
+            st.markdown(f"""<div class="very-small-info">
+                Data source: <b>{ds_for_display}</b>
+            </div>""", unsafe_allow_html=True)
+        else:
+            st.markdown(f"""<div class="very-small-info">
+                Data source: <b>unknown</b>
+            </div>""", unsafe_allow_html=True)
+#_____________________________________________________
 
 #______________________________________________________
 # Get classes of an ontology

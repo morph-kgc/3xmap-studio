@@ -76,9 +76,9 @@ def save_tm_w_view():
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    # bind to logical source
     st.session_state["g_mapping"].add((ls_iri, RML.source, Literal(url_str)))    # bind ls to database
     if engine != "MongoDB":
-        st.session_state["g_mapping"].add((ls_iri, RML.referenceFormulation, QL.SQL))
+        st.session_state["g_mapping"].add((ls_iri, RML.referenceFormulation, RML.SQL2008))
     else:
-        st.session_state["g_mapping"].add((ls_iri, RML.referenceFormulation, QL.MongoQL))
+        st.session_state["g_mapping"].add((ls_iri, RML.referenceFormulation, QL.JSONPath))
     st.session_state["g_mapping"].add((ls_iri, RML.query, Literal(sql_query)))
     st.session_state["g_mapping"].add((tm_iri, RDF.type, RML.TriplesMap))
     # store information____________________
@@ -98,9 +98,9 @@ def save_tm_w_table_name():
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    # bind to logical source
     st.session_state["g_mapping"].add((ls_iri, RML.source, Literal(url_str)))    # bind ls to database
     if engine != "MongoDB":
-        st.session_state["g_mapping"].add((ls_iri, RML.referenceFormulation, QL.SQL))
+        st.session_state["g_mapping"].add((ls_iri, RML.referenceFormulation, RML.SQL2008))
     else:
-        st.session_state["g_mapping"].add((ls_iri, RML.referenceFormulation, QL.MongoQL))
+        st.session_state["g_mapping"].add((ls_iri, RML.referenceFormulation, QL.JSONPath))
     st.session_state["g_mapping"].add((ls_iri, RML.tableName, Literal(selected_table_for_ls)))
     st.session_state["g_mapping"].add((tm_iri, RDF.type, RML.TriplesMap))
     # store information____________________
@@ -692,7 +692,7 @@ with tab1:
                         db_tables = [row[0] for row in result]
 
                         with col1a:
-                            list_to_choose = db_tables
+                            list_to_choose = sorted(db_tables)
                             list_to_choose.insert(0, "Select table")
                             selected_table_for_ls = st.selectbox("📅 Select table:*", list_to_choose,
                                 key="key_selected_table_for_ls")
@@ -920,15 +920,12 @@ with tab2:
 
                     elif build_template_action_sm == "📈 Variable part":
 
-                        column_list, inner_html, ds_for_display = utils.get_column_list_and_give_info(tm_label_for_sm, template=True)
+                        column_list, inner_html, ds_for_display, ds_available_flag = utils.get_column_list_and_give_info(tm_label_for_sm, template=True)
                         if not column_list:   #data source is not available (load)
                             with col1b:
                                 sm_template_variable_part = st.text_input("⌨️ Manually enter column of the data source:*",
                                     placeholder="📈 Enter template placeholder", key="key_sm_template_variable_part_manual", label_visibility="collapsed")
-                                text = f"""🚫Data source not available (<b>{ds_for_display}</b>)""" if ds_for_display else f"""🚫Data source not available"""
-                                st.markdown(f"""<div class="very-small-info">
-                                    {text}
-                                </div>""", unsafe_allow_html=True)
+                                utils.get_very_small_ds_info(column_list, inner_html, ds_for_display, ds_available_flag)
                             with col1c:
                                 if sm_template_variable_part:
                                     st.button("Add", key="save_sm_template_variable_part_button", on_click=save_sm_template_variable_part)
@@ -938,10 +935,7 @@ with tab2:
                                 list_to_choose = column_list.copy()
                                 sm_template_variable_part = st.selectbox("🖱️ Select the column of the data source:", list_to_choose,
                                     placeholder="📈 Select template placeholder", index=None, label_visibility="collapsed", key="key_sm_template_variable_part")
-                                if ds_for_display:
-                                    st.markdown(f"""<div class="very-small-info">
-                                        Data source: <b>{ds_for_display}</b>
-                                    </div>""", unsafe_allow_html=True)
+                                utils.get_very_small_ds_info(column_list, inner_html, ds_for_display, ds_available_flag)
 
                             with col1c:
                                 if sm_template_variable_part:
@@ -1035,26 +1029,20 @@ with tab2:
                     with col1:
                         col1a, col1b = st.columns([2,1])
 
-                    column_list, inner_html, ds_for_display = utils.get_column_list_and_give_info(tm_label_for_sm)
+                    column_list, inner_html, ds_for_display, ds_available_flag = utils.get_column_list_and_give_info(tm_label_for_sm)
 
                     if not column_list:   #data source is not available (load)
                         with col1a:
                             sm_column_name = st.text_input("⌨️ Manually enter logical source reference:*",
                                 placeholder="📊 Enter reference manually", key="key_sm_column_name_manual", label_visibility="collapsed")
-                            text = f"""🚫Data source not available (<b>{ds_for_display}</b>)""" if ds_for_display else f"""🚫Data source not available"""
-                            st.markdown(f"""<div class="very-small-info">
-                                {text}
-                            </div>""", unsafe_allow_html=True)
+                            utils.get_very_small_ds_info(column_list, inner_html, ds_for_display, ds_available_flag)
 
                     else:
                         with col1a:
                             list_to_choose = column_list.copy()
                             sm_column_name = st.selectbox(f"""🖱️ Select reference:*""", list_to_choose,
                                 placeholder="📊 Select reference*", index=None, label_visibility="collapsed", key="key_sm_column_name")
-                            if ds_for_display:
-                                st.markdown(f"""<div class="very-small-info">
-                                    Data source: <b>{ds_for_display}</b>
-                                </div>""", unsafe_allow_html=True)
+                            utils.get_very_small_ds_info(column_list, inner_html, ds_for_display, ds_available_flag)
 
                     if inner_html:
                         with col1b:
@@ -1593,16 +1581,13 @@ with tab3:
 
                 elif build_template_action_om == "📈 Variable part":
 
-                    column_list, inner_html, ds_for_display = utils.get_column_list_and_give_info(tm_label_for_pom)
+                    column_list, inner_html, ds_for_display, ds_available_flag = utils.get_column_list_and_give_info(tm_label_for_pom)
 
                     if not column_list:   #data source is not available (load)
                         with col1b:
                             om_template_variable_part = st.text_input("⌨️ Manually enter column of the data source:*",
                                 placeholder="📈 Enter template placeholder", key="key_om_template_variable_part_manual", label_visibility="collapsed")
-                            text = f"""🚫Data source not available (<b>{ds_for_display}</b>)""" if ds_for_display else f"""🚫Data source not available"""
-                            st.markdown(f"""<div class="very-small-info">
-                                {text}
-                            </div>""", unsafe_allow_html=True)
+                            utils.get_very_small_ds_info(column_list, inner_html, ds_for_display, ds_available_flag)
                         with col1c:
                             if om_template_variable_part:
                                 st.button("Add", key="save_om_template_variable_part_button", on_click=save_om_template_variable_part)
@@ -1613,10 +1598,7 @@ with tab3:
                             list_to_choose.insert(0, "Select reference")
                             om_template_variable_part = st.selectbox("🖱️ Select the column of the data source:", list_to_choose,
                                 placeholder="📈 Select template placeholder", index=None, label_visibility="collapsed", key="key_om_template_variable_part")
-                            if ds_for_display:
-                                st.markdown(f"""<div class="very-small-info">
-                                    Data source: <b>{ds_for_display}</b>
-                                </div>""", unsafe_allow_html=True)
+                            utils.get_very_small_ds_info(column_list, inner_html, ds_for_display, ds_available_flag)
 
                         with col1c:
                             if om_template_variable_part != "Select reference":
@@ -1715,16 +1697,13 @@ with tab3:
                 with col1:
                     col1a, col1b = st.columns([2,1])
 
-                column_list, inner_html, ds_for_display = utils.get_column_list_and_give_info(tm_label_for_pom)
+                column_list, inner_html, ds_for_display, ds_available_flag = utils.get_column_list_and_give_info(tm_label_for_pom)
 
                 if not column_list:   #data source is not available (load)
                     with col1a:
                         om_column_name = st.text_input("⌨️ Manually enter logical source reference:*",
                             placeholder="📊 Enter reference manually", key="key_om_column_name_manual", label_visibility="collapsed")
-                        text = f"""🚫Data source not available (<b>{ds_for_display}</b>)""" if ds_for_display else f"""🚫Data source not available"""
-                        st.markdown(f"""<div class="very-small-info">
-                            {text}
-                        </div>""", unsafe_allow_html=True)
+                        utils.get_very_small_ds_info(column_list, inner_html, ds_for_display, ds_available_flag)
 
                 else:
                     with col1a:
@@ -1732,10 +1711,7 @@ with tab3:
                         list_to_choose.insert(0, "Select reference*")
                         om_column_name = st.selectbox(f"""🖱️ Select reference:*""", list_to_choose,
                             placeholder="📊 Select reference*", index=None, label_visibility="collapsed", key="key_om_column_name")
-                        if ds_for_display:
-                            st.markdown(f"""<div class="very-small-info">
-                                Data source: <b>{ds_for_display}</b>
-                            </div>""", unsafe_allow_html=True)
+                        utils.get_very_small_ds_info(column_list, inner_html, ds_for_display, ds_available_flag)
 
 
                 if inner_html:

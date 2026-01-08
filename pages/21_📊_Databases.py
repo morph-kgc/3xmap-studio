@@ -525,7 +525,7 @@ with tab2:
                 db_tables = [row[0] for row in result]
 
                 with col1b:
-                    list_to_choose = db_tables.copy()
+                    list_to_choose = sorted(db_tables).copy()
                     list_to_choose.insert(0, "Select table")
                     selected_db_table = st.selectbox("🖱️ Select table:*", list_to_choose,
                         key="key_selected_db_table")
@@ -661,6 +661,7 @@ with tab3:
                 with col1a:
                     result = utils.get_tables_from_db(connection_for_view)
                     db_tables = [row[0] for row in result]
+                    db_tables = sorted(db_tables)
                     list_to_choose = db_tables.copy()
                     list_to_choose.insert(0, "Select table")
                     selected_db_table = st.selectbox("🖱️ Select table:*", list_to_choose,
