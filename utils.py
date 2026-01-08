@@ -2523,26 +2523,27 @@ def get_column_list_and_give_info(tm_label, template=False):
         column_list = [str(col) for col in parsed.find_all(sqlglot.expressions.Column)]
 
         if column_list:
-            inner_html = f"""⚠️ <b>Database connection not established</b>.
-                <small>Columns have been inferred from the view.
-                Connecting to the database through the <b>📊 Databases</b> page is still recommended.</small>"""
+            inner_html = f"""⚠️ No information on the <b>source database</b> is given in
+                mapping <b>{st.session_state["g_label"]}</b>.
+                <small>Data columns have been inferred from the view.</small>"""
         else:
-            inner_html = f"""⚠️ <b>Database connection not established</b>.
-                <small>Go to the <b>📊 Databases</b> page to connect and enable column detection.
-                Manual reference entry is discouraged.</small>"""
+            inner_html = f"""⚠️ No information on the <b>source database</b> is given in
+                mapping <b>{st.session_state["g_label"]}</b>.
+                Manual {term} entry is enabled.</small>"""
         ds_for_display = ""
 
     else:                                                           # data source not saved
         if reference_formulation == QL.SQL:
             inner_html = f"""⚠️ <b>{ds}</b> is unavailable.
-                <small>Connect via <b>📊 SQL Databases</b> page to enable column detection.
-                <b>Manual reference entry is discouraged.</b></small>"""
+                <small>Connect via <b>📊 Databases</b> page to enable column detection.
+                Manual {term} entry is discouraged.</small>"""
+            ds_for_display = f"""📊 <b>{ds}</b>"""
 
         else:
             inner_html = f"""⚠️ <b>{ds}</b> is unavailable.
-                <small>Load it via <b>📊 SQL Databases</b> page to enable column detection.
-                <b>Manual reference entry is discouraged.</b></small>"""
-        ds_for_display = ""
+                <small>Add the data source via the <b>📊 Databases</b> or <b>🛢️ Tabular Data</b> pages to enable column detection.
+                Manual {term} entry is discouraged.</small>"""
+        ds_for_display = f"""<b>{ds}</b>"""
 
     return [column_list, inner_html, ds_for_display]
 #______________________________________________________
