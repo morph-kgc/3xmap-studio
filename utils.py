@@ -333,6 +333,11 @@ def import_st_aesthetics():
     .very-small-info {text-align: right; font-size: 10.5px; color: #003366;
         margin-top: -10px;}
 
+    /* VERY SMALL INFO 2 */
+    .very-small-info-2 {font-size: 10.5px;
+        margin-bottom: -10px;}
+
+
     </style>"""
 #_______________________________________________________
 

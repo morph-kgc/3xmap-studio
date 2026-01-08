@@ -43,7 +43,7 @@ def save_tm_w_tab_ls():
     tm_iri = NS[f"{st.session_state['tm_label']}"]
     tm_label = utils.get_node_label(tm_iri)
     ds_filename = ds_file.name
-    ls_iri = NS[f"{ls_label}"] if label_ls_option == "Yes (add label 🏷️)" else BNode()
+    ls_iri = NS[f"{ls_label}"] if label_ls_option == "Yes (add label 🔖)" else BNode()
     # add triples__________________
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    # bind to logical source
     st.session_state["g_mapping"].add((ls_iri, RML.source, Literal(ds_filename)))    # bind ls to source file
@@ -71,7 +71,7 @@ def save_tm_w_view():
     NS = st.session_state["base_ns"][1]
     tm_iri = NS[f"{st.session_state['tm_label']}"]
     tm_label = utils.get_node_label(tm_iri)
-    ls_iri = NS[f"{ls_label}"] if label_ls_option == "Yes (add label 🏷️)" else BNode()
+    ls_iri = NS[f"{ls_label}"] if label_ls_option == "Yes (add label 🔖)" else BNode()
     # add triples__________________
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    # bind to logical source
     st.session_state["g_mapping"].add((ls_iri, RML.source, Literal(url_str)))    # bind ls to database
@@ -94,7 +94,7 @@ def save_tm_w_table_name():
     NS = st.session_state["base_ns"][1]
     tm_iri = NS[f"{st.session_state['tm_label']}"]
     tm_label = utils.get_node_label(tm_iri)
-    ls_iri = NS[f"{ls_label}"] if label_ls_option == "Yes (add label 🏷️)" else BNode()
+    ls_iri = NS[f"{ls_label}"] if label_ls_option == "Yes (add label 🔖)" else BNode()
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    # bind to logical source
     st.session_state["g_mapping"].add((ls_iri, RML.source, Literal(url_str)))    # bind ls to database
     if engine != "MongoDB":
@@ -164,7 +164,7 @@ def reset_sm_template():
 def save_sm_template():   #function to save subject map (template option)
     # get info_______________________
     NS = st.session_state["base_ns"][1]
-    sm_iri = NS[sm_label] if label_sm_option == "Yes (add label 🏷️)" else BNode()
+    sm_iri = NS[sm_label] if label_sm_option == "Yes (add label 🔖)" else BNode()
     # add triples____________________
     st.session_state["g_mapping"].add((tm_iri_for_sm, RML.subjectMap, sm_iri))
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RML.SubjectMap))
@@ -199,7 +199,7 @@ def save_sm_template():   #function to save subject map (template option)
 def save_sm_constant():   #function to save subject map (constant option)
     # get info_______________________
     NS = st.session_state["base_ns"][1]
-    sm_iri = NS[sm_label] if label_sm_option == "Yes (add label 🏷️)" else BNode()
+    sm_iri = NS[sm_label] if label_sm_option == "Yes (add label 🔖)" else BNode()
     # add triples________________________
     st.session_state["g_mapping"].add((tm_iri_for_sm, RML.subjectMap, sm_iri))
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RML.SubjectMap))
@@ -237,7 +237,7 @@ def save_sm_constant():   #function to save subject map (constant option)
 def save_sm_reference():   #function to save subject map (reference option)
     # get info_______________________
     NS = st.session_state["base_ns"][1]
-    sm_iri = NS[sm_label] if label_sm_option == "Yes (add label 🏷️)" else BNode()
+    sm_iri = NS[sm_label] if label_sm_option == "Yes (add label 🔖)" else BNode()
     # add triples____________________
     st.session_state["g_mapping"].add((tm_iri_for_sm, RML.subjectMap, sm_iri))
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RML.SubjectMap))
@@ -637,10 +637,10 @@ with tab1:
                 if connection_ok_flag:
                     with col1b:
                         label_ls_option = st.selectbox("♻️ Reuse Logical Source:",
-                            ["No", "Yes (add label 🏷️)"], key="key_label_ls_option")
+                            ["No", "Yes (add label 🔖)"], key="key_label_ls_option")
                         valid_ls_label = True
 
-                    if label_ls_option == "Yes (add label 🏷️)":
+                    if label_ls_option == "Yes (add label 🔖)":
                         with col1a:
                             ls_label = st.text_input("🏷️ Enter label for the Logical Source:*")
                         with col1b:
@@ -722,9 +722,9 @@ with tab1:
 
             with col1b:
                 label_ls_option = st.selectbox("♻️ Reuse Logical Source:",
-                    ["No", "Yes (add label 🏷️)"], key="key_label_ls_option")
+                    ["No", "Yes (add label 🔖)"], key="key_label_ls_option")
 
-                if label_ls_option == "Yes (add label 🏷️)":
+                if label_ls_option == "Yes (add label 🔖)":
                     with col1a:
                         ls_label = st.text_input("🏷️ Enter label for the Logical Source:*")
                     with col1b:
@@ -742,7 +742,7 @@ with tab1:
                     ls_label = ""
 
                 with col1a:
-                    if label_ls_option == "Yes (add label 🏷️)":
+                    if label_ls_option == "Yes (add label 🔖)":
                         if valid_ls_label_flag:
                             if ds_filename_for_tm != "Select file":
                                 st.button("Save", key="key_save_tm_w_tab_ls", on_click=save_tm_w_tab_ls)
@@ -1073,18 +1073,27 @@ with tab2:
 
                 # TERM TYPE
                 with col1a:
+                    st.markdown(f"""<div class="very-small-info-2">
+                        🆔 Term type*
+                    </div>""", unsafe_allow_html=True)
                     if sm_generation_rule ==  "Constant 🔒":
                         list_to_choose = ["🌐 IRI"]
                     else:
                         list_to_choose = ["🌐 IRI", "👻 BNode"]
                     sm_term_type = st.selectbox("🆔 Select term type:*", list_to_choose,
-                        key="key_sm_term_type")
+                        label_visibility="collapsed", key="key_sm_term_type")
+
 
                 # SUBJECT MAP LABEL
                 with col1a:
-                    label_sm_option = st.selectbox("♻️ Reuse Subject Map (opt):", ["No", "Yes (add label 🏷️)"])
-                    if label_sm_option == "Yes (add label 🏷️)":
-                        sm_label = st.text_input("🔖 Enter Subject Map label:*", key="key_sm_label_new")
+                    st.markdown(f"""<div class="very-small-info-2">
+                        ♻️ Reuse Subject Map*
+                    </div>""", unsafe_allow_html=True)
+                    label_sm_option = st.selectbox("♻️ Reuse Subject Map (opt):", ["No", "Yes (add label 🔖)"],
+                        label_visibility="collapsed")
+                    if label_sm_option == "Yes (add label 🔖)":
+                        sm_label = st.text_input("🔖 Enter Subject Map label:*", key="key_sm_label_new",
+                            placeholder="🔖 Subject Map label*", label_visibility="collapsed")
                         valid_sm_label = utils.is_valid_label(sm_label, hard=True, display_option=False)
                     else:
                         sm_label = ""
@@ -1092,6 +1101,9 @@ with tab2:
 
                 # SUBJECT CLASS
                 with col1b:
+                    st.markdown(f"""<div class="very-small-info-2">
+                        🏷️️ Class
+                    </div>""", unsafe_allow_html=True)
                     ontology_class_dict = utils.get_ontology_class_dict(st.session_state["g_ontology"])
                     custom_class_dict =  utils.get_ontology_class_dict("custom")
                     custom_class_dict = {}          # dictionary for custom classes
@@ -1106,11 +1118,11 @@ with tab2:
                     # Filter by ontology
                     if len(ontology_filter_list) > 1:
                         list_to_choose = ontology_filter_list
-                        list_to_choose.insert(0, "No filter")
-                        ontology_filter_for_subject_class = st.selectbox("📡 Filter class by ontology (opt):",
-                            list_to_choose, key="key_ontology_filter_for_subject_class")
+                        ontology_filter_for_subject_class = st.selectbox("📡 Filter class by ontology (opt):", list_to_choose,
+                            placeholder="📡 Ontology filter", index=None, label_visibility="collapsed",
+                            key="key_ontology_filter_for_subject_class")
 
-                        if ontology_filter_for_subject_class == "No filter":
+                        if not ontology_filter_for_subject_class:
                             ontology_filter_for_subject_class = st.session_state["g_ontology"]
                         if ontology_filter_for_subject_class == "Custom classes":
                             ontology_filter_for_subject_class = "Custom classes"
@@ -1130,18 +1142,17 @@ with tab2:
                         if ontology_superclass_dict:   # there exists at least one superclass (show superclass filter)
                             classes_in_ontology_superclass_dict = {}
                             superclass_list = sorted(ontology_superclass_dict.keys())
-                            superclass_list.insert(0, "No filter")
                             superclass = st.selectbox("📡 Filter by superclass (opt):", superclass_list,
-                                key="key_superclass")   # superclass label
+                                placeholder="📡 Superclass filter", index=None, label_visibility="collapsed", key="key_superclass")   # superclass label
 
-                            if superclass != "No filter":   # a superclass has been selected (filter)
+                            if superclass:   # a superclass has been selected (filter)
                                 classes_in_ontology_superclass_dict[superclass] = ontology_superclass_dict[superclass]
                                 superclass = ontology_superclass_dict[superclass] #we get the superclass iri
                                 for s, p, o in list(set(st.session_state["g_ontology"].triples((None, RDFS.subClassOf, superclass)))):
                                     classes_in_ontology_superclass_dict[utils.get_node_label(s)] = s
                                 class_list = sorted(classes_in_ontology_superclass_dict.keys())
                                 subject_class_list = st.multiselect("🏷️️ Select class(es):", class_list,
-                                    key="key_subject_class")   # class list (labels)
+                                    placeholder="🏷️️ Select class(es)", label_visibility="collapsed", key="key_subject_class")   # class list (labels)
 
                             else:  #no superclass selected (list all classes)
                                 if ontology_filter_for_subject_class == st.session_state["g_ontology"]:
@@ -1149,7 +1160,7 @@ with tab2:
                                 else:
                                     class_list = sorted(ontology_class_dict.keys())
                                 subject_class_list = st.multiselect("🏷️️ Select class(es):", class_list,
-                                    key="key_subject_class")    # class list (labels)
+                                    placeholder="🏷️️ Select class(es)", label_visibility="collapsed", key="key_subject_class")    # class list (labels)
 
                         else:     #no superclasses exist (no superclass filter)
                             if ontology_filter_for_subject_class == st.session_state["g_ontology"]:
@@ -1157,23 +1168,27 @@ with tab2:
                             else:
                                 class_list = sorted(ontology_class_dict.keys())
                             subject_class_list = st.multiselect("🏷️ Select class(es):", class_list,
-                                key="key_subject_class")    # class list (labels)
+                                placeholder="🏷️️ Select class(es)", label_visibility="collapsed", key="key_subject_class")    # class list (labels)
 
                     elif ontology_filter_for_subject_class == "Custom classes":
                         class_list = sorted(custom_class_dict.keys())
                         class_list.insert(0, "Select class")
                         subject_class_list = st.multiselect("🏷️ Select class(es):", class_list,
-                            key="key_subject_class")    # class list (labels)
+                            placeholder="🏷️️ Select class(es)", label_visibility="collapsed", key="key_subject_class")    # class list (labels)
 
                 # GRAPH MAP
                 with col1c:
+
+                    st.markdown(f"""<div class="very-small-info-2">
+                        🗺️️ Graph map
+                    </div>""", unsafe_allow_html=True)
 
                     graph_map_dict = utils.get_graph_map_dict()
                     list_to_choose = sorted(graph_map_dict.keys())
                     list_to_choose.insert(0, "✚ New graph map")
                     list_to_choose.insert(0, "Default graph map")
-                    add_sm_graph_map_option = st.selectbox("️🗺️️ Graph map (optional):",
-                        list_to_choose, key="key_add_sm_graph_map_option")
+                    add_sm_graph_map_option = st.selectbox("️🗺️️ Graph map (optional):", list_to_choose,
+                        label_visibility="collapsed", key="key_add_sm_graph_map_option")
 
                     if add_sm_graph_map_option == "✚ New graph map":
                         mapping_ns_dict = utils.get_g_ns_dict(st.session_state["g_mapping"])
@@ -1262,7 +1277,7 @@ with tab2:
                         inner_html_error += """<small>· The <b>graph map</b>
                             has not been selected.</small><br>"""
 
-                if label_sm_option == "Yes (add label 🏷️)":
+                if label_sm_option == "Yes (add label 🔖)":
                     if not sm_label:
                         sm_complete_flag = False
                         inner_html_error += """<small>· The <b>Subject Map label</b>

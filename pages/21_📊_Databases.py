@@ -630,8 +630,8 @@ with tab3:
 
                 with col2b:
                     st.markdown(f"""<div class="info-message-blue">
-                        🖼️ <b>MongoDB views are created in the database</b>
-                        as read‑only collections <small>(but can be also managed from this page)</small>.
+                        🖼️ <b>MongoDB views</b> are created in the database
+                        <small>as read‑only collections (but can be also managed from this page)</small>.
                     </div>""", unsafe_allow_html=True)
 
                 database = st.session_state["db_connections_dict"][connection_for_view][3]
@@ -835,8 +835,7 @@ with tab3:
                     database =  st.session_state["db_connections_dict"][connection][3]
 
                     query_or_collection = st.session_state["saved_views_dict"][label][1]
-                    max_length = utils.get_max_length_for_display()[10]
-                    query_or_collection = query_or_collection[:max_length] + "..." if len(query_or_collection) > max_length else query_or_collection
+                    query_or_collection = query_or_collection
 
                     rows.append({"Label": label, "Source": connection,
                             "Database": database, "Query/collection": query_or_collection})

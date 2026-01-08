@@ -287,7 +287,7 @@ with tab1:
             with col1:
                 overwrite_g_mapping_and_session_checkbox = st.checkbox(
                     f"""🔄 Start fresh: remove previously loaded ontologies and data sources""",
-                    value=True, key="key_overwrite_g_mapping_and_session_checkbox_new")
+                    key="key_overwrite_g_mapping_and_session_checkbox_new")
         else:
             overwrite_g_mapping_and_session_checkbox = False
 
