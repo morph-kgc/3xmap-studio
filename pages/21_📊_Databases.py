@@ -92,14 +92,14 @@ def save_mongo_view():
     st.session_state["view_saved_ok_flag"] = True  # for success message
     st.session_state["saved_views_dict"][mongo_view_label] = [connection_for_view, f"""{mongo_view_label} ({selected_db_table})"""]
     # reset fields_____________________
-    st.session_state["key_connection_for_view"] = "Select a connection"
+    st.session_state["key_connection_for_view"] = "Select connection"
 
 def save_sql_view():
     # store information________________
     st.session_state["view_saved_ok_flag"] = True  # for success message
     st.session_state["saved_views_dict"][sql_view_label] = [connection_for_view, sql_query]
     # reset fields_____________________
-    st.session_state["key_connection_for_view"] = "Select a connection"
+    st.session_state["key_connection_for_view"] = "Select connection"
 
 def remove_views():
     # delete views________________
@@ -155,8 +155,8 @@ with tab1:
                 </div>""", unsafe_allow_html=True)
 
         # Option to show all connections (if too many)
-        db_connections_df = utils.display_right_column_df("db_connections", "database connections",  display=False)
         if st.session_state["db_connections_dict"] and len(st.session_state["db_connections_dict"]) > utils.get_max_length_for_display()[1]:
+            db_connections_df = utils.display_right_column_df("db_connections", "database connections",  display=False)
             with col2:
                 col2a, col2b = st.columns([0.5,2])
             with col2b:
@@ -354,7 +354,7 @@ with tab1:
         elif manage_connection_option == "🗑️ Remove":
 
             with col1a:
-                list_to_choose = list(reversed(list(st.session_state["db_connections_dict"].keys())))
+                list_to_choose = sorted(st.session_state["db_connections_dict"].keys())
                 list_to_choose.insert(0, "Select all failed connections")
                 if len(list_to_choose) > 2:
                     list_to_choose.insert(0, "Select all")
@@ -477,6 +477,7 @@ with tab2:
 
             # Option to show all connections (if too many)
             if st.session_state["db_connections_dict"] and len(st.session_state["db_connections_dict"]) > utils.get_max_length_for_display()[1]:
+                db_connections_df = utils.display_right_column_df("db_connections", "database connections",  display=False)
                 with col2:
                     col2a, col2b = st.columns([0.5,2])
                 with col2b:
@@ -525,7 +526,7 @@ with tab2:
                 db_tables = [row[0] for row in result]
 
                 with col1b:
-                    list_to_choose = db_tables.copy()
+                    list_to_choose = sorted(db_tables).copy()
                     list_to_choose.insert(0, "Select table")
                     selected_db_table = st.selectbox("🖱️ Select table:*", list_to_choose,
                         key="key_selected_db_table")
@@ -584,6 +585,7 @@ with tab3:
 
             #Option to show all views (if too many)
             if st.session_state["saved_views_dict"] and len(st.session_state["saved_views_dict"]) > utils.get_max_length_for_display()[1]:
+                views_df = utils.display_right_column_df("saved_views", "saved views", display=False)
                 with col2:
                     col2a, col2b = st.columns([0.5,2])
                 with col2b:
@@ -614,12 +616,12 @@ with tab3:
             col1a, col1b = st.columns(2)
 
         with col1a:
-            list_to_choose = list(reversed(list(st.session_state["db_connections_dict"].keys())))
-            list_to_choose.insert(0, "Select a connection")
+            list_to_choose = sorted(st.session_state["db_connections_dict"].keys())
+            list_to_choose.insert(0, "Select connection")
             connection_for_view = st.selectbox("🖱️ Select a connection:*", list_to_choose,
                 key="key_connection_for_view")
 
-        if connection_for_view != "Select a connection":
+        if connection_for_view != "Select connection":
 
             with col1a:
                 conn, connection_ok_flag = utils.check_connection_to_db(connection_for_view)
@@ -630,8 +632,8 @@ with tab3:
 
                 with col2b:
                     st.markdown(f"""<div class="info-message-blue">
-                        🖼️ <b>MongoDB views are created in the database</b>
-                        as read‑only collections <small>(but can be also managed from this page)</small>.
+                        🖼️ <b>MongoDB views</b> are created in the database
+                        <small>as read‑only collections (but can be also managed from this page)</small>.
                     </div>""", unsafe_allow_html=True)
 
                 database = st.session_state["db_connections_dict"][connection_for_view][3]
@@ -661,6 +663,7 @@ with tab3:
                 with col1a:
                     result = utils.get_tables_from_db(connection_for_view)
                     db_tables = [row[0] for row in result]
+                    db_tables = sorted(db_tables)
                     list_to_choose = db_tables.copy()
                     list_to_choose.insert(0, "Select table")
                     selected_db_table = st.selectbox("🖱️ Select table:*", list_to_choose,
@@ -735,7 +738,6 @@ with tab3:
                             on_click=save_sql_view)
 
                 if sql_query and sql_query_ok_flag:
-
                     with col1:
                         utils.display_limited_df(df, "View previsualisation")
 
@@ -754,8 +756,8 @@ with tab3:
         st.rerun()
 
 
-    # PURPLE HEADING: MANAGE SAVED----------------------------------------------
-    # Shows only if there are connections to databases
+    # PURPLE HEADING: MANAGE VIEWS---------------------------------------------
+    # Shows only if there are views to be managed
     if st.session_state["saved_views_dict"]:
         with col1:
             st.write("________")
@@ -770,7 +772,7 @@ with tab3:
             with col1a:
                 st.write("")
                 st.markdown(f"""<div class="success-message-flag">
-                    ✅ The <b>view</b> has been removed!
+                    ✅ The <b>view(s)</b> have been removed!
                 </div>""", unsafe_allow_html=True)
             st.session_state["view_removed_ok_flag"] = False
             time.sleep(utils.get_success_message_time())
@@ -809,7 +811,7 @@ with tab3:
             with col1c:
                 list_to_choose = views_to_manage_list
                 list_to_choose.insert(0, "Select view")
-                view_to_inspect = st.selectbox("🖱️ Select view:*", views_to_manage_list,
+                view_to_inspect = st.selectbox("🖱️ Select view:*", list_to_choose,
                     key="key_view_to_inspect")
 
             if view_to_inspect != "Select view":
@@ -835,8 +837,7 @@ with tab3:
                     database =  st.session_state["db_connections_dict"][connection][3]
 
                     query_or_collection = st.session_state["saved_views_dict"][label][1]
-                    max_length = utils.get_max_length_for_display()[10]
-                    query_or_collection = query_or_collection[:max_length] + "..." if len(query_or_collection) > max_length else query_or_collection
+                    query_or_collection = query_or_collection
 
                     rows.append({"Label": label, "Source": connection,
                             "Database": database, "Query/collection": query_or_collection})
