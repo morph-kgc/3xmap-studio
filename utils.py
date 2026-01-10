@@ -2401,6 +2401,14 @@ def read_data_file(file_input, unsaved=False):
 
 # PANEL: DISPLAY DATA-----------------------------------------------------------
 #_________________________________________________
+# Function to get file format from filename
+def get_file_format(filename):
+
+    return filename.split(".")[-1].lower()
+
+#_________________________________________________
+
+#_________________________________________________
 # Funtion to check whether a hierarchical file is flat
 def is_flat_file(data, file_format):
     if file_format == "json":
@@ -2695,9 +2703,25 @@ def get_column_list_and_give_info(tm_label, template=False):
 
     # Saved data files
     if ds in st.session_state["ds_files_dict"]:
-        df = read_data_file(ds)
-        column_list = df.columns.tolist()
+        file_format = get_file_format(ds)
+        st.write("HERE", file_format, ds)
         ds_for_display = f"""🛢️ <b>{ds}</b>"""
+
+        # TABULAR DATA FILES
+        if file_format not in get_supported_formats(hierarchical_files=True):
+            df = read_data_file(ds)
+            column_list = df.columns.tolist()
+
+        # HIERARCHICAL DATA FILES
+        else:
+            column_list = []
+            for path_label in st.session_state["saved_paths_dict"]:
+                if st.session_state["saved_paths_dict"][path_label][0] == ds:
+                    column_list.append(path_label)
+            if not column_list:
+                inner_html = f"""⚠️ <b>No paths saved</b> for the datasource <b>{ds}</b>
+                <small>You can do so in the <b>🛢️ Data Files</b> page.
+                Manual {term} entry is discouraged.</small>"""
 
     # Saved database
     elif selected_conn_label:

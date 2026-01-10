@@ -319,7 +319,7 @@ with tab2:
         if tab_filename_for_display != "Select file":
 
             tab_file_for_display = st.session_state["ds_files_dict"][tab_filename_for_display]
-            file_format = tab_filename_for_display.split(".")[-1].lower()
+            file_format = utils.get_file_format(tab_filename_for_display)
 
             # TABULAR DATA FILES
             if file_format not in utils.get_supported_formats(hierarchical_files=True):
@@ -388,7 +388,7 @@ with tab3:
     # Get loaded hierarchical files if any
     hierarchical_data_file_dict = {}
     for filename, file in st.session_state["ds_files_dict"].items():
-        file_format = filename.split(".")[-1].lower()
+        file_format = utils.get_file_format(filename)
         if file_format in utils.get_supported_formats(hierarchical_files=True):
             hierarchical_data_file_dict[filename] = file
 
@@ -443,7 +443,7 @@ with tab3:
         if selected_filename_for_path != "Select file":
 
             selected_file_for_path = hierarchical_data_file_dict[selected_filename_for_path]
-            file_format = selected_filename_for_path.split(".")[-1].lower()
+            file_format = utils.get_file_format(selected_filename_for_path)
 
             with col1b:
                 path_label = st.text_input("🏷️ Enter path label (opt):",
