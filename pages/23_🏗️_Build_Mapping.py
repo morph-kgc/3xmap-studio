@@ -47,15 +47,9 @@ def save_tm_w_tab_ls():
     # add triples__________________
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    # bind to logical source
     st.session_state["g_mapping"].add((ls_iri, RML.source, Literal(ds_filename)))    # bind ls to source file
-    file_extension = ds_filename.rsplit(".", 1)[-1]    # bind to reference formulation
-    if file_extension.lower() in ["csv", "tsv"]:
-        st.session_state["g_mapping"].add((ls_iri, QL.referenceFormulation, QL.CSV))
-    elif file_extension.lower() == "xlsx":
-        st.session_state["g_mapping"].add((ls_iri, QL.referenceFormulation, QL.Excel))
-    elif file_extension.lower() == "parquet":
-        st.session_state["g_mapping"].add((ls_iri, QL.referenceFormulation, QL.Parquet))
-    elif file_extension.lower() == "orc":
-        st.session_state["g_mapping"].add((ls_iri, QL.referenceFormulation, QL.ORC))
+    file_extension = ds_filename.rsplit(".", 1)[-1].lower()    # bind to reference formulation
+    reference_formulation = utils.get_reference_formulation_dict()[file_extension]
+    st.session_state["g_mapping"].add((ls_iri, QL.referenceFormulation, reference_formulation))
     st.session_state["g_mapping"].add((tm_iri, RDF.type, RML.TriplesMap))
     # store information____________________
     st.session_state["tm_saved_ok_flag"] = True  # for success message
@@ -586,7 +580,7 @@ with tab1:
         if st.session_state["db_connections_dict"]:
             ls_options_list.append("📊 Database")
         if st.session_state["ds_files_dict"]:
-            ls_options_list.append("🛢️ Tabular data")
+            ls_options_list.append("🛢️ Data file")
         if labelled_ls_list:
             ls_options_list.append("📑 Existing Logical Source")
 
@@ -597,13 +591,13 @@ with tab1:
                 if not st.session_state["db_connections_dict"] and not st.session_state["ds_files_dict"]:
                     st.markdown(f"""<div class="info-message-gray">
                         ℹ️ To add <b>data sources</b> <small>go to the
-                        <b>📊 Databases</b> and/or <b>🛢️ Tabular Data</b> pages.</small>
+                        <b>📊 Databases</b> and/or <b>🛢️ Data Files</b> pages.</small>
                     </div>""", unsafe_allow_html=True)
 
             else:
                 st.markdown(f"""<div class="error-message">
                     ❌ <b>No data sources are available.</b> <small>You can add them in the
-                    <b>📊 Databases</b> and/or <b>🛢️ Tabular Data</b> pages.</small>
+                    <b>📊 Databases</b> and/or <b>🛢️ Data Files</b> pages.</small>
                 </div>""", unsafe_allow_html=True)
                 ls_option = None
 
@@ -706,7 +700,7 @@ with tab1:
                                 df = utils.get_db_table_df(db_connection_for_ls, selected_table_for_ls)
                                 utils.display_limited_df(df, "Table", display=True)
 
-        if ls_option == "🛢️ Tabular data":
+        if ls_option == "🛢️ Data file":
 
             with col1:
                 col1a, col1b = st.columns([2,1])

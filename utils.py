@@ -1,7 +1,10 @@
 import base64
 from collections import defaultdict
 import configparser
+import elementpath
 import io
+import json
+import jsonpath_ng
 import networkx as nx
 import os
 import pandas as pd
@@ -24,6 +27,7 @@ from streamlit.runtime.uploaded_file_manager import UploadedFile
 from urllib.parse import urlparse, urlunparse
 import utils
 import uuid
+import xml.etree.ElementTree as ET
 
 
 # REQUIRED NS===================================================================
@@ -85,7 +89,7 @@ RML, QL = get_required_ns_dict().values()
 # DEFAULT VARIABLES (CAN BE CUSTOMISED)=========================================
 #________________________________________________________
 # Function to get the name of the used folders (only one argument should be True)
-# Used in 🌍 Global Configuration, 🛢️ Tabular Data pages and 🔮 Materialise Graph
+# Used in 🌍 Global Configuration, 🛢️ Data Files pages and 🔮 Materialise Graph
 def get_folder_name(saved_sessions=False, data_sources=False, temp_materialisation_files=False):
 
     if saved_sessions:
@@ -590,7 +594,7 @@ def get_panel_layout(narrow=False):
 #______________________________________________________
 # Function to get error message to indicate a g_mapping or ontology must be imported
 # Only one option must be True
-def get_missing_element_error_message(ontology=False, mapping=False, databases=False, different_page=False):
+def get_missing_element_error_message(ontology=False, mapping=False, databases=False, hierarchical_files=False, different_page=False):
 
     if mapping:
         if not different_page:
@@ -621,6 +625,14 @@ def get_missing_element_error_message(ontology=False, mapping=False, databases=F
         st.markdown(f"""<div class="error-message">
             ❌ <b>No connections to databases have been configured.</b> <small>You can add them in the
             <b>Manage Connections</b> panel.</small>
+        </div>""", unsafe_allow_html=True)
+
+    elif hierarchical_files:
+        st.markdown(f"""<div class="error-message">
+            ❌ <b>No hierarchical files have been loaded </b>
+            <small><i>({format_list_for_display(get_supported_formats(hierarchical_files=True), disjunctive=True)})</i>.
+            You can add them in the
+            <b>Manage Files</b> panel.</small>
         </div>""", unsafe_allow_html=True)
 #______________________________________________________
 
@@ -666,14 +678,15 @@ def get_corner_status_message(mapping_info=False, ontology_info=False):
 
 #______________________________________________________
 # Function to format a list
-def format_list_for_display(xlist):
+def format_list_for_display(xlist, disjunctive=False):
 
     if not xlist:
         formatted_list = ""
     elif len(xlist) == 1:
         formatted_list = xlist[0]
     else:
-        formatted_list = ", ".join(xlist[:-1]) + " and " + xlist[-1]
+        particle = " and " if not disjunctive else " and/or "
+        formatted_list = ", ".join(xlist[:-1]) + particle + xlist[-1]
 
     return formatted_list
 #______________________________________________________
@@ -756,16 +769,16 @@ def format_number_for_display(number):
 # 6. Label in network visualisation (characters)
 # 7. Suggested mapping label (characters)    8. URL for display (characters)
 # 9. Max characters when displaying ontology/mapping serialisation (ttl or nt)
-# 10. Query text for display    RFTAG check everything is used
+# 10. Query/path text for display    RFTAG check everything is used
 # 11. Max characters in a rule before using small fint size
 def get_max_length_for_display():
 
-    return [50, 10, 100, 20, 8, 10, 20, 15, 40, 100000, 30, 40]
+    return [50, 10, 100, 20, 8, 10, 20, 15, 40, 100000, 10, 40]
 #_______________________________________________________
 
 #______________________________________________________
 # Function to display limited dataframed in right column
-# info namespaces / db_connections / saved_views / tabular_ds / triplesmaps
+# info namespaces / db_connections / saved_views / file_ds / triplesmaps
 def display_right_column_df(info, text, complete=True, display=True):
 
     max_length = get_max_length_for_display()[1]
@@ -803,7 +816,7 @@ def display_right_column_df(info, text, complete=True, display=True):
             rows.append({"Label": label, "Source": connection,
                     "Database": database, "Query/Collection": query_or_collection})
 
-    elif info == "tabular_ds":
+    elif info == "file_ds":
         session_state_dict = st.session_state["ds_files_dict"]
         rows = []
         ds_files = list(st.session_state["ds_files_dict"].items())
@@ -832,6 +845,18 @@ def display_right_column_df(info, text, complete=True, display=True):
             row = {"Filename": base_name, "Format": file_format,
                 "Size": file_size if file_size_kb is not None else "N/A"}
             rows.append(row)
+
+    elif info == "saved_paths":
+        session_state_dict = st.session_state["saved_paths_dict"]
+        rows = []
+        for label in reversed(list(st.session_state["saved_paths_dict"].keys())):
+            filename = st.session_state["saved_paths_dict"][label][0]
+            path = st.session_state["saved_paths_dict"][label][1]
+            max_length = get_max_length_for_display()[10]
+            path = path[:max_length] + "..." if len(path) > max_length else path
+
+            rows.append({"Label": label, "Data file": filename,
+                    "Path": path})
 
     elif info == "triplesmaps":
         session_state_dict = st.session_state["last_added_tm_list"]
@@ -905,7 +930,7 @@ def display_right_column_df(info, text, complete=True, display=True):
 # SUPPORTED FORMATS ============================================================
 #_______________________________________________________
 # List of allowed mapping file formats
-def get_supported_formats(mapping=False, ontology=False, databases=False, tab_data=False):
+def get_supported_formats(mapping=False, ontology=False, databases=False, data_files=False, hierarchical_files=False):
 
     if mapping:
         allowed_formats = {"turtle": ".ttl",
@@ -919,9 +944,12 @@ def get_supported_formats(mapping=False, ontology=False, databases=False, tab_da
     elif databases:
         allowed_formats = ["PostgreSQL", "MySQL", "SQL Server", "MariaDB", "Oracle", "MongoDB"]
 
-    if tab_data:
+    if data_files:
         allowed_formats = [".csv", ".tsv", ".xls", ".xlsx", ".parquet", ".feather",
-            ".orc", ".dta", ".sas7bdat", ".sav", ".ods"]
+            ".orc", ".ods", ".json", ".xml"]
+
+    if hierarchical_files:
+        allowed_formats = ["json", "xml"]
 
     return allowed_formats
 #_______________________________________________________
@@ -996,13 +1024,17 @@ def init_session_state_variables():
         st.session_state["view_saved_ok_flag"] = False
         st.session_state["view_removed_ok_flag"] = False
 
-        # 🛢️ TABULAR DATA
+        # 🛢️ DATA FILES
         # TAB1
         st.session_state["key_ds_uploader"] = str(uuid.uuid4())
         st.session_state["ds_files_dict"] = {}
         st.session_state["large_ds_files_dict"] = {}
         st.session_state["ds_file_saved_ok_flag"] = False
         st.session_state["ds_file_removed_ok_flag"] = False
+        # TAB3
+        st.session_state["path_saved_ok_flag"] = False
+        st.session_state["saved_paths_dict"] = {}
+        st.session_state["path_removed_ok_flag"] = False
 
         # 🏗️ BUILD MAPPING
         # TAB1
@@ -2196,8 +2228,12 @@ def get_df_from_db(connection_label, db_table):
 def display_limited_df(df, title, display=True):
 
     table_len = f"{len(df)} rows" if len(df) != 1 else f"{len(df)} row"
-    inner_html = f"""📅 <b style="color:#F63366;"> {title} <small>({table_len}):</small></b>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"""
+    if title:
+        inner_html = f"""📅 <b style="color:#F63366;"> {title} <small>({table_len}):</small></b>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"""
+    else:
+        inner_html = f"""📅 <b style="color:#F63366;"> CONTENT <small>({table_len}):</small></b>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"""
 
     max_rows = utils.get_max_length_for_display()[2]
     max_cols = utils.get_max_length_for_display()[3]
@@ -2206,8 +2242,9 @@ def display_limited_df(df, title, display=True):
 
     # Slice rows if needed
     if len(df) == 0:
+        text = f"""⚠️ <b>{title} <small>(no results).</small></b>""" if title else "⚠️ No results."
         st.markdown(f"""<div class="warning-message">
-                ⚠️ <b>{title} <small>(no results).</small></b>
+                {text}
             </div>""", unsafe_allow_html=True)
 
     else:
@@ -2219,7 +2256,7 @@ def display_limited_df(df, title, display=True):
         elif df.shape[1] > max_cols:
             inner_html += f"""<small>Showing the <b>first {max_cols} columns</b> (out of {df.shape[1]}).</small>"""
 
-    limited_df = df.head(max_rows)
+    limited_df = limited_df.head(max_rows)
 
     if not limited_df.empty:
         st.markdown(f"""<div class="info-message-blue">
@@ -2304,22 +2341,22 @@ def remove_view_from_db(view):
 #______________________________________________________
 
 
-# PAGE: 🛢️ TABULAR DATA=========================================================
+# PAGE: 🛢️ DATA FILES===========================================================
 # PANEL: MANAGE FILES-----------------------------------------------------------
 #_________________________________________________
-# Funtion to read tabular data
+# Funtion to read data files
 # For already saved files, takes the filename
 # For unsaved files, takes the file itself
-def read_tab_file(file_input, unsaved=False):
+def read_data_file(file_input, unsaved=False):
 
     if unsaved:
         file = file_input
         filename = file_input.name
-        file_format = filename.split(".")[-1]
+        file_format = filename.split(".")[-1].lower()
     else:
         filename = file_input
         file = st.session_state["ds_files_dict"][filename]
-        file_format = filename.split(".")[-1]
+        file_format = filename.split(".")[-1].lower()
 
     if file_format == "csv":
         read_content = pd.read_csv(file)
@@ -2350,13 +2387,178 @@ def read_tab_file(file_input, unsaved=False):
     elif file_format == "sav":
         read_content, _ = pyreadstat.read_sav(file)
 
-    else:
-        read_content = ""   # should not occur
+    elif file_format == "json":
+        read_content = pd.read_json(file)
+
+    elif file_format == "xml":
+        raw_bytes = file.getvalue() # get full contents safely
+        read_content = pd.read_xml(io.BytesIO(raw_bytes), parser="etree")
 
     file.seek(0)
 
     return read_content
 #_________________________________________________
+
+# PANEL: DISPLAY DATA-----------------------------------------------------------
+#_________________________________________________
+# Funtion to check whether a hierarchical file is flat
+def is_flat_file(data, file_format):
+    if file_format == "json":
+        if isinstance(data, list):
+            return all(
+                isinstance(item, dict) and
+                all(not isinstance(v, (dict, list)) for v in item.values())
+                for item in data
+            )
+        if isinstance(data, dict):
+            return all(not isinstance(v, (dict, list)) for v in data.values())
+        return False
+
+    elif file_format == "xml":
+        children = list(data)
+        if not children:
+            return False
+
+        # Case: root has repeating children (like <user>)
+        # Each of those children should only have simple text children (no deeper nesting)
+        for child in children:
+            grandkids = list(child)
+            if not grandkids:
+                # leaf node → fine
+                continue
+            # if grandchildren themselves have children → nested → not flat
+            if any(len(list(gc)) > 0 for gc in grandkids):
+                return False
+        return True
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to safely convert json matches into dataframe
+# Handles dicts, scalars, lists, and mixed type
+def display_path_dataframe(filename, path_expr, display=True):
+
+    file_format = filename.split(".")[-1].lower()
+    flag = find_matches(filename, path_expr)[0]
+
+    if not flag:
+        error = find_matches(filename, path_expr)[1]
+        if display:
+            st.markdown(f"""<div class="error-message">
+                ❌ <b>Error applying path:</b> <small><i><b>Full error: </b>{error}</i></small>
+            </div>""", unsafe_allow_html=True)
+        return False
+
+    else:
+        matches = find_matches(filename, path_expr)[1]
+        df = matches_to_dataframe(matches, file_format)
+        if display:
+            display_limited_df(df, "")
+        return True
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to find matches for a hierarchical data file
+def find_matches(filename, path_expr):
+
+    # Get info
+    file = st.session_state["ds_files_dict"][filename]
+    file_format = filename.split(".")[-1].lower()
+
+    # Get file content
+    try:
+        if file_format == "json":
+            raw_bytes = file.getvalue()
+            data = json.loads(raw_bytes.decode("utf-8"))
+            expr = jsonpath_ng.parse(path_expr)
+            matches = [match.value for match in expr.find(data)]
+
+        elif file_format == "xml":
+            raw_bytes = file.getvalue()
+            tree = ET.parse(io.BytesIO(raw_bytes))
+            root = tree.getroot()
+            matches = elementpath.select(root, path_expr)
+
+        return True, matches
+
+    except Exception as e:
+        return False, e
+#_________________________________________________
+
+#_________________________________________________
+# Funtion to safely convert json/xml matches into dataframe
+# Handles dicts, scalars, lists, and mixed type
+def matches_to_dataframe(matches, file_format, default_col="value"):
+
+    if not matches:
+        return pd.DataFrame()
+
+    if file_format == "json":
+
+        # Case 1: all dicts → normalize into columns
+        if all(isinstance(m, dict) for m in matches):
+            return pd.json_normalize(matches)
+
+        # Case 2: all scalars → one-column DataFrame
+        if all(not isinstance(m, (dict, list)) for m in matches):
+            return pd.DataFrame(matches, columns=[default_col])
+
+        # Case 3: all lists → explode into rows
+        if all(isinstance(m, list) for m in matches):
+            # flatten nested lists
+            flat = [item for sublist in matches for item in sublist]
+            # recurse to handle scalars/dicts inside
+            return matches_to_dataframe(flat, default_col=default_col)
+
+        # Case 4: mixed types → coerce everything into dicts
+        coerced = []
+        for m in matches:
+            if isinstance(m, dict):
+                coerced.append(m)
+            elif isinstance(m, list):
+                coerced.append({default_col: m})
+            else:
+                coerced.append({default_col: m})
+        return pd.json_normalize(coerced)
+
+    elif file_format == "xml":
+
+        rows = []
+
+        for m in matches:
+            if isinstance(m, ET.Element):
+                row = dict(m.attrib)   # include attributes
+                for child in list(m):   # include child tags
+                    row[child.tag] = child.text
+                if (not list(m)) and m.text and m.text.strip():   # if element has direct text and no children
+                    row[default_col] = m.text.strip()
+                rows.append(row)
+            else:
+                rows.append({default_col: m})    # scalar (string, number, etc.)
+
+        return pd.DataFrame(rows)
+
+    return df
+#_________________________________________________
+
+# PANEL: MANAGE PATHS-----------------------------------------------------------
+#______________________________________________________
+#Function to display path results
+def display_path_results(path):
+
+    filename = st.session_state["saved_paths_dict"][path][0]
+    path_expression = st.session_state["saved_paths_dict"][path][1]
+    file = st.session_state["ds_files_dict"][filename]
+
+    df, view_ok_flag, error = run_query(connection_label, query_or_collection)
+
+    if not view_ok_flag:
+        st.markdown(f"""<div class="error-message">
+            ❌ <b>Invalid syntax</b>. <small>Please check your path.
+            <i><b>Full error:</b> {error}</i></small>
+        </div>""", unsafe_allow_html=True)
+    else:
+        display_limited_df(df, "Results")
+#______________________________________________________
 
 
 # PAGE: 🏗️ BUILD MAPPING========================================================
@@ -2451,6 +2653,20 @@ def get_db_table_df(conn_label, table):
     return df
 #______________________________________________________
 
+#______________________________________________________
+# Function to get reference formulation dict
+# Should cover all formats in get_supported_formats(data_files=True)
+def get_reference_formulation_dict():
+
+    reference_formulation_dict = {"csv": QL.CSV, "tsv": QL.CSV,
+        "xls": QL.Excel, "xlsx": QL.Excel, "ods": QL.Excel,
+        "parquet": QL.Parquet,"feather": QL.Feather, "orc": QL.ORC,
+        "json": QL.JSONPath, "xml": QL.XPath}
+
+    return reference_formulation_dict
+
+#______________________________________________________
+
 # PANEL: ADD SUBJECT MAP--------------------------------------------------------
 #______________________________________________________
 # Function get the column list of the data source of a tm
@@ -2477,9 +2693,9 @@ def get_column_list_and_give_info(tm_label, template=False):
         if str(ds) == str(url_str):
             selected_conn_label = conn_label
 
-    # Saved tabular data sources
+    # Saved data files
     if ds in st.session_state["ds_files_dict"]:
-        df = read_tab_file(ds)
+        df = read_data_file(ds)
         column_list = df.columns.tolist()
         ds_for_display = f"""🛢️ <b>{ds}</b>"""
 
@@ -2542,7 +2758,7 @@ def get_column_list_and_give_info(tm_label, template=False):
 
         else:
             inner_html = f"""⚠️ <b>{ds}</b> is unavailable.
-                <small>Add the data source via the <b>📊 Databases</b> or <b>🛢️ Tabular Data</b> pages to enable column detection.
+                <small>Add the data source via the <b>📊 Databases</b> or <b>🛢️ Data Files</b> pages to enable column detection.
                 Manual {term} entry is discouraged.</small>"""
             ds_available_flag = False
         ds_for_display = f"""<b>{ds}</b>"""
@@ -4262,7 +4478,7 @@ def get_autoconfig_file():
         st.session_state["mkgc_config"][mkgc_ds_label] = {"db_url": db_url,
             "mappings": mkgc_mappings_str}
 
-    # Autoconfig TABULAR data sources
+    # Autoconfig FILE data sources
     for ds_label in st.session_state["ds_files_dict"]:
         i = 1
         while f"{base_label}{i}" in used_data_source_labels_list:
@@ -4295,7 +4511,7 @@ def get_all_mappings_used_for_materialisation():
 #_________________________________________________
 
 #_________________________________________________
-# Funtion to get list of all used tabular data sources
+# Funtion to get list of all used file data sources
 def get_all_tab_ds_used_for_materialisation():
 
     mkgc_used_tab_ds_list = []
@@ -4338,7 +4554,7 @@ def check_issues_for_materialisation():
             if used_db_url and used_db_url not in mkgc_used_db_conn_list:
                 mkgc_used_db_conn_list.append(used_db_url)
 
-    # List of all used tabular data sources
+    # List of all used file data sources
     mkgc_used_tab_ds_list = get_all_tab_ds_used_for_materialisation()
 
     # Check g_mapping if used (additional mappings checked before adding)
@@ -4400,24 +4616,24 @@ def check_issues_for_materialisation():
                 of the Config file are not working
                 <small>(go to <b>📊 Databases</b> page).</small><br>"""
 
-    # Check all tabular sources are loaded
+    # Check all file sources are loaded
     not_loaded_ds_list = []
     for ds_filename in mkgc_used_tab_ds_list:
         if not ds_filename in st.session_state["ds_files_dict"]:
             not_loaded_ds_list.append(ds_filename)
 
     if not not_loaded_ds_list and mkgc_used_tab_ds_list:
-        inner_html_success += f"""· All <b>tabular data sources</b> ({len((mkgc_used_tab_ds_list))})
+        inner_html_success += f"""· All <b>data source files</b> ({len((mkgc_used_tab_ds_list))})
             of the Config file are loaded.<br>"""
     elif mkgc_used_tab_ds_list:
         everything_ok_flag = False
         if len(not_loaded_ds_list) == 1:
-            inner_html_error += f"""· A <b>tabular data source</b> of the Config file is not loaded
-                <small>(go to <b>🛢️ Tabular Data</b> page).</small><br>"""
+            inner_html_error += f"""· A <b>data file</b> of the Config file is not loaded
+                <small>(go to <b>🛢️ Data Files</b> page).</small><br>"""
         else:
-            inner_html_error += f"""· Several <b>tabular data sources</b> ({len(not_loaded_ds_list)})
+            inner_html_error += f"""· Several <b>data files</b> ({len(not_loaded_ds_list)})
                 of the Config file are not loaded
-                <small>(go to <b>🛢️ Tabular Data</b> page).</small><br>"""
+                <small>(go to <b>🛢️Data Files</b> page).</small><br>"""
 
 
     # Check if there are explicitely declared data sources in any mapping that are not declared in the Config file
@@ -4491,7 +4707,7 @@ def check_issues_for_materialisation():
 
     if mkgc_used_tab_ds_list and not not_loaded_ds_list:
         info_table_html += f"""<thead><tr>
-                                        <th>🛢️ Tabular data sources</th>
+                                        <th>🛢️ Data files</th>
                                         <td>{format_list_for_display(mkgc_used_tab_ds_list)}</td>
                                     </tr></thead><tbody>"""
 
@@ -4499,11 +4715,11 @@ def check_issues_for_materialisation():
         loaded_ds_list = [ds for ds in mkgc_used_tab_ds_list if ds not in not_loaded_ds_list]
         if loaded_ds_list:
             info_table_html += f"""<thead><tr>
-                                            <th>🛢️ Tabular data sources (not loaded)</th>
+                                            <th>🛢️ Data_files (not loaded)</th>
                                             <td>{format_list_for_display(loaded_ds_list)}</td>
                                         </tr></thead><tbody>"""
         info_table_html += f"""<thead><tr>
-                                        <th>🛢️ Tabular data sources (not loaded)</th>
+                                        <th>🛢️ Data_files (not loaded)</th>
                                         <td>{format_list_for_display(not_loaded_ds_list)}</td>
                                     </tr></thead><tbody>"""
 

@@ -509,7 +509,7 @@ with tab3:
                     st.dataframe(df, hide_index=True)
                 else:
                     st.markdown(f"""<div class="warning-message">
-                        ⚠️ <b>No results.</b>
+                        ⚠️ No results.
                     </div>""", unsafe_allow_html=True)
 
         except Exception as e:

@@ -55,7 +55,7 @@ def autoconfig():
         mkgc_mappings_str = str(os.path.join(temp_folder_path, st.session_state["g_label"] + ".ttl"))
         st.session_state["mkgc_config"][mkgc_ds_label] = {"db_url": db_url,
             "mappings": mkgc_mappings_str}
-    # autoconfig TABULAR data sources____________________
+    # autoconfig file data sources____________________
     for ds_label in st.session_state["ds_files_dict"]:
         i = 1
         while f"{base_label}{i}" in used_data_source_labels_list:
@@ -118,7 +118,7 @@ def materialise_graph():
                 with open(file_path, "wb") as f:
                     f.write(g_mapping_file.getvalue())  # write file content as bytes
 
-    # download used tabular data sources___________________________________
+    # download used data files___________________________________
     for ds_filename in mkgc_used_tab_ds_list:
         ds_file = st.session_state["ds_files_dict"][ds_filename]
 
@@ -195,9 +195,9 @@ def remove_ds_for_mkgc():
     st.session_state["ds_for_mkgcgc_removed_ok_flag"] = True
     # reset fields__________________________
     if st.session_state["db_connections_dict"]:
-        st.session_state["key_mkgc_ds_type"] = "📊 SQL Database"
+        st.session_state["key_mkgc_ds_type"] = "📊 Database"
     else:
-        st.session_state["key_mkgc_ds_type"] = "🛢️ Tabular data"
+        st.session_state["key_mkgc_ds_type"] = "🛢️ Data file"
 
 def save_options_for_mkgc():
     #create section_______________
@@ -372,7 +372,7 @@ with tab1:
             st.markdown(f"""<div class="error-message">
                 ❌ There are <b>no data sources</b> available.
                 <small>You can add them in the <b>📊 SQL Databases</b>
-                and the <b>🛢️ Tabular data</b> pages.</small>
+                and the <b>🛢️ Data Files</b> pages.</small>
             </div>""", unsafe_allow_html=True)
         st.stop()
 
@@ -619,11 +619,11 @@ with tab1:
             col1a, col1b = st.columns([1.5,1])
 
         if not st.session_state["ds_files_dict"]:
-            list_to_choose = ["📊 SQL Database"]
+            list_to_choose = ["📊 Database"]
         elif not st.session_state["db_connections_dict"]:
-            list_to_choose = ["🛢️ Tabular data"]
+            list_to_choose = ["🛢️ Data file"]
         else:
-            list_to_choose = ["📊 SQL Database", "🛢️ Tabular data"]
+            list_to_choose = ["📊 Database", "🛢️ Data file"]
         if list(st.session_state["mkgc_config"].keys()) != ["DEFAULT"] and list(st.session_state["mkgc_config"].keys()) != ["DEFAULT", "CONFIGURATION"]:
             list_to_choose.append("🗑️ Remove")    # if only "default" or "configuration" sections
         with col1b:
@@ -635,7 +635,7 @@ with tab1:
             mkgc_ds_type = st.radio("🖱️ Select an option:*", list_to_choose,
                 label_visibility="collapsed", key="key_mkgc_ds_type")
 
-        # ADD DATA SOURCE (SQL OR TABULAR)
+        # ADD DATA SOURCE (SQL OR FILE)
         if mkgc_ds_type != "🗑️ Remove":
             with col1a:
                 mkgc_ds_label = st.text_input("⌨️ Enter data source label:*", key="key_mkgc_ds_label")
@@ -663,7 +663,7 @@ with tab1:
                         col1a, col1b = st.columns(2)
 
                     # Select data source
-                    if mkgc_ds_type == "📊 SQL Database":
+                    if mkgc_ds_type == "📊 Database":
 
                         with col1a:
                             list_to_choose = sorted(st.session_state["db_connections_dict"])
@@ -677,7 +677,7 @@ with tab1:
                                 db_password = st.session_state["db_connections_dict"][mkgc_sql_ds][5]
                                 db_type = st.session_state["db_connections_dict"][mkgc_sql_ds][0]
 
-                    if mkgc_ds_type == "🛢️ Tabular data":
+                    if mkgc_ds_type == "🛢️ Data file":
                         with col1a:
                             list_to_choose = sorted(st.session_state["ds_files_dict"])
                             list_to_choose.insert(0, "Select data source")
@@ -729,17 +729,17 @@ with tab1:
                     mkgc_mappings_str = ",".join(mkgc_mappings_paths_list)   # join into a comma-separated string for the config
 
                     # Save data source
-                    if mkgc_ds_type == "📊 SQL Database":
+                    if mkgc_ds_type == "📊 Database":
                         if mkgc_sql_ds != "Select data source" and mkgc_mappings_list:
                             with col1a:
                                 st.button("Save", key="save_sql_ds_for_mkgcgc_button", on_click=save_sql_ds_for_mkgc)
 
-                    elif mkgc_ds_type == "🛢️ Tabular data":
+                    elif mkgc_ds_type == "🛢️ Data file":
                         if mkgc_tab_ds_file != "Select data source" and mkgc_mappings_list:
                             with col1a:
                                 st.button("Save", key="save_tab_ds_for_mkgcgc_button", on_click=save_tab_ds_for_mkgc)
 
-        # REMOVE DATA SOURCE (SQL OR TABULAR)
+        # REMOVE DATA SOURCE (SQL OR FILE)
         if mkgc_ds_type == "🗑️ Remove":
             st.write("HI")
             with col1a:
@@ -1160,7 +1160,7 @@ with tab2:
             st.markdown(f"""<div class="error-message">
                 ❌ There are <b>no data sources</b> available.
                 <small>You can add them in the <b>📊 SQL Databases</b>
-                and the <b>🛢️ Tabular data</b> pages.</small>
+                and the <b>🛢️ Data Files</b> pages.</small>
             </div>""", unsafe_allow_html=True)
         st.stop()
 
