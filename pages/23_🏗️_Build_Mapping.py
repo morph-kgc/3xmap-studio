@@ -914,7 +914,7 @@ with tab2:
 
                     elif build_template_action_sm == "📈 Variable part":
 
-                        column_list, inner_html, ds_for_display, ds_available_flag = utils.get_column_list_and_give_info(tm_label_for_sm, template=True)
+                        column_list, inner_html, ds_for_display, ds_available_flag, hierarchical_data_file_flag = utils.get_column_list_and_give_info(tm_label_for_sm, template=True)
                         if not column_list:   #data source is not available (load)
                             with col1b:
                                 sm_template_variable_part = st.text_input("⌨️ Manually enter column of the data source:*",
@@ -930,6 +930,8 @@ with tab2:
                                 sm_template_variable_part = st.selectbox("🖱️ Select the column of the data source:", list_to_choose,
                                     placeholder="📈 Select template placeholder", index=None, label_visibility="collapsed", key="key_sm_template_variable_part")
                                 utils.get_very_small_ds_info(column_list, inner_html, ds_for_display, ds_available_flag)
+                                if sm_template_variable_part and hierarchical_data_file_flag:
+                                    sm_template_variable_part = st.session_state["saved_paths_dict"][sm_template_variable_part][1]
 
                             with col1c:
                                 if sm_template_variable_part:
@@ -1023,7 +1025,7 @@ with tab2:
                     with col1:
                         col1a, col1b = st.columns([2,1])
 
-                    column_list, inner_html, ds_for_display, ds_available_flag = utils.get_column_list_and_give_info(tm_label_for_sm)
+                    column_list, inner_html, ds_for_display, ds_available_flag, hierarchical_data_file_flag = utils.get_column_list_and_give_info(tm_label_for_sm)
 
                     if not column_list:   #data source is not available (load)
                         with col1a:
@@ -1037,6 +1039,8 @@ with tab2:
                             sm_column_name = st.selectbox(f"""🖱️ Select reference:*""", list_to_choose,
                                 placeholder="📊 Select reference*", index=None, label_visibility="collapsed", key="key_sm_column_name")
                             utils.get_very_small_ds_info(column_list, inner_html, ds_for_display, ds_available_flag)
+                            if sm_column_name and hierarchical_data_file_flag:
+                                sm_column_name = st.session_state["saved_paths_dict"][sm_column_name][1]
 
                     if inner_html:
                         with col1b:
@@ -1575,7 +1579,7 @@ with tab3:
 
                 elif build_template_action_om == "📈 Variable part":
 
-                    column_list, inner_html, ds_for_display, ds_available_flag = utils.get_column_list_and_give_info(tm_label_for_pom)
+                    column_list, inner_html, ds_for_display, ds_available_flag, hierarchical_data_file_flag = utils.get_column_list_and_give_info(tm_label_for_pom)
 
                     if not column_list:   #data source is not available (load)
                         with col1b:
@@ -1589,13 +1593,14 @@ with tab3:
                     else:  # data source is available
                         with col1b:
                             list_to_choose = column_list.copy()
-                            list_to_choose.insert(0, "Select reference")
                             om_template_variable_part = st.selectbox("🖱️ Select the column of the data source:", list_to_choose,
                                 placeholder="📈 Select template placeholder", index=None, label_visibility="collapsed", key="key_om_template_variable_part")
                             utils.get_very_small_ds_info(column_list, inner_html, ds_for_display, ds_available_flag)
+                            if om_template_variable_part and hierarchical_data_file_flag:
+                                om_template_variable_part = st.session_state["saved_paths_dict"][om_template_variable_part][1]
 
                         with col1c:
-                            if om_template_variable_part != "Select reference":
+                            if om_template_variable_part:
                                 st.button("Add", key="save_om_template_variable_part_button", on_click=save_om_template_variable_part)
 
                     if st.session_state["om_template_list"] and st.session_state["om_template_list"][-1].endswith("}"):
@@ -1691,7 +1696,7 @@ with tab3:
                 with col1:
                     col1a, col1b = st.columns([2,1])
 
-                column_list, inner_html, ds_for_display, ds_available_flag = utils.get_column_list_and_give_info(tm_label_for_pom)
+                column_list, inner_html, ds_for_display, ds_available_flag, hierarchical_data_file_flag = utils.get_column_list_and_give_info(tm_label_for_pom)
 
                 if not column_list:   #data source is not available (load)
                     with col1a:
@@ -1706,7 +1711,8 @@ with tab3:
                         om_column_name = st.selectbox(f"""🖱️ Select reference:*""", list_to_choose,
                             placeholder="📊 Select reference*", index=None, label_visibility="collapsed", key="key_om_column_name")
                         utils.get_very_small_ds_info(column_list, inner_html, ds_for_display, ds_available_flag)
-
+                        if om_column_name and hierarchical_data_file_flag:
+                            om_column_name = st.session_state["saved_paths_dict"][om_column_name][1]
 
                 if inner_html:
                     with col1b:

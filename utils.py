@@ -2684,6 +2684,7 @@ def get_reference_formulation_dict():
 def get_column_list_and_give_info(tm_label, template=False):
 
     term = "reference" if not template else "template placeholder"
+    hierarchical_data_file_flag = False
 
     # Get required info
     tm_iri, ls_iri, ds = get_tm_info(tm_label)
@@ -2704,9 +2705,9 @@ def get_column_list_and_give_info(tm_label, template=False):
             selected_conn_label = conn_label
 
     # Saved data files
+
     if ds in st.session_state["ds_files_dict"]:
         file_format = get_file_format(ds)
-        st.write("HERE", file_format, ds)
         ds_for_display = f"""🛢️ <b>{ds}</b>"""
 
         # TABULAR DATA FILES
@@ -2716,6 +2717,7 @@ def get_column_list_and_give_info(tm_label, template=False):
 
         # HIERARCHICAL DATA FILES
         else:
+            hierarchical_data_file_flag = True
             column_list = []
             for path_label in st.session_state["saved_paths_dict"]:
                 if st.session_state["saved_paths_dict"][path_label][0] == ds:
@@ -2789,7 +2791,7 @@ def get_column_list_and_give_info(tm_label, template=False):
             ds_available_flag = False
         ds_for_display = f"""<b>{ds}</b>"""
 
-    return [column_list, inner_html, ds_for_display, ds_available_flag]
+    return [column_list, inner_html, ds_for_display, ds_available_flag, hierarchical_data_file_flag]
 #______________________________________________________
 
 #______________________________________________________
