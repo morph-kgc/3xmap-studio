@@ -56,6 +56,15 @@ def save_path():
     # reset fields_____________________
     st.session_state["key_selected_filename_for_path"] = "Select file"
 
+def remove_paths():
+    # delete paths________________
+    for path_label in paths_to_drop_list:
+        del st.session_state["saved_paths_dict"][path_label]
+    # store information____________________
+    st.session_state["path_removed_ok_flag"] = True
+    st.session_state["key_manage_view_option"] = "🧭 Path results"
+
+
 #_______________________________________________________________________________
 # PANELS OF THE PAGE (tabs)
 tab1, tab2, tab3 = st.tabs(["Manage Files", "Display Data", "Manage Paths"])
@@ -594,37 +603,37 @@ with tab3:
                         </div></div>""", unsafe_allow_html=True)
                     st.dataframe(df , hide_index=True)
 
-        if manage_view_option == "🗑️ Remove":
+        if manage_path_option == "🗑️ Remove":
 
             with col1c:
-                list_to_choose = views_to_manage_list
+                list_to_choose = paths_to_manage_list
                 if len(list_to_choose) > 1:
                     list_to_choose.insert(0, "Select all")
-                views_to_drop_list = st.multiselect("🖱️ Select views:*", list_to_choose,
-                    key="key_views_to_drop_list")
+                paths_to_drop_list = st.multiselect("🖱️ Select paths:*", list_to_choose,
+                    key="key_paths_to_drop_list")
 
-            if views_to_drop_list:
+            if paths_to_drop_list:
 
                 with col1:
                     col1a, col1b = st.columns([2.5,1])
 
-                if "Select all" in views_to_drop_list:
+                if "Select all" in paths_to_drop_list:
                     with col1b:
                         st.markdown(f"""<div class="warning-message">
-                            ⚠️ You are deleting <b>all views ({len(st.session_state["saved_views_dict"])})</b>.
+                            ⚠️ You are deleting <b>all paths ({len(st.session_state["saved_paths_dict"])})</b>.
                             <small>Make sure you want to go ahead.</small>
                         </div>""", unsafe_allow_html=True)
                     with col1a:
-                        remove_views_checkbox = st.checkbox(
-                        "🔒 I am sure I want to remove all views",
-                        key="key_remove_views_checkbox")
-                        views_to_drop_list = list(st.session_state["saved_views_dict"].keys())
+                        remove_paths_checkbox = st.checkbox(
+                        "🔒 I am sure I want to remove all paths",
+                        key="key_remove_paths_checkbox")
+                        paths_to_drop_list = list(st.session_state["saved_paths_dict"].keys())
                 else:
                     with col1a:
-                        remove_views_checkbox = st.checkbox(
-                        "🔒 I am sure I want to remove the selected views",
-                        key="key_remove_views_checkbox")
+                        remove_paths_checkbox = st.checkbox(
+                        "🔒 I am sure I want to remove the selected paths",
+                        key="key_remove_paths_checkbox")
 
-                if remove_views_checkbox:
+                if remove_paths_checkbox:
                     with col1a:
-                        st.button("Remove", key="key_remove_views_button", on_click=remove_views)
+                        st.button("Remove", key="key_remove_paths_button", on_click=remove_paths)
