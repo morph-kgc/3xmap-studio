@@ -1626,6 +1626,7 @@ def save_session_state():
     project_state_list.append(st.session_state["original_g_size_cache"])
     project_state_list.append(st.session_state["original_g_mapping_ns_dict"])
     project_state_list.append(st.session_state["custom_terms_dict"])
+    project_state_list.append(st.session_state["saved_paths_dict"])
 
     return project_state_list
 #______________________________________________________
@@ -1648,6 +1649,7 @@ def retrieve_session_state(project_state_list):
     st.session_state["original_g_size_cache"] = project_state_list[11]
     st.session_state["original_g_mapping_ns_dict"] = project_state_list[12]
     st.session_state["custom_terms_dict"] = project_state_list[13]
+    st.session_state["saved_paths_dict"] = project_state_list[14]
 
     for conn in st.session_state["db_connection_status_dict"]:
         update_db_connection_status_dict(conn)

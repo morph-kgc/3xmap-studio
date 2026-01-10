@@ -494,32 +494,9 @@ with tab3:
                 with col1:
                     utils.display_path_dataframe(selected_filename_for_path, path_to_save)
 
-    # SUCCESS MESSAGE: PATH REMOVED---------------------------------------------
-    # Shows here if no Manage Saved Paths purple heading
-    if not st.session_state["saved_paths_dict"] and st.session_state["path_removed_ok_flag"]:
-        with col1:
-            col1a, col1b = st.columns([2,1])
-        with col1a:
-            st.write("")
-            st.markdown(f"""<div class="success-message-flag">
-                ✅ The <b>path(s)</b> have been removed!
-            </div>""", unsafe_allow_html=True)
-        st.session_state["path_removed_ok_flag"] = False
-        time.sleep(utils.get_success_message_time())
-        st.rerun()
-
-
-    # PURPLE HEADING: MANAGE PATHS----------------------------------------------
-    # Shows only if there are paths to be managed
-    if st.session_state["saved_paths_dict"]:
-        with col1:
-            st.write("________")
-            st.markdown("""<div class="purple-heading">
-                    ⚙️ Manage Saved Paths
-                </div>""", unsafe_allow_html=True)
-            st.write("")
-
-        if st.session_state["path_removed_ok_flag"]:
+        # SUCCESS MESSAGE: PATH REMOVED---------------------------------------------
+        # Shows here if no Manage Saved Paths purple heading
+        if not st.session_state["saved_paths_dict"] and st.session_state["path_removed_ok_flag"]:
             with col1:
                 col1a, col1b = st.columns([2,1])
             with col1a:
@@ -531,109 +508,132 @@ with tab3:
             time.sleep(utils.get_success_message_time())
             st.rerun()
 
-        with col1:
-            col1a, col1b, col1c = st.columns([0.8,1,1])
 
-        files_w_paths_set = set()
-        for path_label in st.session_state["saved_paths_dict"]:
-            files_w_paths_set.add(st.session_state["saved_paths_dict"][path_label][0])
-        files_w_paths_list = list(files_w_paths_set)
+        # PURPLE HEADING: MANAGE PATHS----------------------------------------------
+        # Shows only if there are paths to be managed
+        if st.session_state["saved_paths_dict"]:
+            with col1:
+                st.write("________")
+                st.markdown("""<div class="purple-heading">
+                        ⚙️ Manage Saved Paths
+                    </div>""", unsafe_allow_html=True)
+                st.write("")
 
-        with col1a:
-            list_to_choose = ["🧭 Path results", "🔎 Inspect", "🗑️ Remove"]
-            manage_path_option = st.radio("🖱️ Select an option:*", list_to_choose,
-                label_visibility="collapsed", key="key_manage_path_option")
-
-        with col1b:
-            list_to_choose = files_w_paths_list
-            list_to_choose.insert(0, "No filter")
-            file_to_manage_path_filter = st.selectbox("📡 Filter by file (opt):", list_to_choose,
-                key="key_file_to_manage_path_filter")
-
-            if file_to_manage_path_filter == "No filter":
-                paths_to_manage_list = list(st.session_state["saved_paths_dict"])
-
-            else:
-                paths_to_manage_list = []
-                for path_label in st.session_state["saved_paths_dict"]:
-                    if st.session_state["saved_paths_dict"][path_label][0] == file_to_manage_path_filter:
-                        paths_to_manage_list.append(path_label)
-
-        if manage_path_option == "🧭 Path results":
-
-            with col1c:
-                list_to_choose = paths_to_manage_list
-                list_to_choose.insert(0, "Select path")
-                path_to_inspect_label = st.selectbox("🖱️ Select path:*", list_to_choose,
-                    key="key_path_to_inspect_label")
-
-            #HEREIGO
-            if path_to_inspect_label != "Select path":
-                filename_to_inspect_path = st.session_state["saved_paths_dict"][path_to_inspect_label][0]
-                path_to_inspect = st.session_state["saved_paths_dict"][path_to_inspect_label][1]
+            if st.session_state["path_removed_ok_flag"]:
                 with col1:
-                    utils.display_path_dataframe(filename_to_inspect_path, path_to_inspect)
+                    col1a, col1b = st.columns([2,1])
+                with col1a:
+                    st.write("")
+                    st.markdown(f"""<div class="success-message-flag">
+                        ✅ The <b>path(s)</b> have been removed!
+                    </div>""", unsafe_allow_html=True)
+                st.session_state["path_removed_ok_flag"] = False
+                time.sleep(utils.get_success_message_time())
+                st.rerun()
 
-        if manage_path_option == "🔎 Inspect":
-            with col1c:
-                list_to_choose = paths_to_manage_list.copy()
-                if len(list_to_choose) > 1:
-                    list_to_choose.insert(0, "Select all")
-                paths_to_inspect_list = st.multiselect("🖱️ Select paths:*", list_to_choose,
-                    key="key_paths_to_inspect_list")
+            with col1:
+                col1a, col1b, col1c = st.columns([0.8,1,1])
 
-            if "Select all" in paths_to_inspect_list:
-                paths_to_inspect_list = paths_to_manage_list
+            files_w_paths_set = set()
+            for path_label in st.session_state["saved_paths_dict"]:
+                files_w_paths_set.add(st.session_state["saved_paths_dict"][path_label][0])
+            files_w_paths_list = list(files_w_paths_set)
 
-            if paths_to_inspect_list:
+            with col1a:
+                list_to_choose = ["🧭 Path results", "🔎 Inspect", "🗑️ Remove"]
+                manage_path_option = st.radio("🖱️ Select an option:*", list_to_choose,
+                    label_visibility="collapsed", key="key_manage_path_option")
 
-                rows = []
-                for label in paths_to_inspect_list:
-                    filename = st.session_state["saved_paths_dict"][label][0]
-                    path_expression = st.session_state["saved_paths_dict"][label][1]
+            with col1b:
+                list_to_choose = files_w_paths_list
+                list_to_choose.insert(0, "No filter")
+                file_to_manage_path_filter = st.selectbox("📡 Filter by file (opt):", list_to_choose,
+                    key="key_file_to_manage_path_filter")
 
-                    rows.append({"Label": label, "Data file": filename,
-                            "Path": path_expression})
+                if file_to_manage_path_filter == "No filter":
+                    paths_to_manage_list = list(st.session_state["saved_paths_dict"])
 
-                df = pd.DataFrame(rows)
-
-                with col1:
-                    st.markdown(f"""<div class="info-message-blue">
-                            🔎 <b> Paths ({len(rows)}):</b>
-                        </div></div>""", unsafe_allow_html=True)
-                    st.dataframe(df , hide_index=True)
-
-        if manage_path_option == "🗑️ Remove":
-
-            with col1c:
-                list_to_choose = paths_to_manage_list
-                if len(list_to_choose) > 1:
-                    list_to_choose.insert(0, "Select all")
-                paths_to_drop_list = st.multiselect("🖱️ Select paths:*", list_to_choose,
-                    key="key_paths_to_drop_list")
-
-            if paths_to_drop_list:
-
-                with col1:
-                    col1a, col1b = st.columns([2.5,1])
-
-                if "Select all" in paths_to_drop_list:
-                    with col1b:
-                        st.markdown(f"""<div class="warning-message">
-                            ⚠️ You are deleting <b>all paths ({len(st.session_state["saved_paths_dict"])})</b>.
-                            <small>Make sure you want to go ahead.</small>
-                        </div>""", unsafe_allow_html=True)
-                    with col1a:
-                        remove_paths_checkbox = st.checkbox(
-                        "🔒 I am sure I want to remove all paths",
-                        key="key_remove_paths_checkbox")
-                        paths_to_drop_list = list(st.session_state["saved_paths_dict"].keys())
                 else:
-                    with col1a:
-                        remove_paths_checkbox = st.checkbox(
-                        "🔒 I am sure I want to remove the selected paths",
-                        key="key_remove_paths_checkbox")
+                    paths_to_manage_list = []
+                    for path_label in st.session_state["saved_paths_dict"]:
+                        if st.session_state["saved_paths_dict"][path_label][0] == file_to_manage_path_filter:
+                            paths_to_manage_list.append(path_label)
 
-                if remove_paths_checkbox:
-                    with col1a:
-                        st.button("Remove", key="key_remove_paths_button", on_click=remove_paths)
+            if manage_path_option == "🧭 Path results":
+
+                with col1c:
+                    list_to_choose = paths_to_manage_list
+                    list_to_choose.insert(0, "Select path")
+                    path_to_inspect_label = st.selectbox("🖱️ Select path:*", list_to_choose,
+                        key="key_path_to_inspect_label")
+
+                #HEREIGO
+                if path_to_inspect_label != "Select path":
+                    filename_to_inspect_path = st.session_state["saved_paths_dict"][path_to_inspect_label][0]
+                    path_to_inspect = st.session_state["saved_paths_dict"][path_to_inspect_label][1]
+                    with col1:
+                        utils.display_path_dataframe(filename_to_inspect_path, path_to_inspect)
+
+            if manage_path_option == "🔎 Inspect":
+                with col1c:
+                    list_to_choose = paths_to_manage_list.copy()
+                    if len(list_to_choose) > 1:
+                        list_to_choose.insert(0, "Select all")
+                    paths_to_inspect_list = st.multiselect("🖱️ Select paths:*", list_to_choose,
+                        key="key_paths_to_inspect_list")
+
+                if "Select all" in paths_to_inspect_list:
+                    paths_to_inspect_list = paths_to_manage_list
+
+                if paths_to_inspect_list:
+
+                    rows = []
+                    for label in paths_to_inspect_list:
+                        filename = st.session_state["saved_paths_dict"][label][0]
+                        path_expression = st.session_state["saved_paths_dict"][label][1]
+
+                        rows.append({"Label": label, "Data file": filename,
+                                "Path": path_expression})
+
+                    df = pd.DataFrame(rows)
+
+                    with col1:
+                        st.markdown(f"""<div class="info-message-blue">
+                                🔎 <b> Paths ({len(rows)}):</b>
+                            </div></div>""", unsafe_allow_html=True)
+                        st.dataframe(df , hide_index=True)
+
+            if manage_path_option == "🗑️ Remove":
+
+                with col1c:
+                    list_to_choose = paths_to_manage_list
+                    if len(list_to_choose) > 1:
+                        list_to_choose.insert(0, "Select all")
+                    paths_to_drop_list = st.multiselect("🖱️ Select paths:*", list_to_choose,
+                        key="key_paths_to_drop_list")
+
+                if paths_to_drop_list:
+
+                    with col1:
+                        col1a, col1b = st.columns([2.5,1])
+
+                    if "Select all" in paths_to_drop_list:
+                        with col1b:
+                            st.markdown(f"""<div class="warning-message">
+                                ⚠️ You are deleting <b>all paths ({len(st.session_state["saved_paths_dict"])})</b>.
+                                <small>Make sure you want to go ahead.</small>
+                            </div>""", unsafe_allow_html=True)
+                        with col1a:
+                            remove_paths_checkbox = st.checkbox(
+                            "🔒 I am sure I want to remove all paths",
+                            key="key_remove_paths_checkbox")
+                            paths_to_drop_list = list(st.session_state["saved_paths_dict"].keys())
+                    else:
+                        with col1a:
+                            remove_paths_checkbox = st.checkbox(
+                            "🔒 I am sure I want to remove the selected paths",
+                            key="key_remove_paths_checkbox")
+
+                    if remove_paths_checkbox:
+                        with col1a:
+                            st.button("Remove", key="key_remove_paths_button", on_click=remove_paths)
