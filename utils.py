@@ -262,10 +262,9 @@ def import_st_aesthetics():
                 border-radius:5px; padding:10px; margin-bottom:8px;
                 font-size:1.1rem; font-weight:600; color:#511D66;}
 
-    /* GRAY HEADINGS */
-            .gray-heading {background-color:#f2f2f2; border-bottom:4px solid #777777;
-                border-radius:5px; padding:6px; margin-bottom:8px;
-                font-size:1rem; font-weight:600; color:#333333;}
+    /* SMALL SUBHEADING */
+    .small-subheading {font-size: 13px; font-weight: 500; margin-top: 10px;
+        margin-bottom: 6px; border-top: 0.5px solid #ccc; padding-bottom: 4px;}
 
     /* GRAY PREVIEW MESSAGE */
             .gray-preview-message {background-color:#f9f9f9; padding:0.7em; border-radius:5px;
@@ -440,10 +439,9 @@ def import_st_aesthetics_dark_mode():
           border-radius: 5px; padding: 10px; margin-bottom: 8px;
           font-size: 1.1rem; font-weight: 600; color: #d8c3f0;}
 
-    /* GRAY HEADINGS — Dark Mode */
-        .gray-heading {background-color: #1e1e1e; border-bottom: 4px solid #999999;
-          border-radius: 5px;   padding: 6px; margin-bottom: 8px; font-size: 1rem;
-          font-weight: 600; color: #dddddd;}
+    /* SMALL SUBHEADING — Dark Mode*/
+    .small-subheading {font-size: 13px; font-weight: 500; margin-top: 10px;
+        margin-bottom: 6px; border-top: 0.5px solid #ccc; padding-bottom: 4px;}
 
     /* GRAY PREVIEW MESSAGE — Dark Mode */
         .gray-preview-message {background-color: #1c1c1c; padding: 0.7em;
@@ -769,11 +767,11 @@ def format_number_for_display(number):
 # 6. Label in network visualisation (characters)
 # 7. Suggested mapping label (characters)    8. URL for display (characters)
 # 9. Max characters when displaying ontology/mapping serialisation (ttl or nt)
-# 10. Query/path text for display    RFTAG check everything is used
+# 10. Query/path text for display
 # 11. Max characters in a rule before using small fint size
 def get_max_length_for_display():
 
-    return [50, 10, 100, 20, 8, 10, 20, 15, 40, 100000, 10, 40]
+    return [50, 10, 100, 20, 8, 10, 20, 15, 40, 100000, 25, 40]
 #_______________________________________________________
 
 #______________________________________________________
@@ -1117,7 +1115,7 @@ def init_page():
 # GLOBAL FUNCTIONS==============================================================
 #______________________________________________________
 # Function to check whether a label is valid
-def is_valid_label(label, hard=False, display_option=True, blank_space=False):
+def is_valid_label(label, hard=False, display=True, blank_space=False):
 
     valid_letters = ["a","b","c","d","e","f","g","h","i","j","k","l","m",
         "n","o","p","q","r","s","t","u","v","w","x","y","z",
@@ -1132,7 +1130,7 @@ def is_valid_label(label, hard=False, display_option=True, blank_space=False):
 
     # disallow spaces
     if re.search(r"[ \t\n\r]", label):    # disallow spaces
-        if display_option:
+        if display:
             if blank_space:
                 st.write("")
             st.markdown(f"""<div class="error-message">
@@ -1143,7 +1141,7 @@ def is_valid_label(label, hard=False, display_option=True, blank_space=False):
 
     # disallow unescaped characters
     if not hard and re.search(r"[<>\"{}|\\^`]", label):
-        if display_option:
+        if display:
             if blank_space:
                 st.write("")
             st.markdown(f"""<div class="error-message">
@@ -1156,7 +1154,7 @@ def is_valid_label(label, hard=False, display_option=True, blank_space=False):
     if hard:
         for letter in label:
             if letter not in valid_letters and letter not in valid_digits:
-                if display_option:
+                if display:
                     if blank_space:
                         st.write("")
                     st.markdown(f"""<div class="error-message">
@@ -1167,7 +1165,7 @@ def is_valid_label(label, hard=False, display_option=True, blank_space=False):
 
     # disallow trailing puntuation if hard
     if hard and label.endswith("_") or label.endswith("-"):
-        if display_option:
+        if display:
             if blank_space:
                 st.write("")
             st.markdown(f"""<div class="error-message">
@@ -1177,7 +1175,7 @@ def is_valid_label(label, hard=False, display_option=True, blank_space=False):
         return False
 
     # warning if long
-    if len(label) > 20 and display_option:
+    if len(label) > 20 and display:
         if blank_space:
             st.write("")
         st.markdown(f"""<div class="warning-message">
@@ -2345,7 +2343,7 @@ def remove_view_from_db(view):
 
 # PAGE: 🛢️ DATA FILES===========================================================
 # PANEL: MANAGE FILES-----------------------------------------------------------
-#_________________________________________________
+#______________________________________________________
 # Funtion to read data files
 # For already saved files, takes the filename
 # For unsaved files, takes the file itself
@@ -2399,18 +2397,17 @@ def read_data_file(file_input, unsaved=False):
     file.seek(0)
 
     return read_content
-#_________________________________________________
+#______________________________________________________
 
 # PANEL: DISPLAY DATA-----------------------------------------------------------
-#_________________________________________________
+#______________________________________________________
 # Function to get file format from filename
 def get_file_format(filename):
 
     return filename.split(".")[-1].lower()
+#______________________________________________________
 
-#_________________________________________________
-
-#_________________________________________________
+#______________________________________________________
 # Funtion to check whether a hierarchical file is flat
 def is_flat_file(data, file_format):
     if file_format == "json":
@@ -2440,12 +2437,11 @@ def is_flat_file(data, file_format):
             if any(len(list(gc)) > 0 for gc in grandkids):
                 return False
         return True
-#_________________________________________________
+#______________________________________________________
 
-#_________________________________________________
-# Funtion to safely convert json matches into dataframe
-# Handles dicts, scalars, lists, and mixed type
-def display_path_dataframe(filename, path_expr, display=True):
+#______________________________________________________
+# Funtion to display the dataframe with the results of a path
+def display_path_dataframe(filename, path_expr, display=True, return_df=False):
 
     file_format = filename.split(".")[-1].lower()
     flag = find_matches(filename, path_expr)[0]
@@ -2456,17 +2452,24 @@ def display_path_dataframe(filename, path_expr, display=True):
             st.markdown(f"""<div class="error-message">
                 ❌ <b>Error applying path:</b> <small><i><b>Full error: </b>{error}</i></small>
             </div>""", unsafe_allow_html=True)
-        return False
+        if not return_df:
+            return True
+        else:
+            return pd.DataFrame()
+
 
     else:
         matches = find_matches(filename, path_expr)[1]
         df = matches_to_dataframe(matches, file_format)
         if display:
             display_limited_df(df, "")
-        return True
-#_________________________________________________
+        if not return_df:
+            return True
+        else:
+            return df
+#______________________________________________________
 
-#_________________________________________________
+#______________________________________________________
 # Funtion to find matches for a hierarchical data file
 def find_matches(filename, path_expr):
 
@@ -2492,9 +2495,9 @@ def find_matches(filename, path_expr):
 
     except Exception as e:
         return False, e
-#_________________________________________________
+#______________________________________________________
 
-#_________________________________________________
+#______________________________________________________
 # Funtion to safely convert json/xml matches into dataframe
 # Handles dicts, scalars, lists, and mixed type
 def matches_to_dataframe(matches, file_format, default_col="value"):
@@ -2502,74 +2505,111 @@ def matches_to_dataframe(matches, file_format, default_col="value"):
     if not matches:
         return pd.DataFrame()
 
+    # JSON
     if file_format == "json":
-
-        # Case 1: all dicts → normalize into columns
         if all(isinstance(m, dict) for m in matches):
             return pd.json_normalize(matches)
-
-        # Case 2: all scalars → one-column DataFrame
-        if all(not isinstance(m, (dict, list)) for m in matches):
+        elif all(not isinstance(m, (dict, list)) for m in matches):
             return pd.DataFrame(matches, columns=[default_col])
-
-        # Case 3: all lists → explode into rows
-        if all(isinstance(m, list) for m in matches):
-            # flatten nested lists
+        elif all(isinstance(m, list) for m in matches):
             flat = [item for sublist in matches for item in sublist]
-            # recurse to handle scalars/dicts inside
-            return matches_to_dataframe(flat, default_col=default_col)
+            return matches_to_dataframe(flat, file_format, default_col=default_col)
+        else:
+            coerced = []
+            for m in matches:
+                if isinstance(m, dict):
+                    coerced.append(m)
+                elif isinstance(m, list):
+                    coerced.append({default_col: m})
+                else:
+                    coerced.append({default_col: m})
+            return pd.json_normalize(coerced)
 
-        # Case 4: mixed types → coerce everything into dicts
-        coerced = []
-        for m in matches:
-            if isinstance(m, dict):
-                coerced.append(m)
-            elif isinstance(m, list):
-                coerced.append({default_col: m})
-            else:
-                coerced.append({default_col: m})
-        return pd.json_normalize(coerced)
-
+    # XML
     elif file_format == "xml":
 
-        rows = []
+        def element_to_dict(elem):
+            node = dict(elem.attrib)
+            if (not list(elem)) and elem.text and elem.text.strip():
+                node[default_col] = elem.text.strip()
+            for child in elem:
+                child_dict = element_to_dict(child)
+                # flatten if only one value
+                if len(child_dict) == 1 and default_col in child_dict:
+                    node[child.tag] = child_dict[default_col]
+                else:
+                    node[child.tag] = child_dict
+            return node
 
+        rows = []
         for m in matches:
             if isinstance(m, ET.Element):
-                row = dict(m.attrib)   # include attributes
-                for child in list(m):   # include child tags
-                    row[child.tag] = child.text
-                if (not list(m)) and m.text and m.text.strip():   # if element has direct text and no children
-                    row[default_col] = m.text.strip()
-                rows.append(row)
+                rows.append(element_to_dict(m))
             else:
-                rows.append({default_col: m})    # scalar (string, number, etc.)
+                rows.append({default_col: m})
 
-        return pd.DataFrame(rows)
+        return pd.json_normalize(rows, sep=".")
 
-    return df
-#_________________________________________________
-
-# PANEL: MANAGE PATHS-----------------------------------------------------------
+    # Fallback
+    return pd.DataFrame()
 #______________________________________________________
-#Function to display path results
-def display_path_results(path):
 
-    filename = st.session_state["saved_paths_dict"][path][0]
-    path_expression = st.session_state["saved_paths_dict"][path][1]
-    file = st.session_state["ds_files_dict"][filename]
+#______________________________________________________
+# Funtion to display the results of a path (raw)
+def display_path_raw(matches, file_format, col):
 
-    df, view_ok_flag, error = run_query(connection_label, query_or_collection)
+    with col:
+        cola, colb = st.columns([3,1])
 
-    if not view_ok_flag:
-        st.markdown(f"""<div class="error-message">
-            ❌ <b>Invalid syntax</b>. <small>Please check your path.
-            <i><b>Full error:</b> {error}</i></small>
-        </div>""", unsafe_allow_html=True)
+    # Convert if XML
+    if file_format == "xml":
+        matches = [utils.element_to_dict(m) if isinstance(m, ET.Element) else m for m in matches]
+
+    # Add pages if needed
+    page_size = 1
+    if len(matches) > page_size:
+        with colb:
+            max = (len(matches) + page_size - 1) // page_size
+            page = st.number_input("Page", min_value=1, max_value=max, label_visibility="collapsed", key=f"""key_{matches}""")   # must avoid duplicated keys
+            st.markdown("""<div class="very-small-info">
+                📑 Page
+            </div>""", unsafe_allow_html=True)
+        col_raw = cola
     else:
-        display_limited_df(df, "Results")
+        page = 1
+        max = 0
+        col_raw = col
+    start = (page-1)*page_size
+    end = start + page_size
+
+    # Display raw text
+    with col_raw:
+        if matches:
+            pages_parenthesis = f"""<small>({max} pages):</small>""" if max else ""
+            st.markdown(f"""<div class="info-message-blue">
+                    🍣 <b style="color:#F63366;"> CONTENT {pages_parenthesis}</b>
+                </div>""", unsafe_allow_html=True)
+            st.json(matches[start:end])
+        else:
+            st.markdown(f"""<div class="warning-message">
+                    ⚠️ No results.
+                </div>""", unsafe_allow_html=True)
 #______________________________________________________
 
+#______________________________________________________
+# Function to display XML path results using json format
+def element_to_dict(elem, default_col="value"):
+
+    node = dict(elem.attrib)
+
+    if (not list(elem)) and elem.text and elem.text.strip():
+        node[default_col] = elem.text.strip()
+
+    for child in elem:
+        node[child.tag] = element_to_dict(child, default_col=default_col)
+
+    return node
+#______________________________________________________
 
 # PAGE: 🏗️ BUILD MAPPING========================================================
 # PANEL: ADD TRIPLESMAP---------------------------------------------------------
