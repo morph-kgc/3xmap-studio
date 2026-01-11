@@ -358,27 +358,109 @@ with tab2:
 
                 df = pd.DataFrame()
 
+                # PATH GIVEN
                 if path_expr.strip():
-                    with col1:
-                        utils.display_path_dataframe(tab_filename_for_display, path_expr)
+                    path_ok_flag, matches = utils.find_matches(tab_filename_for_display, path_expr)
 
+                    with col1a:
+                        list_to_choose = ["📅 Table", "🍣 Raw"]
+                        display_matches_option = st.radio("", list_to_choose, label_visibility="collapsed",
+                            horizontal=True, key="key_display_matches_option_tab2")
+
+                    if display_matches_option == "📅 Table":
+                        df = utils.display_path_dataframe(tab_filename_for_display, path_expr, display=False, return_df=True)
+
+                        if not df.empty:
+                            with col1a:
+                                st.markdown("""<div class="small-subheading" style="margin-top:0;">
+                                </div>""", unsafe_allow_html=True)
+                                column_list = df.columns.tolist()
+                                tab_column_filter_list = st.multiselect(f"""📡 Filter by columns
+                                    (optional, max {utils.get_max_length_for_display()[3]}):""",
+                                    column_list, key="key_tab_column_filter")
+                        else:
+                            tab_column_filter_list = []
+
+                        if not tab_column_filter_list:
+                            with col1:
+                                utils.display_path_dataframe(tab_filename_for_display, path_expr)
+
+                        else:
+                            if len(tab_column_filter_list) > utils.get_max_length_for_display()[3]:
+                                with col1b:
+                                    st.markdown(f"""<div class="error-message">
+                                        ❌ <b> Too many columns</b> selected. <small>Please respect the <b>limit
+                                        of {utils.get_max_length_for_display()[3]}</b>.</small>
+                                    </div>""", unsafe_allow_html=True)
+                            else:
+                                with col1:
+                                    utils.display_limited_df(df[tab_column_filter_list], "")
+
+                    elif display_matches_option == "🍣 Raw":
+                        if path_ok_flag:
+                            utils.display_path_raw(matches, file_format, col1)
+                        else:
+                            with col1:
+                                utils.display_path_dataframe(tab_filename_for_display, path_expr)
+
+
+                # NO PATH GIVEN (SHOW IF FILE IS FLAT)
                 else: # No path expression given
+
+                    is_flat_file_flag = False
+
                     if file_format == "json":
                         raw_bytes = tab_file_for_display.getvalue()
                         data = json.loads(raw_bytes.decode("utf-8"))
                         if utils.is_flat_file(data, file_format):
+                            is_flat_file_flag = True
                             df = pd.DataFrame(data if isinstance(data, list) else [data])
-                            with col1:
-                                utils.display_limited_df(df, "")
 
                     elif file_format == "xml":
                         raw_bytes = tab_file_for_display.getvalue()
                         tree = ET.parse(io.BytesIO(raw_bytes))
-                        root = tree.getroot()
-                        if utils.is_flat_file(root, file_format):
+                        data = tree.getroot()
+                        if utils.is_flat_file(data, file_format):
+                            is_flat_file_flag = True
                             df = pd.read_xml(io.BytesIO(raw_bytes), parser="etree")
-                            with col1:
-                                utils.display_limited_df(df, "")
+
+                    if is_flat_file_flag:
+
+                        with col1a:
+                            list_to_choose = ["📅 Table", "🍣 Raw"]
+                            display_matches_option = st.radio("", list_to_choose, label_visibility="collapsed",
+                                horizontal=True, key="key_display_matches_option_tab2")
+
+                        if display_matches_option == "📅 Table":
+                            if not df.empty:
+                                with col1a:
+                                    st.markdown("""<div class="small-subheading" style="margin-top:0;">
+                                    </div>""", unsafe_allow_html=True)
+                                    column_list = df.columns.tolist()
+                                    tab_column_filter_list = st.multiselect(f"""📡 Filter by columns
+                                        (optional, max {utils.get_max_length_for_display()[3]}):""",
+                                        column_list, key="key_tab_column_filter")
+                            else:
+                                tab_column_filter_list = []
+
+                            if not tab_column_filter_list:
+                                with col1:
+                                    utils.display_limited_df(df, "")
+
+                            else:
+                                if len(tab_column_filter_list) > utils.get_max_length_for_display()[3]:
+                                    with col1b:
+                                        st.markdown(f"""<div class="error-message">
+                                            ❌ <b> Too many columns</b> selected. <small>Please respect the <b>limit
+                                            of {utils.get_max_length_for_display()[3]}</b>.</small>
+                                        </div>""", unsafe_allow_html=True)
+                                else:
+                                    with col1:
+                                        utils.display_limited_df(df[tab_column_filter_list], "")
+
+                        elif display_matches_option == "🍣 Raw":
+                            utils.display_path_raw(data, file_format, col1)
+
 
 #_______________________________________________________________________________
 # PANEL: MANAGE PATHS
@@ -448,7 +530,6 @@ with tab3:
             with col1b:
                 path_label = st.text_input("🏷️ Enter path label (opt):",
                     key="key_path_label")
-            with col1b:
                 path_label_ok_flag = utils.is_valid_label(path_label)
             if path_label and path_label in st.session_state["saved_paths_dict"]:
                 with col1b:
@@ -462,37 +543,53 @@ with tab3:
                 path_to_save = st.text_area("⌨️ Enter path:*",
                     height=150, key="key_path_to_save")
 
-            if not path_label:
+            if not path_label and path_to_save:
                 with col1b:
                     if path_to_save in st.session_state["saved_paths_dict"]:
                         st.markdown(f"""<div class="error-message">
-                            ❌ <b>Path already used as a label</b></b>.
-                            <small> A label must be added in this case.</small>
+                            ❌ <b>A label must be added</b> in this case
+                            <small> (path already used as a label).</small>
                         </div>""", unsafe_allow_html=True)
                         path_label_ok_flag = False
-                    elif len(path_to_save) > utils.get_max_length_for_display()[10]:
-                        st.markdown(f"""<div class="warning-message">
-                            ⚠️ <b>Path is quite long</b> <small>({len(path_to_save)} characters)</b>.
-                            Labelling it is recommended.</small>
-                        </div>""", unsafe_allow_html=True)
-                    path_label = path_to_save
-                    path_label_ok_flag = True
+                    else:
+                        if len(path_to_save) > utils.get_max_length_for_display()[10]:
+                            st.markdown(f"""<div class="warning-message">
+                                ⚠️ <b>Path is quite long</b> <small>({len(path_to_save)} characters)</b>.
+                                Labelling it is recommended.</small>
+                            </div>""", unsafe_allow_html=True)
+                        path_label = path_to_save
+                        path_label_ok_flag = True
 
             df = pd.DataFrame()
 
             if path_to_save.strip():
-                with col1:
-                    path_ok_flag = utils.display_path_dataframe(selected_filename_for_path, path_to_save, display=False)
+                path_ok_flag, matches = utils.find_matches(selected_filename_for_path, path_to_save)
 
+            with col1:
+                col1a, col1b = st.columns([1.5,1])
             if path_to_save.strip() and path_label_ok_flag and path_ok_flag:
-                with col1:
+                with col1a:
                     st.session_state["path_label"] = path_label
                     st.button("Save", key="key_save_path_button",
                         on_click=save_path)
 
             if path_to_save.strip():
-                with col1:
-                    utils.display_path_dataframe(selected_filename_for_path, path_to_save)
+                with col1b:
+                    list_to_choose = ["📅 Table", "🍣 Raw"]
+                    display_matches_option = st.radio("", list_to_choose, label_visibility="collapsed",
+                        horizontal=True, key="key_display_matches_option")
+
+                if display_matches_option == "📅 Table":
+                    with col1:
+                        utils.display_path_dataframe(selected_filename_for_path, path_to_save)
+
+                elif display_matches_option == "🍣 Raw":
+                    if path_ok_flag:
+                        utils.display_path_raw(matches, file_format, col1)
+                    else:
+                        with col1:
+                            utils.display_path_dataframe(selected_filename_for_path, path_to_save)
+
 
         # SUCCESS MESSAGE: PATH REMOVED---------------------------------------------
         # Shows here if no Manage Saved Paths purple heading

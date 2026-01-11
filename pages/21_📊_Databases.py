@@ -640,9 +640,9 @@ with tab3:
                 db = conn[database]
 
                 with col1b:
-                    mongo_view_label = st.text_input("🏷️ Enter label for the view:*",
+                    mongo_view_label = st.text_input("🏷️ Enter view label (becomes collection name):*",
                         key="key_mongo_view_label")
-                    if mongo_view_label in db.list_collection_names():
+                    if mongo_view_label in db.list_collection_names():    # Mongo labels have harder requirements because the collection will be saved
                         st.markdown(f"""<div class="error-message">
                             ❌ The label <b>{mongo_view_label}</b> is already in use.
                             <small>You must pick a different label.</small>
@@ -656,7 +656,6 @@ with tab3:
                         valid_mongo_view_label_flag = False
                     else:
                         valid_mongo_view_label_flag = utils.is_valid_label(mongo_view_label, hard=True) # hard mode enough to ensure all requriements but length
-
 
                 with col1:
                     col1a, col1b = st.columns([2,1])
@@ -706,9 +705,8 @@ with tab3:
             # SQL DATABASE CONNECTIONS
             elif engine != "MongoDB" and connection_ok_flag:
                 with col1b:
-                    sql_view_label = st.text_input("🏷️ Enter label for the view (to save it):*",
+                    sql_view_label = st.text_input("🏷️ Enter view label (opt):",
                         key="key_sql_view_label")
-                with col1b:
                     valid_sql_view_label_flag = utils.is_valid_label(sql_view_label)
                 if sql_view_label and sql_view_label in st.session_state["saved_views_dict"]:
                     with col1b:
@@ -721,6 +719,23 @@ with tab3:
                 with col1:
                     sql_query = st.text_area("⌨️ Enter SQL query:*",
                         height=150, key="key_sql_query")
+
+                if not sql_view_label and sql_query:
+                    with col1b:
+                        if sql_query in st.session_state["saved_views_dict"]:
+                            st.markdown(f"""<div class="error-message">
+                                ❌ <b>A label must be added</b> in this case
+                                <small> (view already used as a label).</small>
+                            </div>""", unsafe_allow_html=True)
+                            valid_sql_view_label_flag = False
+                        else:
+                            if len(sql_query) > utils.get_max_length_for_display()[10]:
+                                st.markdown(f"""<div class="warning-message">
+                                    ⚠️ <b>View is quite long</b> <small>({len(sql_query)} characters)</b>.
+                                    Labelling it is recommended.</small>
+                                </div>""", unsafe_allow_html=True)
+                            sql_view_label = sql_query
+                            valid_sql_view_label_flag = True
 
                 if sql_query:
                     df, sql_query_ok_flag, error = utils.run_query(connection_for_view, sql_query)

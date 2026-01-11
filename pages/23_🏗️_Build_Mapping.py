@@ -1079,7 +1079,7 @@ with tab2:
                     if label_sm_option == "Yes (add label 🔖)":
                         sm_label = st.text_input("🔖 Enter Subject Map label:*", key="key_sm_label_new",
                             placeholder="🔖 Subject Map label*", label_visibility="collapsed")
-                        valid_sm_label = utils.is_valid_label(sm_label, hard=True, display_option=False)
+                        valid_sm_label = utils.is_valid_label(sm_label, hard=True, display=False)
                     else:
                         sm_label = ""
                         sm_iri = BNode()
@@ -1304,10 +1304,9 @@ with tab2:
                 # SAVE BUTTON
                 with col1c:
                     if sm_complete_flag:
-                        st.markdown("""
-                        <div style="font-size:13px; font-weight:500; margin-top:10px; margin-bottom:6px; border-top:0.5px solid #ccc; padding-bottom:4px;">
-                            <b>💾 Save</b><br>
-                        </div>""", unsafe_allow_html=True)
+                        st.markdown("""<div class="small-subheading">
+                                <b>💾 Save</b><br>
+                            </div>""", unsafe_allow_html=True)
                         if sm_generation_rule == "Template 📐":
                             save_sm_template_button = st.button("Save", on_click=save_sm_template, key="key_save_sm_template_button")
                         elif sm_generation_rule == "Constant 🔒":
@@ -1369,8 +1368,7 @@ with tab3:
             col1a, col1b = st.columns(2)
 
         with col1a:
-            st.markdown("""
-            <div class="small-subsection-heading" style="margin-top:-10px; border-top:none;">
+            st.markdown("""<div class="small-subsection-heading" style="margin-top:-10px; border-top:none;">
                 <b><span style=" display:inline-block; width:15px; height:15px;
                 background-color:#009933; color:white; border:1px solid black;
                 text-align:center; font-size:10px; line-height:15px;
@@ -1394,10 +1392,9 @@ with tab3:
 
             # PREDICATE
             with col1:
-                st.markdown("""
-                <div style="font-size:13px; font-weight:500; margin-top:10px; margin-bottom:6px; border-top:0.5px solid #ccc; padding-bottom:4px;">
-                    <b>🅿️ Predicate</b><br>
-                </div>""", unsafe_allow_html=True)
+                st.markdown("""<div class="small-subheading">
+                        <b>🅿️ Predicate</b><br>
+                    </div>""", unsafe_allow_html=True)
 
             with col1:
                 col1a, col1b = st.columns(2)
@@ -1952,10 +1949,9 @@ with tab3:
                 with col1:
                     col1a, col1b = st.columns([6,1])
                 with col1b:
-                    st.markdown("""
-                    <div style="font-size:13px; font-weight:500; margin-top:10px; margin-bottom:6px; border-top:0.5px solid #ccc; padding-bottom:4px;">
-                        <b>💾 Save</b><br>
-                    </div>""", unsafe_allow_html=True)
+                    st.markdown("""<div class="small-subheading">
+                            <b>💾 Save</b><br>
+                        </div>""", unsafe_allow_html=True)
                     st.session_state["tm_iri_for_pom"] = tm_iri_for_pom             # otherwise it will change value in the on_click function
                     if om_generation_rule == "Template 📐":
                         save_pom_template_button = st.button("Save", on_click=save_pom_template, key="key_save_pom_template_button")
@@ -1966,10 +1962,9 @@ with tab3:
 
                 # PREVIEW
                 with col1a:
-                    st.markdown("""
-                    <div style="font-size:13px; font-weight:500; margin-top:10px; margin-bottom:6px; border-top:0.5px solid #ccc; padding-bottom:4px;">
-                        <b>🔍 Preview</b><br>
-                    </div>""", unsafe_allow_html=True)
+                    st.markdown("""<div class="small-subheading">
+                            <b>🔍 Preview</b><br>
+                        </div>""", unsafe_allow_html=True)
 
                 o_is_reference = True if om_generation_rule == "Reference 📊" else False
                 language_tag = False

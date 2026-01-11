@@ -647,7 +647,7 @@ with tab1:
                             ❌ Label is <b>already in use</b>.
                             <small> You must pick a different label.</small>
                         </div>""", unsafe_allow_html=True)
-                elif not utils.is_valid_label(mkgc_ds_label, hard=True, display_option=False):
+                elif not utils.is_valid_label(mkgc_ds_label, hard=True, display=False):
                     with col1a:
                         utils.is_valid_label(mkgc_ds_label, hard=True)
                 elif mkgc_ds_label.lower() == "configuration":
