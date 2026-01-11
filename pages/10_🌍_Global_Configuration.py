@@ -880,7 +880,7 @@ with tab2:
                     with col1a:
                         list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
                         list_to_choose.insert(0, "No filter")
-                        ontology_filter_for_ns = st.selectbox("📡 Filter by ontology (optional):", list_to_choose,
+                        ontology_filter_for_ns = st.selectbox("📡 Filter by ontology:", list_to_choose,
                             key="key_ontology_filter_for_ns")
 
                     if ontology_filter_for_ns == "No filter":

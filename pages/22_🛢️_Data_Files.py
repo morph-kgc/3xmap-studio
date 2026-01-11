@@ -497,7 +497,7 @@ with tab3:
         # PURPLE HEADER: CREATE PATH--------------------------------------------
         with col1:
             st.markdown("""<div class="purple-heading">
-                    🖼️ Create Path
+                    🧭 Create Path
                 </div>""", unsafe_allow_html=True)
             st.write("")
 
@@ -528,7 +528,7 @@ with tab3:
             file_format = utils.get_file_format(selected_filename_for_path)
 
             with col1b:
-                path_label = st.text_input("🏷️ Enter path label (opt):",
+                path_label = st.text_input("🏷️ Enter path label: ᵒᵖᵗ",
                     key="key_path_label")
                 path_label_ok_flag = utils.is_valid_label(path_label)
             if path_label and path_label in st.session_state["saved_paths_dict"]:
@@ -629,7 +629,7 @@ with tab3:
                 st.rerun()
 
             with col1:
-                col1a, col1b, col1c = st.columns([0.8,1,1])
+                col1a, col1b, col1c = st.columns(3)
 
             files_w_paths_set = set()
             for path_label in st.session_state["saved_paths_dict"]:
@@ -644,7 +644,7 @@ with tab3:
             with col1b:
                 list_to_choose = files_w_paths_list
                 list_to_choose.insert(0, "No filter")
-                file_to_manage_path_filter = st.selectbox("📡 Filter by file (opt):", list_to_choose,
+                file_to_manage_path_filter = st.selectbox("📡 Filter by file:", list_to_choose,
                     key="key_file_to_manage_path_filter")
 
                 if file_to_manage_path_filter == "No filter":

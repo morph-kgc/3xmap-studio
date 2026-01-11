@@ -833,7 +833,7 @@ with tab1:
             with col1a:
                 default_output_file = st.session_state["mkgc_config"].get("CONFIGURATION", "output_file", fallback="")
                 default_output_filename = os.path.basename(default_output_file)
-                output_filename = st.text_input("⌨️ Enter output filename (optional):", value=default_output_filename,
+                output_filename = st.text_input("⌨️ Enter output filename: ᵒᵖᵗ", value=default_output_filename,
                     key="key_output_filename")
 
                 if output_filename:
@@ -853,7 +853,7 @@ with tab1:
             with col1b:
                 default_output_format = st.session_state["mkgc_config"].get("CONFIGURATION", "output_format", fallback="Default")
                 list_to_choose = ["Default", "N-TRIPLES", "N-QUADS"]
-                output_format = st.selectbox("🖱️ Select format (optional):", list_to_choose,
+                output_format = st.selectbox("🖱️ Select format: ᵒᵖᵗ", list_to_choose,
                     index=list_to_choose.index(default_output_format), key="key_output_format")
 
             with col1:
@@ -864,7 +864,7 @@ with tab1:
                 default_log_level = st.session_state["mkgc_config"].get("CONFIGURATION", "log_level", fallback="Default")
                 list_to_choose = ["INFO", "DEBUG","WARNING", "ERROR", "CRITICAL", "NOTSET"]
                 list_to_choose.insert(0, "Default")
-                log_level = st.selectbox("🖱️ Select logging level (optional):", list_to_choose,
+                log_level = st.selectbox("🖱️ Select logging level: ᵒᵖᵗ", list_to_choose,
                     index=list_to_choose.index(default_log_level), key="key_log_level")
 
             # Mapping partitioning
@@ -872,7 +872,7 @@ with tab1:
                 default_mapping_partitioning = st.session_state["mkgc_config"].get("CONFIGURATION", "mapping_partitioning", fallback="Default")
                 list_to_choose = ["MAXIMAL", "PARTIAL-AGGREGATIONS", "off"]
                 list_to_choose.insert(0, "Default")
-                mapping_partitioning = st.selectbox("🖱️ Select mapping partitioning (optional):", list_to_choose,
+                mapping_partitioning = st.selectbox("🖱️ Select mapping partitioning: ᵒᵖᵗ", list_to_choose,
                     index=list_to_choose.index(default_mapping_partitioning), key="key_mapping_partitioning")
 
             with col1:
@@ -884,7 +884,7 @@ with tab1:
                 default_na_values_list = default_na_values.split(",") if default_na_values else []
                 list_to_choose = ["null", "NULL", "nan", "NaN", "NA", "N/A", "#N/A", "missing", '""',
                     "-", ".", "none", "None", "undefined", "#VALUE!", "#REF!", "#DIV/0!"]
-                na_values_list = st.multiselect("🖱️ Select NA values (optional):", list_to_choose,
+                na_values_list = st.multiselect("🖱️ Select NA values: ᵒᵖᵗ", list_to_choose,
                     default=default_na_values_list, key="key_na_values")
                 na_values = ",".join(na_values_list)
 
@@ -892,7 +892,7 @@ with tab1:
             with col1b:
                 default_only_printable_chars = st.session_state["mkgc_config"].get("CONFIGURATION", "only_printable_chars", fallback="Default")
                 list_to_choose = ["Default", "Yes", "No"]
-                only_printable_chars = st.selectbox("🖱️ Only printable charts (optional):", list_to_choose,
+                only_printable_chars = st.selectbox("🖱️ Only printable charts: ᵒᵖᵗ", list_to_choose,
                     index=list_to_choose.index(default_only_printable_chars), key="key_only_printable_chars")
 
             with col1:
@@ -903,7 +903,7 @@ with tab1:
                 default_literal_escaping_chars = st.session_state["mkgc_config"].get("CONFIGURATION", "literal_escaping_chars", fallback="")
                 default_literal_escaping_chars_list = list(default_literal_escaping_chars) if default_literal_escaping_chars else []
                 list_to_choose = ["Select all", "!", "#", "$", "&", "'", "(", ")", "*", "+", ",", "/", ":", ";", "=", "?", "@", "[", "]"]
-                literal_escaping_chars_list = st.multiselect("🖱️ Select safe percent encodings (optional):", list_to_choose,
+                literal_escaping_chars_list = st.multiselect("🖱️ Select safe percent encodings: ᵒᵖᵗ", list_to_choose,
                     default=default_literal_escaping_chars_list, key="key_literal_escaping_chars")
                 if "Select all" in literal_escaping_chars_list:
                     literal_escaping_chars_list = ["!", "#", "$", "&", "'", "(", ")", "*", "+", ",", "/", ":", ";", "=", "?", "@", "[", "]"]
@@ -914,7 +914,7 @@ with tab1:
                 default_infer_sql_datatypes = st.session_state["mkgc_config"].get("CONFIGURATION", "infer_sql_datatypes ", fallback="Default")
                 list_to_choose = ["Default", "Yes", "No"]
                 list_to_choose = ["Default", "Yes", "No"]
-                infer_sql_datatypes = st.selectbox("🖱️ Infer sql datatypes (optional):", list_to_choose,
+                infer_sql_datatypes = st.selectbox("🖱️ Infer sql datatypes: ᵒᵖᵗ", list_to_choose,
                     index=list_to_choose.index(default_infer_sql_datatypes), key="key_infer_sql_datatypes")
 
             with col1:
@@ -923,7 +923,7 @@ with tab1:
             # Number of processes
             with col1a:
                 default_number_of_processes = st.session_state["mkgc_config"].get("CONFIGURATION", "number_of_processes", fallback="")
-                number_of_processes = st.text_input("⌨️ Enter number of processes (optional):",
+                number_of_processes = st.text_input("⌨️ Enter number of processes: ᵒᵖᵗ",
                     value = default_number_of_processes, key="key_number_of_processes")
                 if number_of_processes:
                     if not number_of_processes.isdigit():
@@ -935,7 +935,7 @@ with tab1:
             # Output Kafka server
             with col1b:
                 default_output_kafka_server = st.session_state["mkgc_config"].get("CONFIGURATION", "output_kafka_server", fallback="")
-                output_kafka_server = st.text_input("⌨️ Output Kafka server (optional):",
+                output_kafka_server = st.text_input("⌨️ Output Kafka server: ᵒᵖᵗ",
                     value=default_output_kafka_server, key="key_default_output_kafka_server")
                 output_kafka_server_ok_flag = True
                 pattern = r"^[a-zA-Z0-9.-]+:\d+$"
@@ -956,7 +956,7 @@ with tab1:
             if output_kafka_server:
                 with col1b:
                     default_output_kafka_topic = st.session_state["mkgc_config"].get("CONFIGURATION", "output_kafka_topic", fallback="")
-                    output_kafka_topic = st.text_input("⌨️ Output Kafka topic (optional):",
+                    output_kafka_topic = st.text_input("⌨️ Output Kafka topic: ᵒᵖᵗ",
                         value=default_output_kafka_topic, key="key_optput_kafka_topic")
                     if not output_kafka_topic:
                         st.markdown(f"""<div class="error-message">

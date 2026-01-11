@@ -113,7 +113,7 @@ with tab2:
         with col1b:
             list_to_choose = sorted(tm_dict)
             if len(list_to_choose) > 1:
-                selected_tm_for_display_list = st.multiselect("📡 Filter by TriplesMaps (optional):", list_to_choose,
+                selected_tm_for_display_list = st.multiselect("📡 Filter by TriplesMaps:", list_to_choose,
                     placeholder="No filter", key="key_selected_tm_for_display_list_1")
             else:    # if only one tm, dont show filter
                 selected_tm_for_display_list = []
@@ -184,7 +184,7 @@ with tab2:
             tm_dict = utils.get_tm_dict()
             list_to_choose = sorted(tm_dict)
             if len(list_to_choose) > 1:
-                selected_tm_for_display_list = st.multiselect("️📡 Filter by TriplesMaps (optional):", list_to_choose,
+                selected_tm_for_display_list = st.multiselect("️📡 Filter by TriplesMaps:", list_to_choose,
                     placeholder="No filter", key="key_selected_tm_for_display_list_1")
             else:        # if only one tm, dont show filter
                 selected_tm_for_display_list = []
@@ -223,7 +223,7 @@ with tab2:
             tm_dict = utils.get_tm_dict()
             list_to_choose = sorted(tm_dict)
             if len(list_to_choose) > 1:
-                selected_tm_for_display_list = st.multiselect("️📡 Filter by TriplesMaps (optional):", list_to_choose,
+                selected_tm_for_display_list = st.multiselect("️📡 Filter by TriplesMaps:", list_to_choose,
                     placeholder="No filter", key="key_selected_tm_for_display_list_2")
             else:
                 selected_tm_for_display_list = []
@@ -281,7 +281,7 @@ with tab2:
             tm_dict = utils.get_tm_dict()
             list_to_choose = sorted(tm_dict)
             if len(list_to_choose) > 1:
-                selected_tm_for_display_list = st.multiselect("️📡 Filter by TriplesMaps (optional):", list_to_choose,
+                selected_tm_for_display_list = st.multiselect("️📡 Filter by TriplesMaps:", list_to_choose,
                     placeholder="No filter", key="key_selected_tm_for_display_list_1")
             else:        # if only one tm, dont show filter
                 selected_tm_for_display_list = []
@@ -349,7 +349,7 @@ with tab2:
 
             list_to_choose_classes = sorted(list(classes_set))
             if len(list_to_choose_classes) > 1:
-                selected_classes_for_display_list = st.multiselect("📡 Filter by Class (optional):", list_to_choose_classes,
+                selected_classes_for_display_list = st.multiselect("📡 Filter by class:", list_to_choose_classes,
                     placeholder="No filter", key="key_selected_classes_for_display_list")
             else:
                 selected_classes_for_display_list = []
@@ -391,7 +391,7 @@ with tab2:
 
             list_to_choose_properties = sorted(list(properties_set))
             if len(list_to_choose_properties) > 1:
-                selected_properties_for_display_list = st.multiselect("🖱️ Select properties to display (optional):", list_to_choose_properties,
+                selected_properties_for_display_list = st.multiselect("📡 Filter by property:", list_to_choose_properties,
                     placeholder="No filter", key="key_selected_properties_for_display_list")
             else:
                 selected_properties_for_display_list = []
