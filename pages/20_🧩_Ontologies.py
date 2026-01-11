@@ -375,29 +375,28 @@ with tab2:
             st.write("")
 
         with col1:
-            col1a, col1b = st.columns([2.5, 1])
-
-        ontology_searches_list = ["🏷️ Classes", "🔗 Properties", "✏️ Custom search"]
-
-        with col1a:
-            selected_ontology_search = st.radio("🖱️ Select search:*", ontology_searches_list,
+            list_to_choose = ["🏷️ Classes", "🔗 Properties", "✏️ Custom search"]
+            selected_ontology_search = st.radio("🖱️ Select search:*", list_to_choose,
                 label_visibility="collapsed", horizontal=True, key="key_selected_ontology_search")
 
         if len(st.session_state["g_ontology_components_dict"]) > 1:
-            with col1b:
+            with col1:
+                col_ont, col_filter_a, col_filter_b = st.columns(3)
+            with col_ont:
                 list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
-                list_to_choose.insert(0, "All ontologies")
-                ontology_component_for_search_tag = st.selectbox("🧩 Select ontology (opt):", list_to_choose,
+                list_to_choose.insert(0, "No filter")
+                ontology_component_for_search_tag = st.selectbox("🧩 Filter by ontology:", list_to_choose,
                     key="key_ontology_component_for_search_tag")
-            if ontology_component_for_search_tag == "All ontologies":
+            if ontology_component_for_search_tag == "No filter":
                 ontology_for_search = st.session_state["g_ontology"]
             else:
                 for ont, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
                     if ont_tag == ontology_component_for_search_tag:
                         ontology_for_search = st.session_state["g_ontology_components_dict"][ont]
-
         else:
             ontology_for_search = st.session_state["g_ontology"]
+            with col1:
+                col_filter_a, col_filter_b = st.columns(2)
 
         max_length = utils.get_max_length_for_display()[9]
         if len(ontology_for_search) > max_length:
@@ -413,20 +412,52 @@ with tab2:
         # CLASSES
         if selected_ontology_search == "🏷️ Classes":
 
+            superclass_dict = {}
+            for s, p, o in list(set(ontology_for_search.triples((None, RDFS.subClassOf, None)))):
+                if not isinstance(o, BNode) and o not in superclass_dict.values():
+                    superclass_dict[utils.get_node_label(o)] = o
+
+            with col_filter_a:
+                list_to_choose = ["No filter", "Class type", "Annotation"]
+                if superclass_dict:
+                    list_to_choose.insert(1, "Superclass")
+                class_filter_type = st.selectbox("📡 Add filter:", list_to_choose,
+                    key="key_class_filter_type")
+
+            with col_filter_b:
+                if class_filter_type == "Superclass":
+                    superclass_list = sorted(superclass_dict.keys())
+                    superclass_list.insert(0, "No filter")
+                    selected_superclass_filter = st.selectbox("📡 Filter by superclass:", superclass_list,
+                        key="key_selected_superclass_filter")   #superclass label
+
+                if class_filter_type == "Class type":
+                    list_to_choose = ["No filter", "owl: Class", "rdfs: Class"]
+                    selected_class_type = st.selectbox("📡 Filter by class type:", list_to_choose,
+                        key="key_selected_class_type")
+
+                if class_filter_type == "Annotation":
+                    annotation_options = ["No filter", "Has comment", "Has label", "Has comment or label",
+                        "Has comment and label"]
+                    selected_annotation_filter = st.selectbox("📡 Filter by annotation:", annotation_options,
+                        key="key_selected_annotation_filter")
+
             with col1:
-                col1a, col1b, col1c, col1d = st.columns(4)
+                col1a, col1b, col1c = st.columns(3)
 
             with col1a:
-                limit = st.text_input("🎚️ Enter limit (opt):", key="key_limit")
+                limit = st.text_input("🎚️ Enter limit: ᵒᵖᵗ", key="key_limit", placeholder="🎚️ Limit ᵒᵖᵗ",
+                    label_visibility="collapsed")
                 limit = "" if not limit.isdigit() else limit
 
             with col1b:
-                offset = st.text_input("🎚️ Enter offset (opt):", key="key_offset")
+                offset = st.text_input("🎚️ Enter offset: ᵒᵖᵗ", key="key_offset", placeholder="🎚️ Offset ᵒᵖᵗ",
+                    label_visibility="collapsed")
                 offset = "" if not offset.isdigit() else offset
             with col1c:
-                list_to_choose = ["No order", "Ascending", "Descending"]
-                order_clause = st.selectbox("🎚️ Select order (opt):", list_to_choose,
-                    key="key_order_clause")
+                list_to_choose = ["⮔ No order", "⮝ Ascending", "⮝ Descending"]
+                order_clause = st.selectbox("🎚️ Select order: ᵒᵖᵗ", list_to_choose,
+                    key="key_order_clause", label_visibility="collapsed")
 
             no_filters_query = """PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
                 PREFIX owl:  <http://www.w3.org/2002/07/owl#>
@@ -441,31 +472,10 @@ with tab2:
 
             query = no_filters_query
 
-            superclass_dict = {}
-            for s, p, o in list(set(ontology_for_search.triples((None, RDFS.subClassOf, None)))):
-                if not isinstance(o, BNode) and o not in superclass_dict.values():
-                    superclass_dict[utils.get_node_label(o)] = o
-
-            list_to_choose = ["No filter", "Class type", "Annotation"]
-            if superclass_dict:
-                list_to_choose.insert(1, "Superclass")
-
-            with col1d:
-                class_filter_type = st.selectbox("📡 Add filter (opt):", list_to_choose,
-                    key="key_class_filter_type")
-
             # Superclass filter
             if class_filter_type == "Superclass":
 
-                with col1:
-                    col1a, col1b = st.columns([2,1])
-                with col1a:
-                    superclass_list = sorted(superclass_dict.keys())
-                    superclass_list.insert(0, "No superclass filter")
-                    selected_superclass_filter = st.selectbox("📡 Filter by superclass (optional):", superclass_list,
-                        key="key_selected_superclass_filter")   #superclass label
-
-                if selected_superclass_filter != "No superclass filter":
+                if selected_superclass_filter != "No filter":
                     selected_superclass_iri = superclass_dict[selected_superclass_filter]
 
                     query = f"""PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -483,14 +493,7 @@ with tab2:
             # Class type filter
             if class_filter_type == "Class type":
 
-                with col1:
-                    col1a, col1b = st.columns([2,1])
-                with col1a:
-                    list_to_choose = ["No class type filter", "owl: Class", "rdfs: Class"]
-                    selected_class_type = st.selectbox("📡 Filter by class type (optional):", list_to_choose,
-                        key="key_selected_class_type")
-
-                if selected_class_type != "No class type filter":
+                if selected_class_type != "No filter":
 
                     query = f"""PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
                     PREFIX owl:  <http://www.w3.org/2002/07/owl#>
@@ -510,15 +513,7 @@ with tab2:
             # Annotation filter
             if class_filter_type == "Annotation":
 
-                with col1:
-                    col1a, col1b = st.columns([2,1])
-                with col1a:
-                    annotation_options = ["No annotation filter", "Has comment", "Has label", "Has comment or label",
-                        "Has comment and label"]
-                    selected_annotation_filter = st.selectbox("📡 Filter by annotation presence (optional):", annotation_options,
-                        key="key_selected_annotation_filter")
-
-                if selected_annotation_filter != "No annotation filter":
+                if selected_annotation_filter != "No filter":
 
                     base_query = """PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
                         PREFIX owl:  <http://www.w3.org/2002/07/owl#>
@@ -545,9 +540,9 @@ with tab2:
                                 EXISTS { ?class rdfs:comment ?comment }) }"""
 
             # Add limit, offset and order
-            if order_clause == "Ascending":
+            if order_clause == "⮝ Ascending":
                 query += f"ORDER BY ASC(?class) "
-            elif order_clause == "Descending":
+            elif order_clause == "⮝ Descending":
                 query += f"ORDER BY DESC(?class) "
             if limit:
                 query += f"LIMIT {limit} "
@@ -590,19 +585,83 @@ with tab2:
 
         # PROPERTIES
         if selected_ontology_search == "🔗 Properties":
+
+            superproperty_dict = {}
+            for s, p, o in ontology_for_search.triples((None, RDFS.subPropertyOf, None)):
+                if isinstance(o, URIRef) and o not in superproperty_dict.values():
+                    superproperty_dict[utils.get_node_label(o)] = o
+
+            domain_dict = {}
+            for s, p, o in ontology_for_search.triples((None, RDFS.domain, None)):
+                if isinstance(o, URIRef) and o not in domain_dict.values():
+                    domain_dict[utils.get_node_label(o)] = o
+
+            range_dict = {}
+            for s, p, o in ontology_for_search.triples((None, RDFS.range, None)):
+                if isinstance(o, URIRef) and o not in range_dict.values():
+                    range_dict[utils.get_node_label(o)] = o
+
+            with col_filter_a:
+                list_to_choose = ["No filter", "Property type", "Annotation"]
+                if range_dict:
+                    list_to_choose.insert(1,"Range")
+                if domain_dict:
+                    list_to_choose.insert(1,"Domain")
+                if superproperty_dict:
+                    list_to_choose.insert(1,"Superproperty")
+                property_filter_type = st.selectbox("📡 Add filter:", list_to_choose,
+                    key="key_property_filter_type")
+
+            with col_filter_b:
+                if property_filter_type == "Superproperty":
+                    list_to_choose = sorted(list(superproperty_dict))
+                    list_to_choose.insert(0, "No filter")
+                    selected_superproperty_filter = st.selectbox("📡 Filter by superproperty:", list_to_choose,
+                        key="key_selected_superproperty_filter")
+
+                if property_filter_type == "Domain":
+                    list_to_choose = sorted(list(domain_dict))
+                    list_to_choose.insert(0, "No filter")
+                    selected_domain_filter = st.selectbox("📡 Filter by domain", list_to_choose,
+                        key="key_selected_domain_filter")
+
+                if property_filter_type == "Range":
+                    list_to_choose = sorted(list(range_dict))
+                    list_to_choose.insert(0, "No filter")
+                    selected_range_filter = st.selectbox("📡 Filter by range:", list_to_choose,
+                        key="key_selected_range_filter")
+
+                if property_filter_type == "Property type":
+                    property_type_dict = {"rdf: Property": "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property",
+                        "owl: ObjectProperty": "http://www.w3.org/2002/07/owl#ObjectProperty",
+                        "owl: DatatypeProperty": "http://www.w3.org/2002/07/owl#DatatypeProperty",
+                        "owl: AnnotationProperty": "http://www.w3.org/2002/07/owl#AnnotationProperty"}
+                    list_to_choose = list(property_type_dict)
+                    list_to_choose.insert(0, "No filter")
+                    selected_property_type = st.selectbox("📡 Filter by property type:", list_to_choose,
+                        key="key_selected_property_type")
+
+                if property_filter_type == "Annotation":
+                    annotation_options = ["No filter", "Has comment", "Has label", "Has comment or label",
+                        "Has comment and label"]
+                    selected_annotation_filter = st.selectbox("📡 Filter by annotation:", annotation_options,
+                        key="key_selected_property_annotation_filter")
+
             with col1:
-                col1a, col1b, col1c, col1d = st.columns(4)
+                col1a, col1b, col1c = st.columns(3)
 
             with col1a:
-                limit = st.text_input("🎚️ Enter limit (opt):", key="key_limit_prop")
+                limit = st.text_input("🎚️ Enter limit: ᵒᵖᵗ", key="key_limit_prop", placeholder="🎚️ Limit ᵒᵖᵗ",
+                    label_visibility="collapsed")
                 limit = "" if not limit.isdigit() else limit
             with col1b:
-                offset = st.text_input("🎚️ Enter offset (opt):", key="key_offset_prop")
+                offset = st.text_input("🎚️ Enter offset: ᵒᵖᵗ", key="key_offset_prop", placeholder="🎚️ Offset ᵒᵖᵗ",
+                    label_visibility="collapsed")
                 offset = "" if not offset.isdigit() else offset
             with col1c:
-                list_to_choose = ["No order", "Ascending", "Descending"]
-                order_clause = st.selectbox("🎚️ Select order (opt):", list_to_choose,
-                    key="key_order_clause_prop")
+                list_to_choose = ["⮔ No order", "⮝ Ascending", "⮝ Descending"]
+                order_clause = st.selectbox("🎚️ Select order: ᵒᵖᵗ", list_to_choose,
+                    key="key_order_clause_prop", label_visibility="collapsed")
 
             no_filters_query = """PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
                 PREFIX owl:  <http://www.w3.org/2002/07/owl#>
@@ -624,45 +683,10 @@ with tab2:
 
             query = no_filters_query
 
-            superproperty_dict = {}
-            for s, p, o in ontology_for_search.triples((None, RDFS.subPropertyOf, None)):
-                if isinstance(o, URIRef) and o not in superproperty_dict.values():
-                    superproperty_dict[utils.get_node_label(o)] = o
-
-            domain_dict = {}
-            for s, p, o in ontology_for_search.triples((None, RDFS.domain, None)):
-                if isinstance(o, URIRef) and o not in domain_dict.values():
-                    domain_dict[utils.get_node_label(o)] = o
-
-            range_dict = {}
-            for s, p, o in ontology_for_search.triples((None, RDFS.range, None)):
-                if isinstance(o, URIRef) and o not in range_dict.values():
-                    range_dict[utils.get_node_label(o)] = o
-
-            list_to_choose = ["No filter", "Property type", "Annotation"]
-            if range_dict:
-                list_to_choose.insert(1,"Range")
-            if domain_dict:
-                list_to_choose.insert(1,"Domain")
-            if superproperty_dict:
-                list_to_choose.insert(1,"Superproperty")
-
-            with col1d:
-                property_filter_type = st.selectbox("📡 Add filter (opt):", list_to_choose,
-                    key="key_property_filter_type")
-
             # Superproperty filter
             if property_filter_type == "Superproperty":
-                with col1:
-                    col1a, col1b = st.columns([1.5,1])
-                with col1a:
-                    list_to_choose = sorted(list(superproperty_dict))
-                    list_to_choose.insert(0, "No superproperty filter")
-                    selected_superproperty_filter = st.selectbox("📡 Select superproperty filter:*", list_to_choose,
-                        key="key_selected_superproperty_filter")
 
-
-                if selected_superproperty_filter != "No superproperty filter":
+                if selected_superproperty_filter != "No filter":
                     selected_superproperty_iri = superproperty_dict[selected_superproperty_filter]
 
                     query = f"""PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -687,15 +711,8 @@ with tab2:
 
             # Domain filter
             if property_filter_type == "Domain":
-                with col1:
-                    col1a, col1b = st.columns([1.5,1])
-                with col1a:
-                    list_to_choose = sorted(list(domain_dict))
-                    list_to_choose.insert(0, "No domain filter")
-                    selected_domain_filter = st.selectbox("📡 Select domain filter:*", list_to_choose,
-                        key="key_selected_domain_filter")
 
-                if selected_domain_filter != "No domain filter":
+                if selected_domain_filter != "No filter":
                     selected_domain_iri = domain_dict[selected_domain_filter]
 
                     query = f"""
@@ -721,15 +738,8 @@ with tab2:
 
             # Range filter
             if property_filter_type == "Range":
-                with col1:
-                    col1a, col1b = st.columns([1.5,1])
-                with col1a:
-                    list_to_choose = sorted(list(range_dict))
-                    list_to_choose.insert(0, "No range filter")
-                    selected_range_filter = st.selectbox("📡 Select range filter:*", list_to_choose,
-                        key="key_selected_range_filter")
 
-                if selected_range_filter != "No range filter":
+                if selected_range_filter != "No filter":
                     selected_range_iri = range_dict[selected_range_filter]
 
                     query = f"""
@@ -755,19 +765,8 @@ with tab2:
 
             # Property type filter
             if property_filter_type == "Property type":
-                with col1:
-                    col1a, col1b = st.columns([1.5,1])
-                with col1a:
-                    property_type_dict = {"rdf: Property": "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property",
-                        "owl: ObjectProperty": "http://www.w3.org/2002/07/owl#ObjectProperty",
-                        "owl: DatatypeProperty": "http://www.w3.org/2002/07/owl#DatatypeProperty",
-                        "owl: AnnotationProperty": "http://www.w3.org/2002/07/owl#AnnotationProperty"}
-                    list_to_choose = list(property_type_dict)
-                    list_to_choose.insert(0, "Select type")
-                    selected_property_type = st.selectbox("📡 Select property type:", list_to_choose,
-                        key="key_selected_property_type")
 
-                if selected_property_type != "Select type":
+                if selected_property_type != "No filter":
                     selected_property_type_iri = property_type_dict[selected_property_type]
 
                     query = f"""PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -787,15 +786,7 @@ with tab2:
             # Annotation filter
             if property_filter_type == "Annotation":
 
-                with col1:
-                    col1a, col1b = st.columns([2, 1])
-                with col1a:
-                    annotation_options = ["No annotation filter", "Has comment", "Has label", "Has comment or label",
-                        "Has comment and label"]
-                    selected_annotation_filter = st.selectbox("📡 Filter by annotation presence (optional):", annotation_options,
-                        key="key_selected_property_annotation_filter")
-
-                if selected_annotation_filter != "No annotation filter":
+                if selected_annotation_filter != "No filter":
 
                     base_query = """PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
                     PREFIX owl:  <http://www.w3.org/2002/07/owl#>
@@ -830,9 +821,9 @@ with tab2:
                         GROUP BY ?property ?label ?comment"""
 
             # Add limit, offset and order
-            if order_clause == "Ascending":
+            if order_clause == "⮝ Ascending":
                 query += " ORDER BY ASC(?property) "
-            elif order_clause == "Descending":
+            elif order_clause == "⮝ Descending":
                 query += " ORDER BY DESC(?property) "
             if limit:
                 query += f"LIMIT {limit} "
@@ -973,12 +964,12 @@ with tab3:
         if len(st.session_state["g_ontology_components_dict"]) > 1:
             with col1b:
                 list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
-                list_to_choose.insert(0, "All ontologies")
+                list_to_choose.insert(0, "No filter")
                 if not "key_ontology_component_for_preview_tag" in st.session_state:
-                    st.session_state["key_ontology_component_for_preview_tag"] = "All ontologies"  # this ensures the all ontologies selected after download
-                ontology_component_for_preview_tag = st.selectbox("🧩 Select ontology (optional):", list_to_choose,
+                    st.session_state["key_ontology_component_for_preview_tag"] = "No filter"  # this ensures the all ontologies selected after download
+                ontology_component_for_preview_tag = st.selectbox("🧩 Filter by ontology:", list_to_choose,
                     key="key_ontology_component_for_preview_tag")
-            if ontology_component_for_preview_tag == "All ontologies":
+            if ontology_component_for_preview_tag == "No filter":
                 ontology_for_preview = st.session_state["g_ontology"]
             else:
                 for ont, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():

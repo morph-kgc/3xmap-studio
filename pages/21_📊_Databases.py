@@ -705,7 +705,7 @@ with tab3:
             # SQL DATABASE CONNECTIONS
             elif engine != "MongoDB" and connection_ok_flag:
                 with col1b:
-                    sql_view_label = st.text_input("🏷️ Enter view label (opt):",
+                    sql_view_label = st.text_input("🏷️ Enter view label: ᵒᵖᵗ",
                         key="key_sql_view_label")
                     valid_sql_view_label_flag = utils.is_valid_label(sql_view_label)
                 if sql_view_label and sql_view_label in st.session_state["saved_views_dict"]:
@@ -794,7 +794,7 @@ with tab3:
             st.rerun()
 
         with col1:
-            col1a, col1b, col1c = st.columns([0.8,1,1])
+            col1a, col1b, col1c = st.columns(3)
 
         connections_w_views_set = set()
         for view_label in st.session_state["saved_views_dict"]:
@@ -809,7 +809,7 @@ with tab3:
         with col1b:
             list_to_choose = connections_w_views_list
             list_to_choose.insert(0, "No filter")
-            connection_to_manage_view_filter = st.selectbox("📡 Filter by connection (opt):", list_to_choose,
+            connection_to_manage_view_filter = st.selectbox("📡 Filter by connection:", list_to_choose,
                 key="key_connection_to_manage_view_filter")
 
             if connection_to_manage_view_filter == "No filter":

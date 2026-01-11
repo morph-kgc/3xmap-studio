@@ -258,21 +258,30 @@ def import_st_aesthetics():
             height: 14px !important;}
 
     /* PURPLE HEADINGS */
-            .purple-heading {background-color:#e6e6fa; border-bottom:4px solid #511D66;
-                border-radius:5px; padding:10px; margin-bottom:8px;
-                font-size:1.1rem; font-weight:600; color:#511D66;}
+        .purple-heading {background-color:#e6e6fa; border-bottom:4px solid #511D66;
+            border-radius:5px; padding:10px; margin-bottom:8px;
+            font-size:1.1rem; font-weight:600; color:#511D66;}
 
     /* SMALL SUBHEADING */
-    .small-subheading {font-size: 13px; font-weight: 500; margin-top: 10px;
-        margin-bottom: 6px; border-top: 0.5px solid #ccc; padding-bottom: 4px;}
+        .small-subheading {font-size: 13px; font-weight: 500; margin-top: 10px;
+            margin-bottom: 6px; border-top: 0.5px solid #ccc; padding-bottom: 4px;}
 
     /* GRAY PREVIEW MESSAGE */
-            .gray-preview-message {background-color:#f9f9f9; padding:0.7em; border-radius:5px;
-            color:#333333; border:1px solid #e0e0e0; font-size: 0.92em; word-wrap: break-word;}
+        .gray-preview-message {background-color:#f9f9f9; padding:0.7em; border-radius:5px;
+        color:#333333; border:1px solid #e0e0e0; font-size: 0.92em; word-wrap: break-word;}
 
     /* BLUE PREVIEW MESSAGE */
-            .blue-preview-message {background-color: #eaf4ff; padding:0.7em; border-radius:5px;
-            color:#0c5460; border:1px solid #d0e4ff; font-size: 0.92em; word-wrap: break-word;}
+        .blue-preview-message {background-color: #eaf4ff; padding: 0.7em;
+            border-radius: 5px; color: #0c5460; border: 1px solid #d0e4ff;
+            font-size: 0.92em; word-wrap: break-word; margin-top: 0;
+            padding-top: 4px; overflow-wrap: break-word;
+            word-break: break-word; max-width: 100%;}
+
+    /* PREVIEW CELL */
+        .preview-cell {flex: 1 1 0; min-width: 0; text-align: center;
+            border: 0.5px solid black; padding: 5px; border-radius: 5px;
+            overflow-wrap: break-word; word-break: break-word;
+            margin-top: 1px; font-size: 13px; line-height: 1.2;}
 
     /* SUCCESS MESSAGE FLAG */
         .success-message-flag {background-color: #d4edda; padding: 1em;
@@ -440,17 +449,26 @@ def import_st_aesthetics_dark_mode():
           font-size: 1.1rem; font-weight: 600; color: #d8c3f0;}
 
     /* SMALL SUBHEADING — Dark Mode*/
-    .small-subheading {font-size: 13px; font-weight: 500; margin-top: 10px;
-        margin-bottom: 6px; border-top: 0.5px solid #ccc; padding-bottom: 4px;}
+        .small-subheading {font-size: 13px; font-weight: 500; margin-top: 10px;
+            margin-bottom: 6px; border-top: 0.5px solid #ccc; padding-bottom: 4px;}
 
     /* GRAY PREVIEW MESSAGE — Dark Mode */
         .gray-preview-message {background-color: #1c1c1c; padding: 0.7em;
           border-radius: 5px; color: #dddddd; border: 1px solid #444444; font-size: 0.92em;
           word-wrap: break-word;}
 
-    /* BLUE PREVIEW MESSAGE - Dark Mode*/
-            .blue-preview-message {background-color: #0b1c2d; padding:0.7em; border-radius:5px;
-            color:#b3d9ff; border:1px solid #060e1a; font-size: 0.92em; word-wrap: break-word;}
+    /* BLUE PREVIEW MESSAGE */
+        .blue-preview-message {background-color: #0b1c2d; padding: 0.7em;
+            border-radius: 5px; color: #b3d9ff; border: 1px solid #060e1a;
+            font-size: 0.92em; word-wrap: break-word; margin-top: 0;
+            padding-top: 4px; overflow-wrap: break-word;
+            word-break: break-word; max-width: 100%;}
+
+    /* PREVIEW CELL */
+        .preview-cell {flex: 1 1 0; min-width: 0; text-align: center;
+            border: 0.5px solid black; padding: 5px; border-radius: 5px;
+            overflow-wrap: break-word; word-break: break-word;
+            margin-top: 1px; font-size: 13px; line-height: 1.2;}
 
     /* SUCCESS MESSAGE FLAG — Dark Mode */
         .success-message-flag {background-color: #1e2e24; padding: 1em;
@@ -3072,23 +3090,28 @@ def preview_rule(tm_iri_for_pom, predicate_list, om_rule, o_is_reference=False, 
     s_for_display = f"""<small>{s_for_display}</small>""" if len(s_for_display) > max_length else s_for_display
     o_for_display = f"""<small>{o_for_display}</small>""" if len(o_for_display) > max_length else o_for_display
 
-    for p in predicate_list:
-        p_for_display = f"""<small>{p}</small>""" if len(p) > max_length else p    # adjust font size
-        inner_html += f"""<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:0px;">
-                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                    <div style="margin-top:1px; font-size:13px; line-height:1.2;"><b>{s_for_display}</b></div>
-                </div>
-                <div style="flex:0; font-size:18px;">🡆</div>
-                <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                    <div style="margin-top:1px; font-size:13px; line-height:1.2;"><b>{p_for_display}</b></div>
-                </div>
-                <div style="flex:0; font-size:18px;">🡆</div>
-                <div style="flex:1; min-width:140px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                    <div style="margin-top:1px; font-size:13px; line-height:1.2;"><b>{o_for_display}</b></div>
-                </div>
-            </div><br>"""
+    s_for_display = f"""<small>{s_for_display}</small>""" if len(s_for_display) > max_length*2 else s_for_display
+    o_for_display = f"""<small>{o_for_display}</small>""" if len(o_for_display) > max_length*2 else o_for_display
 
-    st.markdown(f"""<div class="blue-preview-message" style="margin-top:0px; padding-top:4px;">
+    for p in predicate_list:
+        p_for_display = p
+        if len(p) > max_length:
+            p_for_display = f"<small>{p}</small>"
+        elif len(p) > max_length*2:
+            p_for_display = f"<small>{p}</small>"
+
+        inner_html += (
+            '<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:10px;">'
+            f'<div class="preview-cell"><b>{s_for_display}</b></div>'
+            '<div style="flex:0; font-size:18px;">🡆</div>'
+            f'<div class="preview-cell"><b>{p_for_display}</b></div>'
+            '<div style="flex:0; font-size:18px;">🡆</div>'
+            f'<div class="preview-cell"><b>{o_for_display}</b></div>'
+            '</div>'
+            '<br>'
+        )
+
+    st.markdown(f"""<div class="blue-preview-message">
             {small_header}{inner_html}
         </div>""", unsafe_allow_html=True)
 #______________________________________________________
@@ -3667,19 +3690,17 @@ def display_rule(s_for_display, p_for_display, o_for_display):
     formatted_p = f"""<small>{formatted_p}</small>""" if len(formatted_p) > max_length else formatted_p
     formatted_o = f"""<small>{formatted_o}</small>""" if len(formatted_o) > max_length else formatted_o
 
+    formatted_s = f"<small>{formatted_s}</small>" if len(formatted_s) > max_length*2 else formatted_s
+    formatted_p = f"<small>{formatted_p}</small>" if len(formatted_p) > max_length*2 else formatted_p
+    formatted_o = f"<small>{formatted_o}</small>" if len(formatted_o) > max_length*2 else formatted_o
+
     inner_html += f"""<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:0px;">
-            <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                <div style="margin-top:1px; font-size:13px; line-height:1.2;"><b>{formatted_s}</b></div>
-            </div>
-            <div style="flex:0; font-size:18px;">🡆</div>
-            <div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                <div style="margin-top:1px; font-size:13px; line-height:1.2;"><b>{formatted_p}</b></div>
-            </div>
-            <div style="flex:0; font-size:18px;">🡆</div>
-            <div style="flex:1; min-width:140px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                <div style="margin-top:1px; font-size:13px; line-height:1.2;"><b>{formatted_o}</b></div>
-            </div>
-        </div><br>"""
+        <div class="preview-cell"><b>{formatted_s}</b></div>
+        <div style="flex:0; font-size:18px;">🡆</div>
+        <div class="preview-cell"><b>{formatted_p}</b></div>
+        <div style="flex:0; font-size:18px;">🡆</div>
+        <div class="preview-cell"><b>{formatted_o}</b></div>
+    </div><br>"""
 
     return [small_header, inner_html]
 #_________________________________________________
@@ -3696,15 +3717,15 @@ def limit_offset_order(col, list, four_columns=False):
             col1a, col1b, col1c, col1d = st.columns(4)
 
     with col1a:
-        limit = st.text_input("🎚️ Limit (opt):", key="key_limit", placeholder="🎚️ Limit",
+        limit = st.text_input("🎚️ Limit: ᵒᵖᵗ", key="key_limit", placeholder="🎚️ Limit ᵒᵖᵗ",
             label_visibility="collapsed")
         limit = "" if not limit.isdigit() else int(limit)
     with col1b:
-        offset = st.text_input("🎚️ Offset (opt):", key="key_offset", placeholder="🎚️ Offset",
+        offset = st.text_input("🎚️ Offset: ᵒᵖᵗ", key="key_offset", placeholder="🎚️ Offset ᵒᵖᵗ",
             label_visibility="collapsed")
         offset = "" if not offset.isdigit() else int(offset)
     with col1c:
-        order_clause = st.selectbox("🎚️ Order (opt):", list,
+        order_clause = st.selectbox("🎚️ Order: ᵒᵖᵗ", list,
             key="key_order_clause", label_visibility="collapsed")
 
     if not four_columns:
@@ -4417,46 +4438,49 @@ def get_ontology_term_frequency_bar_plot(g_ont, selected_terms, superfilter=None
 #_________________________________________________
 # Function to display a rule
 def display_rule_list(rule_list):
-
     max_length = get_max_length_for_display()[11]
 
     if not rule_list:
-        st.markdown(f"""<div class="warning-message">
-            ⚠️ <b>No rules.</b>
-        </div>""", unsafe_allow_html=True)
+        st.markdown(
+            """<div class="warning-message">
+                ⚠️ <b>No rules.</b>
+            </div>""",
+            unsafe_allow_html=True,
+        )
     else:
-        inner_html = f"""<b>RULES ({len(rule_list)}):</b>
-        &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
-        <small>🏷️ Subject → 🔗 Predicate → 🎯 Object</b></small><br>"""
+        inner_html = f"""<b style="color:#F63366;"> RULES ({len(rule_list)}):</b>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <small>🏷️ Subject → 🔗 Predicate → 🎯 Object</small><br>"""
 
         for rule in rule_list:
             formatted_s = rule[0]
             formatted_p = rule[1]
             formatted_o = rule[2]
 
-            formatted_s = f"""<small>{formatted_s}</small>""" if len(formatted_s) > max_length else formatted_s
-            formatted_p = f"""<small>{formatted_p}</small>""" if len(formatted_p) > max_length else formatted_p
-            formatted_o = f"""<small>{formatted_o}</small>""" if len(formatted_o) > max_length else formatted_o
+            formatted_s = f"<small>{formatted_s}</small>" if len(formatted_s) > max_length else formatted_s
+            formatted_p = f"<small>{formatted_p}</small>" if len(formatted_p) > max_length else formatted_p
+            formatted_o = f"<small>{formatted_o}</small>" if len(formatted_o) > max_length else formatted_o
 
-            inner_html += f"""<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:10px;">"""
+            formatted_s = f"<small>{formatted_s}</small>" if len(formatted_s) > max_length*2 else formatted_s
+            formatted_p = f"<small>{formatted_p}</small>" if len(formatted_p) > max_length*2 else formatted_p
+            formatted_o = f"<small>{formatted_o}</small>" if len(formatted_o) > max_length*2 else formatted_o
 
-            inner_html += f"""<div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{formatted_s}</b></div></div>"""
+            inner_html += (f'<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:10px;">'
+                f'<div class="preview-cell"><b>{formatted_s}</b></div>'
+                f'<div style="flex:0; font-size:18px;">🡆</div>'
+                f'<div class="preview-cell"><b>{formatted_p}</b></div>'
+                f'<div style="flex:0; font-size:18px;">🡆</div>'
+                f'<div class="preview-cell"><b>{formatted_o}</b></div>'
+                f'</div>'
+                f'<br>')
 
-            inner_html += f"""<div style="flex:0; font-size:18px;">🡆</div>"""
-
-            inner_html += f"""<div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{formatted_p}</b></div></div>"""
-
-            inner_html += f"""<div style="flex:0; font-size:18px;">🡆</div>"""
-
-            inner_html += f"""<div style="flex:1; min-width:120px; text-align:center; border:0.5px solid black; padding:5px; border-radius:5px; word-break:break-word;">
-                <div style="margin-top:1px; font-size:13px; line-height:1.4;"><b>{formatted_o}</b></div></div><br>
-                </div>"""
-
-        st.markdown(f"""<div class="info-message-blue">
-            {inner_html}
-        </div>""", unsafe_allow_html=True)
+        st.write("")
+        st.markdown(
+            f"""<div class="blue-preview-message">
+                {inner_html}
+            </div>""",
+            unsafe_allow_html=True,
+        )
 #_________________________________________________
 
 # PANEL: CLASS USAGE------------------------------------------------------------

@@ -95,7 +95,7 @@ with tab2:
             list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
             if len(list_to_choose) > 1:
                 list_to_choose.insert(0, "No filter")
-            ontology_filter_for_lens_tag = st.selectbox("🧩 Filter by ontology (opt):",
+            ontology_filter_for_lens_tag = st.selectbox("🧩 Filter by ontology:",
                 list_to_choose, key="key_ontology_filter_for_lens_class")
 
         if ontology_filter_for_lens_tag == "No filter":
@@ -112,7 +112,7 @@ with tab2:
         with col1c:
             superclass_list = sorted(superclass_dict.keys())
             superclass_list.insert(0, "No filter")
-            superclass_filter_for_lens_label = st.selectbox("📡 Filter by superclass (opt):", superclass_list,
+            superclass_filter_for_lens_label = st.selectbox("📡 Filter by superclass:", superclass_list,
                 key="key_superclass")   #superclass label
 
         if superclass_filter_for_lens_label != "No filter":   # a superclass has been selected (filter)
@@ -153,7 +153,7 @@ with tab2:
             list_to_choose = list(ontology_used_classes_count_by_rules_dict.keys())
             if list_to_choose:
                 with col1b:
-                    selected_classes = st.multiselect("🖱️ Select ontology classes to display (opt):", list_to_choose,
+                    selected_classes = st.multiselect("📡 Filter by class:", list_to_choose,
                         key="key_selected_classes")
 
                     utils.get_ontology_term_frequency_bar_plot(ontology_filter_for_lens, selected_classes, superfilter=superclass_filter_for_lens, class_=True)
@@ -165,7 +165,7 @@ with tab2:
                 col1a, col1b = st.columns([2,1])
 
             with col1b:
-                utils.get_filter_info_message_for_lens(ontology_filter_for_lens_tag, utils.get_node_label(superproperty_filter_for_lens))
+                utils.get_filter_info_message_for_lens(ontology_filter_for_lens_tag, utils.get_node_label(superclass_filter_for_lens))
 
             filtered_ontology_used_classes_count_by_rules_dict = utils.get_class_dictionaries_filtered_by_superclass(ontology_filter_for_lens,
                 superclass_filter=superclass_filter_for_lens)[3]
@@ -174,7 +174,7 @@ with tab2:
 
             with col1a:
                 list_to_choose = sorted(filtered_ontology_class_dict.keys())
-                selected_classes_for_lens = st.multiselect("🖱️ Select ontology classes to display (optional):", list_to_choose,
+                selected_classes_for_lens = st.multiselect("📡 Filter by class:", list_to_choose,
                     key="key_selected_classes_for_lens")
                 selected_classes_for_lens = sorted(filtered_ontology_class_dict.keys()) if not selected_classes_for_lens else selected_classes_for_lens
 
@@ -213,7 +213,7 @@ with tab2:
                 col1a, col1b = st.columns([2,1])
 
             with col1b:
-                utils.get_filter_info_message_for_lens(ontology_filter_for_lens_tag, utils.get_node_label(superproperty_filter_for_lens))
+                utils.get_filter_info_message_for_lens(ontology_filter_for_lens_tag, utils.get_node_label(superclass_filter_for_lens))
 
             # Class selection
             filtered_ontology_used_class_dict = utils.get_class_dictionaries_filtered_by_superclass(ontology_filter_for_lens,
@@ -221,7 +221,7 @@ with tab2:
             list_to_choose = list(filtered_ontology_used_class_dict)
             list_to_choose.insert(0, "Select class")
             with col1a:
-                subject_class = st.selectbox("🖱️ Select class:", list_to_choose,
+                subject_class = st.selectbox("🖱️ Select class:*", list_to_choose,
                     key="key_subject_class")   #class label
 
             if subject_class != "Select class":
@@ -269,7 +269,7 @@ with tab3:
             list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
             if len(list_to_choose) > 1:
                 list_to_choose.insert(0, "No filter")
-            ontology_filter_for_lens_tag = st.selectbox("🧩 Filter by ontology (opt):",
+            ontology_filter_for_lens_tag = st.selectbox("🧩 Filter by ontology:",
                 list_to_choose, key="key_ontology_filter_for_lens_property")
 
         if ontology_filter_for_lens_tag == "No filter":
@@ -285,7 +285,7 @@ with tab3:
         with col1c:
             list_to_choose = sorted(superproperty_dict.keys())
             list_to_choose.insert(0, "No filter")
-            superproperty_filter_for_lens_label = st.selectbox("📡 Filter by superproperty (opt):", list_to_choose,
+            superproperty_filter_for_lens_label = st.selectbox("📡 Filter by superproperty:", list_to_choose,
                 key="key_superproperty")   #superproperty label
         if superproperty_filter_for_lens_label != "No filter":   # a superproperty has been selected (filter)
             superproperty_filter_for_lens = superproperty_dict[superproperty_filter_for_lens_label] # get the superproperty iri
@@ -325,7 +325,7 @@ with tab3:
             list_to_choose = list(ontology_used_properties_count_dict.keys())
             if list_to_choose:
                 with col1b:
-                    selected_properties = st.multiselect("🖱️ Select ontology properties to display (optional):", list_to_choose,
+                    selected_properties = st.multiselect("📡 Filter by property:", list_to_choose,
                         key="key_selected_properties")
                     utils.get_ontology_term_frequency_bar_plot(ontology_filter_for_lens, selected_properties, superfilter=superproperty_filter_for_lens)
 
@@ -344,7 +344,7 @@ with tab3:
                 superproperty_filter=superproperty_filter_for_lens)[0]
             with col1a:
                 list_to_choose = sorted(filtered_ontology_property_dict.keys())
-                selected_properties_for_lens = st.multiselect("🖱️ Select ontology properties to display (optional):", list_to_choose,
+                selected_properties_for_lens = st.multiselect("📡 Filter by property:", list_to_choose,
                     key="key_selected_properties_for_lens")
                 selected_properties_for_lens = sorted(filtered_ontology_property_dict.keys()) if not selected_properties_for_lens else selected_properties_for_lens
 
@@ -436,7 +436,7 @@ with tab4:
 
         with col1b:
             list_to_choose = ["No filter", "🏷️ Classes", "🔗 Properties"]
-            external_terms_type = st.selectbox("📡 Filter by type (optional)", list_to_choose,
+            external_terms_type = st.selectbox("📡 Filter by type:", list_to_choose,
                 key="key_external_terms_type")
 
         # Dictionaries for external classes
@@ -479,7 +479,7 @@ with tab4:
                     list_to_choose = sorted(external_properties_dict)
                 elif external_terms_type  == "No filter":
                     list_to_choose = sorted(joined_dict)
-                selected_external_terms = st.multiselect("🖱️ Select terms (opt):", list_to_choose,
+                selected_external_terms = st.multiselect("📡 Filter by term:", list_to_choose,
                     key="key_selected_external_terms")
 
             if not selected_external_terms and external_terms_type == "🏷️ Classes":
