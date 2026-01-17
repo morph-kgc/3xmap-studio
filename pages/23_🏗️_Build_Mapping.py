@@ -732,26 +732,10 @@ with tab1:
                 ds_filename_for_tm = st.selectbox("🖱️ Select the Logical Source file:*", list_to_choose,
                 key="key_ds_filename_for_tm")
 
-            if ds_filename_for_tm != "Select file":
-                ds_file = st.session_state["ds_files_dict"][ds_filename_for_tm]
-
-            iterator_flag = False
-            if utils.is_hierarchical_file(ds_filename_for_tm):
-                iterator_list = []
-                for path_label in st.session_state["saved_paths_dict"]:
-                    if st.session_state["saved_paths_dict"][path_label][0] == ds_filename_for_tm:
-                        iterator_list.append(path_label)
-                if iterator_list:
-                    list_to_choose = iterator_list.copy()
-                    list_to_choose.insert(0, "Select iterator")
-                    with col1a:
-                        iterator_label = st.selectbox("🖱️ Select iterator: ᵒᵖᵗ", list_to_choose, key="key_iterator")
-                    if iterator_label != "Select iterator":
-                        iterator = st.session_state["saved_paths_dict"][iterator_label][1]
-                        iterator_flag = True
 
             with col1b:
-                label_ls_option = st.checkbox("♻️ Reuse Logical Source")
+                label_ls_option = st.radio("♻️ Reuse Logical Source:", ["No", "Yes"], horizontal=True)
+                label_ls_option = False if label_ls_option == "No" else True
 
                 if label_ls_option:
                     with col1a:
@@ -770,6 +754,30 @@ with tab1:
                 else:
                     ls_label = ""
 
+            if ds_filename_for_tm != "Select file":
+                ds_file = st.session_state["ds_files_dict"][ds_filename_for_tm]
+
+            iterator_flag = False
+            if utils.is_hierarchical_file(ds_filename_for_tm):
+                iterator_list = []
+                for path_label in st.session_state["saved_paths_dict"]:
+                    if st.session_state["saved_paths_dict"][path_label][0] == ds_filename_for_tm:
+                        iterator_list.append(path_label)
+                if iterator_list:
+                    list_to_choose = iterator_list.copy()
+                    list_to_choose.insert(0, "Select iterator")
+                    with col1a:
+                        iterator_label = st.selectbox("🖱️ Select iterator: ᵒᵖᵗ", list_to_choose, key="key_iterator")
+                    if iterator_label != "Select iterator":
+                        iterator = st.session_state["saved_paths_dict"][iterator_label][1]
+                        iterator_flag = True
+                    else:
+                        with col1b:
+                            st.write("")
+                            st.markdown(f"""<div class="warning-message">
+                                    ⚠️ Selecting an <b>iterator</b> is strogly recommended.
+                                </span></div>""", unsafe_allow_html=True)
+
                 with col1a:
                     if label_ls_option:
                         if valid_ls_label_flag:
@@ -781,10 +789,12 @@ with tab1:
 
             if utils.is_hierarchical_file(ds_filename_for_tm) and not iterator_list:
                 with col1b:
-                    st.markdown(f"""<div class="info-message-gray">
-                            ℹ️ <b> No paths</b> have been added for this file.
-                            <small> To add an iterator go to the 🛢️ <b>Data Files page</b> (Manage Paths panel).</small>
-                        </span></div>""", unsafe_allow_html=True)
+                    if not iterator_list:
+                        st.markdown(f"""<div class="warning-message">
+                                ⚠️ Adding an <b>iterator</b> is strongly recommended.
+                                <small> Go to the 🛢️ <b>Data Files</b> page (Manage Paths panel) to add them.</small>
+                            </span></div>""", unsafe_allow_html=True)
+
 
         if ls_option == "✏️ Manual":
 
@@ -803,7 +813,8 @@ with tab1:
                     iterator = st.text_input("⌨️ Enter Iterator: ᵒᵖᵗ")
 
             with col1b:
-                label_ls_option = st.checkbox("♻️ Reuse Logical Source")
+                label_ls_option = st.radio("♻️ Reuse Logical Source:", ["No", "Yes"], horizontal=True)
+                label_ls_option = False if label_ls_option == "No" else True
 
                 if label_ls_option:
                     ls_label = st.text_input("🏷️ Enter Logical Source label:*")
