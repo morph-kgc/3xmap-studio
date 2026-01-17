@@ -482,7 +482,7 @@ with tab1:
                 if st.session_state["autoconfig_active_flag"]:
                     st.markdown(f"""<div class="gray-preview-message">
                         🤖 The <b>Config file</b> has been <b>automatically generated</b>.
-                        <small> <b>Manual configuration</b> can be enabled.</small>
+                        <small> <b>Manual configuration</b> may be enabled.</small>
                     </div>""", unsafe_allow_html=True)
                 else:
                     st.markdown(f"""<div class="gray-preview-message">
@@ -1250,9 +1250,10 @@ with tab2:
                     </div>""", unsafe_allow_html=True)
                 st.write("")
 
-            clean_g_mapping_checkbox = st.checkbox(
-            f"""🧹 Clean mapping {st.session_state["g_label"]}""",
-            key="key_clean_g_mapping_checkbox")
+            with col1:
+                clean_g_mapping_checkbox = st.checkbox(
+                f"""🧹 Clean mapping {st.session_state["g_label"]}""",
+                key="key_clean_g_mapping_checkbox")
 
-            if clean_g_mapping_checkbox:
-                st.button("Clean", key="key_clean_g_mapping_button", on_click=clean_g_mapping)
+                if clean_g_mapping_checkbox:
+                    st.button("Clean", key="key_clean_g_mapping_button", on_click=clean_g_mapping)

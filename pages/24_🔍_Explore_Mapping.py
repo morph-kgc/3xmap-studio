@@ -200,6 +200,7 @@ with tab2:
             logical_source = row.logicalSource if hasattr(row, "logicalSource") and row.logicalSource else ""
             source = row.source if hasattr(row, "source") and row.source else ""
             reference_formulation = str(row.referenceFormulation) if hasattr(row, "referenceFormulation") and row.referenceFormulation else ""
+            iterator = row.iterator if hasattr(row, "iterator") and row.iterator else ""
 
             tm_label = utils.get_node_label(tm)
             selected_tm_for_display_list = list(tm_dict) if not selected_tm_for_display_list else selected_tm_for_display_list
@@ -208,6 +209,7 @@ with tab2:
                     "View": sql_query,
                     "Table": table_name,
                     "Source": source,
+                    "Iterator": iterator,
                     "Reference Formulation": utils.get_node_label(reference_formulation),
                     "Logical Source": utils.get_node_label(logical_source)}
                 df_data.append(row_dict)

@@ -190,8 +190,9 @@ with tab1:
         col1a,col1b = st.columns([2,1])
 
     with col1b:
+        st.write("")
         import_ontology_selected_option = st.radio("🖱️ Import ontology from:*", ["🌐 URL", "📁 File"],
-            label_visibility="hidden", horizontal=True, key="key_import_ontology_selected_option")
+            label_visibility="collapsed", horizontal=True, key="key_import_ontology_selected_option")
 
     if import_ontology_selected_option == "🌐 URL":
 
@@ -874,6 +875,9 @@ with tab2:
         # CUSTOM SEARCH
         if selected_ontology_search == "✏️ Custom search":
 
+            with col1:
+                col1a, col1b = st.columns([2,1])
+
             with col1a:
                 query = st.text_area("⌨️ Enter SPARQL query:*")
 
@@ -955,8 +959,8 @@ with tab3:
             col1a, col1b = st.columns([2,1.5])
         with col1a:
             if not "key_export_format_selectbox" in st.session_state:
-                st.session_state["key_export_format_selectbox"] = "🐢 turtle"  # this ensures ntriples wont keep selected after download
-            format_options_dict = {"🐢 turtle": "turtle", "3️⃣ ntriples": "ntriples"}
+                st.session_state["key_export_format_selectbox"] = "🐢 Turtle"  # this ensures ntriples wont keep selected after download
+            format_options_dict = {"🐢 Turtle": "turtle", "3️⃣ N-Triples": "ntriples"}
             preview_format_display = st.radio("🖱️ Select format:*", format_options_dict,
                 label_visibility="collapsed", horizontal=True, key="key_export_format_selectbox")
             preview_format = format_options_dict[preview_format_display]

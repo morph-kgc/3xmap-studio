@@ -5,6 +5,7 @@ import elementpath
 import io
 import json
 import jsonpath_ng
+from jsonpath_ng import parse
 import networkx as nx
 import os
 import pandas as pd
@@ -840,7 +841,7 @@ def display_right_column_df(info, text, complete=True, display=True):
 
         for filename, file_obj in ds_files:
             base_name = filename.split(".")[0]
-            file_format = filename.split(".")[-1]
+            file_format = get_file_format(filename)
 
             if hasattr(file_obj, "size"):               # Streamlit UploadedFile
                 file_size_kb = file_obj.size / 1024
@@ -960,11 +961,11 @@ def get_supported_formats(mapping=False, ontology=False, databases=False, data_f
     elif databases:
         allowed_formats = ["PostgreSQL", "MySQL", "SQL Server", "MariaDB", "Oracle", "MongoDB"]
 
-    if data_files:
+    elif data_files:
         allowed_formats = [".csv", ".tsv", ".xls", ".xlsx", ".parquet", ".feather",
             ".orc", ".ods", ".json", ".xml"]
 
-    if hierarchical_files:
+    elif hierarchical_files:
         allowed_formats = ["json", "xml"]
 
     return allowed_formats
@@ -1121,9 +1122,9 @@ def init_page():
     # import style
     style_container = st.empty()
     if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
-        style_container.markdown(import_st_aesthetics(), unsafe_allow_html=True)
+        style_container.html(import_st_aesthetics())
     else:
-        style_container.markdown(import_st_aesthetics_dark_mode(), unsafe_allow_html=True)
+        style_container.html(import_st_aesthetics_dark_mode())
 
     # initialise session state variables
     init_session_state_variables()
@@ -1337,11 +1338,12 @@ def load_mapping_from_link(url, display=True):
         g.parse(url, format="turtle")
         return g
 
-    except:
+    except Exception as e:
         if display:
             st.markdown(f"""<div class="error-message">
                 ❌ Failed to parse <b>mapping</b>.
-                <small>Please check your URL and/or your mapping.</small>
+                <small>Please check your URL and/or your mapping.
+                <i><b> Full error:</b> {e}</i>>/small>
             </div>""", unsafe_allow_html=True)
         return None
 #_____________________________________________________
@@ -1365,10 +1367,11 @@ def load_mapping_from_file(f):
                 ns = Namespace(uri)
                 g.bind(prefix, ns)
             return g
-        except:
+        except Exception as e:
             st.markdown(f"""<div class="error-message">
                 ❌ Failed to parse <b>mapping</b>.
-                <small> Please check your mapping.</small>
+                <small> Please check your mapping.
+                <i><b> Full error:</b> {e}</i>>/small>
             </div>""", unsafe_allow_html=True)
             return False
 
@@ -2365,16 +2368,16 @@ def remove_view_from_db(view):
 # Funtion to read data files
 # For already saved files, takes the filename
 # For unsaved files, takes the file itself
-def read_data_file(file_input, unsaved=False):
+def read_data_file(file_input, unsaved=False, iterator=False):
 
     if unsaved:
         file = file_input
         filename = file_input.name
-        file_format = filename.split(".")[-1].lower()
+        file_format = get_file_format(filename)
     else:
         filename = file_input
         file = st.session_state["ds_files_dict"][filename]
-        file_format = filename.split(".")[-1].lower()
+        file_format = get_file_format(filename)
 
     if file_format == "csv":
         read_content = pd.read_csv(file)
@@ -2396,21 +2399,42 @@ def read_data_file(file_input, unsaved=False):
         orc_file = orc.ORCFile(file)
         read_content = orc_file.read().to_pandas()
 
-    elif file_format == "dta":
-        read_content, _ = pyreadstat.read_dta(file)
-
-    elif file_format == "sas7bdat":
-        read_content, _ = pyreadstat.read_sas7bdat(file)
-
-    elif file_format == "sav":
-        read_content, _ = pyreadstat.read_sav(file)
+    # elif file_format == "dta":
+    #     read_content, _ = pyreadstat.read_dta(file)
+    #
+    # elif file_format == "sas7bdat":
+    #     read_content, _ = pyreadstat.read_sas7bdat(file)
+    #
+    # elif file_format == "sav":
+    #     read_content, _ = pyreadstat.read_sav(file)
+    # pyreadstat in requirements and import pyreadstat
 
     elif file_format == "json":
-        read_content = pd.read_json(file)
+        if not iterator:
+            read_content = pd.read_json(file)
+        else:
+            raw_bytes = file.getvalue()
+            data = json.loads(raw_bytes.decode("utf-8"))
+            expr = parse(iterator)
+            matches = [match.value for match in expr.find(data)]
+            read_content = pd.json_normalize(matches)
 
     elif file_format == "xml":
-        raw_bytes = file.getvalue() # get full contents safely
-        read_content = pd.read_xml(io.BytesIO(raw_bytes), parser="etree")
+        if not iterator:
+            raw_bytes = file.getvalue() # get full contents safely
+            read_content = pd.read_xml(io.BytesIO(raw_bytes), parser="etree")
+        else:
+            raw_bytes = file.getvalue()
+            root = etree.fromstring(raw_bytes)
+            nodes = root.xpath(iterator)
+            records = []
+            for node in nodes:
+                rec = {}
+                rec.update(node.attrib)
+                for child in node:
+                    rec[child.tag] = child.text
+                records.append(rec)
+            read_content = pd.DataFrame(records)
 
     file.seek(0)
 
@@ -2423,6 +2447,19 @@ def read_data_file(file_input, unsaved=False):
 def get_file_format(filename):
 
     return filename.split(".")[-1].lower()
+#______________________________________________________
+
+#______________________________________________________
+# Function to check if a file is hiearchical from filename
+def is_hierarchical_file(filename):
+
+    hierarchical_extension_list = get_supported_formats(hierarchical_files=True)
+    file_format = get_file_format(filename)
+
+    if file_format in hierarchical_extension_list:
+        return True
+
+    return False
 #______________________________________________________
 
 #______________________________________________________
@@ -2461,7 +2498,7 @@ def is_flat_file(data, file_format):
 # Funtion to display the dataframe with the results of a path
 def display_path_dataframe(filename, path_expr, display=True, return_df=False):
 
-    file_format = filename.split(".")[-1].lower()
+    file_format = get_file_format(filename)
     flag = find_matches(filename, path_expr)[0]
 
     if not flag:
@@ -2493,7 +2530,7 @@ def find_matches(filename, path_expr):
 
     # Get info
     file = st.session_state["ds_files_dict"][filename]
-    file_format = filename.split(".")[-1].lower()
+    file_format = get_file_format(filename)
 
     # Get file content
     try:
@@ -2749,6 +2786,7 @@ def get_column_list_and_give_info(tm_label, template=False):
     reference_formulation = next(st.session_state["g_mapping"].objects(ls_iri, QL.referenceFormulation), None)
     view_as_ds = next(st.session_state["g_mapping"].objects(ls_iri, RML.query), None)
     table_name_as_ds = next(st.session_state["g_mapping"].objects(ls_iri, RML.tableName), None)
+    iterator = next(st.session_state["g_mapping"].objects(ls_iri, RML.iterator), None)
 
     # Initialise variables
     inner_html = ""
@@ -2763,7 +2801,6 @@ def get_column_list_and_give_info(tm_label, template=False):
             selected_conn_label = conn_label
 
     # Saved data files
-
     if ds in st.session_state["ds_files_dict"]:
         file_format = get_file_format(ds)
         ds_for_display = f"""🛢️ <b>{ds}</b>"""
@@ -2775,15 +2812,15 @@ def get_column_list_and_give_info(tm_label, template=False):
 
         # HIERARCHICAL DATA FILES
         else:
-            hierarchical_data_file_flag = True
-            column_list = []
-            for path_label in st.session_state["saved_paths_dict"]:
-                if st.session_state["saved_paths_dict"][path_label][0] == ds:
-                    column_list.append(path_label)
-            if not column_list:
-                inner_html = f"""⚠️ <b>No paths saved</b> for the datasource <b>{ds}</b>
-                <small>You can do so in the <b>🛢️ Data Files</b> page.
-                Manual {term} entry is discouraged.</small>"""
+            if not iterator:
+                df = read_data_file(ds)
+                column_list = df.columns.tolist()
+            else:
+                df = read_data_file(ds, iterator=iterator)
+                column_list = df.columns.tolist()
+                if not column_list:
+                    inner_html = f"""⚠️ The iterator expression returned <b>no matches</b>.
+                        <small>Check your triples map definition. Manual entry allowed but strongly discouraged. </small>"""
 
     # Saved database
     elif selected_conn_label:
@@ -2855,14 +2892,15 @@ def get_column_list_and_give_info(tm_label, template=False):
 #______________________________________________________
 # Function get very small info message on data sources when building mapping
 def get_very_small_ds_info(column_list, inner_html, ds_for_display, ds_available_flag):
+
     if not column_list:   #data source is not available (load)
         if not ds_available_flag:
-            text = f"""🚫Data source not available (<b>{ds_for_display}</b>)""" if ds_for_display else f"""🚫Data source not available"""
+            text = f"""🚫 Data source not available (<b>{ds_for_display}</b>)""" if ds_for_display else f"""🚫 Data source not available"""
             st.markdown(f"""<div class="very-small-info">
                 {text}
             </div>""", unsafe_allow_html=True)
         else:
-            text = f"""🚫Data source not available (<b>{ds_for_display}</b>)""" if ds_for_display else f"""🚫Data source not available"""
+            text = f"""🚫 Data source not available (<b>{ds_for_display}</b>)""" if ds_for_display else f"""🚫 Data source not available"""
             st.markdown(f"""<div class="very-small-info">
                 Data source: <b>{ds_for_display}</b>
             </div>""", unsafe_allow_html=True)
@@ -2998,6 +3036,39 @@ def get_ontology_base_iri(g_ont):
 #________________________________________________________
 
 #______________________________________________________
+# Funtion to read data files
+# For already saved files, takes the filename
+# For unsaved files, takes the file itself
+def read_data_file_w_iterator(filename, iterator):
+
+    file = st.session_state["ds_files_dict"][filename]
+    file_format = get_file_format(filename)
+    content = file.getvalue().decode("utf-8").strip()
+    refs = []
+
+    if file_format == "json":
+        data = json.loads(content)
+        expr = parse(iterator)
+        matches = [match.value for match in expr.find(data)]
+        for m in matches:
+            if isinstance(m, dict):
+                refs.extend(m.keys())
+        return sorted(set(refs))
+
+    elif file_format == "xml":
+        root = etree.fromstring(content.encode("utf-8"))
+        nodes = root.xpath(iterator)
+        for node in nodes:
+            # element children
+            refs.extend([child.tag for child in node])
+            # attributes
+            refs.extend([f"@{k}" for k in node.attrib.keys()])
+        return sorted(set(refs))
+
+    return False
+#______________________________________________________
+
+#______________________________________________________
 # Funtion to get list of datatypes (including possible dt defined by mapping)
 def get_datatype_dict():
 
@@ -3049,7 +3120,7 @@ def prepare_node_for_rule_preview(node, subject=False, predicate=False, object=F
                 sm_rule = utils.get_node_label(sm_rule)
 
         else:
-            sm_rule = """No Subject Map"""
+            sm_rule = """No subject map"""
 #______________________________________________________
 
 #______________________________________________________
@@ -3077,7 +3148,7 @@ def preview_rule(tm_iri_for_pom, predicate_list, om_rule, o_is_reference=False, 
             formatted_s = f"{{{s_for_display}}}"
 
     else:
-        s_for_display = """No Subject Map"""
+        s_for_display = """No subject map"""
 
     # Get object and prepare for display
     o_for_display = get_node_label(om_rule)
@@ -3336,7 +3407,7 @@ def display_sm_info_for_removal(tm_to_unassign_sm_list):
 
 #______________________________________________________
 # Function to check if mapping is complete
-def check_g_mapping(g, warning=False):
+def check_g_mapping(g, warning=False, reduce=True):
 
     tm_dict = get_tm_dict()
     max_length = utils.get_max_length_for_display()[5]
@@ -3370,7 +3441,6 @@ def check_g_mapping(g, warning=False):
 
     if tm_wo_sm_list or tm_wo_pom_list or pom_wo_om_list or pom_wo_predicate_list_display:
 
-        max_length = get_max_length_for_display()[5]
         if g == st.session_state["g_mapping"] and not warning:
             heading_html += f"""ℹ️ Mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> is incomplete."""
         elif g == st.session_state["g_mapping"] and warning:
@@ -3382,50 +3452,49 @@ def check_g_mapping(g, warning=False):
 
         if tm_wo_sm_list:
             g_mapping_complete_flag = False
-            if len(tm_wo_sm_list) < max_length:
+            if len(tm_wo_sm_list) < max_length or not reduce:
                 inner_html += f"""<div style="margin-left: 20px">
-                <small>· TriplesMap(s) without a Subject Map: <b>
-                {tm_wo_sm_list_display}</b></small><br></div>"""
+                <small>· Triples map(s) without a subject map ({len(tm_wo_sm_list)}):
+                <small><b>{tm_wo_sm_list_display}</b></small></small><br></div>"""
             else:
                 inner_html += f"""<div style="margin-left: 20px">
                 <small><b>· {len(tm_wo_sm_list)}
-                TriplesMaps</b> without
-                a Subject Map.</small><br></div>"""
+                Triples maps</b> without
+                a subject map.</small><br></div>"""
 
         if tm_wo_pom_list:
             g_mapping_complete_flag = False
-            if len(tm_wo_pom_list) < max_length:
-                tm_wo_pom_list_display = utils.format_list_for_display(tm_wo_pom_list)
+            if len(tm_wo_pom_list) < max_length or not reduce:
                 inner_html += f"""<div style="margin-left: 20px">
-                <small>· TriplesMap(s) without Predicate-Object Maps
-                <b>{tm_wo_pom_list_display}</b></small><br></div>"""
+                <small>· Triples map(s) without predicate-object maps ({len(tm_wo_pom_list)}):
+                <small><b>{tm_wo_pom_list_display}</b></small></small><br></div>"""
             else:
                 inner_html += f"""<div style="margin-left: 20px">
                 <small>· <b>{len(tm_wo_pom_list)}
-                TriplesMap(s)</b> without Predicate-Object Maps</small><br></div>"""
+                Triples map(s)</b> without predicate-object maps</small><br></div>"""
 
         if pom_wo_om_list:
             g_mapping_complete_flag = False
-            if len(pom_wo_om_list) < max_length:
+            if len(pom_wo_om_list) < max_length or not reduce:
                 inner_html += f"""<div style="margin-left: 20px">
-                <small>· Predicate-Object Map(s) without an Object Map:
-                <b>{pom_wo_om_list_display}</b></small><br></div>"""
+                <small>· Predicate-object map(s) without an object map ({len(pom_wo_om_list_display)}):
+                <small><b>{pom_wo_om_list_display}</b></small></small><br></div>"""
             else:
                 inner_html += f"""<div style="margin-left: 20px">
                 <small>· <b>{len(pom_wo_om_list_display)}
-                Predicate-Object Maps</b> without
-                an Object Map.</small><br></div>"""
+                Predicate-object maps</b> without
+                an object map.</small><br></div>"""
 
         if pom_wo_predicate_list:
             g_mapping_complete_flag = False
-            if len(pom_wo_om_list) < max_length:
+            if len(pom_wo_om_list) < max_length or not reduce:
                 inner_html += f"""<div style="margin-left: 20px">
-                <small>· Predicate-Object Map(s) without a predicate
-                <b>{pom_wo_predicate_list_display}</b></small><br></div>"""
+                <small>· Predicate-object map(s) without a predicate ({len(pom_wo_predicate_list_display)}):
+                <small><b>{pom_wo_predicate_list_display}</b></small></small><br></div>"""
             else:
                 inner_html += f"""<div style="margin-left: 20px">
                 <small>· <b>{len(pom_wo_predicate_list_display)}
-                Predicate-Object Maps</b> without
+                Predicate-object maps</b> without
                 a predicate.</small><br></div>"""
 
     return g_mapping_complete_flag, heading_html, inner_html, tm_wo_sm_list, tm_wo_pom_list, pom_wo_om_list, pom_wo_predicate_list
