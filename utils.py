@@ -5,6 +5,7 @@ import elementpath
 import io
 import json
 import jsonpath_ng
+from jsonpath_ng import parse
 import networkx as nx
 import os
 import pandas as pd
@@ -840,7 +841,7 @@ def display_right_column_df(info, text, complete=True, display=True):
 
         for filename, file_obj in ds_files:
             base_name = filename.split(".")[0]
-            file_format = filename.split(".")[-1]
+            file_format = get_file_format(filename)
 
             if hasattr(file_obj, "size"):               # Streamlit UploadedFile
                 file_size_kb = file_obj.size / 1024
@@ -2367,16 +2368,16 @@ def remove_view_from_db(view):
 # Funtion to read data files
 # For already saved files, takes the filename
 # For unsaved files, takes the file itself
-def read_data_file(file_input, unsaved=False):
+def read_data_file(file_input, unsaved=False, iterator=False):
 
     if unsaved:
         file = file_input
         filename = file_input.name
-        file_format = filename.split(".")[-1].lower()
+        file_format = get_file_format(filename)
     else:
         filename = file_input
         file = st.session_state["ds_files_dict"][filename]
-        file_format = filename.split(".")[-1].lower()
+        file_format = get_file_format(filename)
 
     if file_format == "csv":
         read_content = pd.read_csv(file)
@@ -2409,11 +2410,32 @@ def read_data_file(file_input, unsaved=False):
     # pyreadstat in requirements and import pyreadstat
 
     elif file_format == "json":
-        read_content = pd.read_json(file)
+        if not iterator:
+            read_content = pd.read_json(file)
+        else:
+            raw_bytes = file.getvalue()
+            data = json.loads(raw_bytes.decode("utf-8"))
+            expr = parse(iterator)
+            matches = [match.value for match in expr.find(data)]
+            read_content = pd.json_normalize(matches)
 
     elif file_format == "xml":
-        raw_bytes = file.getvalue() # get full contents safely
-        read_content = pd.read_xml(io.BytesIO(raw_bytes), parser="etree")
+        if not iterator:
+            raw_bytes = file.getvalue() # get full contents safely
+            read_content = pd.read_xml(io.BytesIO(raw_bytes), parser="etree")
+        else:
+            raw_bytes = file.getvalue()
+            root = etree.fromstring(raw_bytes)
+            nodes = root.xpath(iterator)
+            records = []
+            for node in nodes:
+                rec = {}
+                rec.update(node.attrib)
+                for child in node:
+                    rec[child.tag] = child.text
+                records.append(rec)
+            read_content = pd.DataFrame(records)
+
     file.seek(0)
 
     return read_content
@@ -2425,6 +2447,19 @@ def read_data_file(file_input, unsaved=False):
 def get_file_format(filename):
 
     return filename.split(".")[-1].lower()
+#______________________________________________________
+
+#______________________________________________________
+# Function to check if a file is hiearchical from filename
+def is_hierarchical_file(filename):
+
+    hierarchical_extension_list = get_supported_formats(hierarchical_files=True)
+    file_format = get_file_format(filename)
+
+    if file_format in hierarchical_extension_list:
+        return True
+
+    return False
 #______________________________________________________
 
 #______________________________________________________
@@ -2463,7 +2498,7 @@ def is_flat_file(data, file_format):
 # Funtion to display the dataframe with the results of a path
 def display_path_dataframe(filename, path_expr, display=True, return_df=False):
 
-    file_format = filename.split(".")[-1].lower()
+    file_format = get_file_format(filename)
     flag = find_matches(filename, path_expr)[0]
 
     if not flag:
@@ -2495,7 +2530,7 @@ def find_matches(filename, path_expr):
 
     # Get info
     file = st.session_state["ds_files_dict"][filename]
-    file_format = filename.split(".")[-1].lower()
+    file_format = get_file_format(filename)
 
     # Get file content
     try:
@@ -2751,6 +2786,7 @@ def get_column_list_and_give_info(tm_label, template=False):
     reference_formulation = next(st.session_state["g_mapping"].objects(ls_iri, QL.referenceFormulation), None)
     view_as_ds = next(st.session_state["g_mapping"].objects(ls_iri, RML.query), None)
     table_name_as_ds = next(st.session_state["g_mapping"].objects(ls_iri, RML.tableName), None)
+    iterator = next(st.session_state["g_mapping"].objects(ls_iri, RML.iterator), None)
 
     # Initialise variables
     inner_html = ""
@@ -2765,7 +2801,6 @@ def get_column_list_and_give_info(tm_label, template=False):
             selected_conn_label = conn_label
 
     # Saved data files
-
     if ds in st.session_state["ds_files_dict"]:
         file_format = get_file_format(ds)
         ds_for_display = f"""🛢️ <b>{ds}</b>"""
@@ -2777,15 +2812,15 @@ def get_column_list_and_give_info(tm_label, template=False):
 
         # HIERARCHICAL DATA FILES
         else:
-            hierarchical_data_file_flag = True
-            column_list = []
-            for path_label in st.session_state["saved_paths_dict"]:
-                if st.session_state["saved_paths_dict"][path_label][0] == ds:
-                    column_list.append(path_label)
-            if not column_list:
-                inner_html = f"""⚠️ <b>No paths saved</b> for the datasource <b>{ds}</b>
-                <small>You can do so in the <b>🛢️ Data Files</b> page.
-                Manual {term} entry is discouraged.</small>"""
+            if not iterator:
+                df = read_data_file(ds)
+                column_list = df.columns.tolist()
+            else:
+                df = read_data_file(ds, iterator=iterator)
+                column_list = df.columns.tolist()
+                if not column_list:
+                    inner_html = f"""⚠️ The iterator expression returned <b>no matches</b>.
+                        <small>Check your TriplesMap definition. Manual entry allowed but strongly discouraged. </small>"""
 
     # Saved database
     elif selected_conn_label:
@@ -2857,14 +2892,15 @@ def get_column_list_and_give_info(tm_label, template=False):
 #______________________________________________________
 # Function get very small info message on data sources when building mapping
 def get_very_small_ds_info(column_list, inner_html, ds_for_display, ds_available_flag):
+
     if not column_list:   #data source is not available (load)
         if not ds_available_flag:
-            text = f"""🚫Data source not available (<b>{ds_for_display}</b>)""" if ds_for_display else f"""🚫Data source not available"""
+            text = f"""🚫 Data source not available (<b>{ds_for_display}</b>)""" if ds_for_display else f"""🚫 Data source not available"""
             st.markdown(f"""<div class="very-small-info">
                 {text}
             </div>""", unsafe_allow_html=True)
         else:
-            text = f"""🚫Data source not available (<b>{ds_for_display}</b>)""" if ds_for_display else f"""🚫Data source not available"""
+            text = f"""🚫 Data source not available (<b>{ds_for_display}</b>)""" if ds_for_display else f"""🚫 Data source not available"""
             st.markdown(f"""<div class="very-small-info">
                 Data source: <b>{ds_for_display}</b>
             </div>""", unsafe_allow_html=True)
@@ -2998,6 +3034,39 @@ def get_ontology_base_iri(g_ont):
 
     return base_iri_list
 #________________________________________________________
+
+#______________________________________________________
+# Funtion to read data files
+# For already saved files, takes the filename
+# For unsaved files, takes the file itself
+def read_data_file_w_iterator(filename, iterator):
+
+    file = st.session_state["ds_files_dict"][filename]
+    file_format = get_file_format(filename)
+    content = file.getvalue().decode("utf-8").strip()
+    refs = []
+
+    if file_format == "json":
+        data = json.loads(content)
+        expr = parse(iterator)
+        matches = [match.value for match in expr.find(data)]
+        for m in matches:
+            if isinstance(m, dict):
+                refs.extend(m.keys())
+        return sorted(set(refs))
+
+    elif file_format == "xml":
+        root = etree.fromstring(content.encode("utf-8"))
+        nodes = root.xpath(iterator)
+        for node in nodes:
+            # element children
+            refs.extend([child.tag for child in node])
+            # attributes
+            refs.extend([f"@{k}" for k in node.attrib.keys()])
+        return sorted(set(refs))
+
+    return False
+#______________________________________________________
 
 #______________________________________________________
 # Funtion to get list of datatypes (including possible dt defined by mapping)

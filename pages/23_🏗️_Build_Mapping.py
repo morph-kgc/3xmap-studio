@@ -43,14 +43,16 @@ def save_tm_w_tab_ls():
     tm_iri = NS[f"{st.session_state['tm_label']}"]
     tm_label = utils.get_node_label(tm_iri)
     ds_filename = ds_file.name
-    ls_iri = NS[f"{ls_label}"] if label_ls_option == "Yes (add label 🔖)" else BNode()
+    ls_iri = NS[f"{ls_label}"] if label_ls_option else BNode()
+    file_extension = ds_filename.rsplit(".", 1)[-1].lower()    # bind to reference formulation
+    reference_formulation = utils.get_reference_formulation_dict()[file_extension]
     # add triples__________________
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    # bind to logical source
     st.session_state["g_mapping"].add((ls_iri, RML.source, Literal(ds_filename)))    # bind ls to source file
-    file_extension = ds_filename.rsplit(".", 1)[-1].lower()    # bind to reference formulation
-    reference_formulation = utils.get_reference_formulation_dict()[file_extension]
     st.session_state["g_mapping"].add((ls_iri, RML.referenceFormulation, reference_formulation))
     st.session_state["g_mapping"].add((tm_iri, RDF.type, RML.TriplesMap))
+    if iterator_flag:
+        st.session_state["g_mapping"].add((ls_iri, RML.iterator, Literal(iterator)))
     # store information____________________
     st.session_state["tm_saved_ok_flag"] = True  # for success message
     st.session_state["last_added_tm_list"].insert(0, tm_label)    # to display last added tm
@@ -65,7 +67,7 @@ def save_tm_w_view():
     NS = st.session_state["base_ns"][1]
     tm_iri = NS[f"{st.session_state['tm_label']}"]
     tm_label = utils.get_node_label(tm_iri)
-    ls_iri = NS[f"{ls_label}"] if label_ls_option == "Yes (add label 🔖)" else BNode()
+    ls_iri = NS[f"{ls_label}"] if label_ls_option else BNode()
     # add triples__________________
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    # bind to logical source
     st.session_state["g_mapping"].add((ls_iri, RML.source, Literal(url_str)))    # bind ls to database
@@ -88,7 +90,7 @@ def save_tm_w_table_name():
     url_str = utils.get_db_url_str(db_connection_for_ls)
     tm_iri = NS[f"{st.session_state['tm_label']}"]
     tm_label = utils.get_node_label(tm_iri)
-    ls_iri = NS[f"{ls_label}"] if label_ls_option == "Yes (add label 🔖)" else BNode()
+    ls_iri = NS[f"{ls_label}"] if label_ls_option else BNode()
     # add triples__________________
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    # bind to logical source
     st.session_state["g_mapping"].add((ls_iri, RML.source, Literal(url_str)))    # bind ls to database
@@ -109,13 +111,15 @@ def save_tm_w_manual_ls():
     NS = st.session_state["base_ns"][1]
     tm_iri = NS[f"{st.session_state['tm_label']}"]
     tm_label = utils.get_node_label(tm_iri)
-    ls_iri = NS[f"{ls_label}"] if label_ls_option == "Yes (add label 🔖)" else BNode()
+    ls_iri = NS[f"{ls_label}"] if label_ls_option else BNode()
     reference_formulation_iri = QL[manual_reference_formulation]
     # add triples___________________
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    # bind to logical source
     st.session_state["g_mapping"].add((tm_iri, RDF.type, RML.TriplesMap))
     st.session_state["g_mapping"].add((ls_iri, RML.source, Literal(manual_ls)))    # bind ls to database
     st.session_state["g_mapping"].add((ls_iri, RML.referenceFormulation, reference_formulation_iri))
+    if iterator:
+        st.session_state["g_mapping"].add((ls_iri, RML.iterator, Literal(iterator)))
     # store information________________
     st.session_state["tm_saved_ok_flag"] = True  # for success message
     st.session_state["last_added_tm_list"].insert(0, tm_label)    # to display last added tm
@@ -177,7 +181,7 @@ def reset_sm_template():
 def save_sm_template():   #function to save subject map (template option)
     # get info_______________________
     NS = st.session_state["base_ns"][1]
-    sm_iri = NS[sm_label] if label_sm_option == "Yes (add label 🔖)" else BNode()
+    sm_iri = NS[sm_label] if label_sm_option else BNode()
     # add triples____________________
     st.session_state["g_mapping"].add((tm_iri_for_sm, RML.subjectMap, sm_iri))
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RML.SubjectMap))
@@ -212,7 +216,7 @@ def save_sm_template():   #function to save subject map (template option)
 def save_sm_constant():   #function to save subject map (constant option)
     # get info_______________________
     NS = st.session_state["base_ns"][1]
-    sm_iri = NS[sm_label] if label_sm_option == "Yes (add label 🔖)" else BNode()
+    sm_iri = NS[sm_label] if label_sm_option else BNode()
     # add triples________________________
     st.session_state["g_mapping"].add((tm_iri_for_sm, RML.subjectMap, sm_iri))
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RML.SubjectMap))
@@ -250,7 +254,7 @@ def save_sm_constant():   #function to save subject map (constant option)
 def save_sm_reference():   #function to save subject map (reference option)
     # get info_______________________
     NS = st.session_state["base_ns"][1]
-    sm_iri = NS[sm_label] if label_sm_option == "Yes (add label 🔖)" else BNode()
+    sm_iri = NS[sm_label] if label_sm_option else BNode()
     # add triples____________________
     st.session_state["g_mapping"].add((tm_iri_for_sm, RML.subjectMap, sm_iri))
     st.session_state["g_mapping"].add((sm_iri, RDF.type, RML.SubjectMap))
@@ -647,11 +651,11 @@ with tab1:
 
                 if connection_ok_flag:
                     with col1b:
-                        label_ls_option = st.selectbox("♻️ Reuse Logical Source:",
-                            ["No", "Yes (add label 🔖)"], key="key_label_ls_option")
+                        label_ls_option = st.radio("♻️ Reuse Logical Source:", ["No", "Yes"], horizontal=True)
+                        label_ls_option = False if label_ls_option == "No" else True
                         valid_ls_label = True
 
-                    if label_ls_option == "Yes (add label 🔖)":
+                    if label_ls_option:
                         with col1a:
                             ls_label = st.text_input("🏷️ Enter label for the Logical Source:*")
                         with col1b:
@@ -731,11 +735,25 @@ with tab1:
             if ds_filename_for_tm != "Select file":
                 ds_file = st.session_state["ds_files_dict"][ds_filename_for_tm]
 
-            with col1b:
-                label_ls_option = st.selectbox("♻️ Reuse Logical Source:",
-                    ["No", "Yes (add label 🔖)"], key="key_label_ls_option")
+            iterator_flag = False
+            if utils.is_hierarchical_file(ds_filename_for_tm):
+                iterator_list = []
+                for path_label in st.session_state["saved_paths_dict"]:
+                    if st.session_state["saved_paths_dict"][path_label][0] == ds_filename_for_tm:
+                        iterator_list.append(path_label)
+                if iterator_list:
+                    list_to_choose = iterator_list.copy()
+                    list_to_choose.insert(0, "Select iterator")
+                    with col1a:
+                        iterator_label = st.selectbox("🖱️ Select iterator: ᵒᵖᵗ", list_to_choose, key="key_iterator")
+                    if iterator_label != "Select iterator":
+                        iterator = st.session_state["saved_paths_dict"][iterator_label][1]
+                        iterator_flag = True
 
-                if label_ls_option == "Yes (add label 🔖)":
+            with col1b:
+                label_ls_option = st.checkbox("♻️ Reuse Logical Source")
+
+                if label_ls_option:
                     with col1a:
                         ls_label = st.text_input("🏷️ Enter label for the Logical Source:*")
                     with col1b:
@@ -753,13 +771,20 @@ with tab1:
                     ls_label = ""
 
                 with col1a:
-                    if label_ls_option == "Yes (add label 🔖)":
+                    if label_ls_option:
                         if valid_ls_label_flag:
                             if ds_filename_for_tm != "Select file":
                                 st.button("Save", key="key_save_tm_w_tab_ls", on_click=save_tm_w_tab_ls)
                     else:
                         if ds_filename_for_tm != "Select file":
                             st.button("Save", key="key_save_tm_w_tab_ls", on_click=save_tm_w_tab_ls)
+
+            if utils.is_hierarchical_file(ds_filename_for_tm) and not iterator_list:
+                with col1b:
+                    st.markdown(f"""<div class="info-message-gray">
+                            ℹ️ <b> No paths</b> have been added for this file.
+                            <small> To add an iterator go to the 🛢️ <b>Data Files page</b> (Manage Paths panel).</small>
+                        </span></div>""", unsafe_allow_html=True)
 
         if ls_option == "✏️ Manual":
 
@@ -773,11 +798,14 @@ with tab1:
                 manual_reference_formulation = st.selectbox("🖱️ Select reference formulation:*", list_to_choose,
                     key="key_manual_reference_formulation")
 
-            with col1b:
-                label_ls_option = st.selectbox("♻️ Reuse Logical Source:",
-                    ["No", "Yes (add label 🔖)"], key="key_label_ls_option")
+                iterator = ""
+                if manual_reference_formulation in ["LogicalView", "JSONPath", "XPath"]:
+                    iterator = st.text_input("⌨️ Enter Iterator: ᵒᵖᵗ")
 
-                if label_ls_option == "Yes (add label 🔖)":
+            with col1b:
+                label_ls_option = st.checkbox("♻️ Reuse Logical Source")
+
+                if label_ls_option:
                     ls_label = st.text_input("🏷️ Enter Logical Source label:*")
                     with col1b:
                         valid_ls_label_flag = utils.is_valid_label(ls_label, hard=True, blank_space=True)
@@ -1125,9 +1153,9 @@ with tab2:
                     st.markdown(f"""<div class="very-small-info-top">
                         ♻️ Reuse Subject Map ᵒᵖᵗ
                     </div>""", unsafe_allow_html=True)
-                    label_sm_option = st.selectbox("♻️ Reuse Subject Map ᵒᵖᵗ:", ["No", "Yes (add label 🔖)"],
-                        label_visibility="collapsed")
-                    if label_sm_option == "Yes (add label 🔖)":
+                    label_sm_option = st.radio("♻️ Reuse Subject Map", ["No", "Yes"], horizontal=True, label_visibility="collapsed")
+                    label_sm_option = False if label_sm_option == "No" else True
+                    if label_sm_option:
                         sm_label = st.text_input("🔖 Enter Subject Map label:*", key="key_sm_label_new",
                             placeholder="🔖 Subject Map label*", label_visibility="collapsed")
                         valid_sm_label = utils.is_valid_label(sm_label, hard=True, display=False)
@@ -1312,7 +1340,7 @@ with tab2:
                         inner_html_error += """<small>· The <b>graph map</b>
                             has not been selected.</small><br>"""
 
-                if label_sm_option == "Yes (add label 🔖)":
+                if label_sm_option:
                     if not sm_label:
                         sm_complete_flag = False
                         inner_html_error += """<small>· The <b>Subject Map label</b>
@@ -1628,6 +1656,7 @@ with tab3:
                     column_list, inner_html, ds_for_display, ds_available_flag, hierarchical_data_file_flag = utils.get_column_list_and_give_info(tm_label_for_pom)
 
                     if not column_list:   #data source is not available (load)
+                        st.write("HERE")
                         with col1b:
                             om_template_variable_part = st.text_input("⌨️ Manually enter column of the data source:*",
                                 placeholder="📈 Enter template placeholder", key="key_om_template_variable_part_manual", label_visibility="collapsed")
@@ -1742,6 +1771,7 @@ with tab3:
                     col1a, col1b = st.columns([2,1])
 
                 column_list, inner_html, ds_for_display, ds_available_flag, hierarchical_data_file_flag = utils.get_column_list_and_give_info(tm_label_for_pom)
+
 
                 if not column_list:   #data source is not available (load)
                     with col1a:
