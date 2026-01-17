@@ -211,7 +211,7 @@ def save_sm_template():   #function to save subject map (template option)
     st.session_state["sm_template_is_iri_flag"] = False
     st.session_state["sm_template_variable_part_flag"] = False
     # reset fields____________________
-    st.session_state["key_tm_label_input_for_sm"] = "Select TriplesMap"
+    st.session_state["key_tm_label_input_for_sm"] = "Select triples map"
 
 def save_sm_constant():   #function to save subject map (constant option)
     # get info_______________________
@@ -249,7 +249,7 @@ def save_sm_constant():   #function to save subject map (constant option)
     st.session_state["sm_template_prefix"] = ""
     st.session_state["sm_template_variable_part_flag"] = False
     # reset fields_________________________
-    st.session_state["key_tm_label_input_for_sm"] = "Select TriplesMap"
+    st.session_state["key_tm_label_input_for_sm"] = "Select triples map"
 
 def save_sm_reference():   #function to save subject map (reference option)
     # get info_______________________
@@ -284,7 +284,7 @@ def save_sm_reference():   #function to save subject map (reference option)
     st.session_state["sm_template_prefix"] = ""
     st.session_state["sm_template_variable_part_flag"] = False
     # reset fields____________________
-    st.session_state["key_tm_label_input_for_sm"] = "Select TriplesMap"
+    st.session_state["key_tm_label_input_for_sm"] = "Select triples map"
 
 # TAB3
 def save_om_template_fixed_part():
@@ -553,7 +553,7 @@ with tab1:
         utils.get_corner_status_message(mapping_info=True)
 
     with col2b:
-        utils.display_right_column_df("triplesmaps", "last added TriplesMaps")
+        utils.display_right_column_df("triplesmaps", "last added triples maps")
 
     #PURPLE HEADING: ADD TRIPLESMAP---------------------------------------------
     with col1:
@@ -568,7 +568,7 @@ with tab1:
         with col1a:
             st.write("")
             st.markdown(f"""<div class="success-message-flag">
-                ✅ The TriplesMap <b style="color:#F63366;">{st.session_state["tm_label"]}</b> has been added!
+                ✅ The triples map <b style="color:#F63366;">{st.session_state["tm_label"]}</b> has been added!
             </div>""", unsafe_allow_html=True)
         st.session_state["tm_saved_ok_flag"] = False
         time.sleep(utils.get_success_message_time())
@@ -578,7 +578,7 @@ with tab1:
         col1a, col1b = st.columns([1,1])
 
     with col1a:
-        tm_label = st.text_input("🏷️ Enter TriplesMap label:*", key="key_tm_label_input")    # user-friendly name for the TriplesMap
+        tm_label = st.text_input("🏷️ Enter triples map label:*", key="key_tm_label_input")    # user-friendly name for the TriplesMap
         st.session_state["tm_label"] = tm_label
         valid_tm_label = utils.is_valid_label(tm_label, hard=True)
 
@@ -609,7 +609,7 @@ with tab1:
         ls_options_list.append("✏️ Manual")
 
         with col1b:
-            ls_option = st.radio("🖱️ Logical Source:*", ls_options_list, horizontal=True,
+            ls_option = st.radio("🖱️ Logical source:*", ls_options_list, horizontal=True,
                 key="key_ls_option")
 
         with col2:
@@ -626,10 +626,10 @@ with tab1:
 
             with col1a:
                 list_to_choose = sorted(labelled_ls_list)
-                list_to_choose.insert(0, "Select Logical Source")
-                existing_ls = st.selectbox("🖱️ Select existing Logical Source:*", list_to_choose)
+                list_to_choose.insert(0, "Select logical source")
+                existing_ls = st.selectbox("🖱️ Select existing logical source:*", list_to_choose)
 
-            if existing_ls != "Select Logical Source":
+            if existing_ls != "Select logical source":
                 with col1a:
                     save_tm_button_existing_ls = st.button("Save", key="key_save_tm_w_existing_ls", on_click=save_tm_w_existing_ls)
 
@@ -651,13 +651,13 @@ with tab1:
 
                 if connection_ok_flag:
                     with col1b:
-                        label_ls_option = st.radio("♻️ Reuse Logical Source:", ["No", "Yes"], horizontal=True)
+                        label_ls_option = st.radio("♻️ Reuse logical source:", ["No", "Yes"], horizontal=True)
                         label_ls_option = False if label_ls_option == "No" else True
                         valid_ls_label = True
 
                     if label_ls_option:
                         with col1a:
-                            ls_label = st.text_input("🏷️ Enter label for the Logical Source:*")
+                            ls_label = st.text_input("🏷️ Enter label for the logical source:*")
                         with col1b:
                             st.write("")
                             valid_ls_label = utils.is_valid_label(ls_label, hard=True)
@@ -729,17 +729,17 @@ with tab1:
             with col1a:
                 list_to_choose = sorted(st.session_state["ds_files_dict"].keys())
                 list_to_choose.insert(0, "Select file")
-                ds_filename_for_tm = st.selectbox("🖱️ Select the Logical Source file:*", list_to_choose,
+                ds_filename_for_tm = st.selectbox("🖱️ Select the logical source file:*", list_to_choose,
                 key="key_ds_filename_for_tm")
 
 
             with col1b:
-                label_ls_option = st.radio("♻️ Reuse Logical Source:", ["No", "Yes"], horizontal=True)
+                label_ls_option = st.radio("♻️ Reuse logical source:", ["No", "Yes"], horizontal=True)
                 label_ls_option = False if label_ls_option == "No" else True
 
                 if label_ls_option:
                     with col1a:
-                        ls_label = st.text_input("🏷️ Enter label for the Logical Source:*")
+                        ls_label = st.text_input("🏷️ Enter label for the logical source:*")
                     with col1b:
                         valid_ls_label_flag = utils.is_valid_label(ls_label, hard=True, blank_space=True)
                         if ls_label in labelled_ls_list:
@@ -802,7 +802,7 @@ with tab1:
                 col1a, col1b = st.columns([2,1])
 
             with col1a:
-                manual_ls = st.text_input("⌨️ Enter Logical Source:*")
+                manual_ls = st.text_input("⌨️ Enter logical source:*")
                 list_to_choose = sorted(["LogicalView", "JSONPath", "XPath", "CSV", "CSVW", "SQL"])
                 list_to_choose.insert(0, "Select Reference Formulation")
                 manual_reference_formulation = st.selectbox("🖱️ Select reference formulation:*", list_to_choose,
@@ -813,11 +813,11 @@ with tab1:
                     iterator = st.text_input("⌨️ Enter Iterator: ᵒᵖᵗ")
 
             with col1b:
-                label_ls_option = st.radio("♻️ Reuse Logical Source:", ["No", "Yes"], horizontal=True)
+                label_ls_option = st.radio("♻️ Reuse logical source:", ["No", "Yes"], horizontal=True)
                 label_ls_option = False if label_ls_option == "No" else True
 
                 if label_ls_option:
-                    ls_label = st.text_input("🏷️ Enter Logical Source label:*")
+                    ls_label = st.text_input("🏷️ Enter logical source label:*")
                     with col1b:
                         valid_ls_label_flag = utils.is_valid_label(ls_label, hard=True, blank_space=True)
                         if ls_label in labelled_ls_list:
@@ -857,7 +857,7 @@ with tab2:
         with col1a:
             st.write("")
             st.markdown(f"""<div class="success-message-flag">
-                ✅ The <b>Subject Map</b> has been created!
+                ✅ The <b>subject map</b> has been created!
             </div>""", unsafe_allow_html=True)
         st.session_state["sm_saved_ok_flag"] = False
         time.sleep(utils.get_success_message_time())
@@ -876,17 +876,17 @@ with tab2:
         with col1a:
             st.write("")
             st.markdown(f"""<div class="error-message">
-                    ❌ <b>No TriplesMaps</b> in mapping <b>{st.session_state["g_label"]}</b>.
+                    ❌ <b>No triples maps</b> in mapping <b>{st.session_state["g_label"]}</b>.
                     <small>Add them in the <b>Add TriplesMap</b> panel.</small>
                 </div>""", unsafe_allow_html=True)
 
     elif not tm_wo_sm_list:         # all tm have been assigned an sm
         with col1a:
             st.markdown(f"""<div class="info-message-gray">
-                🔒 <b>All existing TriplesMaps have already been assigned a Subject Map.</b><br>
+                🔒 <b>All existing triples maps have already been assigned a subject map.</b><br>
                 <ul style="margin-top:0.5em; margin-bottom:0; font-size:0.9em; list-style-type: disc; padding-left: 1.2em;">
-                    <li>You can add new TriplesMaps in the <b>Add TriplesMap</b> panel.</li>
-                    <li>You can remove the Subject Map of a TriplesMap in the <b>Manage Mapping</b> pannel.</li>
+                    <li>You can add new triples maps in the <b>Add TriplesMap</b> panel.</li>
+                    <li>You can remove the subject map of a triples map in the <b>Manage Mapping</b> pannel.</li>
                 </ul></div>""",unsafe_allow_html=True)
             st.write("")
 
@@ -898,23 +898,23 @@ with tab2:
         with col1a:
             if st.session_state["last_added_tm_list"] and st.session_state["last_added_tm_list"][0] in tm_wo_sm_list:  # Last added tm available (selected by default)
                 list_to_choose = sorted(tm_wo_sm_list)
-                list_to_choose.insert(0, "Select TriplesMap")
+                list_to_choose.insert(0, "Select triples map")
                 st.markdown("""<div class="small-subsection-heading" style="margin-top:-10px; border-top:none;">
                     <b><span style=" display:inline-block; width:15px; height:15px;
                     background-color:#009933; color:white; border:1px solid black;
                     text-align:center; font-size:10px; line-height:15px;
                         ">T</span> TriplesMap
                     </b></div>""", unsafe_allow_html=True)
-                tm_label_for_sm = st.selectbox("🖱️ Select TriplesMap:*", list_to_choose, key="key_tm_label_input_for_sm_default",
+                tm_label_for_sm = st.selectbox("🖱️ Select triples map:*", list_to_choose, key="key_tm_label_input_for_sm_default",
                     label_visibility="collapsed", index=list_to_choose.index(st.session_state["last_added_tm_list"][0]))
 
             else:             # Last added tm not available (no preselected tm)
                 list_to_choose = sorted(tm_wo_sm_list)
-                list_to_choose.insert(0, "Select TriplesMap")
-                tm_label_for_sm = st.selectbox("🖱️ Select TriplesMap:*", list_to_choose, key="key_tm_label_input_for_sm",
+                list_to_choose.insert(0, "Select triples map")
+                tm_label_for_sm = st.selectbox("🖱️ Select triples map:*", list_to_choose, key="key_tm_label_input_for_sm",
                     label_visibility="collapsed")
 
-        if tm_label_for_sm != "Select TriplesMap":
+        if tm_label_for_sm != "Select triples map":
 
             with col1:
                 st.markdown("""<div class="small-subsection-heading">
@@ -942,11 +942,11 @@ with tab2:
             with col1b:
                 if existing_sm_list:
                     list_to_choose = ["Template 📐", "Constant 🔒", "Reference 📊", "Existing 📑"]
-                    sm_generation_rule = st.radio("🖱️ Subject Map generation rule:*", list_to_choose,
+                    sm_generation_rule = st.radio("🖱️ Subject map generation rule:*", list_to_choose,
                         label_visibility="collapsed", horizontal=True, key="key_sm_generation_rule_radio")
                 else:
                     list_to_choose = ["Template 📐", "Constant 🔒", "Reference 📊"]
-                    sm_generation_rule = st.radio("🖱️ Subject Map generation rule:*", list_to_choose,
+                    sm_generation_rule = st.radio("🖱️ Subject map generation rule:*", list_to_choose,
                         label_visibility="collapsed", horizontal=True, key="key_sm_generation_rule_radio")
 
             # Initialise variables
@@ -958,8 +958,8 @@ with tab2:
                 with col1:
                     col1a, col1b = st.columns(2)
                 with col1a:
-                    sm_label = st.selectbox("🖱️ Select existing Subject Map:*", sorted(existing_sm_list),
-                        placeholder="📑 Select existing Subject Map*", index=None, label_visibility="collapsed", key="key_sm_label_existing")
+                    sm_label = st.selectbox("🖱️ Select existing subject map:*", sorted(existing_sm_list),
+                        placeholder="📑 Select existing subject map*", index=None, label_visibility="collapsed", key="key_sm_label_existing")
                     if sm_label:
                         sm_iri = existing_sm_dict[sm_label]
                         st.session_state["sm_iri"] = sm_iri
@@ -1162,13 +1162,13 @@ with tab2:
                 # SUBJECT MAP LABEL
                 with col1a:
                     st.markdown(f"""<div class="very-small-info-top">
-                        ♻️ Reuse Subject Map ᵒᵖᵗ
+                        ♻️ Reuse subject map ᵒᵖᵗ
                     </div>""", unsafe_allow_html=True)
-                    label_sm_option = st.radio("♻️ Reuse Subject Map", ["No", "Yes"], horizontal=True, label_visibility="collapsed")
+                    label_sm_option = st.radio("♻️ Reuse subject map", ["No", "Yes"], horizontal=True, label_visibility="collapsed")
                     label_sm_option = False if label_sm_option == "No" else True
                     if label_sm_option:
-                        sm_label = st.text_input("🔖 Enter Subject Map label:*", key="key_sm_label_new",
-                            placeholder="🔖 Subject Map label*", label_visibility="collapsed")
+                        sm_label = st.text_input("🔖 Enter subject map label:*", key="key_sm_label_new",
+                            placeholder="🔖 subject map label*", label_visibility="collapsed")
                         valid_sm_label = utils.is_valid_label(sm_label, hard=True, display=False)
                     else:
                         sm_label = ""
@@ -1354,25 +1354,25 @@ with tab2:
                 if label_sm_option:
                     if not sm_label:
                         sm_complete_flag = False
-                        inner_html_error += """<small>· The <b>Subject Map label</b>
+                        inner_html_error += """<small>· The <b>subject map label</b>
                             has not been given.</small><br>"""
                     elif not valid_sm_label:
                         sm_complete_flag = False
-                        inner_html_error += """<small>· The <b>Subject Map label</b>
+                        inner_html_error += """<small>· The <b>subject map label</b>
                             is not valid (only safe characters allowed and cannot end with puntuation).</small><br>"""
                     else:
                         NS = st.session_state["base_ns"][1]
                         sm_iri = BNode() if not sm_label else NS[sm_label]
                         if next(st.session_state["g_mapping"].triples((None, RML.subjectMap, sm_iri)), None):
                             sm_complete_flag = False
-                            inner_html_error += """<small>· That <b>Subject Map label</b> is already in use.
+                            inner_html_error += """<small>· That <b>subject map label</b> is already in use.
                                 Please pick a different label.</small><br>"""
 
                 # INFO MESSAGES (RIGHT COLUMN)
                 with col2b:
                     messages = []
                     if inner_html_error:
-                        messages.append(f"""❌ <b>Subject Map is incomplete.</b><br>
+                        messages.append(f"""❌ <b>Subject map is incomplete.</b><br>
                         <div style='margin-left: 1.5em;'>{inner_html_error}</div>""")
                     if inner_html_warning:
                         messages.append(f"""⚠️ <b>Caution.</b><br>
@@ -1404,7 +1404,7 @@ with tab2:
                             save_sm_reference_button = st.button("Save", on_click=save_sm_reference, key="key_save_sm_reference_button")
 
     with col2b:
-        utils.display_right_column_df("subject_maps", "last added Subject Maps")
+        utils.display_right_column_df("subject_maps", "last added subject maps")
 
 
 #_______________________________________________________________________________
@@ -1431,7 +1431,7 @@ with tab3:
         with col1a:
             st.write("")
             st.markdown(f"""<div class="success-message-flag">
-                ✅ The <b style="color:#F63366;">Predicate-Object Map</b> has been created!
+                ✅ The <b style="color:#F63366;">predicate-object map</b> has been created!
             </div>""", unsafe_allow_html=True)
         st.session_state["pom_saved_ok_flag"] = False
         time.sleep(utils.get_success_message_time())
@@ -1447,7 +1447,7 @@ with tab3:
             col1a, col1b = st.columns([2,1])
         with col1a:
             st.markdown(f"""<div class="error-message">
-                    ❌ No TriplesMaps in mapping <b>{st.session_state["g_label"]}</b>.
+                    ❌ No triples maps in mapping <b>{st.session_state["g_label"]}</b>.
                     <small>You can add new TriplesMaps in the <b>Add TriplesMap</b> panel.</small>
                 </div>""", unsafe_allow_html=True)
 
@@ -1465,16 +1465,16 @@ with tab3:
                 </b></div>""", unsafe_allow_html=True)
             if st.session_state["last_added_tm_list"]:
                 list_to_choose = sorted(tm_dict)
-                list_to_choose.insert(0, "Select TriplesMap")
-                tm_label_for_pom = st.selectbox("🖱️ Select TriplesMap:*", list_to_choose, key="key_tm_label_for_pom_default",
+                list_to_choose.insert(0, "Select triples map")
+                tm_label_for_pom = st.selectbox("🖱️ Select triples map:*", list_to_choose, key="key_tm_label_for_pom_default",
                     label_visibility="collapsed", index=list_to_choose.index(st.session_state["last_added_tm_list"][0]))
             else:
                 list_to_choose = list(reversed(tm_dict))
-                list_to_choose.insert(0, "Select TriplesMap")
-                tm_label_for_pom = st.selectbox("🖱️ Select TriplesMap:*", list_to_choose, key="key_tm_label_for_pom",
+                list_to_choose.insert(0, "Select triples map")
+                tm_label_for_pom = st.selectbox("🖱️ Select triple map:*", list_to_choose, key="key_tm_label_for_pom",
                     label_visibility="collapsed")
 
-        if tm_label_for_pom != "Select TriplesMap":
+        if tm_label_for_pom != "Select triples map":
 
             tm_iri_for_pom = tm_dict[tm_label_for_pom]
             column_list = [] # will search only if needed, can be slow with failed connections
@@ -1624,7 +1624,7 @@ with tab3:
             # GENERATION RULE
             with col1b:
                 list_to_choose = ["Template 📐", "Constant 🔒", "Reference 📊"]
-                om_generation_rule = st.radio("🖱️ Object Map generation rule:*", list_to_choose,
+                om_generation_rule = st.radio("🖱️ Object map generation rule:*", list_to_choose,
                     horizontal=True, label_visibility="collapsed", key="key_om_generation_rule_radio")
 
             # TEMPLATE-VALUED OBJECT MAP
@@ -1768,7 +1768,7 @@ with tab3:
                         placeholder="Select namespace ᵒᵖᵗ", index=None, label_visibility="collapsed", key="key_om_constant_ns")
 
                 with col1b:
-                    om_constant = st.text_input("⌨️ Enter Object Map constant:*", key="key_om_constant",
+                    om_constant = st.text_input("⌨️ Enter Object map constant:*", key="key_om_constant",
                         label_visibility="collapsed", placeholder="🔒 Enter constant*")
                     # if om_constant:
                     #     st.markdown("""<div class="very-small-info">
@@ -1904,14 +1904,14 @@ with tab3:
                 om_graph = graph_map_dict[add_om_graph_map_option]
 
         # CHECK EVERYTHING IS READY
-        if tm_label_for_pom != "Select TriplesMap":
+        if tm_label_for_pom != "Select triples map":
 
             pom_complete_flag = True
             inner_html_error = ""
             inner_html_warning = ""
 
             if not tm_label_for_pom in tm_w_sm_list:
-                inner_html_warning += f"""<small>· TriplesMap <b>{tm_label_for_pom}</b> has no Subject Map.
+                inner_html_warning += f"""<small>· Triples map <b>{tm_label_for_pom}</b> has no subject map.
                     It will be invalid without one.</small><br>"""
 
             if not ontology_property_dict and not custom_property_dict:
@@ -2015,7 +2015,7 @@ with tab3:
 
                 messages = []
                 if inner_html_error:
-                    messages.append(f"""❌ <b>Predicate-Object Map is incomplete.</b><br>
+                    messages.append(f"""❌ <b>Predicate-object map is incomplete.</b><br>
                     <div style='margin-left: 1.5em;'>{inner_html_error}</div>""")
                 if inner_html_warning:
                     messages.append(f"""⚠️ <b>Caution.</b><br>
@@ -2111,8 +2111,8 @@ with tab4:
             col1a, col1b = st.columns([2,1])
         with col1a:
             st.markdown(f"""<div class="error-message">
-                    ❌ No TriplesMaps in mapping <b>{st.session_state["g_label"]}</b>.
-                    <small>You can add new TriplesMaps in the <b>Add TriplesMap</b> panel.</small>
+                    ❌ No triples maps in mapping <b>{st.session_state["g_label"]}</b>.
+                    <small>You can add new triples maps in the <b>Add TriplesMap</b> panel.</small>
                 </div>""", unsafe_allow_html=True)
     else:
         with col1:
@@ -2141,7 +2141,7 @@ with tab4:
             with col1a:
                 st.write("")
                 st.markdown(f"""<div class="success-message-flag">
-                    ✅ The <b>Subject Map(s)</b> have been removed!
+                    ✅ The <b>subject map(s)</b> have been removed!
                 </div>""", unsafe_allow_html=True)
             st.session_state["sm_unassigned_ok_flag"] = False
             time.sleep(utils.get_success_message_time())
@@ -2153,7 +2153,7 @@ with tab4:
             with col1a:
                 st.write("")
                 st.markdown(f"""<div class="success-message-flag">
-                    ✅ The <b>Predicate-Object Map(s)</b> have been removed!
+                    ✅ The <b>predicate-object map(s)</b> have been removed!
                 </div>""", unsafe_allow_html=True)
                 st.write("")
             st.session_state["pom_removed_ok_flag"] = False
@@ -2167,7 +2167,7 @@ with tab4:
 
         if not tm_dict:
             st.markdown(f"""<div class="error-message">
-                ❌ Mapping {st.session_state["g_label"]} has no <b>TriplesMaps</b>.
+                ❌ Mapping {st.session_state["g_label"]} has no <b>triples maps</b>.
                 <small>You can add them in the <b>Add TriplesMap panel</b></small>.
             </div>""", unsafe_allow_html=True)
 
@@ -2193,7 +2193,7 @@ with tab4:
             if len(list_to_choose) > 1:
                 list_to_choose.insert(0, "Select all")
             with col1a:
-                tm_to_remove_list = st.multiselect("🖱️ Select TriplesMaps:*", list_to_choose, key="key_tm_to_remove_list")
+                tm_to_remove_list = st.multiselect("🖱️ Select triples maps:*", list_to_choose, key="key_tm_to_remove_list")
 
             if tm_to_remove_list:
 
@@ -2202,7 +2202,7 @@ with tab4:
                     tm_to_remove_list = list(tm_dict.keys())
                     with col1:
                         remove_tm_checkbox = st.checkbox(
-                        "🔒 I am sure I want to remove all TriplesMaps",
+                        "🔒 I am sure I want to remove all triples maps",
                         key="remove_tm_checkbox")
                         if remove_tm_checkbox:
                             st.button("Remove", on_click=remove_all_tm)
@@ -2211,7 +2211,7 @@ with tab4:
                     deleting_all_tm_flag = False
                     with col1:
                         remove_tm_checkbox = st.checkbox(
-                        "🔒 I am sure I want to remove the selected TriplesMap(s)",
+                        "🔒 I am sure I want to remove the selected triples map(s)",
                         key="remove_tm_checkbox")
                         if remove_tm_checkbox:
                             st.button("Remove", on_click=remove_tm)
@@ -2219,7 +2219,7 @@ with tab4:
                 with col1:
                     if deleting_all_tm_flag:
                         st.markdown(f"""<div class="warning-message">
-                                ⚠️ If you continue, <b>all TriplesMaps will be removed</b>.
+                                ⚠️ If you continue, <b>all triples maps will be removed</b>.
                                 <small>Make sure you want to go ahead.</small>
                             </div>""", unsafe_allow_html=True)
                     utils.display_tm_info_for_removal(tm_to_remove_list)
@@ -2235,7 +2235,7 @@ with tab4:
                 list_to_choose = sorted(tm_w_sm_list)
                 if len(list_to_choose) > 1:
                     list_to_choose.insert(0, "Select all")
-                tm_to_unassign_sm_list_input = st.multiselect("🖱️ Select TriplesMaps:*", list_to_choose,
+                tm_to_unassign_sm_list_input = st.multiselect("🖱️ Select triples maps:*", list_to_choose,
                     key="key_tm_to_unassign_sm")
 
                 if "Select all" in tm_to_unassign_sm_list_input:
@@ -2259,10 +2259,10 @@ with tab4:
             if "Select all" in tm_to_unassign_sm_list_input:
                 with col1:
                     unassign_all_sm_checkbox = st.checkbox(
-                    "🔒 I am sure I want to remove all Subject Map(s)",
+                    "🔒 I am sure I want to remove all subject map(s)",
                     key="key_unassign_all_sm_checkbox")
                     st.markdown(f"""<div class="warning-message">
-                            ⚠️ You are deleting <b>all Subject Maps</b>.
+                            ⚠️ You are deleting <b>all subject maps</b>.
                             <small>Make sure you want to go ahead.</small>
                         </div>""", unsafe_allow_html=True)
                     if unassign_all_sm_checkbox:
@@ -2273,7 +2273,7 @@ with tab4:
             elif tm_to_unassign_sm_list:
                 with col1:
                     unassign_sm_checkbox = st.checkbox(
-                    "🔒 I am sure I want to remove the selected Subject Map(s)",
+                    "🔒 I am sure I want to remove the selected subject map(s)",
                     key="key_unassign_sm_checkbox")
                 if unassign_sm_checkbox:
                     st.session_state["sm_to_completely_remove_list"] = sm_to_completely_remove_list
@@ -2298,10 +2298,10 @@ with tab4:
             with col1a:
                 list_to_choose = sorted(tm_w_pom_list)
                 if len(list_to_choose) > 1:
-                    list_to_choose.insert(0, "Select TriplesMap")
-                tm_to_remove_pom_label = st.selectbox("🖱️ Select TriplesMap:*", list_to_choose, key="key_tm_to_remove_pom")
+                    list_to_choose.insert(0, "Select triples map")
+                tm_to_remove_pom_label = st.selectbox("🖱️ Select triples map:*", list_to_choose, key="key_tm_to_remove_pom")
 
-            if tm_to_remove_pom_label != "Select TriplesMap":
+            if tm_to_remove_pom_label != "Select triples map":
                 tm_to_remove_pom_iri = tm_dict[tm_to_remove_pom_label]
                 pom_of_selected_tm_list = []
                 for pom_iri in pom_dict:
@@ -2317,7 +2317,7 @@ with tab4:
                         list_to_choose = sorted(dict_to_choose.keys())
                         if len(list_to_choose) > 1:
                             list_to_choose.insert(0, "Select all")
-                        pom_to_remove_label_list = st.multiselect("🖱️ Select Predicate-Object Maps:*", list_to_choose,
+                        pom_to_remove_label_list = st.multiselect("🖱️ Select predicate-object maps:*", list_to_choose,
                             key="key_pom_to_remove")
 
                         if pom_to_remove_label_list:
@@ -2328,13 +2328,13 @@ with tab4:
                                         pom_to_remove_iri_list.append(pom_iri)
                                 with col1:
                                     remove_all_pom_checkbox = st.checkbox(
-                                    f"""🔒 I am  sure I want to remove all Predicate-Object Maps""",
+                                    f"""🔒 I am  sure I want to remove all predicate-object maps""",
                                     key="key_overwrite_g_mapping_checkbox_new")
                                     if remove_all_pom_checkbox:
                                         st.button("Remove", on_click=remove_pom, key="key_remove_all_pom_button")
                                     st.markdown(f"""<div class="warning-message">
-                                            ⚠️ You are deleting <b>all Predicate-Object Maps ({len(pom_to_remove_iri_list)})</b>
-                                            of the TriplesMap <b>{tm_to_remove_pom_label}</b>.
+                                            ⚠️ You are deleting <b>all predicate-object maps ({len(pom_to_remove_iri_list)})</b>
+                                            of the triples map <b>{tm_to_remove_pom_label}</b>.
                                             <small>Make sure you want to go ahead.</small>
                                         </div>""", unsafe_allow_html=True)
 
@@ -2345,13 +2345,13 @@ with tab4:
                                         pom_to_remove_iri_list.append(dict_to_choose[pom_label])
                                 with col1:
                                     remove_pom_checkbox = st.checkbox(
-                                    f"""🔒 I am  sure I want to remove the selected Predicate-Object Map(s)""",
+                                    f"""🔒 I am  sure I want to remove the selected predicate-object map(s)""",
                                     key="key_overwrite_g_mapping_checkbox_new")
                                     if remove_pom_checkbox:
                                         st.button("Remove", on_click=remove_pom, key="key_remove_pom_button")
 
 
-            if tm_to_remove_pom_label != "Select TriplesMap":
+            if tm_to_remove_pom_label != "Select triples map":
                 rows = [{"Predicate-Object Map": utils.get_node_label(pom_iri),
                     "Rule": pom_dict[pom_iri][5], "Type": pom_dict[pom_iri][4],
                     "Predicate(s)": utils.format_list_for_display(pom_dict[pom_iri][1])}
@@ -2363,7 +2363,7 @@ with tab4:
                     with col1:
                         st.write("")
                         st.markdown(f"""<div style='font-size: 14px; color: grey;'>
-                                🔎 Predicate-Object Maps of TriplesMap <b>{tm_to_remove_pom_label}</b> ({len(df)})
+                                🔎 Predicate-object maps of triples map <b>{tm_to_remove_pom_label}</b> ({len(df)})
                             </div>""", unsafe_allow_html=True)
                         st.dataframe(df, hide_index=True)
 

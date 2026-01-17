@@ -2820,7 +2820,7 @@ def get_column_list_and_give_info(tm_label, template=False):
                 column_list = df.columns.tolist()
                 if not column_list:
                     inner_html = f"""⚠️ The iterator expression returned <b>no matches</b>.
-                        <small>Check your TriplesMap definition. Manual entry allowed but strongly discouraged. </small>"""
+                        <small>Check your triples map definition. Manual entry allowed but strongly discouraged. </small>"""
 
     # Saved database
     elif selected_conn_label:
@@ -3120,7 +3120,7 @@ def prepare_node_for_rule_preview(node, subject=False, predicate=False, object=F
                 sm_rule = utils.get_node_label(sm_rule)
 
         else:
-            sm_rule = """No Subject Map"""
+            sm_rule = """No subject map"""
 #______________________________________________________
 
 #______________________________________________________
@@ -3148,7 +3148,7 @@ def preview_rule(tm_iri_for_pom, predicate_list, om_rule, o_is_reference=False, 
             formatted_s = f"{{{s_for_display}}}"
 
     else:
-        s_for_display = """No Subject Map"""
+        s_for_display = """No subject map"""
 
     # Get object and prepare for display
     o_for_display = get_node_label(om_rule)
@@ -3454,47 +3454,47 @@ def check_g_mapping(g, warning=False, reduce=True):
             g_mapping_complete_flag = False
             if len(tm_wo_sm_list) < max_length or not reduce:
                 inner_html += f"""<div style="margin-left: 20px">
-                <small>· TriplesMap(s) without a Subject Map ({len(tm_wo_sm_list)}):
+                <small>· Triples map(s) without a subject map ({len(tm_wo_sm_list)}):
                 <small><b>{tm_wo_sm_list_display}</b></small></small><br></div>"""
             else:
                 inner_html += f"""<div style="margin-left: 20px">
                 <small><b>· {len(tm_wo_sm_list)}
-                TriplesMaps</b> without
-                a Subject Map.</small><br></div>"""
+                Triples maps</b> without
+                a subject map.</small><br></div>"""
 
         if tm_wo_pom_list:
             g_mapping_complete_flag = False
             if len(tm_wo_pom_list) < max_length or not reduce:
                 inner_html += f"""<div style="margin-left: 20px">
-                <small>· TriplesMap(s) without Predicate-Object Maps ({len(tm_wo_pom_list)}):
+                <small>· Triples map(s) without predicate-object maps ({len(tm_wo_pom_list)}):
                 <small><b>{tm_wo_pom_list_display}</b></small></small><br></div>"""
             else:
                 inner_html += f"""<div style="margin-left: 20px">
                 <small>· <b>{len(tm_wo_pom_list)}
-                TriplesMap(s)</b> without Predicate-Object Maps</small><br></div>"""
+                Triples map(s)</b> without predicate-object maps</small><br></div>"""
 
         if pom_wo_om_list:
             g_mapping_complete_flag = False
             if len(pom_wo_om_list) < max_length or not reduce:
                 inner_html += f"""<div style="margin-left: 20px">
-                <small>· Predicate-Object Map(s) without an Object Map ({len(pom_wo_om_list_display)}):
+                <small>· Predicate-object map(s) without an object map ({len(pom_wo_om_list_display)}):
                 <small><b>{pom_wo_om_list_display}</b></small></small><br></div>"""
             else:
                 inner_html += f"""<div style="margin-left: 20px">
                 <small>· <b>{len(pom_wo_om_list_display)}
-                Predicate-Object Maps</b> without
-                an Object Map.</small><br></div>"""
+                Predicate-object maps</b> without
+                an object map.</small><br></div>"""
 
         if pom_wo_predicate_list:
             g_mapping_complete_flag = False
             if len(pom_wo_om_list) < max_length or not reduce:
                 inner_html += f"""<div style="margin-left: 20px">
-                <small>· Predicate-Object Map(s) without a predicate ({len(pom_wo_predicate_list_display)}):
+                <small>· Predicate-object map(s) without a predicate ({len(pom_wo_predicate_list_display)}):
                 <small><b>{pom_wo_predicate_list_display}</b></small></small><br></div>"""
             else:
                 inner_html += f"""<div style="margin-left: 20px">
                 <small>· <b>{len(pom_wo_predicate_list_display)}
-                Predicate-Object Maps</b> without
+                Predicate-object maps</b> without
                 a predicate.</small><br></div>"""
 
     return g_mapping_complete_flag, heading_html, inner_html, tm_wo_sm_list, tm_wo_pom_list, pom_wo_om_list, pom_wo_predicate_list

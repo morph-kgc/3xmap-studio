@@ -959,8 +959,8 @@ with tab3:
             col1a, col1b = st.columns([2,1.5])
         with col1a:
             if not "key_export_format_selectbox" in st.session_state:
-                st.session_state["key_export_format_selectbox"] = "🐢 turtle"  # this ensures ntriples wont keep selected after download
-            format_options_dict = {"🐢 turtle": "turtle", "3️⃣ ntriples": "ntriples"}
+                st.session_state["key_export_format_selectbox"] = "🐢 Turtle"  # this ensures ntriples wont keep selected after download
+            format_options_dict = {"🐢 Turtle": "turtle", "3️⃣ N-Triples": "ntriples"}
             preview_format_display = st.radio("🖱️ Select format:*", format_options_dict,
                 label_visibility="collapsed", horizontal=True, key="key_export_format_selectbox")
             preview_format = format_options_dict[preview_format_display]
