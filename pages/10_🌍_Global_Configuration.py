@@ -275,6 +275,25 @@ with tab1:
     with col1:
         col1a, col1b = st.columns([2,1])
 
+    with col1:
+        st.code("""@prefix ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#> .
+
+<http://university.org/professor/T001> a ub:Professor ;
+    ub:affiliateOf "Technical University Of Madrid"@en ;
+    ub:name "Mary Johnson" ;
+    ub:teacherOf "Solid State Physics "@en .
+
+<http://university.org/professor/T002> a ub:Professor ;
+    ub:affiliateOf "Technical University Of Madrid"@en ;
+    ub:name "Alan Brown" ;
+    ub:teacherOf "Introduction to Computer Science"@en .
+
+<http://university.org/professor/T003> a ub:Professor ;
+    ub:affiliateOf "Technical University Of Madrid"@en ;
+    ub:name "Susan Davis" ;
+    ub:teacherOf "Calculus II"@en .
+""")
+
     with col1a:
         st.session_state["g_label_temp_new"] = st.text_input("🏷️ Enter mapping label:*", # just a candidate until confirmed
         key="key_g_label_temp_new")

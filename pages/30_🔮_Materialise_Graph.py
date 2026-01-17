@@ -531,24 +531,30 @@ with tab1:
 
         with col1:
             col1a, col1b = st.columns([2,1])
-
-            if download_filename:
-                download_filename_complete = download_filename + download_extension if download_filename else ""
-                if download_format == "turtle":
-                    mime_option = "text/turtle"
-                elif download_format == "ntriples":
+        if download_filename:
+            download_filename_complete = download_filename + download_extension if download_filename else ""
+            if download_format == "turtle":
+                data = st.session_state["materialised_g_mapping_file"]
+                mime_option = "text/turtle"
+            else:
+                g = Graph()
+                g.parse(data=st.session_state["materialised_g_mapping_file"].getvalue().decode("utf-8"), format="turtle")
+                if download_format == "ntriples":
+                    data = g.serialize(format="nt")
                     mime_option = "application/n-triples"
                 elif download_format == "trig":
+                    data = g.serialize(format="json-ld")
                     mime_option = "application/trig"
                 elif download_format == "jsonld":
-                    mime_option = "application/ld+json"
+                    data = g.serialize(format="trig")
+                mime_option = "application/ld+json"
 
-                with col1a:
-                    st.write("")
-                    st.download_button(label="Export",
-                        data=st.session_state["materialised_g_mapping_file"],
-                        file_name=download_filename_complete,
-                        mime=mime_option)
+            with col1a:
+                st.write("")
+                st.download_button(label="Export",
+                    data=data,
+                    file_name=download_filename_complete,
+                    mime=mime_option)
 
             with col1a:
                 back_to_materialisation_checkbox = st.checkbox("🔄 Back to materialisation", key="key_back_to_materialisation_checkbox")
