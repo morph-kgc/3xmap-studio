@@ -515,7 +515,7 @@ with tab1:
         with col1:
             col1a, col1b = st.columns([1,2])
         with col1a:
-            download_extension_dict = utils.get_supported_formats(mapping=True)
+            download_extension_dict = utils.get_supported_formats(mapping=True, fun=True)
             download_format_list = list(download_extension_dict)
             download_format = st.selectbox("🖱️ Select format:*", download_format_list, key="key_download_format_selectbox")
         with col1b:
@@ -533,13 +533,13 @@ with tab1:
             col1a, col1b = st.columns([2,1])
         if download_filename:
             download_filename_complete = download_filename + download_extension if download_filename else ""
-            if download_format == "turtle":
+            if download_format == "🐢 Turtle":
                 data = st.session_state["materialised_g_mapping_file"]
                 mime_option = "text/turtle"
             else:
                 g = Graph()
                 g.parse(data=st.session_state["materialised_g_mapping_file"].getvalue().decode("utf-8"), format="turtle")
-                if download_format == "ntriples":
+                if download_format == "3️⃣ N-Triples":
                     data = g.serialize(format="nt")
                     mime_option = "application/n-triples"
                 elif download_format == "trig":

@@ -47,6 +47,8 @@ def create_new_g_mapping():
     st.session_state["original_g_mapping_ns_dict"] = {}
     st.session_state["new_g_mapping_created_ok_flag"] = True   #flag for success mesagge
     utils.empty_last_added_lists()
+    st.session_state["materialised_g_mapping"] = Graph()
+    st.session_state["graph_materialised_ok_flag"] = False
     # reset fields__________________
     st.session_state["key_g_label_temp_new"] = ""
 
@@ -82,6 +84,8 @@ def import_existing_g_mapping():
         st.session_state["g_mapping_source_cache"] = ["file", selected_mapping_input.name]
     st.session_state["existing_g_mapping_loaded_ok_flag"] = True
     utils.empty_last_added_lists()
+    st.session_state["materialised_g_mapping"] = Graph()
+    st.session_state["graph_materialised_ok_flag"] = False
     # reset fields________________________________________
     st.session_state["key_mapping_link"] = ""
     st.session_state["key_import_mapping_selected_option"] = "🌐 URL"
@@ -274,25 +278,6 @@ with tab1:
 
     with col1:
         col1a, col1b = st.columns([2,1])
-
-    with col1:
-        st.code("""@prefix ub: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#> .
-
-<http://university.org/professor/T001> a ub:Professor ;
-    ub:affiliateOf "Technical University Of Madrid"@en ;
-    ub:name "Mary Johnson" ;
-    ub:teacherOf "Solid State Physics "@en .
-
-<http://university.org/professor/T002> a ub:Professor ;
-    ub:affiliateOf "Technical University Of Madrid"@en ;
-    ub:name "Alan Brown" ;
-    ub:teacherOf "Introduction to Computer Science"@en .
-
-<http://university.org/professor/T003> a ub:Professor ;
-    ub:affiliateOf "Technical University Of Madrid"@en ;
-    ub:name "Susan Davis" ;
-    ub:teacherOf "Calculus II"@en .
-""")
 
     with col1a:
         st.session_state["g_label_temp_new"] = st.text_input("🏷️ Enter mapping label:*", # just a candidate until confirmed
