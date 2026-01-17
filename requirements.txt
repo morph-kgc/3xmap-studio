@@ -2,7 +2,6 @@ cryptography
 elementpath
 jsonpath-ng
 lxml
-matplotlib
 morph-kgc
 networkx
 odfpy
@@ -16,7 +15,6 @@ pyarrow
 PyMySQL
 pymongo
 pyodbc
-pyreadstat
 pyvis
 langcodes
 rdflib
@@ -26,10 +24,6 @@ sqlglot
 streamlit
 streamlit-js-eval
 xlrd
-
-
-
-
 
 
 

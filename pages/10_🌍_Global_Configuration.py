@@ -308,7 +308,7 @@ with tab1:
                 with col1a:
                     overwrite_g_mapping_and_session_checkbox = st.checkbox(
                         f"""🔄 Start fresh: remove previously loaded ontologies and data sources""",
-                        value=True, key="key_overwrite_g_mapping_and_session_checkbox_new")
+                        key="key_overwrite_g_mapping_and_session_checkbox_new")
             else:
                 overwrite_g_mapping_and_session_checkbox = False
 
@@ -404,7 +404,7 @@ with tab1:
                 with col1:
                     overwrite_g_mapping_and_session_checkbox = st.checkbox(
                         f"""🔄 Start fresh: remove previously loaded ontologies and data sources""",
-                        value=True, key="key_overwrite_g_mapping_and_session_checkbox_existing")
+                        key="key_overwrite_g_mapping_and_session_checkbox_existing")
             else:
                 overwrite_g_mapping_and_session_checkbox = False
             with col1:
@@ -426,7 +426,7 @@ with tab1:
                 with col1a:
                     overwrite_g_mapping_and_session_checkbox = st.checkbox(
                         f"""🔄 Start fresh: remove previously loaded ontologies and data sources""",
-                        value=True, key="key_overwrite_g_mapping_and_session_checkbox_existing")
+                        key="key_overwrite_g_mapping_and_session_checkbox_existing")
             else:
                 overwrite_g_mapping_and_session_checkbox = False
 
@@ -503,7 +503,7 @@ with tab1:
 
 
     # RIGHT COLUMN: SUCCESS MESSAGES--------------------------------------------
-    # for retrieve cached mapping, change label and full reset
+    # for retrieve cached session, change label and full reset
     if st.session_state["cached_mapping_retrieved_ok_flag"]:
         with col2b:
             st.write("")
@@ -588,7 +588,7 @@ with tab1:
             with col2b:
                 st.write("")
                 retrieve_cached_mapping_checkbox = st.checkbox(
-                    "🗃️ Retrieve cached mapping",
+                    "🗃️ Retrieve cached session",
                     key="key_retrieve_cached_mapping_checkbox")
                 if retrieve_cached_mapping_checkbox:
                     st.button("Retrieve", key="key_retrieve_cached_mapping_button", on_click=retrieve_cached_mapping)
@@ -1174,7 +1174,7 @@ with tab3:
                 st.button("Save", key="key_save_progress_button", on_click=save_progress)
                 st.markdown(f"""<div class="info-message-blue">
                         ℹ️ Current <b>session state</b> will be temporarily saved.
-                        <small>To retrieve cached work go to the <b>Select Mapping</b> panel.</small>
+                        <small>To retrieve cached session go to the <b>Select Mapping</b> panel.</small>
                     </span></div>""", unsafe_allow_html=True)
                 existing_pkl_file_list = [f for f in os.listdir() if f.endswith("_cache__.pkl")]
                 if existing_pkl_file_list:

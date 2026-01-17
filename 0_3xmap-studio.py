@@ -33,6 +33,6 @@ st.markdown(
 )
 
 st.markdown(f"""
-<h1>Welcome to <span style='color:{color};'>3xmap Studio</span></h1>
+<h1>Welcome to <span style='color:{color};'>3xtudio</span></h1>
 """, unsafe_allow_html=True)
 st.write("Use sidebar to work with existing or new mapping.")

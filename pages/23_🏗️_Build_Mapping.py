@@ -49,7 +49,7 @@ def save_tm_w_tab_ls():
     st.session_state["g_mapping"].add((ls_iri, RML.source, Literal(ds_filename)))    # bind ls to source file
     file_extension = ds_filename.rsplit(".", 1)[-1].lower()    # bind to reference formulation
     reference_formulation = utils.get_reference_formulation_dict()[file_extension]
-    st.session_state["g_mapping"].add((ls_iri, QL.referenceFormulation, reference_formulation))
+    st.session_state["g_mapping"].add((ls_iri, RML.referenceFormulation, reference_formulation))
     st.session_state["g_mapping"].add((tm_iri, RDF.type, RML.TriplesMap))
     # store information____________________
     st.session_state["tm_saved_ok_flag"] = True  # for success message
@@ -58,7 +58,7 @@ def save_tm_w_tab_ls():
     st.session_state["key_tm_label_input"] = ""
 
 def save_tm_w_view():
-    # get required info
+    # get info
     [engine, host, port, database, user, password] = st.session_state["db_connections_dict"][db_connection_for_ls]
     url_str = utils.get_db_url_str(db_connection_for_ls)
     sql_query = st.session_state["saved_views_dict"][selected_view_for_ls][1]
@@ -82,13 +82,14 @@ def save_tm_w_view():
     st.session_state["key_tm_label_input"] = ""
 
 def save_tm_w_table_name():
+    # get info
+    NS = st.session_state["base_ns"][1]
     [engine, host, port, database, user, password] = st.session_state["db_connections_dict"][db_connection_for_ls]
     url_str = utils.get_db_url_str(db_connection_for_ls)
-    # add triples__________________
-    NS = st.session_state["base_ns"][1]
     tm_iri = NS[f"{st.session_state['tm_label']}"]
     tm_label = utils.get_node_label(tm_iri)
     ls_iri = NS[f"{ls_label}"] if label_ls_option == "Yes (add label 🔖)" else BNode()
+    # add triples__________________
     st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    # bind to logical source
     st.session_state["g_mapping"].add((ls_iri, RML.source, Literal(url_str)))    # bind ls to database
     if engine != "MongoDB":
@@ -101,6 +102,24 @@ def save_tm_w_table_name():
     st.session_state["tm_saved_ok_flag"] = True  # for success message
     st.session_state["last_added_tm_list"].insert(0, tm_label)    # to display last added tm
     # reset fields_______________________
+    st.session_state["key_tm_label_input"] = ""
+
+def save_tm_w_manual_ls():
+    # get required info
+    NS = st.session_state["base_ns"][1]
+    tm_iri = NS[f"{st.session_state['tm_label']}"]
+    tm_label = utils.get_node_label(tm_iri)
+    ls_iri = NS[f"{ls_label}"] if label_ls_option == "Yes (add label 🔖)" else BNode()
+    reference_formulation_iri = QL[manual_reference_formulation]
+    # add triples___________________
+    st.session_state["g_mapping"].add((tm_iri, RML.logicalSource, ls_iri))    # bind to logical source
+    st.session_state["g_mapping"].add((tm_iri, RDF.type, RML.TriplesMap))
+    st.session_state["g_mapping"].add((ls_iri, RML.source, Literal(manual_ls)))    # bind ls to database
+    st.session_state["g_mapping"].add((ls_iri, RML.referenceFormulation, reference_formulation_iri))
+    # store information________________
+    st.session_state["tm_saved_ok_flag"] = True  # for success message
+    st.session_state["last_added_tm_list"].insert(0, tm_label)    # to display last added tm
+    # reset fields_____________________
     st.session_state["key_tm_label_input"] = ""
 
 # TAB2
@@ -582,26 +601,24 @@ with tab1:
         if st.session_state["ds_files_dict"]:
             ls_options_list.append("🛢️ Data file")
         if labelled_ls_list:
-            ls_options_list.append("📑 Existing Logical Source")
+            ls_options_list.append("📑 Existing")
+        ls_options_list.append("✏️ Manual")
 
         with col1b:
-            if ls_options_list:
-                ls_option = st.radio("🖱️ Logical Source:*", ls_options_list, horizontal=True,
-                    key="key_ls_option")
-                if not st.session_state["db_connections_dict"] and not st.session_state["ds_files_dict"]:
-                    st.markdown(f"""<div class="info-message-gray">
-                        ℹ️ To add <b>data sources</b> <small>go to the
-                        <b>📊 Databases</b> and/or <b>🛢️ Data Files</b> pages.</small>
-                    </div>""", unsafe_allow_html=True)
+            ls_option = st.radio("🖱️ Logical Source:*", ls_options_list, horizontal=True,
+                key="key_ls_option")
 
-            else:
-                st.markdown(f"""<div class="error-message">
-                    ❌ <b>No data sources are available.</b> <small>You can add them in the
-                    <b>📊 Databases</b> and/or <b>🛢️ Data Files</b> pages.</small>
-                </div>""", unsafe_allow_html=True)
-                ls_option = None
+        with col2:
+            col2a, col2b = st.columns([1,2])
+        with col2b:
+            if not st.session_state["db_connections_dict"] and not st.session_state["ds_files_dict"]:
+                st.markdown(f"""<div class="warning-message">
+                    ⚠️ <b>No data sources have been added</b>
+                    <small>from the <b>📊 Databases</b> or <b>🛢️ Data Files</b> pages.
+                    Only manual entry of the logical sources is available <b>(discouraged)</b>.</small>
+            </div>""", unsafe_allow_html=True)
 
-        if ls_option == "📑 Existing Logical Source":
+        if ls_option == "📑 Existing":
 
             with col1a:
                 list_to_choose = sorted(labelled_ls_list)
@@ -744,7 +761,42 @@ with tab1:
                         if ds_filename_for_tm != "Select file":
                             st.button("Save", key="key_save_tm_w_tab_ls", on_click=save_tm_w_tab_ls)
 
+        if ls_option == "✏️ Manual":
 
+            with col1:
+                col1a, col1b = st.columns([2,1])
+
+            with col1a:
+                manual_ls = st.text_input("⌨️ Enter Logical Source:*")
+                list_to_choose = sorted(["LogicalView", "JSONPath", "XPath", "CSV", "CSVW", "SQL"])
+                list_to_choose.insert(0, "Select Reference Formulation")
+                manual_reference_formulation = st.selectbox("🖱️ Select reference formulation:*", list_to_choose,
+                    key="key_manual_reference_formulation")
+
+            with col1b:
+                label_ls_option = st.selectbox("♻️ Reuse Logical Source:",
+                    ["No", "Yes (add label 🔖)"], key="key_label_ls_option")
+
+                if label_ls_option == "Yes (add label 🔖)":
+                    ls_label = st.text_input("🏷️ Enter Logical Source label:*")
+                    with col1b:
+                        valid_ls_label_flag = utils.is_valid_label(ls_label, hard=True, blank_space=True)
+                        if ls_label in labelled_ls_list:
+                            with col1b:
+                                st.write("")
+                                st.markdown(f"""<div class="error-message">
+                                        ❌ Label <b>{ls_label}</b>
+                                        is already <b>in use</b>. <small>Please pick a different label.</small>
+                                    </div>""", unsafe_allow_html=True)
+                            valid_ls_label_flag = False
+
+                else:
+                    ls_label = ""
+                    valid_ls_label_flag = True
+
+                with col1a:
+                    if valid_ls_label_flag and manual_ls and manual_reference_formulation != "Select Reference Formulation":
+                        st.button("Save", key="key_save_tm_w_manual_ls", on_click=save_tm_w_manual_ls)
 #_______________________________________________________________________________
 #PANEL: ADD SUBJECT MAP
 with tab2:
@@ -808,8 +860,7 @@ with tab2:
             if st.session_state["last_added_tm_list"] and st.session_state["last_added_tm_list"][0] in tm_wo_sm_list:  # Last added tm available (selected by default)
                 list_to_choose = sorted(tm_wo_sm_list)
                 list_to_choose.insert(0, "Select TriplesMap")
-                st.markdown("""
-                <div class="small-subsection-heading" style="margin-top:-10px; border-top:none;">
+                st.markdown("""<div class="small-subsection-heading" style="margin-top:-10px; border-top:none;">
                     <b><span style=" display:inline-block; width:15px; height:15px;
                     background-color:#009933; color:white; border:1px solid black;
                     text-align:center; font-size:10px; line-height:15px;
@@ -1742,7 +1793,7 @@ with tab3:
 
                 with col1b:
                     st.markdown(f"""<div class="very-small-info-top">
-                        🔣️ Data type / 🈳 Language tagᵒᵖᵗ
+                        🔣️ Datatype / 🈳 Language tag ᵒᵖᵗ
                     </div>""", unsafe_allow_html=True)
                     datatypes_dict = utils.get_datatype_dict()
                     list_to_choose = sorted(datatypes_dict.keys())
@@ -2293,7 +2344,7 @@ with tab4:
     # RFBOOKMARK
     # PURPLE HEADING: CLEAN MAPPING---------------------------------------------
     (g_mapping_complete_flag, heading_html, inner_html, tm_wo_sm_list, tm_wo_pom_list,
-        pom_wo_om_list, pom_wo_predicate_list) = utils.check_g_mapping(st.session_state["g_mapping"])
+        pom_wo_om_list, pom_wo_predicate_list) = utils.check_g_mapping(st.session_state["g_mapping"], reduce=False)
     if not g_mapping_complete_flag:
         with col1:
             st.write("_________")

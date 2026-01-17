@@ -960,11 +960,11 @@ def get_supported_formats(mapping=False, ontology=False, databases=False, data_f
     elif databases:
         allowed_formats = ["PostgreSQL", "MySQL", "SQL Server", "MariaDB", "Oracle", "MongoDB"]
 
-    if data_files:
+    elif data_files:
         allowed_formats = [".csv", ".tsv", ".xls", ".xlsx", ".parquet", ".feather",
             ".orc", ".ods", ".json", ".xml"]
 
-    if hierarchical_files:
+    elif hierarchical_files:
         allowed_formats = ["json", "xml"]
 
     return allowed_formats
@@ -1121,9 +1121,9 @@ def init_page():
     # import style
     style_container = st.empty()
     if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
-        style_container.markdown(import_st_aesthetics(), unsafe_allow_html=True)
+        style_container.html(import_st_aesthetics())
     else:
-        style_container.markdown(import_st_aesthetics_dark_mode(), unsafe_allow_html=True)
+        style_container.html(import_st_aesthetics_dark_mode())
 
     # initialise session state variables
     init_session_state_variables()
@@ -1337,11 +1337,12 @@ def load_mapping_from_link(url, display=True):
         g.parse(url, format="turtle")
         return g
 
-    except:
+    except Exception as e:
         if display:
             st.markdown(f"""<div class="error-message">
                 ❌ Failed to parse <b>mapping</b>.
-                <small>Please check your URL and/or your mapping.</small>
+                <small>Please check your URL and/or your mapping.
+                <i><b> Full error:</b> {e}</i>>/small>
             </div>""", unsafe_allow_html=True)
         return None
 #_____________________________________________________
@@ -1365,10 +1366,11 @@ def load_mapping_from_file(f):
                 ns = Namespace(uri)
                 g.bind(prefix, ns)
             return g
-        except:
+        except Exception as e:
             st.markdown(f"""<div class="error-message">
                 ❌ Failed to parse <b>mapping</b>.
-                <small> Please check your mapping.</small>
+                <small> Please check your mapping.
+                <i><b> Full error:</b> {e}</i>>/small>
             </div>""", unsafe_allow_html=True)
             return False
 
@@ -2396,14 +2398,15 @@ def read_data_file(file_input, unsaved=False):
         orc_file = orc.ORCFile(file)
         read_content = orc_file.read().to_pandas()
 
-    elif file_format == "dta":
-        read_content, _ = pyreadstat.read_dta(file)
-
-    elif file_format == "sas7bdat":
-        read_content, _ = pyreadstat.read_sas7bdat(file)
-
-    elif file_format == "sav":
-        read_content, _ = pyreadstat.read_sav(file)
+    # elif file_format == "dta":
+    #     read_content, _ = pyreadstat.read_dta(file)
+    #
+    # elif file_format == "sas7bdat":
+    #     read_content, _ = pyreadstat.read_sas7bdat(file)
+    #
+    # elif file_format == "sav":
+    #     read_content, _ = pyreadstat.read_sav(file)
+    # pyreadstat in requirements and import pyreadstat
 
     elif file_format == "json":
         read_content = pd.read_json(file)
@@ -2411,7 +2414,6 @@ def read_data_file(file_input, unsaved=False):
     elif file_format == "xml":
         raw_bytes = file.getvalue() # get full contents safely
         read_content = pd.read_xml(io.BytesIO(raw_bytes), parser="etree")
-
     file.seek(0)
 
     return read_content
@@ -3336,7 +3338,7 @@ def display_sm_info_for_removal(tm_to_unassign_sm_list):
 
 #______________________________________________________
 # Function to check if mapping is complete
-def check_g_mapping(g, warning=False):
+def check_g_mapping(g, warning=False, reduce=True):
 
     tm_dict = get_tm_dict()
     max_length = utils.get_max_length_for_display()[5]
@@ -3370,7 +3372,6 @@ def check_g_mapping(g, warning=False):
 
     if tm_wo_sm_list or tm_wo_pom_list or pom_wo_om_list or pom_wo_predicate_list_display:
 
-        max_length = get_max_length_for_display()[5]
         if g == st.session_state["g_mapping"] and not warning:
             heading_html += f"""ℹ️ Mapping <b style="color:#F63366;">{st.session_state["g_label"]}</b> is incomplete."""
         elif g == st.session_state["g_mapping"] and warning:
@@ -3382,10 +3383,10 @@ def check_g_mapping(g, warning=False):
 
         if tm_wo_sm_list:
             g_mapping_complete_flag = False
-            if len(tm_wo_sm_list) < max_length:
+            if len(tm_wo_sm_list) < max_length or not reduce:
                 inner_html += f"""<div style="margin-left: 20px">
-                <small>· TriplesMap(s) without a Subject Map: <b>
-                {tm_wo_sm_list_display}</b></small><br></div>"""
+                <small>· TriplesMap(s) without a Subject Map ({len(tm_wo_sm_list)}):
+                <small><b>{tm_wo_sm_list_display}</b></small></small><br></div>"""
             else:
                 inner_html += f"""<div style="margin-left: 20px">
                 <small><b>· {len(tm_wo_sm_list)}
@@ -3394,11 +3395,10 @@ def check_g_mapping(g, warning=False):
 
         if tm_wo_pom_list:
             g_mapping_complete_flag = False
-            if len(tm_wo_pom_list) < max_length:
-                tm_wo_pom_list_display = utils.format_list_for_display(tm_wo_pom_list)
+            if len(tm_wo_pom_list) < max_length or not reduce:
                 inner_html += f"""<div style="margin-left: 20px">
-                <small>· TriplesMap(s) without Predicate-Object Maps
-                <b>{tm_wo_pom_list_display}</b></small><br></div>"""
+                <small>· TriplesMap(s) without Predicate-Object Maps ({len(tm_wo_pom_list)}):
+                <small><b>{tm_wo_pom_list_display}</b></small></small><br></div>"""
             else:
                 inner_html += f"""<div style="margin-left: 20px">
                 <small>· <b>{len(tm_wo_pom_list)}
@@ -3406,10 +3406,10 @@ def check_g_mapping(g, warning=False):
 
         if pom_wo_om_list:
             g_mapping_complete_flag = False
-            if len(pom_wo_om_list) < max_length:
+            if len(pom_wo_om_list) < max_length or not reduce:
                 inner_html += f"""<div style="margin-left: 20px">
-                <small>· Predicate-Object Map(s) without an Object Map:
-                <b>{pom_wo_om_list_display}</b></small><br></div>"""
+                <small>· Predicate-Object Map(s) without an Object Map ({len(pom_wo_om_list_display)}):
+                <small><b>{pom_wo_om_list_display}</b></small></small><br></div>"""
             else:
                 inner_html += f"""<div style="margin-left: 20px">
                 <small>· <b>{len(pom_wo_om_list_display)}
@@ -3418,10 +3418,10 @@ def check_g_mapping(g, warning=False):
 
         if pom_wo_predicate_list:
             g_mapping_complete_flag = False
-            if len(pom_wo_om_list) < max_length:
+            if len(pom_wo_om_list) < max_length or not reduce:
                 inner_html += f"""<div style="margin-left: 20px">
-                <small>· Predicate-Object Map(s) without a predicate
-                <b>{pom_wo_predicate_list_display}</b></small><br></div>"""
+                <small>· Predicate-Object Map(s) without a predicate ({len(pom_wo_predicate_list_display)}):
+                <small><b>{pom_wo_predicate_list_display}</b></small></small><br></div>"""
             else:
                 inner_html += f"""<div style="margin-left: 20px">
                 <small>· <b>{len(pom_wo_predicate_list_display)}
