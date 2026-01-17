@@ -47,6 +47,8 @@ def create_new_g_mapping():
     st.session_state["original_g_mapping_ns_dict"] = {}
     st.session_state["new_g_mapping_created_ok_flag"] = True   #flag for success mesagge
     utils.empty_last_added_lists()
+    st.session_state["materialised_g_mapping"] = Graph()
+    st.session_state["graph_materialised_ok_flag"] = False
     # reset fields__________________
     st.session_state["key_g_label_temp_new"] = ""
 
@@ -82,6 +84,8 @@ def import_existing_g_mapping():
         st.session_state["g_mapping_source_cache"] = ["file", selected_mapping_input.name]
     st.session_state["existing_g_mapping_loaded_ok_flag"] = True
     utils.empty_last_added_lists()
+    st.session_state["materialised_g_mapping"] = Graph()
+    st.session_state["graph_materialised_ok_flag"] = False
     # reset fields________________________________________
     st.session_state["key_mapping_link"] = ""
     st.session_state["key_import_mapping_selected_option"] = "🌐 URL"

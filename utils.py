@@ -947,11 +947,15 @@ def display_right_column_df(info, text, complete=True, display=True):
 # SUPPORTED FORMATS ============================================================
 #_______________________________________________________
 # List of allowed mapping file formats
-def get_supported_formats(mapping=False, ontology=False, databases=False, data_files=False, hierarchical_files=False):
+def get_supported_formats(mapping=False, ontology=False, databases=False, data_files=False, hierarchical_files=False, fun=False):
 
     if mapping:
-        allowed_formats = {"turtle": ".ttl",
-            "ntriples": ".nt"}
+        if not fun:
+            allowed_formats = {"turtle": ".ttl",
+                "ntriples": ".nt"}
+        else:
+            allowed_formats = {"🐢 Turtle": ".ttl",
+                "3️⃣ N-Triples": ".nt"}
 
     elif ontology:
         allowed_formats = {"owl": ".owl", "turtle": ".ttl", "longturtle": ".ttl", "n3": ".n3",
