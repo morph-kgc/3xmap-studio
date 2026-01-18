@@ -3282,7 +3282,7 @@ def get_pom_dict():
 
         elif reference:
             om_type = "reference"
-            om_rule = str(reference)
+            om_rule = "{" + str(reference) + "}"
 
         else:
             om_type = "---"
@@ -3292,6 +3292,20 @@ def get_pom_dict():
         for p_iri in predicate_list:
             predicate_label_list.append(get_node_label(p_iri))
 
+
+        # Predicate Map is used
+        if not predicate_list:
+            predicate_map_list = list(st.session_state["g_mapping"].objects(pom_iri, RML.predicateMap))
+            for pm_iri in predicate_map_list:
+                template = st.session_state["g_mapping"].value(pm_iri, RML.template)
+                constant = st.session_state["g_mapping"].value(pm_iri, RML.constant)
+                reference = st.session_state["g_mapping"].value(pm_iri, RML.reference)
+                if template:
+                    predicate_label_list.append(get_node_label(template))
+                elif constant:
+                    predicate_label_list.append(get_node_label(constant))
+                elif reference:
+                    predicate_label_list.append("{" + get_node_label(reference) + "}" )
 
         pom_dict[pom_iri] = [tm_iri, predicate_label_list, pom_iri, om_iri, om_type, om_rule]
 
@@ -3431,7 +3445,7 @@ def check_g_mapping(g, warning=False, reduce=True):
         pom_label = get_node_label(pom_iri)
         if not any(g.triples((pom_iri, RML.objectMap, None))):
             pom_wo_om_list.append(pom_label)
-        if not any(g.triples((pom_iri, RML.predicate, None))):
+        if not any(g.triples((pom_iri, RML.predicate, None))) and not any (g.triples((pom_iri, RML.predicateMap, None))):
             pom_wo_predicate_list.append(pom_label)
 
     tm_wo_pom_list_display = utils.format_list_for_display(tm_wo_pom_list)
@@ -3524,18 +3538,33 @@ def get_rules_for_sm(sm_iri):
     tm = g.value(predicate=RML.subjectMap, object=sm_iri)
 
     for pom in g.objects(subject=tm, predicate=RML.predicateObjectMap):
-        om = g.value(subject=pom, predicate=RML.objectMap)
-        p_for_display = g.value(subject=pom, predicate=RML.predicate)
-        for pred in [RML.constant, RML.template, RML.reference]:
-            om_for_display = g.value(subject=om, predicate=pred)
-            if om_for_display:
-                break
+        # Get all Object Maps
+        om_list = list(g.objects(subject=pom, predicate=RML.objectMap))
 
-        sm_for_display = get_node_label(sm_for_display)
-        p_for_display = get_node_label(p_for_display)
-        om_for_display = get_node_label(om_for_display)
+        # Get all predicates
+        p_list = list(g.objects(subject=pom, predicate=RML.predicate))
 
-        sm_rules_list.append([sm_for_display, p_for_display, om_for_display, get_node_label(tm)])
+        # Add predicates defined by Predicate Maps
+        pm_list = g.objects(subject=pom, predicate=RML.predicateMap)
+        for pm_iri in pm_list:
+            for pred in [RML.constant, RML.template, RML.reference]:
+                p_for_display = g.value(subject=pm_iri, predicate=pred)
+                p_for_display = "{" + p_for_display + "}" if pred == RML.reference else p_for_display
+                if p_for_display:
+                    p_list.append(p_for_display)
+                    break
+        # Get rules
+        for p_for_display in p_list:
+            for om in om_list:
+                for pred in [RML.constant, RML.template, RML.reference]:
+                    om_for_display = g.value(subject=om, predicate=pred)
+                    om_for_display = "{" + om_for_display + "}" if pred == RML.reference else om_for_display
+                    if om_for_display:
+                        break
+                sm_for_display = get_node_label(sm_for_display)
+                p_for_display = get_node_label(p_for_display)
+                om_for_display = get_node_label(om_for_display)
+                sm_rules_list.append([sm_for_display, p_for_display, om_for_display, get_node_label(tm)])
 
     return sm_rules_list
 #_________________________________________________

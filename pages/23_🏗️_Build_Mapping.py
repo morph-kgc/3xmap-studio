@@ -2353,7 +2353,7 @@ with tab4:
 
             if tm_to_remove_pom_label != "Select triples map":
                 rows = [{"Predicate-Object Map": utils.get_node_label(pom_iri),
-                    "Rule": pom_dict[pom_iri][5], "Type": pom_dict[pom_iri][4],
+                    "Object rule": pom_dict[pom_iri][5],
                     "Predicate(s)": utils.format_list_for_display(pom_dict[pom_iri][1])}
                     for pom_iri in pom_of_selected_tm_list]
                 df = pd.DataFrame(rows)

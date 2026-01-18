@@ -45,6 +45,14 @@ with tab1:
     with col1:
         col1a, col1b = st.columns([2,1])
 
+    with col1:
+        g = st.session_state["g_mapping"]
+        tm_list = g.subjects(predicate=RML.logicalSource)
+        for tm in tm_list:
+            sm = g.value(predicate=RML.subjectMap, subject=tm)
+            utils.get_rules_for_sm(sm)
+            st.write("HERE", utils.get_rules_for_sm(sm))
+
     (s_node_color, p_edge_color, o_node_color, p_edge_label_color,
         background_color, legend_font_color) = utils.get_colors_for_network()
 
