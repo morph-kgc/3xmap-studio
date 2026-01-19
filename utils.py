@@ -3608,7 +3608,7 @@ def display_g_mapping_network(tm_for_network_list):
 # constant_string is "s", "p" or "o"
 def get_unique_node_label(complete_node_id, constant_string, legend_dict):
 
-    max_length=utils.get_max_length_for_display()[6]
+    max_length = utils.get_max_length_for_display()[6]
 
     # Get proposed unique short label (ex. "s3")
     i = 1
@@ -3633,9 +3633,108 @@ def get_unique_node_label(complete_node_id, constant_string, legend_dict):
 
 #_________________________________________________
 # Function to create network and legend
+# def create_g_mapping_network(tm_for_network_list):
+#
+#     max_length=utils.get_max_length_for_display()[6]
+#     (s_node_color, p_edge_color, o_node_color, p_edge_label_color,
+#         background_color, legend_font_color) = get_colors_for_network()
+#
+#     # Get sm list
+#     sm_for_network_list = []
+#     for sm in st.session_state["g_mapping"].objects(predicate=RML.subjectMap):
+#         for rule in utils.get_rules_for_sm(sm):
+#             if rule[3] in tm_for_network_list:
+#                 sm_for_network_list.append(sm)
+#                 break
+#
+#     # Create network and legend
+#     G = nx.DiGraph()
+#     legend_dict = {}
+#     for sm in sm_for_network_list:
+#         for rule in utils.get_rules_for_sm(sm):
+#             s, p, o, tm = rule
+#
+#             # st.write("HERE", rule[3], rule)
+#             s_id, legend_dict = get_unique_node_label(s, "s", legend_dict)        # get unique label if too long
+#             p_label, legend_dict = get_unique_node_label(p, "p", legend_dict)
+#             o_id, legend_dict = get_unique_node_label(o, "o", legend_dict)
+#
+#             G.add_node(s_id, label=s_id, color=s_node_color, shape="ellipse")  # add nodes and edge
+#
+#             if o_id not in G:
+#                 G.add_node(o_id, label=o_id, color=o_node_color, shape="ellipse")  # conditional so that if node is also sm it will have s_node_color
+#             G.add_edge(s_id, o_id, label=p_label, color=p_edge_color, font={"color": p_edge_label_color})
+#
+#     # Create Pyvis network
+#     G_net = Network(height="600px", width="100%", directed=True)
+#     G_net.from_nx(G)
+#
+#     # Optional: improve layout and styling
+#     G_net.repulsion(node_distance=200, central_gravity=0.3, spring_length=200, spring_strength=0.05)
+#     G_net.set_options("""{
+#         "nodes": {"shape": "ellipse", "borderWidth": 0,
+#             "font": {"size": 14, "face": "arial", "align": "center",
+#               "color": "#ffffff"},
+#             "color": {"background": "#87cefa", "border": "#87cefa"}},
+#          "edges": {"width": 3, "arrows":
+#             {"to": {"enabled": true, "scaleFactor": 0.5}},
+#             "color": {"color": "#1e1e1e"},
+#             "font": {"size": 10, "align": "middle", "color": "#1e1e1e"},
+#             "smooth": false},
+#           "physics": {"enabled": true},
+#           "interaction": {"hover": true},
+#           "layout": {"improvedLayout": true}
+#         }""")
+#
+#     # Get network and legend
+#     network_flag = False
+#     network_html = ""
+#     legend_flag = False
+#     legend_html = ""
+#     legend_html_list = []
+#
+#     if sm_for_network_list:
+#         network_flag = True
+#         network_html = G_net.generate_html()           # generate HTML string
+#         network_html = network_html.replace('<div id="mynetwork"',            # inject background color
+#             f'<div id="mynetwork" style="background-color: {background_color};"')
+#
+#         # Create and display legend
+#         for letter in ["s", "p", "o"]:
+#             legend_html = "<div style='font-family: sans-serif; font-size: 14px;'>"
+#             if letter == "s":
+#                 legend_html += "<p>🔑 Subject legend</p>"
+#                 object_color = s_node_color
+#             elif letter == "p":
+#                 legend_html += "<p>🔑 Predicate legend</p>"
+#                 object_color = p_edge_color
+#             elif letter == "o":
+#                 legend_html += "<p>🔑 Object legend</p>"
+#                 object_color = o_node_color
+#
+#             for key, value in legend_dict.items():
+#                 if key.startswith(letter):
+#                     legend_html += ("<div style='display: flex; align-items: flex-start; margin-bottom: 4px;'>"
+#                         f"<div style='min-width: 60px; font-weight: bold;'><code>{str(key)}</code></div>"
+#                         f"<div style='flex: 1; max-width: 100%; word-break: break-word; white-space: normal; font-size: 12px;'>{str(value)}</div>"
+#                         "</div>")
+#                     legend_flag = True
+#
+#             legend_html += "</div>"
+#
+#             legend_html = f"""<div style='border-left: 4px solid {object_color}; padding: 0.4em 0.6em;
+#                 color: {legend_font_color}; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
+#                 margin: 0.5em 0; background-color: {background_color}; border-radius: 4px; box-sizing: border-box;
+#                 word-wrap: break-word;'>
+#                     {legend_html}
+#                 </div>"""
+#
+#             legend_html_list.append(legend_html)
+#
+#     return network_flag, network_html, legend_flag, legend_html_list
+
 def create_g_mapping_network(tm_for_network_list):
 
-    max_length=utils.get_max_length_for_display()[6]
     (s_node_color, p_edge_color, o_node_color, p_edge_label_color,
         background_color, legend_font_color) = get_colors_for_network()
 
@@ -3650,25 +3749,46 @@ def create_g_mapping_network(tm_for_network_list):
     # Create network and legend
     G = nx.DiGraph()
     legend_dict = {}
+
+    # Store predicates per subject-object pair (in case of multiple predicates)
+    edge_predicates = {}
+
     for sm in sm_for_network_list:
         for rule in utils.get_rules_for_sm(sm):
             s, p, o, tm = rule
 
-            s_id, legend_dict = get_unique_node_label(s, "s", legend_dict)        # get unique label if too long
-            p_label, legend_dict = get_unique_node_label(p, "p", legend_dict)
+            s_id, legend_dict = get_unique_node_label(s, "s", legend_dict)
             o_id, legend_dict = get_unique_node_label(o, "o", legend_dict)
 
-            G.add_node(s_id, label=s_id, color=s_node_color, shape="ellipse")  # add nodes and edge
+            # Add nodes
+            G.add_node(s_id, label=s_id, color=s_node_color, shape="ellipse")
             if o_id not in G:
-                G.add_node(o_id, label=o_id, color=o_node_color, shape="ellipse")  # conditional so that if node is also sm it will have s_node_color
-            G.add_edge(s_id, o_id, label=p_label, color=p_edge_color, font={"color": p_edge_label_color})
+                G.add_node(o_id, label=o_id, color=o_node_color, shape="ellipse")
+
+            key = (s_id, o_id)
+            if key not in edge_predicates:
+                edge_predicates[key] = []
+            edge_predicates[key].append(p)
+
+    # Add ONE edge per s_id - o_id with merged predicate labels (parallel edges not allowed)
+    for (s_id, o_id), preds in edge_predicates.items():
+        merged_label = format_list_for_display(preds)
+        p_label, legend_dict = get_unique_node_label(merged_label, "p", legend_dict)
+        G.add_edge(
+            s_id,
+            o_id,
+            label=p_label,
+            color=p_edge_color,
+            font={"color": p_edge_label_color}
+        )
 
     # Create Pyvis network
     G_net = Network(height="600px", width="100%", directed=True)
     G_net.from_nx(G)
 
     # Optional: improve layout and styling
-    G_net.repulsion(node_distance=200, central_gravity=0.3, spring_length=200, spring_strength=0.05)
+    G_net.repulsion(node_distance=200, central_gravity=0.3,
+                    spring_length=200, spring_strength=0.05)
     G_net.set_options("""{
         "nodes": {"shape": "ellipse", "borderWidth": 0,
             "font": {"size": 14, "face": "arial", "align": "center",
@@ -3688,16 +3808,18 @@ def create_g_mapping_network(tm_for_network_list):
     network_flag = False
     network_html = ""
     legend_flag = False
-    legend_html = ""
     legend_html_list = []
 
     if sm_for_network_list:
         network_flag = True
-        network_html = G_net.generate_html()           # generate HTML string
-        network_html = network_html.replace('<div id="mynetwork"',            # inject background color
-            f'<div id="mynetwork" style="background-color: {background_color};"')
+        network_html = G_net.generate_html()
+        network_html = network_html.replace(
+            '<div id="mynetwork"',
+            f'<div id="mynetwork" style="background-color: {background_color};"'
+        )
 
         # Create and display legend
+        legend_flag = {"s": False, "p": False, "o": False}
         for letter in ["s", "p", "o"]:
             legend_html = "<div style='font-family: sans-serif; font-size: 14px;'>"
             if letter == "s":
@@ -3716,7 +3838,7 @@ def create_g_mapping_network(tm_for_network_list):
                         f"<div style='min-width: 60px; font-weight: bold;'><code>{str(key)}</code></div>"
                         f"<div style='flex: 1; max-width: 100%; word-break: break-word; white-space: normal; font-size: 12px;'>{str(value)}</div>"
                         "</div>")
-                    legend_flag = True
+                    legend_flag[letter] = True
 
             legend_html += "</div>"
 
@@ -3727,9 +3849,11 @@ def create_g_mapping_network(tm_for_network_list):
                     {legend_html}
                 </div>"""
 
-            legend_html_list.append(legend_html)
+            if legend_flag[letter]:
+                legend_html_list.append(legend_html)
 
     return network_flag, network_html, legend_flag, legend_html_list
+
 #__________________________________________________
 
 # PANEL: PREDEFINED SEARCHES----------------------------------------------------
