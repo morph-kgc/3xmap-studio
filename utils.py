@@ -726,10 +726,6 @@ def get_node_label(node, iri_prefix=True, short_BNode=False):
         else:
             label = str(node)
 
-    elif node:
-        is_valid_iri_flag = is_valid_iri(node, delimiter_ending=False)
-
-
     # Empty node
     else:
         label = ""
@@ -786,11 +782,32 @@ def format_number_for_display(number):
 # 6. Label in network visualisation (characters)
 # 7. Suggested mapping label (characters)    8. URL for display (characters)
 # 9. Max characters when displaying ontology/mapping serialisation (ttl or nt)
-# 10. Query/path text for display
-# 11. Max characters in a rule before using small fint size
+# 10. Query/path text for display              # 11. Max characters in a rule before using small fint size
+# 12. Threshold for column width adjustment in df
 def get_max_length_for_display():
 
-    return [50, 10, 100, 20, 8, 10, 20, 15, 40, 100000, 25, 40]
+    return [50, 10, 100, 20, 8, 10, 20, 15, 40, 100000, 25, 40, 20]
+#_______________________________________________________
+
+#______________________________________________________
+# Function to display a dataframe with reasonable column width indeèndent of the content
+def display_formatted_df(df):
+
+    max_length = get_max_length_for_display()[12]
+    wide_width="medium"
+
+    column_config = {}
+    for col in df.columns:
+
+        if df[col].dtype != bool:
+            col_len = df[col].astype(str).map(len).max()    # compute max length of the column's string values
+
+            if col_len > max_length:
+                column_config[col] = st.column_config.TextColumn(width=wide_width)  # long content → apply wide width
+            else:
+                column_config[col] = st.column_config.TextColumn(width="auto")   # short content → let Streamlit auto-size
+
+    st.dataframe(df, column_config=column_config, use_container_width=True, hide_index=True)
 #_______________________________________________________
 
 #______________________________________________________
@@ -3282,7 +3299,7 @@ def get_pom_dict():
 
         elif reference:
             om_type = "reference"
-            om_rule = str(reference)
+            om_rule = "{" + str(reference) + "}"
 
         else:
             om_type = "---"
@@ -3292,6 +3309,19 @@ def get_pom_dict():
         for p_iri in predicate_list:
             predicate_label_list.append(get_node_label(p_iri))
 
+
+        # Predicate Map is used
+        predicate_map_list = list(st.session_state["g_mapping"].objects(pom_iri, RML.predicateMap))
+        for pm_iri in predicate_map_list:
+            template = st.session_state["g_mapping"].value(pm_iri, RML.template)
+            constant = st.session_state["g_mapping"].value(pm_iri, RML.constant)
+            reference = st.session_state["g_mapping"].value(pm_iri, RML.reference)
+            if template:
+                predicate_label_list.append(get_node_label(template))
+            elif constant:
+                predicate_label_list.append(get_node_label(constant))
+            elif reference:
+                predicate_label_list.append("{" + get_node_label(reference) + "}" )
 
         pom_dict[pom_iri] = [tm_iri, predicate_label_list, pom_iri, om_iri, om_type, om_rule]
 
@@ -3431,7 +3461,7 @@ def check_g_mapping(g, warning=False, reduce=True):
         pom_label = get_node_label(pom_iri)
         if not any(g.triples((pom_iri, RML.objectMap, None))):
             pom_wo_om_list.append(pom_label)
-        if not any(g.triples((pom_iri, RML.predicate, None))):
+        if not any(g.triples((pom_iri, RML.predicate, None))) and not any (g.triples((pom_iri, RML.predicateMap, None))):
             pom_wo_predicate_list.append(pom_label)
 
     tm_wo_pom_list_display = utils.format_list_for_display(tm_wo_pom_list)
@@ -3524,18 +3554,33 @@ def get_rules_for_sm(sm_iri):
     tm = g.value(predicate=RML.subjectMap, object=sm_iri)
 
     for pom in g.objects(subject=tm, predicate=RML.predicateObjectMap):
-        om = g.value(subject=pom, predicate=RML.objectMap)
-        p_for_display = g.value(subject=pom, predicate=RML.predicate)
-        for pred in [RML.constant, RML.template, RML.reference]:
-            om_for_display = g.value(subject=om, predicate=pred)
-            if om_for_display:
-                break
+        # Get all Object Maps
+        om_list = list(g.objects(subject=pom, predicate=RML.objectMap))
 
-        sm_for_display = get_node_label(sm_for_display)
-        p_for_display = get_node_label(p_for_display)
-        om_for_display = get_node_label(om_for_display)
+        # Get all predicates
+        p_list = list(g.objects(subject=pom, predicate=RML.predicate))
 
-        sm_rules_list.append([sm_for_display, p_for_display, om_for_display, get_node_label(tm)])
+        # Add predicates defined by Predicate Maps
+        pm_list = g.objects(subject=pom, predicate=RML.predicateMap)
+        for pm_iri in pm_list:
+            for pred in [RML.constant, RML.template, RML.reference]:
+                p_for_display = g.value(subject=pm_iri, predicate=pred)
+                p_for_display = "{" + p_for_display + "}" if pred == RML.reference else p_for_display
+                if p_for_display:
+                    p_list.append(p_for_display)
+                    break
+        # Get rules
+        for p_for_display in p_list:
+            for om in om_list:
+                for pred in [RML.constant, RML.template, RML.reference]:
+                    om_for_display = g.value(subject=om, predicate=pred)
+                    om_for_display = "{" + om_for_display + "}" if pred == RML.reference else om_for_display
+                    if om_for_display:
+                        break
+                sm_for_display = get_node_label(sm_for_display)
+                p_for_display = get_node_label(p_for_display)
+                om_for_display = get_node_label(om_for_display)
+                sm_rules_list.append([sm_for_display, p_for_display, om_for_display, get_node_label(tm)])
 
     return sm_rules_list
 #_________________________________________________
@@ -3579,7 +3624,7 @@ def display_g_mapping_network(tm_for_network_list):
 # constant_string is "s", "p" or "o"
 def get_unique_node_label(complete_node_id, constant_string, legend_dict):
 
-    max_length=utils.get_max_length_for_display()[6]
+    max_length = utils.get_max_length_for_display()[6]
 
     # Get proposed unique short label (ex. "s3")
     i = 1
@@ -3604,9 +3649,108 @@ def get_unique_node_label(complete_node_id, constant_string, legend_dict):
 
 #_________________________________________________
 # Function to create network and legend
+# def create_g_mapping_network(tm_for_network_list):
+#
+#     max_length=utils.get_max_length_for_display()[6]
+#     (s_node_color, p_edge_color, o_node_color, p_edge_label_color,
+#         background_color, legend_font_color) = get_colors_for_network()
+#
+#     # Get sm list
+#     sm_for_network_list = []
+#     for sm in st.session_state["g_mapping"].objects(predicate=RML.subjectMap):
+#         for rule in utils.get_rules_for_sm(sm):
+#             if rule[3] in tm_for_network_list:
+#                 sm_for_network_list.append(sm)
+#                 break
+#
+#     # Create network and legend
+#     G = nx.DiGraph()
+#     legend_dict = {}
+#     for sm in sm_for_network_list:
+#         for rule in utils.get_rules_for_sm(sm):
+#             s, p, o, tm = rule
+#
+#             # st.write("HERE", rule[3], rule)
+#             s_id, legend_dict = get_unique_node_label(s, "s", legend_dict)        # get unique label if too long
+#             p_label, legend_dict = get_unique_node_label(p, "p", legend_dict)
+#             o_id, legend_dict = get_unique_node_label(o, "o", legend_dict)
+#
+#             G.add_node(s_id, label=s_id, color=s_node_color, shape="ellipse")  # add nodes and edge
+#
+#             if o_id not in G:
+#                 G.add_node(o_id, label=o_id, color=o_node_color, shape="ellipse")  # conditional so that if node is also sm it will have s_node_color
+#             G.add_edge(s_id, o_id, label=p_label, color=p_edge_color, font={"color": p_edge_label_color})
+#
+#     # Create Pyvis network
+#     G_net = Network(height="600px", width="100%", directed=True)
+#     G_net.from_nx(G)
+#
+#     # Optional: improve layout and styling
+#     G_net.repulsion(node_distance=200, central_gravity=0.3, spring_length=200, spring_strength=0.05)
+#     G_net.set_options("""{
+#         "nodes": {"shape": "ellipse", "borderWidth": 0,
+#             "font": {"size": 14, "face": "arial", "align": "center",
+#               "color": "#ffffff"},
+#             "color": {"background": "#87cefa", "border": "#87cefa"}},
+#          "edges": {"width": 3, "arrows":
+#             {"to": {"enabled": true, "scaleFactor": 0.5}},
+#             "color": {"color": "#1e1e1e"},
+#             "font": {"size": 10, "align": "middle", "color": "#1e1e1e"},
+#             "smooth": false},
+#           "physics": {"enabled": true},
+#           "interaction": {"hover": true},
+#           "layout": {"improvedLayout": true}
+#         }""")
+#
+#     # Get network and legend
+#     network_flag = False
+#     network_html = ""
+#     legend_flag = False
+#     legend_html = ""
+#     legend_html_list = []
+#
+#     if sm_for_network_list:
+#         network_flag = True
+#         network_html = G_net.generate_html()           # generate HTML string
+#         network_html = network_html.replace('<div id="mynetwork"',            # inject background color
+#             f'<div id="mynetwork" style="background-color: {background_color};"')
+#
+#         # Create and display legend
+#         for letter in ["s", "p", "o"]:
+#             legend_html = "<div style='font-family: sans-serif; font-size: 14px;'>"
+#             if letter == "s":
+#                 legend_html += "<p>🔑 Subject legend</p>"
+#                 object_color = s_node_color
+#             elif letter == "p":
+#                 legend_html += "<p>🔑 Predicate legend</p>"
+#                 object_color = p_edge_color
+#             elif letter == "o":
+#                 legend_html += "<p>🔑 Object legend</p>"
+#                 object_color = o_node_color
+#
+#             for key, value in legend_dict.items():
+#                 if key.startswith(letter):
+#                     legend_html += ("<div style='display: flex; align-items: flex-start; margin-bottom: 4px;'>"
+#                         f"<div style='min-width: 60px; font-weight: bold;'><code>{str(key)}</code></div>"
+#                         f"<div style='flex: 1; max-width: 100%; word-break: break-word; white-space: normal; font-size: 12px;'>{str(value)}</div>"
+#                         "</div>")
+#                     legend_flag = True
+#
+#             legend_html += "</div>"
+#
+#             legend_html = f"""<div style='border-left: 4px solid {object_color}; padding: 0.4em 0.6em;
+#                 color: {legend_font_color}; font-size: 0.85em; font-family: "Source Sans Pro", sans-serif;
+#                 margin: 0.5em 0; background-color: {background_color}; border-radius: 4px; box-sizing: border-box;
+#                 word-wrap: break-word;'>
+#                     {legend_html}
+#                 </div>"""
+#
+#             legend_html_list.append(legend_html)
+#
+#     return network_flag, network_html, legend_flag, legend_html_list
+
 def create_g_mapping_network(tm_for_network_list):
 
-    max_length=utils.get_max_length_for_display()[6]
     (s_node_color, p_edge_color, o_node_color, p_edge_label_color,
         background_color, legend_font_color) = get_colors_for_network()
 
@@ -3621,25 +3765,58 @@ def create_g_mapping_network(tm_for_network_list):
     # Create network and legend
     G = nx.DiGraph()
     legend_dict = {}
+
+    # Store predicates per subject-object pair
+    edge_predicates = {}
+
     for sm in sm_for_network_list:
         for rule in utils.get_rules_for_sm(sm):
             s, p, o, tm = rule
 
-            s_id, legend_dict = get_unique_node_label(s, "s", legend_dict)        # get unique label if too long
-            p_label, legend_dict = get_unique_node_label(p, "p", legend_dict)
+            # Shorten only subject and object labels
+            s_id, legend_dict = get_unique_node_label(s, "s", legend_dict)
             o_id, legend_dict = get_unique_node_label(o, "o", legend_dict)
 
-            G.add_node(s_id, label=s_id, color=s_node_color, shape="ellipse")  # add nodes and edge
+            # Add nodes
+            G.add_node(s_id, label=s_id, color=s_node_color, shape="ellipse")
             if o_id not in G:
-                G.add_node(o_id, label=o_id, color=o_node_color, shape="ellipse")  # conditional so that if node is also sm it will have s_node_color
-            G.add_edge(s_id, o_id, label=p_label, color=p_edge_color, font={"color": p_edge_label_color})
+                G.add_node(o_id, label=o_id, color=o_node_color, shape="ellipse")
+
+            # Collect predicates for this (subject, object)
+            key = (s_id, o_id)
+            if key not in edge_predicates:
+                edge_predicates[key] = []
+            edge_predicates[key].append(p)
+
+    # Add ONE edge per (subject, object) with merged predicate labels
+    for (s_id, o_id), preds in edge_predicates.items():
+
+        # Deduplicate + sort predicates for stable, clean labels
+        unique_preds = sorted(set(preds))
+
+        # Create merged label
+        merged_label = " + ".join(unique_preds)
+
+        # Add merged predicate label to legend
+        p_label, legend_dict = get_unique_node_label(merged_label, "p", legend_dict)
+
+        # Add edge
+        G.add_edge(
+            s_id,
+            o_id,
+            label=p_label,
+            color=p_edge_color,
+            font={"color": p_edge_label_color}
+        )
 
     # Create Pyvis network
     G_net = Network(height="600px", width="100%", directed=True)
     G_net.from_nx(G)
 
-    # Optional: improve layout and styling
-    G_net.repulsion(node_distance=200, central_gravity=0.3, spring_length=200, spring_strength=0.05)
+    # Styling
+    G_net.repulsion(node_distance=200, central_gravity=0.3,
+                    spring_length=200, spring_strength=0.05)
+
     G_net.set_options("""{
         "nodes": {"shape": "ellipse", "borderWidth": 0,
             "font": {"size": 14, "face": "arial", "align": "center",
@@ -3659,18 +3836,22 @@ def create_g_mapping_network(tm_for_network_list):
     network_flag = False
     network_html = ""
     legend_flag = False
-    legend_html = ""
     legend_html_list = []
 
     if sm_for_network_list:
         network_flag = True
-        network_html = G_net.generate_html()           # generate HTML string
-        network_html = network_html.replace('<div id="mynetwork"',            # inject background color
-            f'<div id="mynetwork" style="background-color: {background_color};"')
+        network_html = G_net.generate_html()
+        network_html = network_html.replace(
+            '<div id="mynetwork"',
+            f'<div id="mynetwork" style="background-color: {background_color};"'
+        )
 
-        # Create and display legend
+        # Create legend
+        legend_flag = {"s": False, "p": False, "o": False}
+
         for letter in ["s", "p", "o"]:
             legend_html = "<div style='font-family: sans-serif; font-size: 14px;'>"
+
             if letter == "s":
                 legend_html += "<p>🔑 Subject legend</p>"
                 object_color = s_node_color
@@ -3683,11 +3864,13 @@ def create_g_mapping_network(tm_for_network_list):
 
             for key, value in legend_dict.items():
                 if key.startswith(letter):
-                    legend_html += ("<div style='display: flex; align-items: flex-start; margin-bottom: 4px;'>"
+                    legend_html += (
+                        "<div style='display: flex; align-items: flex-start; margin-bottom: 4px;'>"
                         f"<div style='min-width: 60px; font-weight: bold;'><code>{str(key)}</code></div>"
                         f"<div style='flex: 1; max-width: 100%; word-break: break-word; white-space: normal; font-size: 12px;'>{str(value)}</div>"
-                        "</div>")
-                    legend_flag = True
+                        "</div>"
+                    )
+                    legend_flag[letter] = True
 
             legend_html += "</div>"
 
@@ -3698,9 +3881,12 @@ def create_g_mapping_network(tm_for_network_list):
                     {legend_html}
                 </div>"""
 
-            legend_html_list.append(legend_html)
+            if legend_flag[letter]:
+                legend_html_list.append(legend_html)
 
     return network_flag, network_html, legend_flag, legend_html_list
+
+
 #__________________________________________________
 
 # PANEL: PREDEFINED SEARCHES----------------------------------------------------
@@ -3849,21 +4035,31 @@ def get_predefined_search_results(selected_predefined_search, order_clause):
 
     if selected_predefined_search == "Rules":
         query = """PREFIX rml: <http://w3id.org/rml/>
-
             SELECT DISTINCT ?tm ?sm ?pom ?om ?subject_value ?predicate ?object_value WHERE {
               ?tm rml:subjectMap ?sm .
               ?tm rml:predicateObjectMap ?pom .
-              ?pom rml:predicate ?predicate .
               ?pom rml:objectMap ?om .
 
+              # --- DIRECT PREDICATE ---
+              {?pom rml:predicate ?predicate .}
+              UNION
+              # --- PREDICATE MAP (constant, template, reference) ---
+              {?pom rml:predicateMap ?pm .
+                {?pm rml:constant ?predicate .}
+                UNION
+                {?pm rml:template ?predicate .}
+                UNION
+                {?pm rml:reference ?predicate .}}
+
+              # SubjectMap value
               OPTIONAL { ?sm rml:template ?subject_value . }
               OPTIONAL { ?sm rml:constant ?subject_value . }
               OPTIONAL { ?sm rml:reference ?subject_value . }
 
+              # ObjectMap value
               OPTIONAL { ?om rml:template ?object_value . }
               OPTIONAL { ?om rml:constant ?object_value . }
-              OPTIONAL { ?om rml:reference ?object_value . }
-            }"""
+              OPTIONAL { ?om rml:reference ?object_value . }}"""
 
         if order_clause == "⮝ Subject":
             query += f"ORDER BY ASC(?subject_value) "
@@ -3918,9 +4114,20 @@ def get_predefined_search_results(selected_predefined_search, order_clause):
 
     elif selected_predefined_search == "Predicate-Object Maps":
         query = f"""PREFIX rml: <http://w3id.org/rml/>
-            SELECT ?tm ?pom ?predicate ?objectMap ?template ?constant ?reference ?termType ?datatype ?language ?graphMap WHERE {{
+            SELECT ?tm ?pom ?pm ?predicate ?objectMap ?template ?constant ?reference ?termType ?datatype ?language ?graphMap WHERE {{
               ?tm rml:predicateObjectMap ?pom .
-              OPTIONAL {{ ?pom rml:predicate ?predicate }}
+              # Direct predicate
+              {{?pom rml:predicate ?predicate .}}
+              UNION
+              # PredicateMap (constant, template, reference)
+              {{?pom rml:predicateMap ?pm .
+                {{?pm rml:constant ?predicate .}}
+                UNION
+                {{?pm rml:template ?predicate .}}
+                UNION
+                {{?pm rml:reference ?predicate .}}    }}
+
+              OPTIONAL {{ ?pom rml:predicateMap ?pm }}
               OPTIONAL {{ ?pom rml:objectMap ?objectMap }}
               OPTIONAL {{ ?objectMap rml:template ?template }}
               OPTIONAL {{ ?objectMap rml:constant ?constant }}
@@ -3931,8 +4138,7 @@ def get_predefined_search_results(selected_predefined_search, order_clause):
               OPTIONAL {{ ?objectMap rml:graphMap ?graphMap }}
               OPTIONAL {{ ?pom rml:constant ?constant }}
               OPTIONAL {{ ?pom rml:template ?template }}
-              OPTIONAL {{ ?pom rml:reference ?reference }}
-            }}"""
+              OPTIONAL {{ ?pom rml:reference ?reference }}   }}"""
 
         if order_clause == "⮝ Predicate":
             query += f"ORDER BY ASC(?predicate) "
@@ -3944,11 +4150,19 @@ def get_predefined_search_results(selected_predefined_search, order_clause):
             query += f"ORDER BY DESC(?tm) "
 
     elif selected_predefined_search == "Used Properties":
-        query = """PREFIX rml: <http://w3id.org/rml/>
-        SELECT DISTINCT ?tm ?pom ?predicate WHERE {
+        query = f"""        PREFIX rml: <http://w3id.org/rml/>
+        SELECT DISTINCT ?tm ?pom ?predicate WHERE {{
           ?tm rml:predicateObjectMap ?pom .
-          ?pom rml:predicate ?predicate .
-        }"""
+          {{# Direct predicate
+            ?pom rml:predicate ?predicate . }}
+          UNION
+          {{# PredicateMap: constant, template, reference
+            ?pom rml:predicateMap ?pm .
+            {{?pm rml:constant ?predicate .}}
+            UNION
+            {{?pm rml:template ?predicate .}}
+            UNION
+            {{?pm rml:reference ?predicate .}}   }}   }}"""
 
         if order_clause == "⮝ Property":
             query += f"ORDER BY ASC(?predicate) "
@@ -4030,7 +4244,9 @@ def display_predefined_search_df(df_data, limit, offset, display=True):
             st.markdown(f"""<div class="info-message-blue">
                 <b>RESULTS ({len(df)}):</b>
             </div>""", unsafe_allow_html=True)
-            st.dataframe(df, hide_index=True)
+            df = pd.DataFrame(df_data)
+            display_formatted_df(df)
+
         else:
             st.markdown(f"""<div class="warning-message">
                 ⚠️ No results.
@@ -4073,30 +4289,43 @@ def get_mapping_composition_by_class_donut_chart():
             frequency_dict[ont_tag] = total_count
 
     # Count classes from external ontologies (not imported)
-    all_used_class_dict = {}
-    for s, p, o in st.session_state["g_mapping"].triples((None, RML["class"], None)):
-        if isinstance(o, URIRef):
-            all_used_class_dict[get_node_label(o)] = o
+    ontology_classes = [get_node_label(v) for v in get_ontology_class_dict(st.session_state["g_ontology"]).values()]
+    count_other = 0
+    for sm in st.session_state["g_mapping"].objects(predicate=RML.subjectMap):
+        sm_number_of_rules = len(utils.get_rules_for_sm(sm))
+        sm_number_of_external_classes = 0
+        for class_iri in st.session_state["g_mapping"].objects(subject=sm, predicate=RML["class"]):
+            if class_iri not in ontology_classes:
+                sm_number_of_external_classes += 1
+        count_other += sm_number_of_rules * sm_number_of_external_classes
+    if count_other:
+        frequency_dict["Other"] = count_other
 
-    other_ontologies_list = []
-    for class_label, class_iri in all_used_class_dict.items():
-        other_ontologies_flag = True
-        for ont_label, g_ont in st.session_state["g_ontology_components_dict"].items():   # check if class belongs to an imported ontology
-            ontology_class_dict = get_ontology_class_dict(g_ont)
-            if class_iri in ontology_class_dict.values():
-                other_ontologies_flag = False
-        if other_ontologies_flag:    # class belongs to external ontology
-            other_ontologies_list.append(class_iri)
-
-    if other_ontologies_list:   # count times external classes are used
-        number_of_rules = 0
-        for class_iri in other_ontologies_list:
-            for s, p, o in st.session_state["g_mapping"].triples((None, RML["class"], class_iri)):
-                sm_iri = s
-                rule_list = get_rules_for_sm(sm_iri)
-                number_of_rules += len(rule_list)
-        if number_of_rules:
-            frequency_dict["Other"] = number_of_rules
+    # # Count classes from external ontologies (not imported)
+    # all_used_class_dict = {}
+    # for s, p, o in st.session_state["g_mapping"].triples((None, RML["class"], None)):
+    #     if isinstance(o, URIRef):
+    #         all_used_class_dict[get_node_label(o)] = o
+    #
+    # other_ontologies_list = []
+    # for class_label, class_iri in all_used_class_dict.items():
+    #     other_ontologies_flag = True
+    #     for ont_label, g_ont in st.session_state["g_ontology_components_dict"].items():   # check if class belongs to an imported ontology
+    #         ontology_class_dict = get_ontology_class_dict(g_ont)
+    #         if class_iri in ontology_class_dict.values():
+    #             other_ontologies_flag = False
+    #     if other_ontologies_flag:    # class belongs to external ontology
+    #         other_ontologies_list.append(class_iri)
+    #
+    # if other_ontologies_list:   # count times external classes are used
+    #     number_of_rules = 0
+    #     for class_iri in other_ontologies_list:
+    #         for s, p, o in st.session_state["g_mapping"].triples((None, RML["class"], class_iri)):
+    #             sm_iri = s
+    #             rule_list = get_rules_for_sm(sm_iri)
+    #             number_of_rules += len(rule_list)
+    #     if number_of_rules:
+    #         frequency_dict["Other"] = number_of_rules
 
     # Donut chart
     if frequency_dict:
@@ -4148,14 +4377,14 @@ def get_mapping_composition_by_class_donut_chart():
 def get_ontology_used_classes_count_by_rules_dict(g_ont):
 
     ontology_class_dict = get_ontology_class_dict(g_ont)
-    usage_count_dict = {}
+    usage_count_dict = defaultdict(int)
 
     for class_label, class_iri in ontology_class_dict.items():
         for s, p, o in st.session_state["g_mapping"].triples((None, RML["class"], URIRef(class_iri))):
             sm_iri = s
             sm_iri_rule_list = get_rules_for_sm(sm_iri)
             if sm_iri_rule_list:
-                usage_count_dict[class_label] = len(sm_iri_rule_list)
+                usage_count_dict[class_label] += len(sm_iri_rule_list)
 
     return dict(usage_count_dict)
 #_________________________________________________
@@ -4175,24 +4404,15 @@ def get_mapping_composition_by_property_donut_chart():
         if total_count:
             frequency_dict[ont_tag] = total_count
 
-    # Count classes from external ontologies (not imported)
-    all_used_property_dict = {}
-    for s, p, o in st.session_state["g_mapping"].triples((None, RML["predicate"], None)):
-        if isinstance(o, URIRef):
-            all_used_property_dict[get_node_label(o)] = o
-
-    other_ontologies_list = []
-    for prop_label, prop_iri in all_used_property_dict.items():
-        other_ontologies_flag = True
-        for ont_label, g_ont in st.session_state["g_ontology_components_dict"].items():  # check if property belongs to an imported ontology
-            ontology_property_dict = get_ontology_property_dict(g_ont)
-            if prop_iri in ontology_property_dict.values():
-                other_ontologies_flag = False
-        if other_ontologies_flag:     # property belongs to external ontology
-            other_ontologies_list.append(prop_iri)
-
-    if other_ontologies_list:  # count times external properties are used
-        frequency_dict["Other"] = len(other_ontologies_list)
+    # Count properties from external ontologies (not imported)
+    ontology_properties = [get_node_label(v) for v in get_ontology_property_dict(st.session_state["g_ontology"]).values()]
+    count_other = 0
+    for sm in st.session_state["g_mapping"].objects(predicate=RML.subjectMap):
+        for rule in utils.get_rules_for_sm(sm):
+            if rule[1] not in ontology_properties:
+                count_other += 1
+    if count_other:
+        frequency_dict["Other"] = count_other
 
     # Donut chart
     if frequency_dict:
@@ -4247,8 +4467,10 @@ def get_ontology_used_properties_count_dict(g_ont):
     usage_count_dict = defaultdict(int)
 
     for prop_label, prop_iri in ontology_property_dict.items():
-        for triple in st.session_state["g_mapping"].triples((None, RML["predicate"], URIRef(prop_iri))):
-            usage_count_dict[prop_label] += 1
+        for sm in st.session_state["g_mapping"].objects(predicate=RML.subjectMap):
+            for rule in utils.get_rules_for_sm(sm):
+                if rule[1] == get_node_label(prop_iri):
+                    usage_count_dict[prop_label] += 1
 
     return dict(usage_count_dict)
 #_________________________________________________
@@ -4345,6 +4567,7 @@ def get_average_ontology_term_frequency_metric(g_ont, superfilter=None, type="us
         ontology_used_property_dict = get_property_dictionaries_filtered_by_superproperty(g_ont, superproperty_filter=superfilter)[1]
         ontology_used_properties_count_dict = get_property_dictionaries_filtered_by_superproperty(g_ont, superproperty_filter=superfilter)[2]
         label = "properties"
+        label_2 = "property"
 
         number_of_rules = sum(ontology_used_properties_count_dict.values())
         number_of_used_terms = len(ontology_used_property_dict)
@@ -4355,6 +4578,7 @@ def get_average_ontology_term_frequency_metric(g_ont, superfilter=None, type="us
         ontology_used_class_dict = get_class_dictionaries_filtered_by_superclass(g_ont, superclass_filter=superfilter)[1]
         ontology_used_classes_count_by_rules_dict = get_class_dictionaries_filtered_by_superclass(g_ont, superclass_filter=superfilter)[3]
         label = "classes"
+        label_2 = "class"
 
         number_of_rules = sum(ontology_used_classes_count_by_rules_dict.values())
         number_of_used_terms = len(ontology_used_class_dict)
@@ -4366,11 +4590,11 @@ def get_average_ontology_term_frequency_metric(g_ont, superfilter=None, type="us
         }</style>""", unsafe_allow_html=True)
     if type == "used":
         average_use = number_of_rules/number_of_used_terms if number_of_used_terms != 0 else 0
-        st.metric(label="Average freq", value=f"{format_number_for_display(average_use)}",
+        st.metric(label=f"Rules per {label_2} (avg.)", value=f"{format_number_for_display(average_use)}",
             delta=f"(over used {label})", delta_color="off")
     if type == "all":
         average_use = number_of_rules/number_of_terms if number_of_terms != 0 else 0
-        st.metric(label="Average freq", value=f"{format_number_for_display(average_use)}",
+        st.metric(label=f"Rules per {label_2} (avg.)", value=f"{format_number_for_display(average_use)}",
             delta=f"(over all {label})", delta_color="off")
 #_________________________________________________
 
@@ -4458,8 +4682,12 @@ def get_used_ontology_terms_donut_chart(g_ont, superfilter=None, class_=False):
         unused = len(ontology_class_dict) - used
 
     # Data
-    data = {"Category": ["Used properties", "Unused properties"],
-        "Value": [used, unused]}
+    if not class_:
+        data = {"Category": ["Used properties", "Unused properties"],
+            "Value": [used, unused]}
+    else:
+        data = {"Category": ["Used classes", "Unused classes"],
+            "Value": [used, unused]}
 
     # Create donut chart and style
     colors = get_colors_for_stats_dict()
@@ -4498,8 +4726,9 @@ def get_ontology_term_frequency_bar_plot(g_ont, selected_terms, superfilter=None
         fig = px.bar(x=labels,y=counts,text=counts)
 
         # Style the chart
+        yaxis = "property frequency" if not class_ else "class frequency"
         fig.update_traces(marker_color=colors["purple"], textposition="inside", width=0.7)
-        fig.update_layout(xaxis_title=None, yaxis_title="property frequency",
+        fig.update_layout(xaxis_title=None, yaxis_title=yaxis,
             yaxis=dict(showticklabels=False, ticks="", showgrid=True,
                 gridcolor="lightgray", title_standoff=5),
             height=300, margin=dict(t=20, b=20, l=20, r=20))

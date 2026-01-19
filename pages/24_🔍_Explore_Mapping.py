@@ -45,6 +45,14 @@ with tab1:
     with col1:
         col1a, col1b = st.columns([2,1])
 
+    # with col1:
+    #     g = st.session_state["g_mapping"]
+    #     tm_list = g.subjects(predicate=RML.logicalSource)
+    #     for tm in tm_list:
+    #         sm = g.value(predicate=RML.subjectMap, subject=tm)
+    #         utils.get_rules_for_sm(sm)
+            # st.write("HERE", utils.get_rules_for_sm(sm))
+
     (s_node_color, p_edge_color, o_node_color, p_edge_label_color,
         background_color, legend_font_color) = utils.get_colors_for_network()
 
@@ -77,10 +85,9 @@ with tab1:
         with col1:
             components.html(network_html, height=600)
 
-        if legend_flag:
-            with col2:
-                for legend_html in legend_html_list:
-                    st.markdown(f"""{legend_html}""", unsafe_allow_html=True)
+        with col2:
+            for legend_html in legend_html_list:
+                st.markdown(f"""{legend_html}""", unsafe_allow_html=True)
 
 
 #_______________________________________________________________________________
@@ -132,6 +139,7 @@ with tab2:
             subject = row.subject_value if hasattr(row, "subject_value") and row.subject_value else ""
             predicate = row.predicate if hasattr(row, "predicate") and row.predicate else ""
             object_ = row.object_value if hasattr(row, "object_value") and row.object_value else ""
+            predicate = utils.add_braces_to_reference(predicate)
 
             # Format subject and object
             subject = utils.add_braces_to_reference(subject)
@@ -201,6 +209,8 @@ with tab2:
             source = row.source if hasattr(row, "source") and row.source else ""
             reference_formulation = str(row.referenceFormulation) if hasattr(row, "referenceFormulation") and row.referenceFormulation else ""
             iterator = row.iterator if hasattr(row, "iterator") and row.iterator else ""
+            number_of_pom = len(list(st.session_state["g_mapping"].objects(subject=tm, predicate=RML["predicateObjectMap"])))
+            has_sm = st.session_state["g_mapping"].value(subject=tm, predicate=RML["subjectMap"]) is not None
 
             tm_label = utils.get_node_label(tm)
             selected_tm_for_display_list = list(tm_dict) if not selected_tm_for_display_list else selected_tm_for_display_list
@@ -211,6 +221,8 @@ with tab2:
                     "Source": source,
                     "Iterator": iterator,
                     "Reference Formulation": utils.get_node_label(reference_formulation),
+                    "Has Subject Map": has_sm,
+                    "# Predicate-Object Maps": number_of_pom,
                     "Logical Source": utils.get_node_label(logical_source)}
                 df_data.append(row_dict)
 
@@ -297,6 +309,8 @@ with tab2:
             tm = row.tm if row.tm else ""
             pom = row.pom if row.pom else ""
             predicate = str(row.predicate) if row.predicate else ""
+            predicate = utils.add_braces_to_reference(predicate)
+            pm = row.pm if hasattr(row, "pm") and row.pm else ""
             object_map = row.objectMap if row.objectMap else ""
             template = str(row.template) if row.template else ""
             constant = str(row.constant) if row.constant else ""
@@ -332,6 +346,7 @@ with tab2:
                     "Graph Map": utils.get_node_label(graph_map),
                     "TriplesMap": utils.get_node_label(tm),
                     "Predicate-Object Map": utils.get_node_label(pom),
+                    "Predicate-Map": utils.get_node_label(pm),
                     "Object Map": utils.get_node_label(object_map)}
 
                 df_data.append(row_dict)
@@ -358,25 +373,46 @@ with tab2:
 
         limit, offset, order_clause = utils.limit_offset_order(col1, ["⮔ No order", "⮝ Class", "⮟ Class",
             "⮝ TriplesMap", "⮟ TriplesMap"])
+
         results = utils.get_predefined_search_results(selected_predefined_search, order_clause)
-        df_data = []
+        grouped = {}
         for row in results:
             tm = row.tm if hasattr(row, "tm") and row.tm else ""
             sm = row.sm if hasattr(row, "sm") and row.sm else ""
             rdf_class = row.get("class") if row.get("class") else ""
             class_label = utils.get_node_label(rdf_class)
+
+            # Determine ontology tag
             ont_tag = utils.identify_term_ontology(class_label)
-            if not ont_tag:   # External classes (check if custom)
+            if not ont_tag:
                 if rdf_class in st.session_state["custom_terms_dict"]:
                     ont_tag = "Custom"
                 else:
                     ont_tag = "External"
 
-            selected_classes_for_display_list = list_to_choose_classes if not selected_classes_for_display_list else selected_classes_for_display_list
-            if class_label in selected_classes_for_display_list:
-                df_data.append({"Class": utils.get_node_label(rdf_class), "Ontology": ont_tag,
-                    "TriplesMap": utils.get_node_label(tm),
-                    "Subject Map": utils.get_node_label(sm)})
+            # Apply filter
+            selected_classes_for_display_list = (list_to_choose_classes
+                if not selected_classes_for_display_list
+                else selected_classes_for_display_list)
+
+            if class_label not in selected_classes_for_display_list:
+                continue
+
+            # Initialize group entry
+            if class_label not in grouped:
+                grouped[class_label] = {"Ontology": ont_tag,
+                    "TriplesMaps": set(), "SubjectMaps": set()}
+
+            # Add TM and SM
+            grouped[class_label]["TriplesMaps"].add(utils.get_node_label(tm))
+            grouped[class_label]["SubjectMaps"].add(utils.get_node_label(sm))
+
+        # Convert grouped data into df_data list
+        df_data = []
+        for class_label, info in grouped.items():
+            df_data.append({"Class": class_label, "Ontology": info["Ontology"],
+                "TriplesMaps": utils.format_list_for_display(sorted(info["TriplesMaps"])),
+                "Subject Maps": utils.format_list_for_display(sorted(info["SubjectMaps"]))})
 
         # Display
         with col1:
@@ -400,25 +436,50 @@ with tab2:
 
         limit, offset, order_clause = utils.limit_offset_order(col1, ["⮔ No order", "⮝ Property", "⮟ Property",
             "⮝ TriplesMap", "⮟ TriplesMap"])
+
         results = utils.get_predefined_search_results(selected_predefined_search, order_clause)
         df_data = []
+        # Group results by property
+        grouped = {}
+
         for row in results:
             tm = row.tm if hasattr(row, "tm") and row.tm else ""
             pom = row.pom if hasattr(row, "pom") and row.pom else ""
             predicate = row.get("predicate") if row.get("predicate") else ""
             predicate_label = utils.get_node_label(predicate)
+
+            # Determine ontology tag
             ont_tag = utils.identify_term_ontology(predicate_label)
-            if not ont_tag:   # External properties (check if custom)
+            if not ont_tag:
                 if predicate in st.session_state["custom_terms_dict"]:
                     ont_tag = "Custom"
                 else:
                     ont_tag = "External"
 
-            selected_properties_for_display_list = list_to_choose_properties if not selected_properties_for_display_list else selected_properties_for_display_list
-            if predicate_label in selected_properties_for_display_list:
-                df_data.append({"Property": utils.get_node_label(predicate), "Ontology": ont_tag,
-                    "TriplesMap": utils.get_node_label(tm),
-                    "Predicate-Object Map": utils.get_node_label(pom)})
+            # Apply filter
+            selected_properties_for_display_list = (
+                list_to_choose_properties if not selected_properties_for_display_list
+                else selected_properties_for_display_list
+            )
+            if predicate_label not in selected_properties_for_display_list:
+                continue
+
+            # Initialize group entry
+            if predicate_label not in grouped:
+                grouped[predicate_label] = {"Ontology": ont_tag,
+                    "TriplesMaps": set(), "PredicateObjectMaps": set()}
+
+            # Add TM and POM
+            grouped[predicate_label]["TriplesMaps"].add(utils.get_node_label(tm))
+            grouped[predicate_label]["PredicateObjectMaps"].add(utils.get_node_label(pom))
+
+        # Convert grouped data into df_data list
+        df_data = []
+        for prop, info in grouped.items():
+            df_data.append({"Property": prop, "Ontology": info["Ontology"],
+                "TriplesMaps": utils.format_list_for_display(sorted(info["TriplesMaps"])),
+                "Predicate-Object Maps": utils.format_list_for_display(sorted(info["PredicateObjectMaps"]))})
+
 
         # Display
         with col1:

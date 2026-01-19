@@ -376,39 +376,50 @@ with tab2:
             st.write("")
 
         with col1:
-            list_to_choose = ["🏷️ Classes", "🔗 Properties", "✏️ Custom search"]
+            list_to_choose = ["🏷️ Classes", "🔗 Properties", "🔍 SPARQL Search"]
+            if st.session_state["custom_terms_dict"]:
+                list_to_choose.insert(2, "✏️ Custom terms")
             selected_ontology_search = st.radio("🖱️ Select search:*", list_to_choose,
                 label_visibility="collapsed", horizontal=True, key="key_selected_ontology_search")
 
-        if len(st.session_state["g_ontology_components_dict"]) > 1:
-            with col1:
-                col_ont, col_filter_a, col_filter_b = st.columns(3)
-            with col_ont:
-                list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
-                list_to_choose.insert(0, "No filter")
-                ontology_component_for_search_tag = st.selectbox("🧩 Filter by ontology:", list_to_choose,
-                    key="key_ontology_component_for_search_tag")
-            if ontology_component_for_search_tag == "No filter":
-                ontology_for_search = st.session_state["g_ontology"]
-            else:
-                for ont, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
-                    if ont_tag == ontology_component_for_search_tag:
-                        ontology_for_search = st.session_state["g_ontology_components_dict"][ont]
-        else:
-            ontology_for_search = st.session_state["g_ontology"]
-            with col1:
-                col_filter_a, col_filter_b = st.columns(2)
+        if selected_ontology_search != "✏️ Custom terms":
 
-        max_length = utils.get_max_length_for_display()[9]
-        if len(ontology_for_search) > max_length:
-            with col2:
-                col2a, col2b = st.columns([1,3])
             with col2b:
-                st.write("")
                 st.markdown(f"""<div class="info-message-blue">
-                    🐘 <b>Your ontology is quite large</b> ({utils.format_number_for_display(len(ontology_for_search))} triples).
-                    <small>Some <b>patience</b> may be required.</small>
+                    ℹ️ <b>User-added classes and properties</b> are not shown here.
+                    <small> Select the <b>✏️ Custom terms</b> option to explore them.</small>
                 </div>""", unsafe_allow_html=True)
+
+
+            if len(st.session_state["g_ontology_components_dict"]) > 1:
+                with col1:
+                    col_ont, col_filter_a, col_filter_b = st.columns(3)
+                with col_ont:
+                    list_to_choose = sorted(st.session_state["g_ontology_components_tag_dict"].values())
+                    list_to_choose.insert(0, "No filter")
+                    ontology_component_for_search_tag = st.selectbox("🧩 Filter by ontology:", list_to_choose,
+                        key="key_ontology_component_for_search_tag")
+                if ontology_component_for_search_tag == "No filter":
+                    ontology_for_search = st.session_state["g_ontology"]
+                else:
+                    for ont, ont_tag in st.session_state["g_ontology_components_tag_dict"].items():
+                        if ont_tag == ontology_component_for_search_tag:
+                            ontology_for_search = st.session_state["g_ontology_components_dict"][ont]
+            else:
+                ontology_for_search = st.session_state["g_ontology"]
+                with col1:
+                    col_filter_a, col_filter_b = st.columns(2)
+
+            max_length = utils.get_max_length_for_display()[9]
+            if len(ontology_for_search) > max_length:
+                with col2:
+                    col2a, col2b = st.columns([1,3])
+                with col2b:
+                    st.write("")
+                    st.markdown(f"""<div class="info-message-blue">
+                        🐘 <b>Your ontology is quite large</b> ({utils.format_number_for_display(len(ontology_for_search))} triples).
+                        <small>Some <b>patience</b> may be required.</small>
+                    </div>""", unsafe_allow_html=True)
 
         # CLASSES
         if selected_ontology_search == "🏷️ Classes":
@@ -419,7 +430,7 @@ with tab2:
                     superclass_dict[utils.get_node_label(o)] = o
 
             with col_filter_a:
-                list_to_choose = ["No filter", "Class type", "Annotation"]
+                list_to_choose = ["No filter", "Class type", "Comment/Label"]
                 if superclass_dict:
                     list_to_choose.insert(1, "Superclass")
                 class_filter_type = st.selectbox("📡 Add filter:", list_to_choose,
@@ -437,7 +448,7 @@ with tab2:
                     selected_class_type = st.selectbox("📡 Filter by class type:", list_to_choose,
                         key="key_selected_class_type")
 
-                if class_filter_type == "Annotation":
+                if class_filter_type == "Comment/Label":
                     annotation_options = ["No filter", "Has comment", "Has label", "Has comment or label",
                         "Has comment and label"]
                     selected_annotation_filter = st.selectbox("📡 Filter by annotation:", annotation_options,
@@ -512,7 +523,7 @@ with tab2:
                       OPTIONAL {{ ?class rdfs:comment ?comment }} }}"""
 
             # Annotation filter
-            if class_filter_type == "Annotation":
+            if class_filter_type == "Comment/Label":
 
                 if selected_annotation_filter != "No filter":
 
@@ -559,11 +570,15 @@ with tab2:
                 label = getattr(row, "label", "")
                 comment = getattr(row, "comment", "")
                 class_type = getattr(row, "type", "")  # Extract the class type
+                subclass_of_list = list(ontology_for_search.objects(subject=class_iri, predicate=RDFS.subClassOf))
+                subclass_of_list = [utils.get_node_label(cl) for cl in subclass_of_list if isinstance(cl, URIRef)]
+                subclass_of = utils.format_list_for_display(subclass_of_list)
 
                 if isinstance(class_iri, URIRef):  # filter out BNodes
-                    df_data.append({
-                        "Class": utils.get_node_label(class_iri),
+                    df_data.append({"Class": utils.get_node_label(class_iri),
+                        "Ontology": utils.identify_term_ontology(utils.get_node_label(class_iri)),
                         "Label": label, "Comment": comment,
+                        "Subclass of": subclass_of,
                         "Class Type": ("owl: Class" if str(class_type) == "http://www.w3.org/2002/07/owl#Class" else
                             "rdfs: Class" if str(class_type) == "http://www.w3.org/2000/01/rdf-schema#Class" else
                             str(class_type)),
@@ -578,7 +593,7 @@ with tab2:
                     st.markdown(f"""<div class="info-message-blue">
                         <b>Results ({len(df)}):</b>
                     </div>""", unsafe_allow_html=True)
-                    st.dataframe(df, hide_index=True)
+                    utils.display_formatted_df(df)
                 else:
                     st.markdown(f"""<div class="warning-message">
                         ⚠️ No results.
@@ -603,7 +618,7 @@ with tab2:
                     range_dict[utils.get_node_label(o)] = o
 
             with col_filter_a:
-                list_to_choose = ["No filter", "Property type", "Annotation"]
+                list_to_choose = ["No filter", "Property type", "Comment/Label"]
                 if range_dict:
                     list_to_choose.insert(1,"Range")
                 if domain_dict:
@@ -642,7 +657,7 @@ with tab2:
                     selected_property_type = st.selectbox("📡 Filter by property type:", list_to_choose,
                         key="key_selected_property_type")
 
-                if property_filter_type == "Annotation":
+                if property_filter_type == "Comment/Label":
                     annotation_options = ["No filter", "Has comment", "Has label", "Has comment or label",
                         "Has comment and label"]
                     selected_annotation_filter = st.selectbox("📡 Filter by annotation:", annotation_options,
@@ -785,7 +800,7 @@ with tab2:
                     """
 
             # Annotation filter
-            if property_filter_type == "Annotation":
+            if property_filter_type == "Comment/Label":
 
                 if selected_annotation_filter != "No filter":
 
@@ -853,8 +868,13 @@ with tab2:
                     prop_types_list.append("owl: AnnotationProperty")
                 prop_types = utils.format_list_for_display(prop_types_list)
 
+                subproperty_of_list = list(ontology_for_search.objects(subject=prop_iri, predicate=RDFS.subPropertyOf))
+                subproperty_of_list = [utils.get_node_label(pr) for pr in subproperty_of_list if isinstance(pr, URIRef)]
+                subproperty_of = utils.format_list_for_display(subproperty_of_list)
+
                 df_data.append({"Property": utils.get_node_label(prop_iri),
-                    "Label": label, "Comment": comment, "Property Type": prop_types,
+                    "Ontology": utils.identify_term_ontology(utils.get_node_label(prop_iri)),
+                    "Label": label, "Comment": comment, "Subproperty of": subproperty_of, "Property Type": prop_types,
                      "Property IRI": prop_iri  })
 
             # Create dataframe and display
@@ -872,8 +892,50 @@ with tab2:
                         ⚠️ No results.
                     </div>""", unsafe_allow_html=True)
 
-        # CUSTOM SEARCH
-        if selected_ontology_search == "✏️ Custom search":
+        # CUSTOM TERMS
+        if selected_ontology_search == "✏️ Custom terms":
+
+            with col1:
+                col1a, col1b = st.columns([2,1])
+
+            custom_property_dict = utils.get_ontology_property_dict("custom")
+            custom_class_dict = utils.get_ontology_class_dict("custom")
+
+            if custom_property_dict and custom_class_dict:
+                list_to_choose = ["No filter", "🏷️ Class", "🔗 Property"]
+            elif custom_class_dict:
+                list_to_choose = ["🏷️ Class"]
+            elif custom_property_dict:
+                list_to_choose = ["🔗 Property"]
+
+            with col1a:
+                custom_term_type_for_display = st.selectbox("📡 Filter by type:*", list_to_choose,
+                    key="key_custom_term_type_for_display")
+
+            if custom_term_type_for_display == "🏷️ Class":
+                df = pd.DataFrame([(k) for k in custom_class_dict],
+                    columns=["Class"])
+            elif custom_term_type_for_display == "🔗 Property":
+                df = pd.DataFrame([(k) for k in custom_property_dict],
+                    columns=["Property"])
+            elif custom_term_type_for_display == "No filter":
+                df = pd.DataFrame([(utils.get_node_label(k), v) for k, v in st.session_state["custom_terms_dict"].items()],
+                    columns=["Term", "Type"])
+
+            with col1:
+                if not df.empty:
+                    st.markdown(f"""<div class="info-message-blue">
+                        <b>Results ({len(df)}):</b>
+                    </div>""", unsafe_allow_html=True)
+                    st.dataframe(df, hide_index=True)
+                else:
+                    st.markdown(f"""<div class="warning-message">
+                        ⚠️ No results.
+                    </div>""", unsafe_allow_html=True)
+
+
+        # SPARQL SEARCH
+        if selected_ontology_search == "🔍 SPARQL Search":
 
             with col1:
                 col1a, col1b = st.columns([2,1])

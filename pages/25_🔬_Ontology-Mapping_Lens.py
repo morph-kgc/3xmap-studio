@@ -138,7 +138,7 @@ with tab2:
             with col1a:
                 utils.get_used_ontology_terms_metric(ontology_filter_for_lens, superfilter=superclass_filter_for_lens, class_=True)
             with col1b:
-                utils.get_average_ontology_term_frequency_metric(ontology_filter_for_lens, superfilter=superclass_filter_for_lens)
+                utils.get_average_ontology_term_frequency_metric(ontology_filter_for_lens, superfilter=superclass_filter_for_lens, class_=True)
             with col1c:
                 utils.get_average_ontology_term_frequency_metric(ontology_filter_for_lens, superfilter=superclass_filter_for_lens, class_=True, type="all")
             with col1e:
@@ -218,7 +218,7 @@ with tab2:
             # Class selection
             filtered_ontology_used_class_dict = utils.get_class_dictionaries_filtered_by_superclass(ontology_filter_for_lens,
                 superclass_filter=superclass_filter_for_lens)[0]
-            list_to_choose = list(filtered_ontology_used_class_dict)
+            list_to_choose = sorted(filtered_ontology_used_class_dict)
             list_to_choose.insert(0, "Select class")
             with col1a:
                 subject_class = st.selectbox("🖱️ Select class:*", list_to_choose,
