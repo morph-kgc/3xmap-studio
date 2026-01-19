@@ -430,7 +430,7 @@ with tab2:
                     superclass_dict[utils.get_node_label(o)] = o
 
             with col_filter_a:
-                list_to_choose = ["No filter", "Class type", "Annotation"]
+                list_to_choose = ["No filter", "Class type", "Comment/Label"]
                 if superclass_dict:
                     list_to_choose.insert(1, "Superclass")
                 class_filter_type = st.selectbox("📡 Add filter:", list_to_choose,
@@ -448,7 +448,7 @@ with tab2:
                     selected_class_type = st.selectbox("📡 Filter by class type:", list_to_choose,
                         key="key_selected_class_type")
 
-                if class_filter_type == "Annotation":
+                if class_filter_type == "Comment/Label":
                     annotation_options = ["No filter", "Has comment", "Has label", "Has comment or label",
                         "Has comment and label"]
                     selected_annotation_filter = st.selectbox("📡 Filter by annotation:", annotation_options,
@@ -523,7 +523,7 @@ with tab2:
                       OPTIONAL {{ ?class rdfs:comment ?comment }} }}"""
 
             # Annotation filter
-            if class_filter_type == "Annotation":
+            if class_filter_type == "Comment/Label":
 
                 if selected_annotation_filter != "No filter":
 
@@ -570,11 +570,15 @@ with tab2:
                 label = getattr(row, "label", "")
                 comment = getattr(row, "comment", "")
                 class_type = getattr(row, "type", "")  # Extract the class type
+                subclass_of_list = list(ontology_for_search.objects(subject=class_iri, predicate=RDFS.subClassOf))
+                subclass_of_list = [utils.get_node_label(cl) for cl in subclass_of_list if isinstance(cl, URIRef)]
+                subclass_of = utils.format_list_for_display(subclass_of_list)
 
                 if isinstance(class_iri, URIRef):  # filter out BNodes
                     df_data.append({"Class": utils.get_node_label(class_iri),
                         "Ontology": utils.identify_term_ontology(utils.get_node_label(class_iri)),
                         "Label": label, "Comment": comment,
+                        "Subclass of": subclass_of,
                         "Class Type": ("owl: Class" if str(class_type) == "http://www.w3.org/2002/07/owl#Class" else
                             "rdfs: Class" if str(class_type) == "http://www.w3.org/2000/01/rdf-schema#Class" else
                             str(class_type)),
@@ -614,7 +618,7 @@ with tab2:
                     range_dict[utils.get_node_label(o)] = o
 
             with col_filter_a:
-                list_to_choose = ["No filter", "Property type", "Annotation"]
+                list_to_choose = ["No filter", "Property type", "Comment/Label"]
                 if range_dict:
                     list_to_choose.insert(1,"Range")
                 if domain_dict:
@@ -653,7 +657,7 @@ with tab2:
                     selected_property_type = st.selectbox("📡 Filter by property type:", list_to_choose,
                         key="key_selected_property_type")
 
-                if property_filter_type == "Annotation":
+                if property_filter_type == "Comment/Label":
                     annotation_options = ["No filter", "Has comment", "Has label", "Has comment or label",
                         "Has comment and label"]
                     selected_annotation_filter = st.selectbox("📡 Filter by annotation:", annotation_options,
@@ -796,7 +800,7 @@ with tab2:
                     """
 
             # Annotation filter
-            if property_filter_type == "Annotation":
+            if property_filter_type == "Comment/Label":
 
                 if selected_annotation_filter != "No filter":
 
@@ -864,9 +868,13 @@ with tab2:
                     prop_types_list.append("owl: AnnotationProperty")
                 prop_types = utils.format_list_for_display(prop_types_list)
 
+                subproperty_of_list = list(ontology_for_search.objects(subject=prop_iri, predicate=RDFS.subPropertyOf))
+                subproperty_of_list = [utils.get_node_label(pr) for pr in subproperty_of_list if isinstance(pr, URIRef)]
+                subproperty_of = utils.format_list_for_display(subproperty_of_list)
+
                 df_data.append({"Property": utils.get_node_label(prop_iri),
                     "Ontology": utils.identify_term_ontology(utils.get_node_label(prop_iri)),
-                    "Label": label, "Comment": comment, "Property Type": prop_types,
+                    "Label": label, "Comment": comment, "Subproperty of": subproperty_of, "Property Type": prop_types,
                      "Property IRI": prop_iri  })
 
             # Create dataframe and display

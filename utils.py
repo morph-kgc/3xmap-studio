@@ -4590,11 +4590,11 @@ def get_average_ontology_term_frequency_metric(g_ont, superfilter=None, type="us
         }</style>""", unsafe_allow_html=True)
     if type == "used":
         average_use = number_of_rules/number_of_used_terms if number_of_used_terms != 0 else 0
-        st.metric(label=f"#Rules per {label_2} (avg.)", value=f"{format_number_for_display(average_use)}",
+        st.metric(label=f"Rules per {label_2} (avg.)", value=f"{format_number_for_display(average_use)}",
             delta=f"(over used {label})", delta_color="off")
     if type == "all":
         average_use = number_of_rules/number_of_terms if number_of_terms != 0 else 0
-        st.metric(label=f"#Rules per {label_2} (avg.)", value=f"{format_number_for_display(average_use)}",
+        st.metric(label=f"Rules per {label_2} (avg.)", value=f"{format_number_for_display(average_use)}",
             delta=f"(over all {label})", delta_color="off")
 #_________________________________________________
 
