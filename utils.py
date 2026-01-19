@@ -3294,18 +3294,17 @@ def get_pom_dict():
 
 
         # Predicate Map is used
-        if not predicate_list:
-            predicate_map_list = list(st.session_state["g_mapping"].objects(pom_iri, RML.predicateMap))
-            for pm_iri in predicate_map_list:
-                template = st.session_state["g_mapping"].value(pm_iri, RML.template)
-                constant = st.session_state["g_mapping"].value(pm_iri, RML.constant)
-                reference = st.session_state["g_mapping"].value(pm_iri, RML.reference)
-                if template:
-                    predicate_label_list.append(get_node_label(template))
-                elif constant:
-                    predicate_label_list.append(get_node_label(constant))
-                elif reference:
-                    predicate_label_list.append("{" + get_node_label(reference) + "}" )
+        predicate_map_list = list(st.session_state["g_mapping"].objects(pom_iri, RML.predicateMap))
+        for pm_iri in predicate_map_list:
+            template = st.session_state["g_mapping"].value(pm_iri, RML.template)
+            constant = st.session_state["g_mapping"].value(pm_iri, RML.constant)
+            reference = st.session_state["g_mapping"].value(pm_iri, RML.reference)
+            if template:
+                predicate_label_list.append(get_node_label(template))
+            elif constant:
+                predicate_label_list.append(get_node_label(constant))
+            elif reference:
+                predicate_label_list.append("{" + get_node_label(reference) + "}" )
 
         pom_dict[pom_iri] = [tm_iri, predicate_label_list, pom_iri, om_iri, om_type, om_rule]
 
@@ -3750,13 +3749,14 @@ def create_g_mapping_network(tm_for_network_list):
     G = nx.DiGraph()
     legend_dict = {}
 
-    # Store predicates per subject-object pair (in case of multiple predicates)
+    # Store predicates per subject-object pair
     edge_predicates = {}
 
     for sm in sm_for_network_list:
         for rule in utils.get_rules_for_sm(sm):
             s, p, o, tm = rule
 
+            # Shorten only subject and object labels
             s_id, legend_dict = get_unique_node_label(s, "s", legend_dict)
             o_id, legend_dict = get_unique_node_label(o, "o", legend_dict)
 
@@ -3765,15 +3765,25 @@ def create_g_mapping_network(tm_for_network_list):
             if o_id not in G:
                 G.add_node(o_id, label=o_id, color=o_node_color, shape="ellipse")
 
+            # Collect predicates for this (subject, object)
             key = (s_id, o_id)
             if key not in edge_predicates:
                 edge_predicates[key] = []
             edge_predicates[key].append(p)
 
-    # Add ONE edge per s_id - o_id with merged predicate labels (parallel edges not allowed)
+    # Add ONE edge per (subject, object) with merged predicate labels
     for (s_id, o_id), preds in edge_predicates.items():
-        merged_label = format_list_for_display(preds)
+
+        # Deduplicate + sort predicates for stable, clean labels
+        unique_preds = sorted(set(preds))
+
+        # Create merged label
+        merged_label = " + ".join(unique_preds)
+
+        # Add merged predicate label to legend
         p_label, legend_dict = get_unique_node_label(merged_label, "p", legend_dict)
+
+        # Add edge
         G.add_edge(
             s_id,
             o_id,
@@ -3786,9 +3796,10 @@ def create_g_mapping_network(tm_for_network_list):
     G_net = Network(height="600px", width="100%", directed=True)
     G_net.from_nx(G)
 
-    # Optional: improve layout and styling
+    # Styling
     G_net.repulsion(node_distance=200, central_gravity=0.3,
                     spring_length=200, spring_strength=0.05)
+
     G_net.set_options("""{
         "nodes": {"shape": "ellipse", "borderWidth": 0,
             "font": {"size": 14, "face": "arial", "align": "center",
@@ -3818,10 +3829,12 @@ def create_g_mapping_network(tm_for_network_list):
             f'<div id="mynetwork" style="background-color: {background_color};"'
         )
 
-        # Create and display legend
+        # Create legend
         legend_flag = {"s": False, "p": False, "o": False}
+
         for letter in ["s", "p", "o"]:
             legend_html = "<div style='font-family: sans-serif; font-size: 14px;'>"
+
             if letter == "s":
                 legend_html += "<p>🔑 Subject legend</p>"
                 object_color = s_node_color
@@ -3834,10 +3847,12 @@ def create_g_mapping_network(tm_for_network_list):
 
             for key, value in legend_dict.items():
                 if key.startswith(letter):
-                    legend_html += ("<div style='display: flex; align-items: flex-start; margin-bottom: 4px;'>"
+                    legend_html += (
+                        "<div style='display: flex; align-items: flex-start; margin-bottom: 4px;'>"
                         f"<div style='min-width: 60px; font-weight: bold;'><code>{str(key)}</code></div>"
                         f"<div style='flex: 1; max-width: 100%; word-break: break-word; white-space: normal; font-size: 12px;'>{str(value)}</div>"
-                        "</div>")
+                        "</div>"
+                    )
                     legend_flag[letter] = True
 
             legend_html += "</div>"
@@ -3853,6 +3868,7 @@ def create_g_mapping_network(tm_for_network_list):
                 legend_html_list.append(legend_html)
 
     return network_flag, network_html, legend_flag, legend_html_list
+
 
 #__________________________________________________
 
