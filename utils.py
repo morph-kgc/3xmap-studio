@@ -726,10 +726,6 @@ def get_node_label(node, iri_prefix=True, short_BNode=False):
         else:
             label = str(node)
 
-    elif node:
-        is_valid_iri_flag = is_valid_iri(node, delimiter_ending=False)
-
-
     # Empty node
     else:
         label = ""
@@ -786,11 +782,30 @@ def format_number_for_display(number):
 # 6. Label in network visualisation (characters)
 # 7. Suggested mapping label (characters)    8. URL for display (characters)
 # 9. Max characters when displaying ontology/mapping serialisation (ttl or nt)
-# 10. Query/path text for display
-# 11. Max characters in a rule before using small fint size
+# 10. Query/path text for display              # 11. Max characters in a rule before using small fint size
+# 12. Threshold for column width adjustment in df
 def get_max_length_for_display():
 
-    return [50, 10, 100, 20, 8, 10, 20, 15, 40, 100000, 25, 40]
+    return [50, 10, 100, 20, 8, 10, 20, 15, 40, 100000, 25, 40, 20]
+#_______________________________________________________
+
+#______________________________________________________
+# Function to display a dataframe with reasonable column width indeèndent of the content
+def display_formatted_df(df):
+
+    max_length = get_max_length_for_display()[12]
+    wide_width="medium"
+
+    column_config = {}
+    for col in df.columns:
+        col_len = df[col].astype(str).map(len).max()    # compute max length of the column's string values
+
+        if col_len > max_length:
+            column_config[col] = st.column_config.TextColumn(width=wide_width)  # long content → apply wide width
+        else:
+            column_config[col] = st.column_config.TextColumn(width="auto")   # short content → let Streamlit auto-size
+
+    st.dataframe(df, column_config=column_config, use_container_width=True, hide_index=True)
 #_______________________________________________________
 
 #______________________________________________________
@@ -4018,21 +4033,31 @@ def get_predefined_search_results(selected_predefined_search, order_clause):
 
     if selected_predefined_search == "Rules":
         query = """PREFIX rml: <http://w3id.org/rml/>
-
             SELECT DISTINCT ?tm ?sm ?pom ?om ?subject_value ?predicate ?object_value WHERE {
               ?tm rml:subjectMap ?sm .
               ?tm rml:predicateObjectMap ?pom .
-              ?pom rml:predicate ?predicate .
               ?pom rml:objectMap ?om .
 
+              # --- DIRECT PREDICATE ---
+              {?pom rml:predicate ?predicate .}
+              UNION
+              # --- PREDICATE MAP (constant, template, reference) ---
+              {?pom rml:predicateMap ?pm .
+                {?pm rml:constant ?predicate .}
+                UNION
+                {?pm rml:template ?predicate .}
+                UNION
+                {?pm rml:reference ?predicate .}}
+
+              # SubjectMap value
               OPTIONAL { ?sm rml:template ?subject_value . }
               OPTIONAL { ?sm rml:constant ?subject_value . }
               OPTIONAL { ?sm rml:reference ?subject_value . }
 
+              # ObjectMap value
               OPTIONAL { ?om rml:template ?object_value . }
               OPTIONAL { ?om rml:constant ?object_value . }
-              OPTIONAL { ?om rml:reference ?object_value . }
-            }"""
+              OPTIONAL { ?om rml:reference ?object_value . }}"""
 
         if order_clause == "⮝ Subject":
             query += f"ORDER BY ASC(?subject_value) "
@@ -4199,7 +4224,10 @@ def display_predefined_search_df(df_data, limit, offset, display=True):
             st.markdown(f"""<div class="info-message-blue">
                 <b>RESULTS ({len(df)}):</b>
             </div>""", unsafe_allow_html=True)
-            st.dataframe(df, hide_index=True)
+            df = pd.DataFrame(df_data)
+
+            display_formatted_df(df)
+
         else:
             st.markdown(f"""<div class="warning-message">
                 ⚠️ No results.
@@ -4242,30 +4270,43 @@ def get_mapping_composition_by_class_donut_chart():
             frequency_dict[ont_tag] = total_count
 
     # Count classes from external ontologies (not imported)
-    all_used_class_dict = {}
-    for s, p, o in st.session_state["g_mapping"].triples((None, RML["class"], None)):
-        if isinstance(o, URIRef):
-            all_used_class_dict[get_node_label(o)] = o
+    ontology_classes = [get_node_label(v) for v in get_ontology_class_dict(st.session_state["g_ontology"]).values()]
+    count_other = 0
+    for sm in st.session_state["g_mapping"].objects(predicate=RML.subjectMap):
+        sm_number_of_rules = len(utils.get_rules_for_sm(sm))
+        sm_number_of_external_classes = 0
+        for class_iri in st.session_state["g_mapping"].objects(subject=sm, predicate=RML["class"]):
+            if class_iri not in ontology_classes:
+                sm_number_of_external_classes += 1
+        count_other += sm_number_of_rules * sm_number_of_external_classes
+    if count_other:
+        frequency_dict["Other"] = count_other
 
-    other_ontologies_list = []
-    for class_label, class_iri in all_used_class_dict.items():
-        other_ontologies_flag = True
-        for ont_label, g_ont in st.session_state["g_ontology_components_dict"].items():   # check if class belongs to an imported ontology
-            ontology_class_dict = get_ontology_class_dict(g_ont)
-            if class_iri in ontology_class_dict.values():
-                other_ontologies_flag = False
-        if other_ontologies_flag:    # class belongs to external ontology
-            other_ontologies_list.append(class_iri)
-
-    if other_ontologies_list:   # count times external classes are used
-        number_of_rules = 0
-        for class_iri in other_ontologies_list:
-            for s, p, o in st.session_state["g_mapping"].triples((None, RML["class"], class_iri)):
-                sm_iri = s
-                rule_list = get_rules_for_sm(sm_iri)
-                number_of_rules += len(rule_list)
-        if number_of_rules:
-            frequency_dict["Other"] = number_of_rules
+    # # Count classes from external ontologies (not imported)
+    # all_used_class_dict = {}
+    # for s, p, o in st.session_state["g_mapping"].triples((None, RML["class"], None)):
+    #     if isinstance(o, URIRef):
+    #         all_used_class_dict[get_node_label(o)] = o
+    #
+    # other_ontologies_list = []
+    # for class_label, class_iri in all_used_class_dict.items():
+    #     other_ontologies_flag = True
+    #     for ont_label, g_ont in st.session_state["g_ontology_components_dict"].items():   # check if class belongs to an imported ontology
+    #         ontology_class_dict = get_ontology_class_dict(g_ont)
+    #         if class_iri in ontology_class_dict.values():
+    #             other_ontologies_flag = False
+    #     if other_ontologies_flag:    # class belongs to external ontology
+    #         other_ontologies_list.append(class_iri)
+    #
+    # if other_ontologies_list:   # count times external classes are used
+    #     number_of_rules = 0
+    #     for class_iri in other_ontologies_list:
+    #         for s, p, o in st.session_state["g_mapping"].triples((None, RML["class"], class_iri)):
+    #             sm_iri = s
+    #             rule_list = get_rules_for_sm(sm_iri)
+    #             number_of_rules += len(rule_list)
+    #     if number_of_rules:
+    #         frequency_dict["Other"] = number_of_rules
 
     # Donut chart
     if frequency_dict:
@@ -4344,24 +4385,15 @@ def get_mapping_composition_by_property_donut_chart():
         if total_count:
             frequency_dict[ont_tag] = total_count
 
-    # Count classes from external ontologies (not imported)
-    all_used_property_dict = {}
-    for s, p, o in st.session_state["g_mapping"].triples((None, RML["predicate"], None)):
-        if isinstance(o, URIRef):
-            all_used_property_dict[get_node_label(o)] = o
-
-    other_ontologies_list = []
-    for prop_label, prop_iri in all_used_property_dict.items():
-        other_ontologies_flag = True
-        for ont_label, g_ont in st.session_state["g_ontology_components_dict"].items():  # check if property belongs to an imported ontology
-            ontology_property_dict = get_ontology_property_dict(g_ont)
-            if prop_iri in ontology_property_dict.values():
-                other_ontologies_flag = False
-        if other_ontologies_flag:     # property belongs to external ontology
-            other_ontologies_list.append(prop_iri)
-
-    if other_ontologies_list:  # count times external properties are used
-        frequency_dict["Other"] = len(other_ontologies_list)
+    # Count properties from external ontologies (not imported)
+    ontology_properties = [get_node_label(v) for v in get_ontology_property_dict(st.session_state["g_ontology"]).values()]
+    count_other = 0
+    for sm in st.session_state["g_mapping"].objects(predicate=RML.subjectMap):
+        for rule in utils.get_rules_for_sm(sm):
+            if rule[1] not in ontology_properties:
+                count_other += 1
+    if count_other:
+        frequency_dict["Other"] = count_other
 
     # Donut chart
     if frequency_dict:
@@ -4416,8 +4448,10 @@ def get_ontology_used_properties_count_dict(g_ont):
     usage_count_dict = defaultdict(int)
 
     for prop_label, prop_iri in ontology_property_dict.items():
-        for triple in st.session_state["g_mapping"].triples((None, RML["predicate"], URIRef(prop_iri))):
-            usage_count_dict[prop_label] += 1
+        for sm in st.session_state["g_mapping"].objects(predicate=RML.subjectMap):
+            for rule in utils.get_rules_for_sm(sm):
+                if rule[1] == get_node_label(prop_iri):
+                    usage_count_dict[prop_label] += 1
 
     return dict(usage_count_dict)
 #_________________________________________________

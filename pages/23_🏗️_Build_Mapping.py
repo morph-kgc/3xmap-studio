@@ -194,7 +194,6 @@ def save_sm_template():   #function to save subject map (template option)
             subject_class_iri = ontology_class_dict[class_label]
         elif class_label in custom_class_dict:
             subject_class_iri = custom_class_dict[class_label]
-        subject_class_iri = ontology_class_dict[class_label]
         st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
     # graph map_____________________
     if add_sm_graph_map_option != "Default graph map":
@@ -235,7 +234,6 @@ def save_sm_constant():   #function to save subject map (constant option)
             subject_class_iri = ontology_class_dict[class_label]
         elif class_label in custom_class_dict:
             subject_class_iri = custom_class_dict[class_label]
-        subject_class_iri = ontology_class_dict[class_label]
         st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
     # graph map_____________________
     if add_sm_graph_map_option != "Default graph map":
@@ -267,7 +265,6 @@ def save_sm_reference():   #function to save subject map (reference option)
             subject_class_iri = ontology_class_dict[class_label]
         elif class_label in custom_class_dict:
             subject_class_iri = custom_class_dict[class_label]
-        subject_class_iri = ontology_class_dict[class_label]
         st.session_state["g_mapping"].add((sm_iri, RML["class"], subject_class_iri))
     # graph map_____________________
     if add_sm_graph_map_option != "Default graph map":
@@ -778,14 +775,14 @@ with tab1:
                                     ⚠️ Selecting an <b>iterator</b> is strogly recommended.
                                 </span></div>""", unsafe_allow_html=True)
 
-                with col1a:
-                    if label_ls_option:
-                        if valid_ls_label_flag:
-                            if ds_filename_for_tm != "Select file":
-                                st.button("Save", key="key_save_tm_w_tab_ls", on_click=save_tm_w_tab_ls)
-                    else:
+            with col1a:
+                if label_ls_option:
+                    if valid_ls_label_flag:
                         if ds_filename_for_tm != "Select file":
                             st.button("Save", key="key_save_tm_w_tab_ls", on_click=save_tm_w_tab_ls)
+                else:
+                    if ds_filename_for_tm != "Select file":
+                        st.button("Save", key="key_save_tm_w_tab_ls", on_click=save_tm_w_tab_ls)
 
             if utils.is_hierarchical_file(ds_filename_for_tm) and not iterator_list:
                 with col1b:

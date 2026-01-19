@@ -365,25 +365,46 @@ with tab2:
 
         limit, offset, order_clause = utils.limit_offset_order(col1, ["⮔ No order", "⮝ Class", "⮟ Class",
             "⮝ TriplesMap", "⮟ TriplesMap"])
+
         results = utils.get_predefined_search_results(selected_predefined_search, order_clause)
-        df_data = []
+        grouped = {}
         for row in results:
             tm = row.tm if hasattr(row, "tm") and row.tm else ""
             sm = row.sm if hasattr(row, "sm") and row.sm else ""
             rdf_class = row.get("class") if row.get("class") else ""
             class_label = utils.get_node_label(rdf_class)
+
+            # Determine ontology tag
             ont_tag = utils.identify_term_ontology(class_label)
-            if not ont_tag:   # External classes (check if custom)
+            if not ont_tag:
                 if rdf_class in st.session_state["custom_terms_dict"]:
                     ont_tag = "Custom"
                 else:
                     ont_tag = "External"
 
-            selected_classes_for_display_list = list_to_choose_classes if not selected_classes_for_display_list else selected_classes_for_display_list
-            if class_label in selected_classes_for_display_list:
-                df_data.append({"Class": utils.get_node_label(rdf_class), "Ontology": ont_tag,
-                    "TriplesMap": utils.get_node_label(tm),
-                    "Subject Map": utils.get_node_label(sm)})
+            # Apply filter
+            selected_classes_for_display_list = (list_to_choose_classes
+                if not selected_classes_for_display_list
+                else selected_classes_for_display_list)
+
+            if class_label not in selected_classes_for_display_list:
+                continue
+
+            # Initialize group entry
+            if class_label not in grouped:
+                grouped[class_label] = {"Ontology": ont_tag,
+                    "TriplesMaps": set(), "SubjectMaps": set()}
+
+            # Add TM and SM
+            grouped[class_label]["TriplesMaps"].add(utils.get_node_label(tm))
+            grouped[class_label]["SubjectMaps"].add(utils.get_node_label(sm))
+
+        # Convert grouped data into df_data list
+        df_data = []
+        for class_label, info in grouped.items():
+            df_data.append({"Class": class_label, "Ontology": info["Ontology"],
+                "TriplesMaps": utils.format_list_for_display(sorted(info["TriplesMaps"])),
+                "Subject Maps": utils.format_list_for_display(sorted(info["SubjectMaps"]))})
 
         # Display
         with col1:
@@ -407,25 +428,50 @@ with tab2:
 
         limit, offset, order_clause = utils.limit_offset_order(col1, ["⮔ No order", "⮝ Property", "⮟ Property",
             "⮝ TriplesMap", "⮟ TriplesMap"])
+
         results = utils.get_predefined_search_results(selected_predefined_search, order_clause)
         df_data = []
+        # Group results by property
+        grouped = {}
+
         for row in results:
             tm = row.tm if hasattr(row, "tm") and row.tm else ""
             pom = row.pom if hasattr(row, "pom") and row.pom else ""
             predicate = row.get("predicate") if row.get("predicate") else ""
             predicate_label = utils.get_node_label(predicate)
+
+            # Determine ontology tag
             ont_tag = utils.identify_term_ontology(predicate_label)
-            if not ont_tag:   # External properties (check if custom)
+            if not ont_tag:
                 if predicate in st.session_state["custom_terms_dict"]:
                     ont_tag = "Custom"
                 else:
                     ont_tag = "External"
 
-            selected_properties_for_display_list = list_to_choose_properties if not selected_properties_for_display_list else selected_properties_for_display_list
-            if predicate_label in selected_properties_for_display_list:
-                df_data.append({"Property": utils.get_node_label(predicate), "Ontology": ont_tag,
-                    "TriplesMap": utils.get_node_label(tm),
-                    "Predicate-Object Map": utils.get_node_label(pom)})
+            # Apply filter
+            selected_properties_for_display_list = (
+                list_to_choose_properties if not selected_properties_for_display_list
+                else selected_properties_for_display_list
+            )
+            if predicate_label not in selected_properties_for_display_list:
+                continue
+
+            # Initialize group entry
+            if predicate_label not in grouped:
+                grouped[predicate_label] = {"Ontology": ont_tag,
+                    "TriplesMaps": set(), "PredicateObjectMaps": set()}
+
+            # Add TM and POM
+            grouped[predicate_label]["TriplesMaps"].add(utils.get_node_label(tm))
+            grouped[predicate_label]["PredicateObjectMaps"].add(utils.get_node_label(pom))
+
+        # Convert grouped data into df_data list
+        df_data = []
+        for prop, info in grouped.items():
+            df_data.append({"Property": prop, "Ontology": info["Ontology"],
+                "TriplesMaps": utils.format_list_for_display(sorted(info["TriplesMaps"])),
+                "Predicate-Object Maps": utils.format_list_for_display(sorted(info["PredicateObjectMaps"]))})
+
 
         # Display
         with col1:
