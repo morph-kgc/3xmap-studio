@@ -798,12 +798,14 @@ def display_formatted_df(df):
 
     column_config = {}
     for col in df.columns:
-        col_len = df[col].astype(str).map(len).max()    # compute max length of the column's string values
 
-        if col_len > max_length:
-            column_config[col] = st.column_config.TextColumn(width=wide_width)  # long content → apply wide width
-        else:
-            column_config[col] = st.column_config.TextColumn(width="auto")   # short content → let Streamlit auto-size
+        if df[col].dtype != bool:
+            col_len = df[col].astype(str).map(len).max()    # compute max length of the column's string values
+
+            if col_len > max_length:
+                column_config[col] = st.column_config.TextColumn(width=wide_width)  # long content → apply wide width
+            else:
+                column_config[col] = st.column_config.TextColumn(width="auto")   # short content → let Streamlit auto-size
 
     st.dataframe(df, column_config=column_config, use_container_width=True, hide_index=True)
 #_______________________________________________________
@@ -4112,9 +4114,20 @@ def get_predefined_search_results(selected_predefined_search, order_clause):
 
     elif selected_predefined_search == "Predicate-Object Maps":
         query = f"""PREFIX rml: <http://w3id.org/rml/>
-            SELECT ?tm ?pom ?predicate ?objectMap ?template ?constant ?reference ?termType ?datatype ?language ?graphMap WHERE {{
+            SELECT ?tm ?pom ?pm ?predicate ?objectMap ?template ?constant ?reference ?termType ?datatype ?language ?graphMap WHERE {{
               ?tm rml:predicateObjectMap ?pom .
-              OPTIONAL {{ ?pom rml:predicate ?predicate }}
+              # Direct predicate
+              {{?pom rml:predicate ?predicate .}}
+              UNION
+              # PredicateMap (constant, template, reference)
+              {{?pom rml:predicateMap ?pm .
+                {{?pm rml:constant ?predicate .}}
+                UNION
+                {{?pm rml:template ?predicate .}}
+                UNION
+                {{?pm rml:reference ?predicate .}}    }}
+
+              OPTIONAL {{ ?pom rml:predicateMap ?pm }}
               OPTIONAL {{ ?pom rml:objectMap ?objectMap }}
               OPTIONAL {{ ?objectMap rml:template ?template }}
               OPTIONAL {{ ?objectMap rml:constant ?constant }}
@@ -4125,8 +4138,7 @@ def get_predefined_search_results(selected_predefined_search, order_clause):
               OPTIONAL {{ ?objectMap rml:graphMap ?graphMap }}
               OPTIONAL {{ ?pom rml:constant ?constant }}
               OPTIONAL {{ ?pom rml:template ?template }}
-              OPTIONAL {{ ?pom rml:reference ?reference }}
-            }}"""
+              OPTIONAL {{ ?pom rml:reference ?reference }}   }}"""
 
         if order_clause == "⮝ Predicate":
             query += f"ORDER BY ASC(?predicate) "
@@ -4138,11 +4150,19 @@ def get_predefined_search_results(selected_predefined_search, order_clause):
             query += f"ORDER BY DESC(?tm) "
 
     elif selected_predefined_search == "Used Properties":
-        query = """PREFIX rml: <http://w3id.org/rml/>
-        SELECT DISTINCT ?tm ?pom ?predicate WHERE {
+        query = f"""        PREFIX rml: <http://w3id.org/rml/>
+        SELECT DISTINCT ?tm ?pom ?predicate WHERE {{
           ?tm rml:predicateObjectMap ?pom .
-          ?pom rml:predicate ?predicate .
-        }"""
+          {{# Direct predicate
+            ?pom rml:predicate ?predicate . }}
+          UNION
+          {{# PredicateMap: constant, template, reference
+            ?pom rml:predicateMap ?pm .
+            {{?pm rml:constant ?predicate .}}
+            UNION
+            {{?pm rml:template ?predicate .}}
+            UNION
+            {{?pm rml:reference ?predicate .}}   }}   }}"""
 
         if order_clause == "⮝ Property":
             query += f"ORDER BY ASC(?predicate) "
@@ -4225,7 +4245,6 @@ def display_predefined_search_df(df_data, limit, offset, display=True):
                 <b>RESULTS ({len(df)}):</b>
             </div>""", unsafe_allow_html=True)
             df = pd.DataFrame(df_data)
-
             display_formatted_df(df)
 
         else:
@@ -4358,14 +4377,14 @@ def get_mapping_composition_by_class_donut_chart():
 def get_ontology_used_classes_count_by_rules_dict(g_ont):
 
     ontology_class_dict = get_ontology_class_dict(g_ont)
-    usage_count_dict = {}
+    usage_count_dict = defaultdict(int)
 
     for class_label, class_iri in ontology_class_dict.items():
         for s, p, o in st.session_state["g_mapping"].triples((None, RML["class"], URIRef(class_iri))):
             sm_iri = s
             sm_iri_rule_list = get_rules_for_sm(sm_iri)
             if sm_iri_rule_list:
-                usage_count_dict[class_label] = len(sm_iri_rule_list)
+                usage_count_dict[class_label] += len(sm_iri_rule_list)
 
     return dict(usage_count_dict)
 #_________________________________________________
@@ -4548,6 +4567,7 @@ def get_average_ontology_term_frequency_metric(g_ont, superfilter=None, type="us
         ontology_used_property_dict = get_property_dictionaries_filtered_by_superproperty(g_ont, superproperty_filter=superfilter)[1]
         ontology_used_properties_count_dict = get_property_dictionaries_filtered_by_superproperty(g_ont, superproperty_filter=superfilter)[2]
         label = "properties"
+        label_2 = "property"
 
         number_of_rules = sum(ontology_used_properties_count_dict.values())
         number_of_used_terms = len(ontology_used_property_dict)
@@ -4558,6 +4578,7 @@ def get_average_ontology_term_frequency_metric(g_ont, superfilter=None, type="us
         ontology_used_class_dict = get_class_dictionaries_filtered_by_superclass(g_ont, superclass_filter=superfilter)[1]
         ontology_used_classes_count_by_rules_dict = get_class_dictionaries_filtered_by_superclass(g_ont, superclass_filter=superfilter)[3]
         label = "classes"
+        label_2 = "class"
 
         number_of_rules = sum(ontology_used_classes_count_by_rules_dict.values())
         number_of_used_terms = len(ontology_used_class_dict)
@@ -4569,11 +4590,11 @@ def get_average_ontology_term_frequency_metric(g_ont, superfilter=None, type="us
         }</style>""", unsafe_allow_html=True)
     if type == "used":
         average_use = number_of_rules/number_of_used_terms if number_of_used_terms != 0 else 0
-        st.metric(label="Average freq", value=f"{format_number_for_display(average_use)}",
+        st.metric(label=f"#Rules per {label_2} (avg.)", value=f"{format_number_for_display(average_use)}",
             delta=f"(over used {label})", delta_color="off")
     if type == "all":
         average_use = number_of_rules/number_of_terms if number_of_terms != 0 else 0
-        st.metric(label="Average freq", value=f"{format_number_for_display(average_use)}",
+        st.metric(label=f"#Rules per {label_2} (avg.)", value=f"{format_number_for_display(average_use)}",
             delta=f"(over all {label})", delta_color="off")
 #_________________________________________________
 
@@ -4661,8 +4682,12 @@ def get_used_ontology_terms_donut_chart(g_ont, superfilter=None, class_=False):
         unused = len(ontology_class_dict) - used
 
     # Data
-    data = {"Category": ["Used properties", "Unused properties"],
-        "Value": [used, unused]}
+    if not class_:
+        data = {"Category": ["Used properties", "Unused properties"],
+            "Value": [used, unused]}
+    else:
+        data = {"Category": ["Used classes", "Unused classes"],
+            "Value": [used, unused]}
 
     # Create donut chart and style
     colors = get_colors_for_stats_dict()
@@ -4701,8 +4726,9 @@ def get_ontology_term_frequency_bar_plot(g_ont, selected_terms, superfilter=None
         fig = px.bar(x=labels,y=counts,text=counts)
 
         # Style the chart
+        yaxis = "property frequency" if not class_ else "class frequency"
         fig.update_traces(marker_color=colors["purple"], textposition="inside", width=0.7)
-        fig.update_layout(xaxis_title=None, yaxis_title="property frequency",
+        fig.update_layout(xaxis_title=None, yaxis_title=yaxis,
             yaxis=dict(showticklabels=False, ticks="", showgrid=True,
                 gridcolor="lightgray", title_standoff=5),
             height=300, margin=dict(t=20, b=20, l=20, r=20))

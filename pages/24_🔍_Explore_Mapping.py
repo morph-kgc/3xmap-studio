@@ -139,6 +139,7 @@ with tab2:
             subject = row.subject_value if hasattr(row, "subject_value") and row.subject_value else ""
             predicate = row.predicate if hasattr(row, "predicate") and row.predicate else ""
             object_ = row.object_value if hasattr(row, "object_value") and row.object_value else ""
+            predicate = utils.add_braces_to_reference(predicate)
 
             # Format subject and object
             subject = utils.add_braces_to_reference(subject)
@@ -208,6 +209,8 @@ with tab2:
             source = row.source if hasattr(row, "source") and row.source else ""
             reference_formulation = str(row.referenceFormulation) if hasattr(row, "referenceFormulation") and row.referenceFormulation else ""
             iterator = row.iterator if hasattr(row, "iterator") and row.iterator else ""
+            number_of_pom = len(list(st.session_state["g_mapping"].objects(subject=tm, predicate=RML["predicateObjectMap"])))
+            has_sm = st.session_state["g_mapping"].value(subject=tm, predicate=RML["subjectMap"]) is not None
 
             tm_label = utils.get_node_label(tm)
             selected_tm_for_display_list = list(tm_dict) if not selected_tm_for_display_list else selected_tm_for_display_list
@@ -218,6 +221,8 @@ with tab2:
                     "Source": source,
                     "Iterator": iterator,
                     "Reference Formulation": utils.get_node_label(reference_formulation),
+                    "Has Subject Map": has_sm,
+                    "# Predicate-Object Maps": number_of_pom,
                     "Logical Source": utils.get_node_label(logical_source)}
                 df_data.append(row_dict)
 
@@ -304,6 +309,8 @@ with tab2:
             tm = row.tm if row.tm else ""
             pom = row.pom if row.pom else ""
             predicate = str(row.predicate) if row.predicate else ""
+            predicate = utils.add_braces_to_reference(predicate)
+            pm = row.pm if hasattr(row, "pm") and row.pm else ""
             object_map = row.objectMap if row.objectMap else ""
             template = str(row.template) if row.template else ""
             constant = str(row.constant) if row.constant else ""
@@ -339,6 +346,7 @@ with tab2:
                     "Graph Map": utils.get_node_label(graph_map),
                     "TriplesMap": utils.get_node_label(tm),
                     "Predicate-Object Map": utils.get_node_label(pom),
+                    "Predicate-Map": utils.get_node_label(pm),
                     "Object Map": utils.get_node_label(object_map)}
 
                 df_data.append(row_dict)
