@@ -1876,7 +1876,7 @@ def is_valid_ontology(g):
 #______________________________________________________
 
 #______________________________________________________
-def get_candidate_ontology_info_messages(g, g_label, g_format):
+def get_candidate_ontology_info_messages(g, g_label, g_format, file=False):
 
     valid_ontology_flag = True
     error_html = ""
@@ -1884,8 +1884,11 @@ def get_candidate_ontology_info_messages(g, g_label, g_format):
     success_html = ""
 
     # error message
-    if not utils.is_valid_ontology(g):
+    if not utils.is_valid_ontology(g) and not file:
         error_html += f"""❌ URL <b>does not</b> link to a valid ontology."""
+        valid_ontology_flag = False
+    if not utils.is_valid_ontology(g) and file:
+        error_html += f"""❌ File <b>does not</b> contain a valid ontology."""
         valid_ontology_flag = False
 
     if g_label in st.session_state["g_ontology_components_dict"]:
@@ -1952,26 +1955,38 @@ def get_unique_ontology_tag(g_label):
     g_ontology_iri = next(g.subjects(RDF.type, OWL.Ontology), None)
     forbidden_tags_beginning = [f"ns{i}" for i in range(1, 10)]
 
-    # first option: prefix of the base ns
-    if g_ontology_iri:
-        prefix = g.namespace_manager.compute_qname(g_ontology_iri)[0]
-        if not any(prefix.startswith(tag) for tag in forbidden_tags_beginning):
-            tag=prefix
+    # First option: prefix of the base ns
+    # if g_ontology_iri:
+    #     prefix = g.namespace_manager.compute_qname(g_ontology_iri)[0]
+    #     if prefix and not any(prefix.startswith(tag) for tag in forbidden_tags_beginning):
+    #         tag = prefix
+    # tag = tag.replace(" ", "")  # remove spaces
 
-    # second option: use 4 first characters of ontology name
-    tag = g_label[:4] if not tag else tag
+    # First option: first meaningful word
+    words = g_label.replace("-", " ").strip().split()    # separate words (by space or hyphen)
+    for w in words:
+        if w.lower() != "the":
+            tag = w
+            break
+    tag = re.sub(r'[^A-Za-z]', '', tag)   # keep only letters
+    tag = tag[:10]
 
-    # ensure tag is unique
+    # Fallback for empty tag
+    tag = "Ont" if not tag else tag
+
+    # Capitalise
+    tag = tag.capitalize()
+
+    # Ensure tag is unique
     if not tag in st.session_state["g_ontology_components_tag_dict"].values():
         return tag
 
-    # else make unique by adding numeric suffix
+    # Else make unique by adding numeric suffix
     i = 1
     while f"{tag}{i}" in st.session_state["g_ontology_components_tag_dict"].values():
         i += 1
 
     return f"{tag}{i}"
-
 #______________________________________________________
 
 
@@ -4517,7 +4532,7 @@ def get_filter_info_message_for_lens(ontology_filter_tag, superfilter):
     if ontology_filter_tag != "No filter":
         inner_html += f"""🧩 <b style="color:#F63366;">{ontology_filter_tag}</b></span><br>"""
     else:
-        ont_list = list(st.session_state["g_ontology_components_tag_dict"].values())
+        ont_list = [v[:3] for v in st.session_state["g_ontology_components_tag_dict"].values()]
         inner_html += f"""🧩 <b style="color:#F63366;">{"+".join(ont_list)}</b></span><br>"""
 
     if superfilter and superfilter != "No filter":
