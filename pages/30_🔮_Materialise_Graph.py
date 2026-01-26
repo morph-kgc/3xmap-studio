@@ -23,7 +23,7 @@ utils.init_page()
 RML, QL = utils.get_required_ns_dict().values()
 
 # Temporal folder to store intermediate files-----------------------------------
-temp_folder_path = utils.get_folder_name(temp_materialisation_files=True)
+temp_folder_path = utils.get_folder_name(temp_3xtudio_files=True)
 
 # Define on_click functions--------------------------------------------
 # TAB1

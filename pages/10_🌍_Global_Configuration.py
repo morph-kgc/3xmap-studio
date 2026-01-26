@@ -377,8 +377,7 @@ with tab1:
 
             with col1b:
                 st.write("")
-                st.session_state["candidate_g_mapping"] = utils.load_mapping_from_link(
-                    selected_mapping_input)   # we load the mapping as a candidate (until confirmed)
+                st.session_state["candidate_g_mapping"] = utils.load_mapping_from_link(selected_mapping_input)   # we load the mapping as a candidate (until confirmed)
 
     elif import_mapping_selected_option == "📁 File":
 

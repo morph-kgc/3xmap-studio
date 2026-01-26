@@ -6,6 +6,7 @@ import io
 import json
 import jsonpath_ng
 from jsonpath_ng import parse
+# from morph_kgc import translate_to_rml
 import networkx as nx
 import os
 import pandas as pd
@@ -91,7 +92,7 @@ RML, QL = get_required_ns_dict().values()
 #________________________________________________________
 # Function to get the name of the used folders (only one argument should be True)
 # Used in 🌍 Global Configuration, 🛢️ Data Files pages and 🔮 Materialise Graph
-def get_folder_name(saved_sessions=False, data_sources=False, temp_materialisation_files=False):
+def get_folder_name(saved_sessions=False, data_sources=False, temp_3xtudio_files=False):
 
     if saved_sessions:
         return "saved_sessions"
@@ -99,8 +100,8 @@ def get_folder_name(saved_sessions=False, data_sources=False, temp_materialisati
     elif data_sources:
         return "data_sources"
 
-    elif temp_materialisation_files:
-        return "materialisation_files_temp"
+    elif temp_3xtudio_files:
+        return "3xtudio_files_temp"
 #________________________________________________________
 
 #_____________________________________________________
@@ -721,7 +722,7 @@ def get_node_label(node, iri_prefix=True, short_BNode=False):
         if is_valid_iri(node, delimiter_ending=False):
             try:
                 label = st.session_state["g_mapping"].namespace_manager.qname(URIRef(node))
-            except ValueError:
+            except Exception:
                 label = str(node)
         else:
             label = str(node)
@@ -1347,7 +1348,7 @@ def format_suggested_mapping_label(label):
     label = label[:max_length] if len(label) > max_length else label
 
     return label
-#_____________________________________________________
+#_______________________________________________________
 
 #_______________________________________________________
 # Function to import mapping from link
@@ -1356,7 +1357,20 @@ def load_mapping_from_link(url, display=True):
     g = Graph()
 
     try:
-        g.parse(url, format="turtle")
+        # Download raw text
+        response = requests.get(url)
+        response.raise_for_status()
+        content = response.text
+
+        # Parse mapping
+        g.parse(data=content)
+
+        # Bind mapping namespaces
+        prefixes = re.findall(r"@prefix\s+(\w+):\s+<([^>]+)>", content)
+        for prefix, uri in prefixes:
+            ns = Namespace(uri)
+            g.bind(prefix, ns)
+
         return g
 
     except Exception as e:
@@ -1364,10 +1378,58 @@ def load_mapping_from_link(url, display=True):
             st.markdown(f"""<div class="error-message">
                 ❌ Failed to parse <b>mapping</b>.
                 <small>Please check your URL and/or your mapping.
-                <i><b> Full error:</b> {e}</i>>/small>
+                <i><b> Full error:</b> {e}</i></small>
             </div>""", unsafe_allow_html=True)
         return None
-#_____________________________________________________
+#_______________________________________________________
+
+#_______________________________________________________
+# Function to import mapping from link
+# Translates to RML if needed via morph-kgc
+# def load_mapping_from_link(url, display=True):
+#
+#     temp_folder_path = utils.get_folder_name(temp_3xtudio_files=True)
+#
+#     # Downlad and save mapping
+#     try:
+#         response = requests.get(url)
+#         response.raise_for_status()
+#         content = response.text
+#
+#         temp_mapping_path = os.path.join(temp_folder_path, "mapping_from_url.ttl")
+#         with open(temp_mapping_path, "w", encoding="utf-8") as f:
+#             f.write(content)
+#
+#     except Exception as e:
+#         if display:
+#             st.markdown(f"""<div class="error-message">
+#                 ❌ Failed to import the <b>mapping</b>.
+#                 <small><i><b>Full error:</b> {e}</i></small>
+#             </div>""", unsafe_allow_html=True)
+#         return None
+#
+#     # Translate to RML
+#     try:
+#         rml_graph = translate_to_rml_func(temp_mapping_path)
+#
+#     except Exception as e:
+#         if display:
+#             st.markdown(f"""<div class="error-message">
+#                 ❌ Failed to translate the <b>mapping</b> to RML.
+#                 <small><i><b>Full error:</b> {e}</i></small>
+#             </div>""", unsafe_allow_html=True)
+#         return None
+#
+#     # Bind prefixes
+#     prefixes = re.findall(r"(?:@prefix|PREFIX)\s+(\w+):\s+<([^>]+)>",    # look for the ns in the raw graph to bind them
+#         content, flags=re.IGNORECASE)
+#
+#     for prefix, uri in prefixes:
+#         rml_graph.bind(prefix, Namespace(uri))
+#
+#     # Return graph
+#     return rml_graph
+#_______________________________________________________
 
 #_______________________________________________________
 # Function to import mapping from file (f is a file object)
@@ -1383,7 +1445,7 @@ def load_mapping_from_file(f):
         content = f.read().decode("utf-8")
         try:
             g.parse(data=content, format=rdf_format_dict[ext])
-            prefixes = re.findall(r"@prefix\s+(\w+):\s+<([^>]+)>", content)
+            prefixes = re.findall(r"@prefix\s+(\w+):\s+<([^>]+)>", content)   # look for the ns in the raw graph to bind them
             for prefix, uri in prefixes:
                 ns = Namespace(uri)
                 g.bind(prefix, ns)
@@ -1394,13 +1456,13 @@ def load_mapping_from_file(f):
                 <small> Please check your mapping.
                 <i><b> Full error:</b> {e}</i>>/small>
             </div>""", unsafe_allow_html=True)
-            return False
+            return None
 
     else:   # error message (should not happen)
         st.markdown(f"""<div class="error-message">
             ❌ Unsupported file extension <b>{ext}</b>.
         </div>""", unsafe_allow_html=True)
-        return False
+        return None
 #_____________________________________________________
 
 #_____________________________________________________
@@ -1946,6 +2008,85 @@ def check_ontology_overlap(g1, g2):
 #______________________________________________________
 
 #______________________________________________________
+# Function to get the tags of popular ontologies (can be expanded)
+def get_ontology_tag_dict():
+
+    ontology_tag_dict = {
+        # --- W3C Core / Semantic Web ---
+        "owl ontology": "OWL",
+        "rdf schema": "RDFS",
+        "skos": "SKOS",
+        "friend of a friend": "FOAF",
+        "dublin core": "DC",
+        "dcterms": "DCTERMS",
+        "prov": "PROV",
+        "time ontology": "TIME",
+        "geosparql": "GEO",
+        "organization ontology": "ORG",
+        "void": "VOID",
+        "shacl": "SHACL",
+        "dcat": "DCAT",
+        "hydra": "HYDRA",
+        "web annotation": "OA",
+        "xml schema": "XSD",
+
+        # --- No-label ontologies (IRI fragment) ---
+        "schema": "SCHEMA",
+        "gtfs": "GTFS",
+        "univ-bench": "UB",
+        "wine": "WINE",
+        "pizza": "PIZZA",
+        "transit": "TRANSIT",
+        "opentransit": "OPENTRANSIT",
+
+        # --- Popular Domain Ontologies ---
+        "goodrelations": "GR",
+        "music ontology": "MO",
+        "event ontology": "EVENT",
+        "ssn": "SSN",
+        "sosa": "SOSA",
+        "bibo": "BIBO",
+        "sioc": "SIOC",
+        "vcard": "VCARD",
+        "wgs84": "WGS84",
+        "geonames": "GEONAMES",
+        "dbpedia": "DBPEDIA",
+        "yago": "YAGO",
+        "wikidata": "WD",
+        "cidoc": "CIDOC",
+        "creative commons": "CC",
+        "linked data platform": "LDP",
+        "open graph": "OG",
+
+        # --- OBO Foundry / Life Sciences ---
+        "gene ontology": "GO",
+        "human phenotype": "HPO",
+        "chebi": "ChEBI",
+        "uberon": "UBERON",
+        "disease ontology": "DOID",
+        "protein ontology": "PRO",
+        "cell ontology": "CL",
+        "nci thesaurus": "NCIT",
+        "sequence ontology": "SO",
+        "environment ontology": "ENVO",
+        "plant ontology": "PO",
+        "phenotype and trait": "PATO",
+        "obi": "OBI",
+        "basic formal ontology": "BFO",
+        "information artifact": "IAO",
+        "evidence & conclusion": "ECO",
+        "eco": "ECO",
+
+        # --- Mapping / Data Integration ---
+        "r2rml": "R2RML",
+        "rml": "RML",
+        "csvw": "CSVW",
+        "spin": "SPIN"}
+
+    return ontology_tag_dict
+#______________________________________________________
+
+#______________________________________________________
 # Function to get the tag of an ontology
 # Ensures uniqueness by adding numeric suffix if necessary
 def get_unique_ontology_tag(g_label):
@@ -1955,6 +2096,13 @@ def get_unique_ontology_tag(g_label):
     g_ontology_iri = next(g.subjects(RDF.type, OWL.Ontology), None)
     forbidden_tags_beginning = [f"ns{i}" for i in range(1, 10)]
 
+    # First option: Get from dictionary
+    ontology_tag_dict = get_ontology_tag_dict()
+    for k, v in ontology_tag_dict.items():
+        if k in str(g_label).lower():
+            tag = v
+            break
+
     # First option: prefix of the base ns
     # if g_ontology_iri:
     #     prefix = g.namespace_manager.compute_qname(g_ontology_iri)[0]
@@ -1962,20 +2110,21 @@ def get_unique_ontology_tag(g_label):
     #         tag = prefix
     # tag = tag.replace(" ", "")  # remove spaces
 
-    # First option: first meaningful word
-    words = g_label.replace("-", " ").strip().split()    # separate words (by space or hyphen)
-    for w in words:
-        if w.lower() != "the":
-            tag = w
-            break
-    tag = re.sub(r'[^A-Za-z]', '', tag)   # keep only letters
-    tag = tag[:10]
+    # Second option: first meaningful word
+    if not tag:
+        words = g_label.replace("-", " ").strip().split()    # separate words (by space or hyphen)
+        for w in words:
+            if w.lower() != "the":
+                tag = w
+                break
+        tag = re.sub(r'[^A-Za-z]', '', tag)   # keep only letters
+        tag = tag[:10]
 
     # Fallback for empty tag
     tag = "Ont" if not tag else tag
 
     # Capitalise
-    tag = tag.capitalize()
+    tag = tag.upper()
 
     # Ensure tag is unique
     if not tag in st.session_state["g_ontology_components_tag_dict"].values():
@@ -4866,7 +5015,7 @@ def get_class_dictionaries_filtered_by_superclass(g_ont, superclass_filter=None)
 def get_autoconfig_file():
 
     # Temporal folder
-    temp_folder_path = get_folder_name(temp_materialisation_files=True)
+    temp_folder_path = get_folder_name(temp_3xtudio_files=True)
 
     # Reset config dict
     st.session_state["mkgc_config"] = configparser.ConfigParser()
