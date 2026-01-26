@@ -5,11 +5,11 @@ import base64
 
 # Config---------------------------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
-    st.set_page_config(page_title="3xmap Studio", layout="wide",
+    st.set_page_config(page_title="3xtudio", layout="wide",
         page_icon="logo/fav_icon.png")
     color = "#511D66"
 else:
-    st.set_page_config(page_title="3xmap Studio", layout="wide",
+    st.set_page_config(page_title="3xtudio", layout="wide",
         page_icon="logo/fav_icon_inverse.png")
     color = "#d8c3f0"
 
