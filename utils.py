@@ -6,7 +6,7 @@ import io
 import json
 import jsonpath_ng
 from jsonpath_ng import parse
-# from morph_kgc import translate_to_rml
+from morph_kgc import translate_to_rml
 import networkx as nx
 import os
 import pandas as pd
@@ -1341,94 +1341,101 @@ def format_suggested_mapping_label(label):
 
     max_length = get_max_length_for_display()[7]
 
+    # Remove extensions
+    while True:
+        label, ext = os.path.splitext(label)
+        if ext == "":
+            break
+
     label = label.replace(' ', '_')
     label = re.sub(r'[<>"{}|\\^`]', '', label)
     label = re.sub(r'[.-]+$', '', label)
     label = re.sub(r'[^A-Za-z0-9_]', '', label)
-    label = label[:max_length] if len(label) > max_length else label
+    label = label[:max_length]
 
     return label
 #_______________________________________________________
 
 #_______________________________________________________
 # Function to import mapping from link
-def load_mapping_from_link(url, display=True):
-
-    g = Graph()
-
-    try:
-        # Download raw text
-        response = requests.get(url)
-        response.raise_for_status()
-        content = response.text
-
-        # Parse mapping
-        g.parse(data=content)
-
-        # Bind mapping namespaces
-        prefixes = re.findall(r"@prefix\s+(\w+):\s+<([^>]+)>", content)
-        for prefix, uri in prefixes:
-            ns = Namespace(uri)
-            g.bind(prefix, ns)
-
-        return g
-
-    except Exception as e:
-        if display:
-            st.markdown(f"""<div class="error-message">
-                ❌ Failed to parse <b>mapping</b>.
-                <small>Please check your URL and/or your mapping.
-                <i><b> Full error:</b> {e}</i></small>
-            </div>""", unsafe_allow_html=True)
-        return None
+# def load_mapping_from_link(url, display=True):
+#
+#     g = Graph()
+#
+#     try:
+#         # Download raw text
+#         response = requests.get(url)
+#         response.raise_for_status()
+#         content = response.text
+#
+#         # Parse mapping
+#         g.parse(data=content)
+#
+#         # Bind mapping namespaces
+#         prefixes = re.findall(r"@prefix\s+(\w+):\s+<([^>]+)>", content)
+#         for prefix, uri in prefixes:
+#             ns = Namespace(uri)
+#             g.bind(prefix, ns)
+#
+#         return g
+#
+#     except Exception as e:
+#         if display:
+#             st.markdown(f"""<div class="error-message">
+#                 ❌ Failed to parse <b>mapping</b>.
+#                 <small>Please check your URL and/or your mapping.
+#                 <i><b> Full error:</b> {e}</i></small>
+#             </div>""", unsafe_allow_html=True)
+#         return None
 #_______________________________________________________
 
 #_______________________________________________________
 # Function to import mapping from link
 # Translates to RML if needed via morph-kgc
-# def load_mapping_from_link(url, display=True):
-#
-#     temp_folder_path = utils.get_folder_name(temp_3xtudio_files=True)
-#
-#     # Downlad and save mapping
-#     try:
-#         response = requests.get(url)
-#         response.raise_for_status()
-#         content = response.text
-#
-#         temp_mapping_path = os.path.join(temp_folder_path, "mapping_from_url.ttl")
-#         with open(temp_mapping_path, "w", encoding="utf-8") as f:
-#             f.write(content)
-#
-#     except Exception as e:
-#         if display:
-#             st.markdown(f"""<div class="error-message">
-#                 ❌ Failed to import the <b>mapping</b>.
-#                 <small><i><b>Full error:</b> {e}</i></small>
-#             </div>""", unsafe_allow_html=True)
-#         return None
-#
-#     # Translate to RML
-#     try:
-#         rml_graph = translate_to_rml_func(temp_mapping_path)
-#
-#     except Exception as e:
-#         if display:
-#             st.markdown(f"""<div class="error-message">
-#                 ❌ Failed to translate the <b>mapping</b> to RML.
-#                 <small><i><b>Full error:</b> {e}</i></small>
-#             </div>""", unsafe_allow_html=True)
-#         return None
-#
-#     # Bind prefixes
-#     prefixes = re.findall(r"(?:@prefix|PREFIX)\s+(\w+):\s+<([^>]+)>",    # look for the ns in the raw graph to bind them
-#         content, flags=re.IGNORECASE)
-#
-#     for prefix, uri in prefixes:
-#         rml_graph.bind(prefix, Namespace(uri))
-#
-#     # Return graph
-#     return rml_graph
+def load_mapping_from_link(url, display=True):
+
+    temp_folder_path = utils.get_folder_name(temp_3xtudio_files=True)
+    os.makedirs(temp_folder_path, exist_ok=True)
+
+    # Downlad and save mapping
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        content = response.text
+
+        temp_mapping_path = os.path.join(temp_folder_path, "mapping_from_url.ttl")
+        with open(temp_mapping_path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+    except Exception as e:
+        if display:
+            st.markdown(f"""<div class="error-message">
+                ❌ Failed to import the <b>mapping</b>.
+                <small><i><b>Full error:</b> {e}</i></small>
+            </div>""", unsafe_allow_html=True)
+        return None
+
+    # Translate to RML
+    try:
+        rml_graph = translate_to_rml(temp_mapping_path)
+
+    except Exception as e:
+        if display:
+            st.markdown(f"""<div class="error-message">
+                ❌ Failed to translate the <b>mapping</b> to RML.
+                <small><i><b>Full error:</b> {e}</i></small>
+            </div>""", unsafe_allow_html=True)
+        return None
+
+    # Bind prefixes
+    prefixes = re.findall(r"(?:@prefix|PREFIX)\s+(\w+):\s+<([^>]+)>",    # look for the ns in the raw graph to bind them
+        content, flags=re.IGNORECASE)
+
+    for prefix, uri in prefixes:
+        rml_graph.bind(prefix, Namespace(uri))
+
+    # Return graph
+    return rml_graph
 #_______________________________________________________
 
 #_______________________________________________________

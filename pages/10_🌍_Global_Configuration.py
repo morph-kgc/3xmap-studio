@@ -550,7 +550,7 @@ with tab1:
                         🗺️ You are working with mapping
                         <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
                         <div style="margin-left:15px;"><small>
-                            · Mapping was loaded from URL <b>{URL_for_display}</b>.<br>
+                            · Mapping was imported from URL <b>{URL_for_display}</b>.<br>
                             · When loaded, mapping had <b>{st.session_state["original_g_size_cache"]} TriplesMaps</b>.<br>
                             · Now mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps</b>.
                         </small></div></div>""")
@@ -560,7 +560,7 @@ with tab1:
                         🗺️ You are working with mapping
                         <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
                         <div style="margin-left:15px;"><small>
-                            · Mapping was loaded from file <b>{st.session_state["g_mapping_source_cache"][1]}</b>.<br>
+                            · Mapping was imported from file <b>{st.session_state["g_mapping_source_cache"][1]}</b>.<br>
                             · When loaded, mapping had <b>{st.session_state["original_g_size_cache"]} TriplesMaps</b>.<br>
                             · Now mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps</b>.
                         </small></div></div>""")
