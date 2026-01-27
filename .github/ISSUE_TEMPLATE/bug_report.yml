@@ -30,7 +30,7 @@ body:
       required: true
   - type: input
     attributes:
-      label: "RDFolio version:"
+      label: "3xtudio version:"
       placeholder: e.g., 1.0.0
     validations:
       required: true

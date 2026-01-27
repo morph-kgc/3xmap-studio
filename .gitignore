@@ -5,4 +5,6 @@ __pycache__/
 saved_sessions/
 data_sources/
 
+3xtudio_files_temp/
+
 .venv

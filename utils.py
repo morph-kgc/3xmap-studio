@@ -109,7 +109,7 @@ def get_folder_name(saved_sessions=False, data_sources=False, temp_3xtudio_files
 # Used in 🌍 Global Configuration page
 def get_default_base_ns():
 
-    return ["map3x", Namespace("http://3xmap.org/mapping/")]
+    return ["3xtudio", Namespace("http://3xtudio.org/mapping/")]
 #________________________________________________________
 
 #_____________________________________________________
