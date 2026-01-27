@@ -9,10 +9,10 @@ import uuid
 
 # Config------------------------------------------------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
-    st.set_page_config(page_title="3Xmap Studio", layout="wide",
+    st.set_page_config(page_title="3xtudio", layout="wide",
         page_icon="logo/fav_icon.png")
 else:
-    st.set_page_config(page_title="3Xmap Studio", layout="wide",
+    st.set_page_config(page_title="3xtudio", layout="wide",
         page_icon="logo/fav_icon_inverse.png")
 
 # Initialise page---------------------------------------------------------------
@@ -253,7 +253,7 @@ with tab1:
             st.session_state["g_ontology_from_file_candidate"] = g_candidate
             st.session_state["g_ontology_from_file_candidate_fmt"] = fmt_candidate
             st.session_state["g_ontology_from_file_candidate_label"] = utils.get_ontology_human_readable_name(st.session_state["g_ontology_from_file_candidate"], source_file=st.session_state["ontology_file"])
-            valid_ontology_flag, success_html, warning_html, error_html = utils.get_candidate_ontology_info_messages(st.session_state["g_ontology_from_file_candidate"], st.session_state["g_ontology_from_file_candidate_label"], st.session_state["g_ontology_from_file_candidate_fmt"])
+            valid_ontology_flag, success_html, warning_html, error_html = utils.get_candidate_ontology_info_messages(st.session_state["g_ontology_from_file_candidate"], st.session_state["g_ontology_from_file_candidate_label"], st.session_state["g_ontology_from_file_candidate_fmt"], file=True)
 
             if valid_ontology_flag:
                 with col1b:

@@ -10,10 +10,10 @@ import utils
 
 # Config------------------------------------------------------------------------
 if "dark_mode_flag" not in st.session_state or not st.session_state["dark_mode_flag"]:
-    st.set_page_config(page_title="3Xmap Studio", layout="wide",
+    st.set_page_config(page_title="3xtudio", layout="wide",
         page_icon="logo/fav_icon.png")
 else:
-    st.set_page_config(page_title="3Xmap Studio", layout="wide",
+    st.set_page_config(page_title="3xtudio", layout="wide",
         page_icon="logo/fav_icon_inverse.png")
 
 # Initialise page---------------------------------------------------------------
@@ -377,8 +377,7 @@ with tab1:
 
             with col1b:
                 st.write("")
-                st.session_state["candidate_g_mapping"] = utils.load_mapping_from_link(
-                    selected_mapping_input)   # we load the mapping as a candidate (until confirmed)
+                st.session_state["candidate_g_mapping"] = utils.load_mapping_from_link(selected_mapping_input)   # we load the mapping as a candidate (until confirmed)
 
     elif import_mapping_selected_option == "📁 File":
 
@@ -551,7 +550,7 @@ with tab1:
                         🗺️ You are working with mapping
                         <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
                         <div style="margin-left:15px;"><small>
-                            · Mapping was loaded from URL <b>{URL_for_display}</b>.<br>
+                            · Mapping was imported from URL <b>{URL_for_display}</b>.<br>
                             · When loaded, mapping had <b>{st.session_state["original_g_size_cache"]} TriplesMaps</b>.<br>
                             · Now mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps</b>.
                         </small></div></div>""")
@@ -561,7 +560,7 @@ with tab1:
                         🗺️ You are working with mapping
                         <b style="color:#F63366;">{st.session_state["g_label"]}</b>.
                         <div style="margin-left:15px;"><small>
-                            · Mapping was loaded from file <b>{st.session_state["g_mapping_source_cache"][1]}</b>.<br>
+                            · Mapping was imported from file <b>{st.session_state["g_mapping_source_cache"][1]}</b>.<br>
                             · When loaded, mapping had <b>{st.session_state["original_g_size_cache"]} TriplesMaps</b>.<br>
                             · Now mapping has <b>{utils.get_number_of_tm(st.session_state["g_mapping"])} TriplesMaps</b>.
                         </small></div></div>""")
