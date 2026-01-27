@@ -1092,7 +1092,7 @@ with tab1:
                 with col1b:
                     st.write("")
                     st.write("")
-                    uploaded_mapping_ok_flag = utils.load_mapping_from_file(uploaded_mapping)
+                    uploaded_mapping_ok_flag = utils.import_mapping_from_file(uploaded_mapping)
                 with col1a:
                     if uploaded_mapping_ok_flag:
                         st.button("Save", key="key_save_mapping_for_mkgcgc_from_file_button",
@@ -1104,7 +1104,7 @@ with tab1:
 
             if mapping_url:
                 with col1a:
-                    mapping_url_ok_flag = utils.load_mapping_from_link(mapping_url)
+                    mapping_url_ok_flag = utils.import_mapping_from_link(mapping_url)
                 if mapping_url_ok_flag:
                     with col1a:
                         st.button("Save", key="key_save_mapping_for_mkgcgc_from_url_button",

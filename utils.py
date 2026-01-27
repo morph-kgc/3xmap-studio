@@ -965,15 +965,13 @@ def display_right_column_df(info, text, complete=True, display=True):
 # SUPPORTED FORMATS ============================================================
 #_______________________________________________________
 # List of allowed mapping file formats
-def get_supported_formats(mapping=False, ontology=False, databases=False, data_files=False, hierarchical_files=False, fun=False):
+def get_supported_formats(mapping=False, input_mapping=False, ontology=False, databases=False, data_files=False, hierarchical_files=False, fun=False):
 
     if mapping:
-        if not fun:
-            allowed_formats = {"turtle": ".ttl",
-                "ntriples": ".nt"}
-        else:
-            allowed_formats = {"🐢 Turtle": ".ttl",
-                "3️⃣ N-Triples": ".nt"}
+        allowed_formats = {"turtle": ".ttl", "ntriples": ".nt"} if not fun else {"🐢 Turtle": ".ttl", "3️⃣ N-Triples": ".nt"}
+
+    elif input_mapping:
+        allowed_formats = [".ttl", ".nt", ".yml", ".yaml"]
 
     elif ontology:
         allowed_formats = {"owl": ".owl", "turtle": ".ttl", "longturtle": ".ttl", "n3": ".n3",
@@ -1331,6 +1329,34 @@ def is_valid_iri(iri, delimiter_ending=True):
     return True
 #_________________________________________________________
 
+#_________________________________________________________
+# Function to check if iri is splittable
+def is_real_iri(iri):
+
+    if not isinstance(iri, URIRef):
+        return False
+
+    else:
+        try:
+            split_uri(iri)
+            return True
+        except:
+            return False
+#_________________________________________________________
+
+#_________________________________________________________
+# Function to check if iri is splittable
+def safely_split_iri(iri, ns=False):
+
+    if is_real_iri(iri) and not ns:
+        return split_uri(iri)[1]
+
+    if is_real_iri(iri) and ns:
+        return split_uri(iri)[0]
+
+    else:
+        return iri
+#_________________________________________________________
 
 
 # PAGE: 🌍 GLOBAL CONFIGURATION ================================================
@@ -1358,7 +1384,7 @@ def format_suggested_mapping_label(label):
 
 #_______________________________________________________
 # Function to import mapping from link
-# def load_mapping_from_link(url, display=True):
+# def import_mapping_from_link(url, display=True):
 #
 #     g = Graph()
 #
@@ -1392,18 +1418,22 @@ def format_suggested_mapping_label(label):
 #_______________________________________________________
 # Function to import mapping from link
 # Translates to RML if needed via morph-kgc
-def load_mapping_from_link(url, display=True):
+def import_mapping_from_link(url, display=True):
 
     temp_folder_path = utils.get_folder_name(temp_3xtudio_files=True)
     os.makedirs(temp_folder_path, exist_ok=True)
 
-    # Downlad and save mapping
+    # Detect extension from URL
+    ext = os.path.splitext(url)[1].lower()
+    if ext not in [".ttl", ".nt", ".yml", ".yaml"]:
+        ext = ".ttl"  # fallback
+
+    # Download and save mapping
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=(3, 10))
         response.raise_for_status()
         content = response.text
-
-        temp_mapping_path = os.path.join(temp_folder_path, "mapping_from_url.ttl")
+        temp_mapping_path = os.path.join(temp_folder_path, "mapping_from_url" + ext)
         with open(temp_mapping_path, "w", encoding="utf-8") as f:
             f.write(content)
 
@@ -1417,7 +1447,7 @@ def load_mapping_from_link(url, display=True):
 
     # Translate to RML
     try:
-        rml_graph = translate_to_rml(temp_mapping_path)
+        rml_mapping = translate_to_rml(temp_mapping_path)
 
     except Exception as e:
         if display:
@@ -1427,49 +1457,120 @@ def load_mapping_from_link(url, display=True):
             </div>""", unsafe_allow_html=True)
         return None
 
-    # Bind prefixes
-    prefixes = re.findall(r"(?:@prefix|PREFIX)\s+(\w+):\s+<([^>]+)>",    # look for the ns in the raw graph to bind them
-        content, flags=re.IGNORECASE)
+    # Normalize graph by serializing to Turtle
+    temp_ttl_path = os.path.join(temp_folder_path, "normalized.ttl")
+    rml_mapping.serialize(destination=temp_ttl_path, format="turtle")
+
+    # Read back the Turtle serialization
+    with open(temp_ttl_path, "r", encoding="utf-8") as f:
+        ttl_content = f.read()
+
+    # Remove temporary files and folder
+    for filename in os.listdir(temp_folder_path):       # delete all files inside the folder
+        file_path = os.path.join(temp_folder_path, filename)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+    os.rmdir(temp_folder_path)      # remove the empty folder
+
+    # Extract prefixes from Turtle serialization and bind
+    prefixes = re.findall(r"(?:@prefix|PREFIX)\s+(\w+):\s+<([^>]+)>",
+        ttl_content, flags=re.IGNORECASE)
 
     for prefix, uri in prefixes:
-        rml_graph.bind(prefix, Namespace(uri))
+        rml_mapping.bind(prefix, Namespace(uri))
 
-    # Return graph
-    return rml_graph
+    # Return mapping
+    return rml_mapping
 #_______________________________________________________
 
 #_______________________________________________________
 # Function to import mapping from file (f is a file object)
 # This should work for all mapping formats in get_supported_formats
-def load_mapping_from_file(f):
+# def import_mapping_from_file(f):
+#
+#     ext = os.path.splitext(f.name)[1].lower()  #file extension
+#
+#     if ext in [".ttl", ".rdf", ".xml", ".nt", ".n3", ".trig", ".trix"]:
+#         rdf_format_dict = {".ttl": "turtle", ".rdf": "xml", ".xml": "xml",
+#             ".nt": "nt", ".n3": "n3", ".trig": "trig", ".trix": "trix"}
+#         g = Graph()
+#         content = f.read().decode("utf-8")
+#         try:
+#             g.parse(data=content, format=rdf_format_dict[ext])
+#             prefixes = re.findall(r"@prefix\s+(\w+):\s+<([^>]+)>", content)   # look for the ns in the raw graph to bind them
+#             for prefix, uri in prefixes:
+#                 ns = Namespace(uri)
+#                 g.bind(prefix, ns)
+#             return g
+#         except Exception as e:
+#             st.markdown(f"""<div class="error-message">
+#                 ❌ Failed to parse <b>mapping</b>.
+#                 <small> Please check your mapping.
+#                 <i><b> Full error:</b> {e}</i>>/small>
+#             </div>""", unsafe_allow_html=True)
+#             return None
+#
+#     else:   # error message (should not happen)
+#         st.markdown(f"""<div class="error-message">
+#             ❌ Unsupported file extension <b>{ext}</b>.
+#         </div>""", unsafe_allow_html=True)
+#         return None
+#_______________________________________________________
 
-    ext = os.path.splitext(f.name)[1].lower()  #file extension
+#_______________________________________________________
+# Function to import mapping from file (f is a file object)
+# This should work for all mapping formats in get_supported_formats
+# Translates to RML if needed via morph-kgc
+def import_mapping_from_file(f, display=True):
 
-    if ext in [".ttl", ".rdf", ".xml", ".nt", ".n3", ".trig", ".trix"]:
-        rdf_format_dict = {".ttl": "turtle", ".rdf": "xml", ".xml": "xml",
-            ".nt": "nt", ".n3": "n3", ".trig": "trig", ".trix": "trix"}
-        g = Graph()
-        content = f.read().decode("utf-8")
-        try:
-            g.parse(data=content, format=rdf_format_dict[ext])
-            prefixes = re.findall(r"@prefix\s+(\w+):\s+<([^>]+)>", content)   # look for the ns in the raw graph to bind them
-            for prefix, uri in prefixes:
-                ns = Namespace(uri)
-                g.bind(prefix, ns)
-            return g
-        except Exception as e:
+    ext = os.path.splitext(f.name)[1].lower()
+
+    # Read file content and temporarily save
+    f.seek(0)
+    raw = f.read()
+    content = raw.decode("utf-8", errors="replace")
+    content = content.lstrip("\ufeff")
+    content = content.replace("\r\n", "\n").replace("\r", "\n")
+    temp_folder_path = utils.get_folder_name(temp_3xtudio_files=True)
+    os.makedirs(temp_folder_path, exist_ok=True)
+
+    temp_mapping_path = os.path.join(temp_folder_path, "mapping_from_file" + ext)
+    with open(temp_mapping_path, "w", encoding="utf-8") as temp_file:
+        temp_file.write(content)
+
+    # Translate to RML
+    try:
+        rml_mapping = translate_to_rml(temp_mapping_path)
+    except Exception as e:
+        if display:
             st.markdown(f"""<div class="error-message">
-                ❌ Failed to parse <b>mapping</b>.
-                <small> Please check your mapping.
-                <i><b> Full error:</b> {e}</i>>/small>
+                ❌ Failed to translate the <b>mapping</b> to RML.
+                <small><i><b>Full error:</b> {e}</i></small>
             </div>""", unsafe_allow_html=True)
-            return None
-
-    else:   # error message (should not happen)
-        st.markdown(f"""<div class="error-message">
-            ❌ Unsupported file extension <b>{ext}</b>.
-        </div>""", unsafe_allow_html=True)
         return None
+
+    # Normalize graph by serializing to Turtle
+    temp_ttl_path = os.path.join(temp_folder_path, "normalized.ttl")
+    rml_mapping.serialize(destination=temp_ttl_path, format="turtle")
+
+    with open(temp_ttl_path, "r", encoding="utf-8") as f2:
+        ttl_content = f2.read()
+
+    # Remove temporary files and folder
+    for filename in os.listdir(temp_folder_path):       # delete all files inside the folder
+        file_path = os.path.join(temp_folder_path, filename)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+    os.rmdir(temp_folder_path)      # remove the empty folder
+    
+    # Extract prefixes from Turtle serialization and bind
+    prefixes = re.findall(r"(?:@prefix|PREFIX)\s+(\w+):\s+<([^>]+)>",
+        ttl_content, flags=re.IGNORECASE)
+    for prefix, uri in prefixes:
+        rml_mapping.bind(prefix, Namespace(uri))
+
+    # Return mapping
+    return rml_mapping
 #_____________________________________________________
 
 #_____________________________________________________
@@ -1492,9 +1593,10 @@ def get_g_mapping_base_ns():
     for s, p, o in st.session_state["g_mapping"]:
         if isinstance(s, URIRef):
             if p in [RML.logicalSource, RML.subjectMap, RML.predicateObjectMap, RML.objectMap]:
-                base_ns = split_uri(s)[0]
-                if is_valid_iri(base_ns):
-                    break
+                if is_real_iri(s):
+                    base_ns = split_uri(s)[0]
+                    if is_valid_iri(base_ns):
+                        break
 
     # Look for prefix of the base namespace (else assign "base")
     prefix = "base"
@@ -1525,7 +1627,7 @@ def change_g_mapping_base_ns(prefix, namespace):
 
     # look for the tm, sm, pom and om and create dictionary with updated iris
     for s, p, o in st.session_state["g_mapping"]:
-        if isinstance(s, URIRef):
+        if is_real_iri(s):
             if p in [RML.logicalSource, RML.subjectMap, RML.predicateObjectMap, RML.objectMap]:
                 updated_nodes_dict[s] = URIRef(base_ns[1] + split_uri(s)[1])
 
@@ -3745,8 +3847,8 @@ def get_rules_for_sm(sm_iri):
             for om in om_list:
                 for pred in [RML.constant, RML.template, RML.reference]:
                     om_for_display = g.value(subject=om, predicate=pred)
-                    om_for_display = "{" + om_for_display + "}" if pred == RML.reference else om_for_display
                     if om_for_display:
+                        om_for_display = "{" + om_for_display + "}" if pred == RML.reference else om_for_display
                         break
                 sm_for_display = get_node_label(sm_for_display)
                 p_for_display = get_node_label(p_for_display)
@@ -3829,7 +3931,7 @@ def get_unique_node_label(complete_node_id, constant_string, legend_dict):
 #     # Get sm list
 #     sm_for_network_list = []
 #     for sm in st.session_state["g_mapping"].objects(predicate=RML.subjectMap):
-#         for rule in utils.get_rules_for_sm(sm):
+#         for rule in get_rules_for_sm(sm):
 #             if rule[3] in tm_for_network_list:
 #                 sm_for_network_list.append(sm)
 #                 break
@@ -3838,7 +3940,7 @@ def get_unique_node_label(complete_node_id, constant_string, legend_dict):
 #     G = nx.DiGraph()
 #     legend_dict = {}
 #     for sm in sm_for_network_list:
-#         for rule in utils.get_rules_for_sm(sm):
+#         for rule in get_rules_for_sm(sm):
 #             s, p, o, tm = rule
 #
 #             # st.write("HERE", rule[3], rule)
@@ -3928,7 +4030,7 @@ def create_g_mapping_network(tm_for_network_list):
     # Get sm list
     sm_for_network_list = []
     for sm in st.session_state["g_mapping"].objects(predicate=RML.subjectMap):
-        for rule in utils.get_rules_for_sm(sm):
+        for rule in get_rules_for_sm(sm):
             if rule[3] in tm_for_network_list:
                 sm_for_network_list.append(sm)
                 break
@@ -3941,7 +4043,7 @@ def create_g_mapping_network(tm_for_network_list):
     edge_predicates = {}
 
     for sm in sm_for_network_list:
-        for rule in utils.get_rules_for_sm(sm):
+        for rule in get_rules_for_sm(sm):
             s, p, o, tm = rule
 
             # Shorten only subject and object labels
@@ -4463,7 +4565,7 @@ def get_mapping_composition_by_class_donut_chart():
     ontology_classes = [get_node_label(v) for v in get_ontology_class_dict(st.session_state["g_ontology"]).values()]
     count_other = 0
     for sm in st.session_state["g_mapping"].objects(predicate=RML.subjectMap):
-        sm_number_of_rules = len(utils.get_rules_for_sm(sm))
+        sm_number_of_rules = len(get_rules_for_sm(sm))
         sm_number_of_external_classes = 0
         for class_iri in st.session_state["g_mapping"].objects(subject=sm, predicate=RML["class"]):
             if class_iri not in ontology_classes:
@@ -4579,7 +4681,7 @@ def get_mapping_composition_by_property_donut_chart():
     ontology_properties = [get_node_label(v) for v in get_ontology_property_dict(st.session_state["g_ontology"]).values()]
     count_other = 0
     for sm in st.session_state["g_mapping"].objects(predicate=RML.subjectMap):
-        for rule in utils.get_rules_for_sm(sm):
+        for rule in get_rules_for_sm(sm):
             if rule[1] not in ontology_properties:
                 count_other += 1
     if count_other:
@@ -4639,7 +4741,7 @@ def get_ontology_used_properties_count_dict(g_ont):
 
     for prop_label, prop_iri in ontology_property_dict.items():
         for sm in st.session_state["g_mapping"].objects(predicate=RML.subjectMap):
-            for rule in utils.get_rules_for_sm(sm):
+            for rule in get_rules_for_sm(sm):
                 if rule[1] == get_node_label(prop_iri):
                     usage_count_dict[prop_label] += 1
 
@@ -5143,7 +5245,7 @@ def check_issues_for_materialisation():
             if mapping_path_list_string:
                 for mapping_path in mapping_path_list_string.split(","):
                     if mapping_path in st.session_state["mkgc_g_mappings_dict"].values(): # these are the URL additional mappings
-                        if not utils.load_mapping_from_link(mapping_path, display=False):
+                        if not utils.import_mapping_from_link(mapping_path, display=False):
                             mkgc_not_working_url_mappings_list.append(mapping_path)
 
     mkgc_used_additional_mapping_list = mkgc_used_mapping_list.copy()

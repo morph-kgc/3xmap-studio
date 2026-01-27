@@ -359,6 +359,7 @@ with tab1:
             selected_mapping_input = st.text_input(f"""⌨️ Enter link to mapping:*""", key="key_mapping_link")
 
         if selected_mapping_input:
+
             try:
                 suggested_mapping_label = split_uri(selected_mapping_input)[1]
                 suggested_mapping_label = utils.format_suggested_mapping_label(suggested_mapping_label)
@@ -377,12 +378,12 @@ with tab1:
 
             with col1b:
                 st.write("")
-                st.session_state["candidate_g_mapping"] = utils.load_mapping_from_link(selected_mapping_input)   # we load the mapping as a candidate (until confirmed)
+                st.session_state["candidate_g_mapping"] = utils.import_mapping_from_link(selected_mapping_input)   # we load the mapping as a candidate (until confirmed)
 
     elif import_mapping_selected_option == "📁 File":
 
         with col1a:
-            mapping_format_list = sorted(utils.get_supported_formats(mapping=True).values())
+            mapping_format_list = sorted(utils.get_supported_formats(input_mapping=True))
             selected_mapping_input = st.file_uploader(f"""🖱️
             Upload mapping file:*""", type=mapping_format_list, key=st.session_state["key_mapping_uploader"])
 
@@ -396,7 +397,7 @@ with tab1:
                     key="key_g_label_temp_existing", value=suggested_mapping_label)
                 valid_mapping_label = utils.is_valid_label(st.session_state["g_label_temp_existing"], hard=True)
 
-                st.session_state["candidate_g_mapping"] = utils.load_mapping_from_file(
+                st.session_state["candidate_g_mapping"] = utils.import_mapping_from_file(
                     selected_mapping_input)   # just candidate until confirmed
 
     # A mapping has not been loaded yet
@@ -411,7 +412,7 @@ with tab1:
             else:
                 overwrite_g_mapping_and_session_checkbox = False
             with col1:
-                st.button("Import", on_click=import_existing_g_mapping, key="key_import_existing_g_mapping_button_2")
+                st.button("Import", on_click=import_existing_g_mapping, key="key_import_existing_g_mapping_button")
 
 
     # A mapping is currently loaded
@@ -440,7 +441,7 @@ with tab1:
 
             if overwrite_g_mapping_checkbox:
                 with col1a:
-                    st.button(f"""Import""", on_click=import_existing_g_mapping, key="key_import_existing_g_mapping_button_2")
+                    st.button(f"""Import""", on_click=import_existing_g_mapping, key="key_import_existing_g_mapping_button")
 
     # PURPLE HEADING - RETRIEVE SAVED SESSION-----------------------------------
     # Only shows if there exist saved sessions
@@ -579,7 +580,7 @@ with tab1:
                 🚫 <b>No mapping</b> has been created/imported yet.
             </div>""")
 
-    # RIGHT COLUMN OPTION: RETRIEVE CAH¡CHED MAPPING----------------------------
+    # RIGHT COLUMN OPTION: RETRIEVE CACHED MAPPING------------------------------
     # Only shows if not working with a mapping
     if not st.session_state["g_label"]:
         pkl_cache_filename = next((f for f in os.listdir() if f.endswith("_cache__.pkl")), None)  # fallback if no match is found
@@ -644,6 +645,16 @@ with tab1:
 
                 if second_full_reset_checkbox:
                     st.button("Reset", key="key_full_reset_button", on_click=full_reset)
+
+    # RIGHT COLUMN: INFO ON MAPPING FORMATS-------------------------------------
+    # If link or file given
+    if selected_mapping_input:
+        with col2b:
+            st.write("")
+            st.markdown("""<div class="info-message-blue">
+            ℹ️ <b>RML, R2RML, and YARRRML</b> mappings are supported. <small>All formats are automatically converted to <b>RML</b>.</small>
+                </div>""", unsafe_allow_html=True)
+
 
 #_______________________________________________________________________________
 # PANEL: CONFIGURE NAMESPACES
