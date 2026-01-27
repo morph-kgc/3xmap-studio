@@ -580,7 +580,7 @@ with tab1:
         valid_tm_label = utils.is_valid_label(tm_label, hard=True)
 
     tm_dict = utils.get_tm_dict()
-    tm_label_list = [split_uri(tm_iri)[1] for tm_label, tm_iri in tm_dict.items()]
+    tm_label_list = [utils.safely_split_iri(tm_iri)[1] for tm_label, tm_iri in tm_dict.items()]
     if tm_label in tm_label_list:
         valid_tm_label = False
         with col1a:
